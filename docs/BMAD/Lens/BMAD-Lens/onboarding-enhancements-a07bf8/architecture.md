@@ -94,7 +94,7 @@ AFTER (Phase Completion):                                           [REQ-7,8]
   1. Commit artifacts
   2. git push origin {phase_branch}
   3. Invoke: casey.create-pr(phase_branch, audience_branch, context)
-     → Tries gh CLI first, then PAT+curl, then manual URL
+     → Uses PAT+curl if available, otherwise manual URL fallback
   4. Store pr_url in initiative config
   5. Update state (phase marked "pr_pending" not "complete")
   6. DO NOT merge, DO NOT delete branch
@@ -116,16 +116,12 @@ Input:
   $5 = labels (comma-separated)
 
 Logic:
-  1. Check: command -v gh
-     → YES: gh pr create --base $2 --head $1 --title "$3" --body "$4" --label "$5"
-     → NO: continue
-  
-  2. Check: PAT file exists at _bmad-output/lens-work/personal/github-credentials.yaml
+  1. Check: PAT file exists at _bmad-output/lens-work/personal/github-credentials.yaml
      → YES: extract PAT, extract owner/repo from git remote
      → curl POST /repos/{owner}/{repo}/pulls
-     → NO: continue
+     → Return PR URL
   
-  3. Fallback:
+  2. Fallback (no PAT):
      → Extract remote URL
      → Print: "Create PR manually: {remote}/compare/{base}...{head}"
 
@@ -165,13 +161,10 @@ Phase Router
     │
     ├── 3. Casey Agent: create-pr
     │       │
-    │       ├── Try: gh pr create ...
-    │       │     └── Success → PR URL
-    │       │
     │       ├── Try: curl + PAT ...
     │       │     └── Success → PR URL
     │       │
-    │       └── Fallback: manual URL
+    │       └── Fallback (no PAT): manual URL
     │             └── Print compare URL
     │
     ├── 4. Store pr_url in initiative config
@@ -252,8 +245,7 @@ When user invokes `/spec`, `/plan`, etc. while previous phase is `pr_pending`:
 | Feature init without Jira | REQ-1 | Manual: `/new-feature` with no tracker |
 | Feature init with Jira | REQ-1,3 | Manual: `/new-feature` with tracker=jira |
 | Duplicate initiative detection | REQ-1 | Manual: create same-named feature twice |
-| Phase completion → PR (gh) | REQ-7,8 | Manual: complete a phase with `gh` installed |
-| Phase completion → PR (PAT) | REQ-7,8 | Manual: complete a phase without `gh`, with PAT |
-| Phase completion → fallback | REQ-8 | Manual: complete a phase without `gh` or PAT |
+| Phase completion → PR (PAT) | REQ-7,8 | Manual: complete a phase with PAT configured |
+| Phase completion → fallback | REQ-8 | Manual: complete a phase without PAT |
 | Next phase after PR pending | REQ-7 | Manual: try `/spec` before PR merged |
 | Profile anti-pattern | REQ-4 | Verify no `profiles/` directory created |

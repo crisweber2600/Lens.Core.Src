@@ -240,21 +240,9 @@ No automated PR creation. Users must manually create PRs on GitHub.
 After each phase/workflow completes:
 
 1. **Check for PAT:** Load `_bmad-output/lens-work/personal/github-credentials.yaml`
-2. **Check for `gh` CLI:** `which gh` — preferred method if available
-3. **Create PR** using best available method:
+2. **Create PR** using best available method:
 
-**Method 1: GitHub CLI (`gh`)**
-```bash
-gh pr create \
-  --repo "{owner}/{repo}" \
-  --base "{audience_branch}" \
-  --head "{phase_branch}" \
-  --title "P{N} {phase_name}: {initiative_name}" \
-  --body "Phase {N} ({phase_name}) complete.\nReview audience: {audience}.\n\nArtifacts:\n- {artifact_list}" \
-  --label "lens-work,p{N},{audience}"
-```
-
-**Method 2: GitHub API + PAT**
+**Method 1: GitHub API + PAT**
 ```bash
 curl -s -X POST \
   -H "Authorization: token ${PAT}" \
@@ -268,7 +256,7 @@ curl -s -X POST \
   }'
 ```
 
-**Method 3: Fallback (no PAT, no `gh`)**
+**Method 2: Fallback (no PAT)**
 ```
 📋 Create PR manually:
 https://github.com/{owner}/{repo}/compare/{audience_branch}...{phase_branch}
@@ -280,17 +268,18 @@ https://github.com/{owner}/{repo}/compare/{audience_branch}...{phase_branch}
 #### Affected Files
 | File | Change |
 |------|--------|
-| `agents/casey.agent.yaml` | Add `create-pr` hook with PAT/gh/fallback logic |
+| `agents/casey.agent.yaml` | Add `create-pr` hook with PAT/fallback logic |
 | `workflows/router/pre-plan/workflow.md` | Step 5: Invoke casey.create-pr |
 | All phase router workflows | Phase completion: Invoke casey.create-pr |
-| `scripts/create-pr.sh` (NEW) | Helper script for PR creation with fallback chain |
+| `scripts/create-pr.sh` (NEW) | Helper script for PR creation with PAT or manual fallback |
 
 #### Acceptance Criteria
-- [ ] PR auto-created when PAT or `gh` CLI available
-- [ ] Fallback URL printed when neither available
+- [ ] PR auto-created when PAT is available
+- [ ] Fallback URL printed when PAT is not configured
 - [ ] PR URL stored in initiative config
 - [ ] PR title/body include phase info and artifact list
 - [ ] Works for all phase routers (pre-plan, spec, plan, tech-plan, story-gen, review, dev)
+- [ ] No dependency on `gh` CLI — uses curl + PAT only
 
 ---
 
@@ -359,7 +348,6 @@ phases:
 
 ## 7. Dependencies
 
-- GitHub CLI (`gh`) — optional but preferred for REQ-8
 - GitHub PAT — already collected during onboarding, stored in `personal/github-credentials.yaml`
 - Casey agent — existing git orchestration infrastructure
 - Scribe agent — existing constitutional compliance checking
@@ -372,5 +360,4 @@ phases:
 |------|--------|-----------|
 | No PAT configured | PR creation falls back to manual URL | Clear fallback messaging |
 | Branch name collision (no random suffix) | Duplicate initiative error | Duplicate check before creation |
-| `gh` CLI not installed | Use curl+PAT or manual URL | Three-tier fallback chain |
 | Phase branch not pushed | PR creation fails | Ensure push before PR create |
