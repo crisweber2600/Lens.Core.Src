@@ -5,6 +5,7 @@
 _bmad-output/lens-work/personal/
 _bmad-output/lens-work/roster/
 _bmad-output/lens-work/state.yaml
+_bmad-output/lens-work/event-log.jsonl
 
 # TargetProjects (external repos - not part of control repo)
 TargetProjects/
