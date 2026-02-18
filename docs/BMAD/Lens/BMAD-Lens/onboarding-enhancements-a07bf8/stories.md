@@ -25,6 +25,8 @@
 | S3.3 | E3 | Auto-create TargetProjects directory | XS | Medium |
 | S3.4 | E3 | Wire profile preferences into init-initiative | S | Medium |
 | S4.1 | E4 | Create branch-topology.md documentation | S | Low |
+| S5.1 | E5 | Add type-discriminator directories to docs path | S | Medium |
+| S5.2 | E5 | Relocate per-initiative output to BmadDocs | M | Medium |
 
 ---
 
@@ -417,3 +419,112 @@ Create a reference document explaining lens-work branch naming conventions, comp
 - [ ] Document created with branch naming rules
 - [ ] Max length guidance included
 - [ ] Practical examples provided
+
+---
+
+## E5 Stories
+
+### S5.1: Add Type-Discriminator Directories to Docs Path
+
+**Epic:** E5 — Docs Path Restructuring  
+**Effort:** Small  
+**REQ:** REQ-11  
+**Added:** Correct-course change proposal (pre-Sprint 1)
+
+#### Description
+Modify the docs path composition in the init-initiative workflow (Step 4a) to insert `repo/` before the repo name segment and `feature/` before the feature ID segment. This makes the path hierarchy self-describing — each entity type is unambiguous from the path alone.
+
+#### Implementation Notes
+- Source: `src/modules/lens-work/workflows/router/init-initiative/workflow.md` (repo-relative within BMAD.Lens)
+- In Step 4a, change `docs_segments` composition:
+  ```yaml
+  # CURRENT:
+  docs_segments = [docs_domain, docs_service, docs_repo, docs_feature].filter(seg => seg != "")
+  
+  # NEW (REQ-11):
+  segments = [docs_domain, docs_service]
+  if docs_repo != "":
+    segments.push("repo")
+    segments.push(docs_repo)
+  if docs_feature != "":
+    segments.push("feature")
+    segments.push(docs_feature)
+  docs_segments = segments.filter(seg => seg != "")
+  ```
+- Domain-only: `docs/BMAD/` (unchanged)
+- Service-only: `docs/BMAD/Lens/` (unchanged)
+- Repo-level: `docs/BMAD/Lens/repo/BMAD-Lens/`
+- Feature under repo: `docs/BMAD/Lens/repo/BMAD-Lens/feature/onboarding-enhancements/`
+- Feature without repo: `docs/BMAD/Lens/feature/onboarding-enhancements/`
+
+#### Files Changed
+| File | Section |
+|------|--------|
+| `workflows/router/init-initiative/workflow.md` | Step 4a: Docs Path Composition |
+
+#### Acceptance Criteria
+- [ ] `repo/` segment inserted before repo name in docs path
+- [ ] `feature/` segment inserted before feature ID in docs path
+- [ ] Domain and service path levels unchanged
+- [ ] `docs.path` in initiative config reflects discriminated structure
+- [ ] All downstream workflows read `docs.path` (no hardcoded old paths)
+
+---
+
+### S5.2: Relocate Per-Initiative Output to BmadDocs
+
+**Epic:** E5 — Docs Path Restructuring  
+**Effort:** Medium  
+**REQ:** REQ-10  
+**Added:** Correct-course change proposal (pre-Sprint 1)
+
+#### Description
+Co-locate per-initiative BMAD output (initiative config, dev stories, sprint backlog) with the initiative's planning docs under a `BmadDocs/` subfolder. Global workbench files (`state.yaml`, `event-log.jsonl`, `personal/`, `constitutions/`) remain in `_bmad-output/lens-work/`.
+
+#### Implementation Notes
+- Source files (all repo-relative within BMAD.Lens):
+  - `src/modules/lens-work/workflows/router/init-initiative/workflow.md` — compute `bmad_docs` path, create directory, write initiative config to `BmadDocs/initiative.yaml`
+  - `src/modules/lens-work/workflows/router/review/workflow.md` — write dev stories + sprint backlog to `BmadDocs/`
+  - `src/modules/lens-work/workflows/router/dev/workflow.md` — read dev stories from `BmadDocs/`
+- New `docs.bmad_docs` field in initiative config:
+  ```yaml
+  docs:
+    bmad_docs: "docs/BMAD/Lens/repo/BMAD-Lens/feature/onboarding-enhancements/BmadDocs"
+  ```
+- Init-initiative creates directory: `mkdir -p ${docs.bmad_docs}`
+- Initiative config is DUPLICATED (not moved) — canonical copy remains at `_bmad-output/lens-work/initiatives/{id}.yaml` for backward compat; BmadDocs copy is the developer-facing reference.
+- `state.yaml` still references `_bmad-output/lens-work/initiatives/{id}.yaml` for runtime loading.
+
+#### What Moves to BmadDocs
+| Artifact | Current Location | New Location |
+|---|---|---|
+| Dev stories | `_bmad-output/implementation-artifacts/dev-story-*.md` | `{docs_path}/BmadDocs/dev-story-*.md` |
+| Sprint backlog | `{docs_path}/sprint-backlog.md` | `{docs_path}/BmadDocs/sprint-backlog.md` |
+| Initiative config (copy) | `_bmad-output/lens-work/initiatives/{id}.yaml` | `{docs_path}/BmadDocs/initiative.yaml` |
+
+#### What Stays in _bmad-output
+| Artifact | Reason |
+|---|---|
+| `state.yaml` | Global workbench state, not initiative-scoped |
+| `event-log.jsonl` | Global audit log |
+| `personal/` | User profile, not initiative-scoped |
+| `constitutions/` | Governance rules, layered hierarchy |
+| `initiatives/{id}.yaml` | Canonical runtime config (backward compat) |
+
+#### Files Changed
+| File | Change |
+|------|--------|
+| `workflows/router/init-initiative/workflow.md` | Compute `bmad_docs`, create dir, write init config copy |
+| `workflows/router/review/workflow.md` | Write dev stories + sprint backlog to `bmad_docs` |
+| `workflows/router/dev/workflow.md` | Read dev stories from `bmad_docs` |
+
+#### Dependencies
+- S5.1 (type discriminators) — `bmad_docs` path depends on the discriminated `docs_path`
+
+#### Acceptance Criteria
+- [ ] `docs.bmad_docs` field in initiative config
+- [ ] Dev stories written to `{docs_path}/BmadDocs/`
+- [ ] Sprint backlog at `{docs_path}/BmadDocs/sprint-backlog.md`
+- [ ] Initiative config copy at `{docs_path}/BmadDocs/initiative.yaml`
+- [ ] Global files remain in `_bmad-output/lens-work/`
+- [ ] `BmadDocs/` directory auto-created during init-initiative

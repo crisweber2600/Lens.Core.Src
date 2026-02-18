@@ -347,6 +347,76 @@ PRE-FLIGHT (mandatory, never skip):
 
 ---
 
+### REQ-10: Relocate Per-Initiative Output to BmadDocs (CC-1)
+
+**Priority:** Medium  
+**Type:** Structural change  
+**Added:** Correct-course change proposal (pre-Sprint 1)
+
+#### Current Behavior
+Per-initiative documents (initiative config, implementation artifacts like dev stories and sprint backlogs) are stored under `_bmad-output/lens-work/initiatives/` and `_bmad-output/implementation-artifacts/`. This separates planning docs (in `docs/`) from their related BMAD output, making it hard to see a complete initiative at a glance.
+
+#### Required Behavior
+- Per-initiative configuration (`initiatives/{id}.yaml`) and implementation artifacts (`dev-story-*.md`, `sprint-backlog.md`) should be stored under the initiative's docs path in a `BmadDocs/` subfolder.
+- New path: `docs/[Domain]/[Service]/[repo]/[feature]/BmadDocs/`
+  - Example: `docs/BMAD/Lens/repo/BMAD-Lens/feature/onboarding-enhancements/BmadDocs/initiative.yaml`
+  - Example: `docs/BMAD/Lens/repo/BMAD-Lens/feature/onboarding-enhancements/BmadDocs/dev-story-S1.1.md`
+- **Scope: initiative-scoped only.** Global workbench files (`state.yaml`, `event-log.jsonl`, `personal/`, `constitutions/`) remain in `_bmad-output/lens-work/`.
+- Initiative config field `docs.bmad_docs` is added to track the BmadDocs path.
+
+#### Affected Files
+| File | Change |
+|------|--------|
+| `workflows/router/init-initiative/workflow.md` | Step 4a: Compute and store `bmad_docs` path; create directory |
+| `workflows/router/review/workflow.md` | Update dev-story output path to use `bmad_docs` |
+| `workflows/router/dev/workflow.md` | Read dev stories from `bmad_docs` |
+| All router workflows | Replace `_bmad-output/implementation-artifacts/` references with `bmad_docs` |
+
+#### Acceptance Criteria
+- [ ] Per-initiative config stored at `{docs_path}/BmadDocs/initiative.yaml`
+- [ ] Dev stories written to `{docs_path}/BmadDocs/`
+- [ ] Sprint backlog resides at `{docs_path}/BmadDocs/sprint-backlog.md` (or `{docs_path}/sprint-backlog.md`)
+- [ ] Global workbench files (`state.yaml`, `event-log.jsonl`) remain in `_bmad-output/lens-work/`
+- [ ] `docs.bmad_docs` field added to initiative config schema
+
+---
+
+### REQ-11: Add Type-Discriminator Directories to Docs Path (CC-2)
+
+**Priority:** Medium  
+**Type:** Structural change  
+**Added:** Correct-course change proposal (pre-Sprint 1)
+
+#### Current Behavior
+Docs path hierarchy uses flat segments: `docs/[Domain]/[Service]/[RepoName]/[FeatureId]/`. At `docs/BMAD/Lens/`, a child could be a repo (`BMAD-Lens`) or a feature — there's no way to tell from the path alone.
+
+#### Required Behavior
+Insert type-discriminator segments (`repo/`, `feature/`) before the entity name:
+- Repo-level: `docs/[Domain]/[Service]/repo/[RepoName]/`
+- Feature under repo: `docs/[Domain]/[Service]/repo/[RepoName]/feature/[FeatureId]/`
+- Feature without repo: `docs/[Domain]/[Service]/feature/[FeatureId]/`
+
+Examples:
+| Layer | Current | Proposed |
+|---|---|---|
+| Repo | `docs/BMAD/Lens/BMAD-Lens/` | `docs/BMAD/Lens/repo/BMAD-Lens/` |
+| Feature (repo) | `docs/BMAD/Lens/BMAD-Lens/onboarding-enhancements/` | `docs/BMAD/Lens/repo/BMAD-Lens/feature/onboarding-enhancements/` |
+| Feature (no repo) | `docs/BMAD/Lens/my-feature/` | `docs/BMAD/Lens/feature/my-feature/` |
+
+#### Affected Files
+| File | Change |
+|------|--------|
+| `workflows/router/init-initiative/workflow.md` | Step 4a: Insert `repo/` and `feature/` type discriminators into `docs_segments` |
+
+#### Acceptance Criteria
+- [ ] `repo/` segment inserted before repo name in docs path
+- [ ] `feature/` segment inserted before feature ID in docs path
+- [ ] Domain and service levels remain unchanged
+- [ ] `docs.path` in initiative config reflects the new structure
+- [ ] Type discriminators applied only at repo and feature levels (not domain/service)
+
+---
+
 ## 3. Data Model Changes
 
 ### personal/profile.yaml — New Fields
@@ -365,6 +435,14 @@ preferences:
 ```yaml
 id: onboarding-enhancements       # CHANGED (REQ-1): no random suffix
 jira_ticket: "BMAD-123"           # NEW (REQ-3): optional
+docs:
+  root: "docs"
+  domain: "BMAD"
+  service: "Lens"
+  repo: "BMAD-Lens"
+  feature: "onboarding-enhancements"
+  path: "docs/BMAD/Lens/repo/BMAD-Lens/feature/onboarding-enhancements"  # CHANGED (REQ-11): type discriminators
+  bmad_docs: "docs/BMAD/Lens/repo/BMAD-Lens/feature/onboarding-enhancements/BmadDocs"  # NEW (REQ-10)
 phases:
   p1:
     status: complete
@@ -389,6 +467,8 @@ phases:
 | 7 | REQ-5 | TargetProjects auto-create (simple) |
 | 8 | REQ-6 | Branch name docs (simple, no code) |
 | 9 | REQ-9 | Phase transition enforcement (implement alongside REQ-7) |
+| 10 | REQ-10 | BmadDocs relocation — co-locates initiative output with planning docs |
+| 11 | REQ-11 | Type-discriminator directories — unambiguous path hierarchy |
 
 ---
 

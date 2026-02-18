@@ -28,6 +28,7 @@
 | E2: Initiative ID Cleanup | 3 (S2.1–S2.3) | ✅ | ✅ (S2.3 depends on S3.2) | ✅ |
 | E3: Onboarding Profile Enhancements | 5 (S3.1–S3.4, S2.4) | ✅ | ✅ | ✅ |
 | E4: Documentation | 1 (S4.1) | ✅ | ✅ | ✅ |
+| E5: Docs Path Restructuring | 2 (S5.1–S5.2) | ✅ | ✅ (S5.2 depends on S5.1) | ✅ |
 
 ---
 
@@ -47,6 +48,10 @@ S3.3 (TargetProjects mkdir)  ─┤
 S2.4 (anti-pattern warning)  ─┘
 
 S4.1 (branch docs)           ─→ Independent, any time
+
+S5.1 (type discriminators)   ─→ S5.2 (BmadDocs relocation)
+                              │
+                              └─→ Depends on init-initiative (same Step 4a as E2)
 ```
 
 ---
@@ -62,7 +67,7 @@ S4.1 (branch docs)           ─→ Independent, any time
 | 4 | S1.4 | State machine extension — tracks PR status |
 | 5 | S1.5 | Merge validation — closes the governance loop |
 
-### Sprint 2: IDs & Onboarding (E2 + E3)
+### Sprint 2: IDs & Onboarding & Docs Path (E2 + E3 + E5)
 | Order | Story | Rationale |
 |-------|-------|-----------|
 | 6 | S2.1 | Remove random suffix |
@@ -73,11 +78,13 @@ S4.1 (branch docs)           ─→ Independent, any time
 | 11 | S2.4 | Anti-pattern warning (onboarding file, grouped with E3) |
 | 12 | S3.4 | Wire preferences into init-initiative |
 | 13 | S2.3 | Jira ticket integration (depends on S3.2) |
+| 14 | S5.1 | Type-discriminator directories (modifies same init-initiative Step 4a) |
+| 15 | S5.2 | BmadDocs relocation (depends on S5.1) |
 
 ### Sprint 3: Docs (E4)
 | Order | Story | Rationale |
 |-------|-------|-----------|
-| 14 | S4.1 | Branch topology documentation |
+| 16 | S4.1 | Branch topology documentation |
 
 ---
 
@@ -107,7 +114,7 @@ S4.1 (branch docs)           ─→ Independent, any time
 
 ## 7. Definition of Done
 
-- [ ] All 14 stories implemented in source directory
+- [ ] All 16 stories implemented in source directory
 - [ ] Module built and synced to `_bmad/lens-work/`
 - [ ] All acceptance criteria verified manually
 - [ ] No `profiles/` directory in fresh onboarding

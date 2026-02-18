@@ -15,6 +15,7 @@
 | E2 | Initiative ID Cleanup | REQ-1 | High | Medium |
 | E3 | Onboarding Profile Enhancements | REQ-2, REQ-3, REQ-4, REQ-5 | Medium | Medium |
 | E4 | Documentation | REQ-6 | Low | Small |
+| E5 | Docs Path Restructuring | REQ-10, REQ-11 | Medium | Medium |
 
 ---
 
@@ -139,3 +140,50 @@ Create a `branch-topology.md` document in the lens-work docs explaining how bran
 ### Dependencies
 
 - None
+
+---
+
+## E5: Docs Path Restructuring
+
+**Priority:** Medium  
+**REQs:** REQ-10 (BmadDocs relocation), REQ-11 (type-discriminator directories)  
+**Added:** Correct-course change proposal (pre-Sprint 1)
+
+### Description
+
+Restructure the docs path hierarchy to insert type-discriminator segments (`repo/`, `feature/`) that make entity types unambiguous at every level. Additionally, co-locate per-initiative BMAD output (initiative config, dev stories) with planning docs under a `BmadDocs/` subfolder, reducing the split between `_bmad-output/` and `docs/`.
+
+### Scope
+
+- **init-initiative workflow** modified: Step 4a docs_path composition adds `repo/` and `feature/` discriminators; computes and stores `bmad_docs` path
+- **Initiative config schema** extended: `docs.bmad_docs` field added
+- **Review workflow** modified: dev-story and sprint-backlog output path uses `bmad_docs`
+- **Dev workflow** modified: reads dev stories from `bmad_docs`
+- **All router workflows**: replace `_bmad-output/implementation-artifacts/` references with `bmad_docs`
+
+### Path Examples
+
+| Layer | Current | New |
+|---|---|---|
+| Repo | `docs/BMAD/Lens/BMAD-Lens/` | `docs/BMAD/Lens/repo/BMAD-Lens/` |
+| Feature (repo) | `docs/BMAD/Lens/BMAD-Lens/onboarding-enhancements/` | `docs/BMAD/Lens/repo/BMAD-Lens/feature/onboarding-enhancements/` |
+| BmadDocs | `_bmad-output/implementation-artifacts/` | `docs/.../feature/onboarding-enhancements/BmadDocs/` |
+
+### Acceptance Criteria
+
+- [ ] `repo/` segment inserted before repo name in docs path
+- [ ] `feature/` segment inserted before feature ID in docs path
+- [ ] Domain and service levels unchanged
+- [ ] Per-initiative config stored at `{docs_path}/BmadDocs/initiative.yaml`
+- [ ] Dev stories and sprint backlog written to `{docs_path}/BmadDocs/`
+- [ ] Global files (`state.yaml`, `event-log.jsonl`) remain in `_bmad-output/lens-work/`
+- [ ] `docs.bmad_docs` field in initiative config schema
+
+### Dependencies
+
+- REQ-1 (initiative ID cleanup) — docs path incorporates the initiative ID
+- init-initiative workflow — same Step 4a being modified by E2
+
+### Risks
+
+- Existing initiatives have old-format paths — need migration note or backward-compat fallback

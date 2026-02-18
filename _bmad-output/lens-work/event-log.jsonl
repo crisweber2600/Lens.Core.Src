@@ -9,3 +9,4 @@
 {"ts":"2026-02-18T13:00:01Z","event":"review-checklist","id":"onboarding-enhancements-a07bf8","phase":"gate","missing_artifacts":1,"readiness_blockers":0}
 {"ts":"2026-02-18T13:00:02Z","event":"review-compliance","id":"onboarding-enhancements-a07bf8","phase":"gate","checked_artifacts":5,"warn_count":0,"fail_count":0}
 {"ts":"2026-02-18T13:00:03Z","event":"review-complete","id":"onboarding-enhancements-a07bf8","phase":"gate","workflow":"review","status":"passed_with_warnings"}
+{"ts":"2026-02-18T14:00:00Z","event":"correct-course","id":"onboarding-enhancements-a07bf8","phase":"gate","workflow":"correct-course","trigger":"pre-sprint enhancements","changes":["REQ-10: BmadDocs relocation","REQ-11: type-discriminator directories"],"new_epic":"E5","new_stories":["S5.1","S5.2"],"scope":"moderate"}
