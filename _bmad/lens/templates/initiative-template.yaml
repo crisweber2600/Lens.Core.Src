@@ -1,0 +1,50 @@
+# Initiative Template
+# One per initiative, stored at _bmad-output/lens/initiatives/{id}.yaml
+
+id: ""
+type: ""                    # domain | service | feature
+name: ""
+description: ""
+
+# Hierarchy
+domain_prefix: ""           # Domain prefix string
+service_prefix: ""          # Service prefix string (for service/feature)
+
+# Branch topology
+feature_branch_root: ""     # Flat hyphen-separated root name (feature only)
+audiences:                  # Configured during /new (feature only)
+  - small
+  - medium
+  - large
+
+# Phase-to-audience mapping (feature only)
+review_audience_map:
+  p1: small
+  p2: medium
+  p3: large
+  p4: large
+  p5: large
+  p6: large
+
+# Docs path
+docs_path: ""               # e.g., "docs/{domain}/{service}/{id}/"
+
+# Phase tracking
+current_phase: null          # null | p1 | p2 | p3 | p4 | p5 | p6
+gate_status:
+  pre-plan: not-started
+  plan: not-started
+  tech-plan: not-started
+  story-gen: not-started
+  review: not-started
+  dev: not-started
+
+# Git
+remote: origin
+
+# Governance
+constitution_mode: advisory  # advisory | enforced
+
+# Timestamps
+created_at: ""
+created_by: ""

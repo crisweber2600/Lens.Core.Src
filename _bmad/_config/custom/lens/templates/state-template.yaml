@@ -1,0 +1,24 @@
+# Lens State Template
+# Copy this to initialize a new state.yaml
+
+lens_contract_version: "2.0"
+
+active_initiative:
+  id: ""
+  type: ""           # domain | service | feature
+  current_phase: ""   # null | pre-plan | plan | tech-plan | story-gen | review | dev
+  feature_branch_root: ""
+  audiences: []       # e.g., [small, medium, large]
+  current_audience: ""
+  current_phase_branch: ""
+  gate_status:
+    pre-plan: not-started
+    plan: not-started
+    tech-plan: not-started
+    story-gen: not-started
+    review: not-started
+    dev: not-started
+  checklist: {}
+
+background_errors: []
+workflow_status: idle   # idle | running | error

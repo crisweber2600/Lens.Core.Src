@@ -1,0 +1,8 @@
+# Lens State
+# Auto-managed by Lens — do not edit manually
+# Use /sync, /fix, or /override for state repairs
+
+lens_contract_version: "2.0"
+active_initiative: null
+background_errors: []
+workflow_status: idle
