@@ -1,0 +1,41 @@
+# Initiative Configuration
+# Created by Lens /new-domain command
+
+id: "bmad"
+type: "domain"
+name: "BMAD"
+description: "BMAD domain-level initiative — organizational grouping for the BMAD ecosystem"
+
+# Hierarchy
+domain_prefix: "bmad"
+service_prefix: null
+
+# Branch topology
+feature_branch_root: null
+audiences: null
+
+# Phase-to-audience mapping (not applicable for domain)
+review_audience_map: null
+
+# Docs path
+docs_path: "docs/bmad/"
+
+# Phase tracking
+current_phase: null
+gate_status:
+  pre-plan: not-started
+  plan: not-started
+  tech-plan: not-started
+  story-gen: not-started
+  review: not-started
+  dev: not-started
+
+# Git
+remote: origin
+
+# Governance
+constitution_mode: advisory
+
+# Timestamps
+created_at: "2026-02-17T20:00:00.000Z"
+created_by: "CrisWeber"

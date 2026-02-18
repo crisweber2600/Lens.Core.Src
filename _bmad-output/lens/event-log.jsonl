@@ -1,2 +1,3 @@
 {"ts":"2026-02-17T12:00:00Z","event":"onboard_complete","initiative":"system","user":"Cris Weber","details":{"repos_found":0,"git_user":"Cris Weber","git_email":"cris@weber.center"}}
 {"ts":"2026-02-17T18:45:30.000Z","event":"initiative_created","initiative":"auth-platform","user":"Cris Weber","details":{"id":"auth-platform","type":"domain","name":"auth-platform","branches":["auth"],"domain_prefix":"auth"}}
+{"ts":"2026-02-17T20:00:00.000Z","event":"initiative_created","initiative":"bmad","user":"CrisWeber","details":{"id":"bmad","type":"domain","name":"BMAD","branches":["bmad"],"domain_prefix":"bmad"}}

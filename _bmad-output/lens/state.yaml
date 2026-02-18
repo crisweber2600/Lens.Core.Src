@@ -4,14 +4,13 @@
 
 lens_contract_version: "2.0"
 active_initiative:
-  id: auth-platform
-  type: domain
-  phase: null
+  id: "bmad"
+  type: "domain"
+  current_phase: null
   feature_branch_root: null
   audiences: null
   current_audience: null
   current_phase_branch: null
-  branch: auth
   gate_status:
     pre-plan: not-started
     plan: not-started
