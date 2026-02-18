@@ -1,0 +1,12 @@
+# LENS Workbench State
+# Auto-managed by lens-work - do not edit manually
+
+version: 1
+active_initiative: onboarding-enhancements-a07bf8
+# For feature-layer: active_initiative = initiative_id
+# Load via: initiatives/onboarding-enhancements-a07bf8.yaml
+current:
+  phase: p2
+  phase_name: Planning
+  workflow: spec
+  workflow_status: in_progress
