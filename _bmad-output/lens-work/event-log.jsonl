@@ -5,3 +5,7 @@
 {"ts":"2026-02-18T12:00:00Z","event":"pre-plan","id":"onboarding-enhancements-a07bf8","phase":"p1","workflow":"pre-plan","status":"complete"}
 {"ts":"2026-02-18T12:30:00Z","event":"spec","id":"onboarding-enhancements-a07bf8","phase":"p2","workflow":"spec","status":"complete","artifacts":["prd.md","architecture.md"],"branch":"bmad-lens-onboarding-enhancements-a07bf8-medium-p2"}
 {"ts":"2026-02-18T12:45:00Z","event":"plan","id":"onboarding-enhancements-a07bf8","phase":"p3","workflow":"plan","status":"in_progress","artifacts":["epics.md","stories.md","readiness-checklist.md"],"branch":"bmad-lens-onboarding-enhancements-a07bf8-medium-p3"}
+{"ts":"2026-02-18T13:00:00Z","event":"review-start","id":"onboarding-enhancements-a07bf8","phase":"gate","workflow":"review"}
+{"ts":"2026-02-18T13:00:01Z","event":"review-checklist","id":"onboarding-enhancements-a07bf8","phase":"gate","missing_artifacts":1,"readiness_blockers":0}
+{"ts":"2026-02-18T13:00:02Z","event":"review-compliance","id":"onboarding-enhancements-a07bf8","phase":"gate","checked_artifacts":5,"warn_count":0,"fail_count":0}
+{"ts":"2026-02-18T13:00:03Z","event":"review-complete","id":"onboarding-enhancements-a07bf8","phase":"gate","workflow":"review","status":"passed_with_warnings"}

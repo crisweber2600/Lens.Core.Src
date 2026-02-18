@@ -6,7 +6,7 @@ active_initiative: onboarding-enhancements-a07bf8
 # For feature-layer: active_initiative = initiative_id
 # Load via: initiatives/onboarding-enhancements-a07bf8.yaml
 current:
-  phase: p3
-  phase_name: Solutioning
-  workflow: plan
-  workflow_status: in_progress
+  phase: gate
+  phase_name: Implementation Gate
+  workflow: review
+  workflow_status: review_complete
