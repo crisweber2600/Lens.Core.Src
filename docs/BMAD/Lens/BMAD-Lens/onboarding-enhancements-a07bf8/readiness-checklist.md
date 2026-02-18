@@ -14,8 +14,8 @@
 | Product Brief | ✅ | ✅ |
 | PRD (9 REQs) | ✅ | ✅ |
 | Architecture | ✅ | ✅ |
-| Epics (4) | ✅ | Pending |
-| Stories (14) | ✅ | Pending |
+| Epics (4) | ✅ | ✅ Adversarial review passed |
+| Stories (14) | ✅ | ✅ Adversarial review passed |
 | Readiness Checklist | ✅ (this file) | — |
 
 ---
@@ -25,8 +25,8 @@
 | Epic | Stories | All ACs Defined | Dependencies Clear | Implementable |
 |------|---------|----------------|-------------------|---------------|
 | E1: Phase Governance & PR Automation | 5 (S1.1–S1.5) | ✅ | ✅ | ✅ |
-| E2: Initiative ID Cleanup | 4 (S2.1–S2.4) | ✅ | ✅ (S2.3 depends on S3.2) | ✅ |
-| E3: Onboarding Profile Enhancements | 4 (S3.1–S3.4) | ✅ | ✅ | ✅ |
+| E2: Initiative ID Cleanup | 3 (S2.1–S2.3) | ✅ | ✅ (S2.3 depends on S3.2) | ✅ |
+| E3: Onboarding Profile Enhancements | 5 (S3.1–S3.4, S2.4) | ✅ | ✅ | ✅ |
 | E4: Documentation | 1 (S4.1) | ✅ | ✅ | ✅ |
 
 ---
@@ -35,15 +35,16 @@
 
 ```
 S1.1 (remove auto-merge)     ─┐
-S1.3 (pre-flight checklist)   ├─→ S1.2 (create-pr script) ─→ S1.4 (pr_pending status) ─→ S1.5 (merge validation)
-                               │
-S2.1 (remove random suffix)  ─┤
+S1.2 (create-pr script)       ├─→ S1.4 (pr_pending status) ─→ S1.5 (merge validation)
+S1.3 (pre-flight checklist)  ─┘
+
+S2.1 (remove random suffix)  ─┐
 S2.2 (duplicate detection)   ─┤─→ Can run in parallel
-S2.4 (anti-pattern warning)  ─┘
-                               
+                              │
 S3.1 (question mode)         ─┐
 S3.2 (tracker preference)    ─┼─→ S3.4 (wire into init-initiative) ─→ S2.3 (Jira ticket in ID)
-S3.3 (TargetProjects mkdir)  ─┘
+S3.3 (TargetProjects mkdir)  ─┤
+S2.4 (anti-pattern warning)  ─┘
 
 S4.1 (branch docs)           ─→ Independent, any time
 ```
@@ -66,10 +67,10 @@ S4.1 (branch docs)           ─→ Independent, any time
 |-------|-------|-----------|
 | 6 | S2.1 | Remove random suffix |
 | 7 | S2.2 | Duplicate detection (depends on cleaner IDs) |
-| 8 | S2.4 | Anti-pattern warning |
-| 9 | S3.1 | Question mode prompt |
-| 10 | S3.2 | Tracker preference prompt |
-| 11 | S3.3 | TargetProjects auto-create |
+| 8 | S3.1 | Question mode prompt |
+| 9 | S3.2 | Tracker preference prompt |
+| 10 | S3.3 | TargetProjects auto-create |
+| 11 | S2.4 | Anti-pattern warning (onboarding file, grouped with E3) |
 | 12 | S3.4 | Wire preferences into init-initiative |
 | 13 | S2.3 | Jira ticket integration (depends on S3.2) |
 

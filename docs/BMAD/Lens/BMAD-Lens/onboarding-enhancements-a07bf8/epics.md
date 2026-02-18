@@ -12,8 +12,8 @@
 | Epic | Title | REQs | Priority | Effort |
 |------|-------|------|----------|--------|
 | E1 | Phase Governance & PR Automation | REQ-7, REQ-8, REQ-9 | High | Large |
-| E2 | Initiative ID Cleanup | REQ-1, REQ-4 | High | Medium |
-| E3 | Onboarding Profile Enhancements | REQ-2, REQ-3, REQ-5 | Medium | Medium |
+| E2 | Initiative ID Cleanup | REQ-1 | High | Medium |
+| E3 | Onboarding Profile Enhancements | REQ-2, REQ-3, REQ-4, REQ-5 | Medium | Medium |
 | E4 | Documentation | REQ-6 | Low | Small |
 
 ---
@@ -60,25 +60,21 @@ Replace local auto-merge with PR-based phase completion across all 7 phase route
 ## E2: Initiative ID Cleanup
 
 **Priority:** High  
-**REQs:** REQ-1 (remove random suffix), REQ-4 (profile anti-pattern)
+**REQs:** REQ-1 (remove random suffix)
 
 ### Description
 
-Remove the random hex suffix from feature initiative IDs, making them human-readable and concise. Add duplicate detection. If the user's tracker preference is Jira, prepend the Jira ticket ID. Simultaneously eliminate the `profiles/*.yaml` anti-pattern by adding explicit warnings to the onboarding workflow.
+Remove the random hex suffix from feature initiative IDs, making them human-readable and concise. Add duplicate detection. If the user's tracker preference is Jira, prepend the Jira ticket ID.
 
 ### Scope
 
 - **init-initiative workflow** modified: ID generation, duplicate check, Jira ticket prompt
-- **Onboarding workflow** modified: anti-pattern warning block added
-- **Profile path enforcement**: only `personal/profile.yaml` — never `profiles/`
 
 ### Acceptance Criteria
 
 - [ ] Feature initiative IDs have no random suffix (e.g., `onboarding-enhancements` not `onboarding-enhancements-a07bf8`)
 - [ ] Duplicate initiative names detected and rejected with user-facing error
 - [ ] Jira ticket ID prepended when `tracker=jira` (e.g., `BMAD-123-onboarding-enhancements`)
-- [ ] Anti-pattern warning in onboarding workflow source prevents `profiles/` directory creation
-- [ ] No `profiles/*.yaml` files created during fresh onboarding
 
 ### Dependencies
 
@@ -89,18 +85,19 @@ Remove the random hex suffix from feature initiative IDs, making them human-read
 ## E3: Onboarding Profile Enhancements
 
 **Priority:** Medium  
-**REQs:** REQ-2 (question mode), REQ-3 (tracker preference), REQ-5 (TargetProjects auto-create)
+**REQs:** REQ-2 (question mode), REQ-3 (tracker preference), REQ-4 (profile anti-pattern), REQ-5 (TargetProjects auto-create)
 
 ### Description
 
-Extend the onboarding workflow to collect two new user preferences — question mode (interactive vs batch) and work item tracker (Jira/Azure DevOps/None). Auto-create the TargetProjects directory immediately after the user provides the path.
+Extend the onboarding workflow to collect two new user preferences — question mode (interactive vs batch) and work item tracker (Jira/Azure DevOps/None). Auto-create the TargetProjects directory immediately after the user provides the path. Eliminate the `profiles/*.yaml` anti-pattern by adding explicit warnings to the onboarding workflow.
 
 ### Scope
 
-- **Onboarding workflow** modified: 3 new prompts added after PAT section
+- **Onboarding workflow** modified: 3 new prompts added after PAT section, anti-pattern warning block added
 - **Profile schema** extended: `preferences.question_mode`, `preferences.tracker`, `preferences.jira_base_url`
 - **init-initiative workflow** modified: reads profile preferences as defaults
 - **TargetProjects** `mkdir -p` added after path confirmation
+- **Profile path enforcement**: only `personal/profile.yaml` — never `profiles/`
 
 ### Acceptance Criteria
 
@@ -110,6 +107,8 @@ Extend the onboarding workflow to collect two new user preferences — question 
 - [ ] All new fields stored in `personal/profile.yaml` under `preferences`
 - [ ] `/new-domain` and `/new-feature` inherit `question_mode` from profile as default
 - [ ] TargetProjects directory created immediately via `mkdir -p` (idempotent)
+- [ ] Anti-pattern warning in onboarding workflow source prevents `profiles/` directory creation
+- [ ] No `profiles/*.yaml` files created during fresh onboarding
 
 ### Dependencies
 

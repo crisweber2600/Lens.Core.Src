@@ -19,7 +19,7 @@
 | S2.1 | E2 | Remove random suffix from feature initiative IDs | S | High |
 | S2.2 | E2 | Add duplicate initiative detection | S | High |
 | S2.3 | E2 | Add Jira ticket ID to initiative ID | S | High |
-| S2.4 | E2 | Add profile anti-pattern warning to onboarding | S | High |
+| S2.4 | E3 | Add profile anti-pattern warning to onboarding | S | Medium |
 | S3.1 | E3 | Add question mode prompt to onboarding | S | Medium |
 | S3.2 | E3 | Add tracker preference prompt to onboarding | S | Medium |
 | S3.3 | E3 | Auto-create TargetProjects directory | XS | Medium |
@@ -40,7 +40,7 @@
 In each of the 7 phase router workflows, replace the phase-completion section that performs `git merge --no-ff` + `git branch -d` with a sequence that: commits artifacts, pushes the phase branch, and does NOT merge or delete.
 
 #### Implementation Notes
-- Source: `TargetProjects/bmad/lens/BMAD.Lens/src/modules/lens-work/workflows/router/*/workflow.md`
+- Source: `src/modules/lens-work/workflows/router/*/workflow.md` (repo-relative within BMAD.Lens)
 - In each workflow, locate the Phase Completion section (typically the last numbered step)
 - Remove: `git checkout {audience}`, `git merge --no-ff`, `git branch -d`
 - Replace with: `git push origin {phase_branch}`
@@ -74,7 +74,7 @@ In each of the 7 phase router workflows, replace the phase-completion section th
 Create `scripts/create-pr.sh` — a helper that creates GitHub PRs via the REST API using a PAT stored in `personal/github-credentials.yaml`. If no PAT is configured, output a manual compare URL instead.
 
 #### Implementation Notes
-- Source: `TargetProjects/bmad/lens/BMAD.Lens/src/modules/lens-work/scripts/create-pr.sh` (NEW)
+- Source: `src/modules/lens-work/scripts/create-pr.sh` (NEW, repo-relative within BMAD.Lens)
 - Input: head_branch, base_branch, title, body
 - Logic:
   1. Read PAT from `_bmad-output/lens-work/personal/github-credentials.yaml`
@@ -262,7 +262,7 @@ When the user's tracker preference is `jira`, prompt for an optional Jira ticket
 
 ### S2.4: Add Profile Anti-Pattern Warning to Onboarding
 
-**Epic:** E2 — Initiative ID Cleanup  
+**Epic:** E3 — Onboarding Profile Enhancements  
 **Effort:** Small  
 **REQ:** REQ-4
 
@@ -406,7 +406,7 @@ When creating a new domain/feature initiative, read `question_mode` and `tracker
 Create a reference document explaining lens-work branch naming conventions, composition rules, and length guidelines.
 
 #### Implementation Notes
-- Source: `TargetProjects/bmad/lens/BMAD.Lens/src/modules/lens-work/docs/branch-topology.md` (NEW)
+- Source: `src/modules/lens-work/docs/branch-topology.md` (NEW, repo-relative within BMAD.Lens)
 - Contents:
   - Branch name composition: `{domain}-{service}-{initiative}-{audience}-p{N}-{workflow}`
   - Max recommended length: 128 chars
