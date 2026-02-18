@@ -99,6 +99,17 @@ AFTER (Phase Completion):                                           [REQ-7,8]
   5. Update state (phase marked "pr_pending" not "complete")
   6. DO NOT merge, DO NOT delete branch
   7. Output PR URL to user
+
+NEXT PHASE ENTRY (mandatory pre-flight):                            [REQ-9]
+  1. Validate previous phase: pr_pending → check if PR merged
+     → NOT merged: STOP, warn user
+     → Merged (or first phase): continue
+  2. git checkout {audience_branch}
+  3. git pull origin {audience_branch}
+  4. git checkout -b {initiative}-{audience}-p{N+1}
+  5. Confirm to user: "Now on branch: {new_branch}"
+  6. Update state.yaml: phase = p{N+1}, status = in_progress
+  → GATE: Only after all 6 steps pass → begin artifact generation
 ```
 
 ---
@@ -211,13 +222,13 @@ When user invokes `/spec`, `/plan`, etc. while previous phase is `pr_pending`:
 |---|-------------------|-----|-------------|
 | 1 | `workflows/utility/onboarding/workflow.md` | 2,3,4,5 | Modified |
 | 2 | `workflows/router/init-initiative/workflow.md` | 1,2,3 | Modified |
-| 3 | `workflows/router/pre-plan/workflow.md` | 7,8 | Modified |
-| 4 | `workflows/router/spec/workflow.md` | 7,8 | Modified |
-| 5 | `workflows/router/plan/workflow.md` | 7,8 | Modified |
-| 6 | `workflows/router/tech-plan/workflow.md` | 7,8 | Modified |
-| 7 | `workflows/router/story-gen/workflow.md` | 7,8 | Modified |
-| 8 | `workflows/router/review/workflow.md` | 7,8 | Modified |
-| 9 | `workflows/router/dev/workflow.md` | 7,8 | Modified |
+| 3 | `workflows/router/pre-plan/workflow.md` | 7,8,9 | Modified |
+| 4 | `workflows/router/spec/workflow.md` | 7,8,9 | Modified |
+| 5 | `workflows/router/plan/workflow.md` | 7,8,9 | Modified |
+| 6 | `workflows/router/tech-plan/workflow.md` | 7,8,9 | Modified |
+| 7 | `workflows/router/story-gen/workflow.md` | 7,8,9 | Modified |
+| 8 | `workflows/router/review/workflow.md` | 7,8,9 | Modified |
+| 9 | `workflows/router/dev/workflow.md` | 7,8,9 | Modified |
 | 10 | `agents/casey.agent.yaml` | 8 | Modified |
 | 11 | `scripts/create-pr.sh` | 8 | **New** |
 | 12 | `docs/branch-topology.md` | 6 | **New** |

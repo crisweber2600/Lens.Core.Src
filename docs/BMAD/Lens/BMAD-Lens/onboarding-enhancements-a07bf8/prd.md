@@ -11,7 +11,7 @@
 
 ## 1. Overview
 
-Improve the lens-work first-run onboarding and initiative creation experience by addressing 8 friction points identified during real user testing. Changes target the source at `TargetProjects/bmad/lens/BMAD.Lens/src/modules/lens-work/` (per constitution Article I).
+Improve the lens-work first-run onboarding and initiative creation experience by addressing 9 friction points identified during real user testing. Changes target the source at `TargetProjects/bmad/lens/BMAD.Lens/src/modules/lens-work/` (per constitution Article I).
 
 ---
 
@@ -283,6 +283,70 @@ https://github.com/{owner}/{repo}/compare/{audience_branch}...{phase_branch}
 
 ---
 
+### REQ-9: Enforce Full Workflow on Phase Transitions (FP-9)
+
+**Priority:** High  
+**Type:** Behavioral enforcement across all phase routers
+
+#### Current Behavior
+When transitioning from one phase to the next (e.g., P1 → P2), the phase branch creation step is sometimes skipped. The agent proceeds directly to artifact generation on the current branch instead of:
+1. Checking out the audience branch
+2. Creating the new phase branch (e.g., `*-p2`)
+3. Checking out the new phase branch
+4. Then generating artifacts
+
+This was observed during the P1 → P2 transition where the `-medium-p2` branch was not created before artifacts were written.
+
+#### Required Behavior
+Every phase router workflow MUST execute ALL steps in order — no steps may be skipped or short-circuited. Phase transition must follow this **mandatory sequence**:
+
+```
+1. Complete current phase (commit, push, PR per REQ-7/8)
+2. When user triggers next phase:
+   a. Validate: previous phase PR merged (or first phase)
+   b. Checkout audience branch
+   c. git pull (ensure up-to-date)
+   d. Create new phase branch: {initiative}-{audience}-p{N}
+   e. Checkout new phase branch
+   f. Confirm branch to user: "Now on branch: {branch_name}"
+   g. THEN begin artifact generation
+```
+
+The workflow must treat branch creation as a **hard gate** — no artifacts may be generated until the phase branch exists and is checked out.
+
+#### Enforcement Mechanism
+Each phase router workflow must include a **pre-flight checklist** at the top:
+```
+PRE-FLIGHT (mandatory, never skip):
+  □ Current branch verified
+  □ Previous phase status checked
+  □ Audience branch checked out
+  □ New phase branch created
+  □ New phase branch checked out
+  □ State.yaml updated to new phase
+  → GATE: All boxes checked before proceeding to artifact work
+```
+
+#### Affected Files
+| File | Change |
+|------|--------|
+| `workflows/router/pre-plan/workflow.md` | Add pre-flight checklist |
+| `workflows/router/spec/workflow.md` | Add pre-flight checklist |
+| `workflows/router/plan/workflow.md` | Add pre-flight checklist |
+| `workflows/router/tech-plan/workflow.md` | Add pre-flight checklist |
+| `workflows/router/story-gen/workflow.md` | Add pre-flight checklist |
+| `workflows/router/review/workflow.md` | Add pre-flight checklist |
+| `workflows/router/dev/workflow.md` | Add pre-flight checklist |
+
+#### Acceptance Criteria
+- [ ] Every phase router has a pre-flight checklist that must complete before artifact work
+- [ ] Branch creation is a hard gate — no artifacts written without phase branch
+- [ ] User sees branch confirmation message before any artifact generation begins
+- [ ] State.yaml is updated to the new phase before artifact work starts
+- [ ] No phase transition can silently skip branching steps
+
+---
+
 ## 3. Data Model Changes
 
 ### personal/profile.yaml — New Fields
@@ -324,6 +388,7 @@ phases:
 | 6 | REQ-3 | Tracker preference (moderate effort, depends on REQ-1 for Jira ID) |
 | 7 | REQ-5 | TargetProjects auto-create (simple) |
 | 8 | REQ-6 | Branch name docs (simple, no code) |
+| 9 | REQ-9 | Phase transition enforcement (implement alongside REQ-7) |
 
 ---
 
@@ -361,3 +426,4 @@ phases:
 | No PAT configured | PR creation falls back to manual URL | Clear fallback messaging |
 | Branch name collision (no random suffix) | Duplicate initiative error | Duplicate check before creation |
 | Phase branch not pushed | PR creation fails | Ensure push before PR create |
+| Phase branch skipped on transition | Artifacts on wrong branch | Pre-flight checklist as hard gate |
