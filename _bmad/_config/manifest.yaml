@@ -1,0 +1,16 @@
+installation:
+  version: 6.0.0-alpha.23
+  installDate: 2026-02-19T03:03:31.331Z
+  lastUpdated: 2026-02-19T03:03:31.331Z
+modules:
+  - core
+  - bmb
+  - bmgd
+  - bmm
+  - cis
+  - lens-work
+ides:
+  - claude-code
+  - codex
+  - cursor
+  - github-copilot

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "github": {
+    "repo": "https://github.com/crisweber2600/bmad.lens.release",
+    "branch": "release/2.0.0",
+    "stubsSourcePath": ".github/prompts",
+    "stubsTargetPath": ".github/stubPrompts",
+    "cloneOnboardingStubsEnabled": true
+  },
+  "lens-work": {
+    "version": "1.0.0",
+    "installedDate": "2026-02-19T03:03:31.193Z",
+    "preferredQuestionMode": "interactive",
+    "preferredTracker": "none"
+  }
+}
