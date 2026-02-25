@@ -11,6 +11,5 @@ description: 'Create new service-level initiative with service-only branch and f
 Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.new-service.prompt.md
 ```
 
-Source: [lens-work.new-service.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/4.0.0/.github/prompts/lens-work.new-service.prompt.md)
-
+Source: [lens-work.new-service.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.new-service.prompt.md)
 ````

@@ -1,6 +1,6 @@
 ````prompt
 ---
-description: 'Fetch remote changes, re-validate state, and sync'
+description: 'Fetch from remote, re-validate all gates, and update state to reflect current reality'
 ---
 
 # lens-work.sync (Stub)
@@ -11,6 +11,5 @@ description: 'Fetch remote changes, re-validate state, and sync'
 Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.sync.prompt.md
 ```
 
-Source: [lens-work.sync.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/4.0.0/.github/prompts/lens-work.sync.prompt.md)
-
+Source: [lens-work.sync.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.sync.prompt.md)
 ````

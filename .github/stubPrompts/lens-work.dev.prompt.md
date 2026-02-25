@@ -1,6 +1,6 @@
 ````prompt
 ---
-description: 'Implementation loop with dev-story, code-review, and retro workflows'
+description: 'Launch Dev phase — implementation loop with code review and retrospective (Amelia/Developer, base audience)'
 ---
 
 # lens-work.dev (Stub)
@@ -11,6 +11,5 @@ description: 'Implementation loop with dev-story, code-review, and retro workflo
 Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.dev.prompt.md
 ```
 
-Source: [lens-work.dev.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/4.0.0/.github/prompts/lens-work.dev.prompt.md)
-
+Source: [lens-work.dev.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.dev.prompt.md)
 ````
