@@ -1,8 +1,8 @@
 ---
 name: onboarding
 description: Create profile + run bootstrap
-agent: scout
-trigger: '@scout onboard or @lens-work onboard'
+agent: "@lens/discovery"
+trigger: '@lens onboard or @lens-work onboard'
 category: utility
 first_run: true
 ---
@@ -20,7 +20,7 @@ first_run: true
 ```
 🔭 Welcome to LENS Workbench!
 
-I'm Scout, your setup guide. I'll help you:
+I'm LENS, your setup guide. I'll help you:
 1. Create your profile
 2. Set up your TargetProjects
 3. Generate initial documentation
@@ -259,7 +259,7 @@ output: |
 ### 4. Run Discovery
 
 ```yaml
-invoke: scout.repo-discover
+invoke: discovery.repo-discover
 params:
   scope: bootstrap_scope
 
@@ -282,7 +282,7 @@ if missing > 0:
     📥 Cloning ${missing} missing repos...
     This may take a few minutes.
   
-  invoke: scout.repo-reconcile
+  invoke: discovery.repo-reconcile
 ```
 
 ### 6. Run Documentation
@@ -291,7 +291,7 @@ if missing > 0:
 output: |
   📄 Generating initial documentation...
 
-invoke: scout.repo-document
+invoke: discovery.repo-document
 params:
   mode: "full"  # First run = full documentation
 ```
@@ -312,8 +312,8 @@ What's ready:
 
 Next steps:
 ├── Run #new-feature "your-feature" to start an initiative
-├── Run @tracey ST to see status anytime
-└── Run @compass H for help
+├── Run @lens ST to see status anytime
+└── Run @lens H for help
 
 Welcome to the team! 🚀
 ```

@@ -43,8 +43,8 @@ Create a report-only propagation plan listing affected children, detected confli
 ## Output
 
 - Propagation plan markdown file
-- `amendment-propagated` Tracey event
-- Governance-prefixed commit via Casey
+- `amendment-propagated` event (via state-management)
+- Governance-prefixed commit via git-orchestration skill
 
 ---
 

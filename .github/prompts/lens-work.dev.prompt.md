@@ -9,7 +9,7 @@ Activate @lens agent and execute /dev:
 2. Execute `/dev` command to launch the Dev phase
 3. Load lifecycle contract: `_bmad/lens-work/lifecycle.yaml`
 4. Pre-flight: verify clean working directory, load two-file state (state.yaml + initiative config)
-5. Gate check: verify large→base audience promotion is complete (constitution gate via Scribe)
+5. Gate check: verify large→base audience promotion is complete (constitution gate via constitution skill)
 6. Verify ancestry: `origin/{initiative_root}-large-sprintplan` is ancestor of `origin/{initiative_root}-large`
 7. Verify dev story exists (interactive mode) at `{bmad_docs}/dev-story-{id}.md` or fallback to `_bmad-output/implementation-artifacts/dev-story-{id}.md`
 8. Derive audience from lifecycle contract: `dev` → `base`
@@ -26,20 +26,20 @@ Use `#think` before decomposing implementation tasks or selecting code patterns.
 
 **Prerequisites:**
 - `/sprintplan` complete: `{initiative_root}-large-sprintplan` PR merged into `{initiative_root}-large`
-- **Large → base audience promotion done** (constitution gate via Scribe)
+- **Large → base audience promotion done** (constitution gate via constitution skill)
 - Dev story exists at `{bmad_docs}/dev-story-{id}.md` (created by `/sprintplan`)
 - `state.yaml` exists with `active_initiative` set and `audience_status.large_to_base: passed`
 
 **Audience promotion gate (large → base):**
-- Gate: constitution (via Scribe)
-- Scribe resolves and validates all artifacts against constitutional rules
+- Gate: constitution (via @lens/constitution)
+- Constitution skill resolves and validates all artifacts against constitutional rules
 - Entry condition: all large-audience phases merged into `{initiative_root}-large`
 - Dev phase is blocked until this gate passes
 
 **Execution sequence:**
 
 **[0] Pre-Flight (required)**
-- Verify clean working directory (Casey)
+- Verify clean working directory (git-orchestration)
 - Load two-file state
 - Verify `audience_status.large_to_base` is `passed` or `passed_with_warnings`
 - Create phase branch `{initiative_root}-dev` from base; push immediately
@@ -49,7 +49,7 @@ Use `#think` before decomposing implementation tasks or selecting code patterns.
 - Confirm constitution gate (large→base) is `passed` or `passed_with_warnings`
 
 **[1a] Constitutional Context Injection (required)**
-- Scribe resolves constitutional context for current domain/service
+- Constitution skill resolves constitutional context for current domain/service
 - BLOCK on parse errors; store context for the entire implementation session
 
 **[2] Load Dev Story**
@@ -57,11 +57,11 @@ Use `#think` before decomposing implementation tasks or selecting code patterns.
 - Display: story title, acceptance criteria, technical notes, target branch
 
 **[2a] Dev Story Constitution Check (required)**
-- Scribe runs compliance check on dev story
+- Constitution skill runs compliance check on dev story
 - BLOCK if `fail_count > 0` — resolve story issues before implementation
 
 **[3] Checkout Target Repo**
-- Casey switches from BMAD control repo to `TargetProjects/{repo}/`
+- Git-orchestration switches from BMAD control repo to `TargetProjects/{repo}/`
 - Checkout feature branch in target repo (creates if needed, pushes immediately)
 
 **[4] Implementation Loop (repeating per task)**

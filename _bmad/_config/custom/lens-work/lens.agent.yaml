@@ -1,7 +1,7 @@
 ---
 # @lens Agent Configuration
-# Lens-Work Module Architecture Upgrade
-# Single unified agent replacing v1's five agents with five skills
+# Lens-Work Module v2.0
+# Unified agent orchestrating lifecycle via five skills
 # Reference: TD-005 (Architecture Decision)
 
 name: "@lens"
@@ -12,7 +12,7 @@ version: "2.0.0"
 
 initiative: "upgrade-cjki9q"
 
-# Agent Skills (replaces v1's five separate agents)
+# Agent Skills
 skills:
   - name: "git-orchestration"
     description: "Branch creation, PR operations, topology management"

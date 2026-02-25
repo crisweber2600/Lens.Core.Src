@@ -212,7 +212,7 @@ debt_signals:
     severity: high
 ```
 
-### 7. Store Context in Scout Sidecar
+### 7. Store Context in Discovery Sidecar
 Update `_memory/scout-sidecar/scout-discoveries.md`:
 
 ```yaml

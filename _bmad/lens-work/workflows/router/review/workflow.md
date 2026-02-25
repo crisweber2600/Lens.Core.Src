@@ -1,7 +1,7 @@
 ---
 name: review
 description: Legacy redirect to sprintplan (v2)
-agent: compass
+agent: "@lens"
 trigger: /review command
 category: router
 redirects_to: sprintplan

@@ -1,7 +1,7 @@
 ---
 name: dev
 description: Implementation loop (dev-story/code-review/retro)
-agent: compass
+agent: "@lens"
 trigger: /dev command
 category: router
 phase: dev
@@ -50,7 +50,7 @@ phase_name: Dev
 # GATE: All steps must pass before proceeding to artifact work
 
 # Verify working directory is clean
-invoke: casey.verify-clean-state
+invoke: git-orchestration.verify-clean-state
 
 # Load two-file state
 state = load("_bmad-output/lens-work/state.yaml")
@@ -74,7 +74,7 @@ if docs_path == null or docs_path == "":
   docs_path = "_bmad-output/planning-artifacts/"
   repo_docs_path = null
   warning: "⚠️ DEPRECATED: Initiative missing docs.path configuration."
-  warning: "  → Run: /compass migrate <initiative-id> to add docs.path"
+  warning: "  → Run: /lens migrate <initiative-id> to add docs.path"
   warning: "  → This fallback will be removed in a future version."
 
 # NOTE: docs_path is READ-ONLY in /dev — used for context loading (S11)
@@ -101,11 +101,11 @@ prev_audience_branch = "${initiative.initiative_root}-${prev_audience}"
 if initiative.phase_status[prev_phase] exists:
   if initiative.phase_status[prev_phase] == "pr_pending":
     # Check if the audience branch contains the phase commits (merged via PR)
-    result = casey.exec("git merge-base --is-ancestor origin/${prev_phase_branch} origin/${prev_audience_branch}")
+    result = git-orchestration.exec("git merge-base --is-ancestor origin/${prev_phase_branch} origin/${prev_audience_branch}")
 
     if result.exit_code == 0:
       # PR was merged! Auto-update status
-      invoke: tracey.update-initiative
+      invoke: state-management.update-initiative
       params:
         initiative_id: ${initiative.id}
         updates:
@@ -141,7 +141,7 @@ phase_branch = "${initiative.initiative_root}-dev"
 
 # Step 5: Create phase branch if it doesn't exist [REQ-9]
 if not branch_exists(phase_branch):
-  invoke: casey.start-phase
+  invoke: git-orchestration.start-phase
   params:
     phase_name: "dev"
     initiative_id: ${initiative.id}
@@ -152,10 +152,10 @@ if not branch_exists(phase_branch):
     FAIL("❌ Pre-flight failed: Could not create branch ${phase_branch}")
 
 # Step 6: Checkout phase branch
-invoke: casey.checkout-branch
+invoke: git-orchestration.checkout-branch
 params:
   branch: ${phase_branch}
-invoke: casey.pull-latest
+invoke: git-orchestration.pull-latest
 
 # Step 7: Confirm to user
 output: |
@@ -169,13 +169,13 @@ output: |
 ### 1. Audience Promotion Check — large → base Complete
 
 ```yaml
-# Verify large→base audience promotion gate passed (constitution gate via Scribe)
+# Verify large→base audience promotion gate passed (constitution gate via constitution skill)
 # All large-audience phases (sprintplan) must be merged
 sprintplan_branch = "${initiative.initiative_root}-large-sprintplan"
 large_branch = "${initiative.initiative_root}-large"
 
 # Ancestry check: sprintplan must be merged into large audience branch
-result = casey.exec("git merge-base --is-ancestor origin/${sprintplan_branch} origin/${large_branch}")
+result = git-orchestration.exec("git merge-base --is-ancestor origin/${sprintplan_branch} origin/${large_branch}")
 
 if result.exit_code != 0:
   error: |
@@ -193,7 +193,7 @@ if initiative.audience_status.large_to_base not in ["passed", "passed_with_warni
 
 ```yaml
 # Resolve constitutional governance for this context before implementation loop
-constitutional_context = invoke("scribe.resolve-context")
+constitutional_context = invoke("constitution.resolve-context")
 
 if constitutional_context.status == "parse_error":
   error: |
@@ -255,7 +255,7 @@ output: |
 # REQ-10: Use BmadDocs path if available, fallback to legacy
 dev_story_path = dev_story_source   # REQ-10: set by Step 2 fallback logic
 
-dev_story_compliance = invoke("scribe.compliance-check")
+dev_story_compliance = invoke("constitution.compliance-check")
 params:
   artifact_path: ${dev_story_path}
   artifact_type: "Story/Epic"
@@ -273,8 +273,8 @@ if dev_story_compliance.fail_count > 0:
 **IMPORTANT:** This is where we switch from BMAD control repo to TargetProjects.
 
 ```yaml
-# Casey checks out the feature branch in the actual repo
-invoke: casey.checkout-target
+# git-orchestration checks out the feature branch in the actual repo
+invoke: git-orchestration.checkout-target
 params:
   target_repo: "${initiative.target_repos[0]}"
   target_path: "TargetProjects/${domain}/${service}/${repo}"
@@ -301,16 +301,16 @@ You're now working in: ${target_path}
 - Return to BMAD directory when ready for code review
 
 **Commands available:**
-- `@compass done` — Signal implementation complete, start code review
-- `@tracey ST` — Check status
-- `@compass help` — Show available commands
+- `@lens done` — Signal implementation complete, start code review
+- `@lens ST` — Check status
+- `@lens help` — Show available commands
 ```
 
 ### 5. Adversarial Code Review + Constitutional Gates (when signaled)
 
 ```yaml
-# User signals: @compass done
-invoke: casey.start-workflow
+# User signals: @lens done
+invoke: git-orchestration.start-workflow
 params:
   workflow_name: code-review
 
@@ -323,7 +323,7 @@ params:
 
 # Re-check constitutional compliance on review outputs before allowing progression
 code_review_path = "_bmad-output/implementation-artifacts/code-review-${id}.md"
-code_review_compliance = invoke("scribe.compliance-check")
+code_review_compliance = invoke("constitution.compliance-check")
 params:
   artifact_path: ${code_review_path}
   artifact_type: "Code file"
@@ -333,7 +333,7 @@ if code_review_compliance.fail_count > 0:
   error: |
     Code review compliance gate failed.
     FAIL count: ${code_review_compliance.fail_count}
-    Resolve violations and re-run @compass done.
+    Resolve violations and re-run @lens done.
 
 # Multi-agent teardown pass to aggressively probe edge cases
 invoke: core.party-mode
@@ -346,7 +346,7 @@ params:
 if party_mode.status not in ["pass", "complete"]:
   error: |
     Party mode teardown found unresolved issues.
-    Address _bmad-output/implementation-artifacts/party-mode-review-${story_id}.md and re-run @compass done.
+    Address _bmad-output/implementation-artifacts/party-mode-review-${story_id}.md and re-run @lens done.
 
 # Epic-level teardown is mandatory when this story completes its parent epic
 current_epic_id = resolve_story_epic_id(
@@ -374,7 +374,7 @@ if current_epic_id:
     if epic_adversarial.status in ["blocked", "fail", "failed"]:
       error: |
         Epic adversarial review failed for ${current_epic_id}.
-        Resolve implementation-readiness findings and re-run @compass done.
+        Resolve implementation-readiness findings and re-run @lens done.
 
     invoke: core.party-mode
     params:
@@ -387,9 +387,9 @@ if current_epic_id:
     if party_mode.status not in ["pass", "complete"]:
       error: |
         Epic party-mode teardown found unresolved issues for ${current_epic_id}.
-        Address _bmad-output/implementation-artifacts/epic-${current_epic_id}-party-mode-review.md and re-run @compass done.
+        Address _bmad-output/implementation-artifacts/epic-${current_epic_id}-party-mode-review.md and re-run @lens done.
 
-invoke: casey.finish-workflow
+invoke: git-orchestration.finish-workflow
 ```
 
 ### 6. Retrospective (optional)
@@ -398,21 +398,21 @@ invoke: casey.finish-workflow
 offer: "Run retrospective? [Y]es / [N]o"
 
 if yes:
-  invoke: casey.start-workflow
+  invoke: git-orchestration.start-workflow
   params:
     workflow_name: retro
     
   invoke: bmm.retrospective
   params:
     constitutional_context: ${constitutional_context}
-  invoke: casey.finish-workflow
+  invoke: git-orchestration.finish-workflow
 ```
 
 ### 7. Update State Files & Initiative Config
 
 ```yaml
 # Update initiative file: _bmad-output/lens-work/initiatives/${initiative.id}.yaml
-invoke: tracey.update-initiative
+invoke: state-management.update-initiative
 params:
   initiative_id: ${initiative.id}
   updates:
@@ -429,7 +429,7 @@ params:
         story_id: "${story_id}"
 
 # Update state.yaml current phase to dev
-invoke: tracey.update-state
+invoke: state-management.update-state
 params:
   updates:
     current_phase: "dev"
@@ -441,8 +441,8 @@ params:
 
 ```yaml
 # REQ-7: Never auto-merge. PR created in S1.2.
-# Casey commits all state and artifact changes
-invoke: casey.commit-and-push
+# git-orchestration commits all state and artifact changes
+invoke: git-orchestration.commit-and-push
 params:
   paths:
     - "_bmad-output/lens-work/state.yaml"
@@ -463,7 +463,7 @@ params:
 
 ```yaml
 if all_phases_complete():
-  invoke: tracey.update-initiative
+  invoke: state-management.update-initiative
   params:
     initiative_id: ${initiative.id}
     updates:
@@ -472,10 +472,10 @@ if all_phases_complete():
       phase_status:
         dev: "complete"
 
-  invoke: tracey.archive
+  invoke: state-management.archive
   
   # Final commit
-  invoke: casey.commit-and-push
+  invoke: git-orchestration.commit-and-push
   params:
     paths:
       - "_bmad-output/lens-work/"

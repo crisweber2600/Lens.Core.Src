@@ -1,8 +1,8 @@
 ---
 name: override
 description: Bypass merge validation with logged reason
-agent: tracey
-trigger: "@tracey OVERRIDE"
+agent: "@lens/state-management"
+trigger: "@lens OVERRIDE"
 category: utility
 requires_reason: true
 ---
@@ -111,7 +111,7 @@ You may now proceed to the next step.
 ## Override Visibility
 
 Overridden gates are flagged in:
-- `@tracey ST` status reports
+- `@lens ST` status reports
 - Phase completion summaries
 - Final initiative archive
 

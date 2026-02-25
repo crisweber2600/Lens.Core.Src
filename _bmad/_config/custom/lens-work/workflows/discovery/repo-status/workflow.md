@@ -1,8 +1,8 @@
 ---
 name: repo-status
 description: Fast health check for repos
-agent: scout
-trigger: "@scout repo-status"
+agent: "@lens/discovery"
+trigger: "@lens repo-status"
 category: discovery
 mutates: false
 ---

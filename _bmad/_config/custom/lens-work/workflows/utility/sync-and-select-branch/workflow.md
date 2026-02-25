@@ -1,8 +1,8 @@
 ---
 name: sync-and-select-branch
 description: "Daily-limited git sync with branch inspection and user selection, profile-tracked"
-agent: casey
-trigger: "Internal workflow — invoked by compass or lens-work startup"
+agent: "@lens/git-orchestration"
+trigger: "Internal workflow — invoked by @lens or lens-work startup"
 category: utility
 ---
 

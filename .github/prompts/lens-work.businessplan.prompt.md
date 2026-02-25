@@ -42,7 +42,7 @@ Use `#think` before defining product requirements or UX scope.
 **Context injection:**
 - Loads `{docs_path}/product-brief.md` from preplan phase
 - Loads repo README/CONTRIBUTING from `{repo_docs_path}/` if available
-- Constitutional context resolved by Scribe before artifact generation
+- Constitutional context resolved by constitution skill before artifact generation
 
 **Branch lifecycle:**
 - START: `{initiative_root}-small-businessplan` created from `{initiative_root}-small`, pushed immediately

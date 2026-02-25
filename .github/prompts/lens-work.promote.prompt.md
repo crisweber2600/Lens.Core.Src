@@ -1,6 +1,6 @@
 ```prompt
 ---
-description: Promote the active initiative to the next audience level — runs the appropriate gate and creates a promotion PR (Compass)
+description: Promote the active initiative to the next audience level — runs the appropriate gate and creates a promotion PR (@lens)
 ---
 
 Activate @lens agent and execute /promote:
@@ -17,11 +17,11 @@ Use `#think` before determining which gate to run and which phases must be compl
 ```
 small   →  medium   gate: adversarial-review   (party mode, lead: Winston)
 medium  →  large    gate: stakeholder-approval  (manual confirmation)
-large   →  base     gate: constitution-gate     (Scribe validates all artifacts)
+large   →  base     gate: constitution-gate     (constitution skill validates all artifacts)
 ```
 
 **[0] Pre-Flight**
-- Casey: verify clean git state
+- Git-orchestration: verify clean git state
 - Load `state.yaml` + active initiative config
 - Derive `source_audience` from current state
 - Derive `target_audience` from lifecycle promotion chain
@@ -48,14 +48,14 @@ large   →  base     gate: constitution-gate     (Scribe validates all artifact
 - If No: pause promotion (user resumes later)
 - If Yes: gate passes
 
-**large → base (constitution-gate — Scribe):**
-- Scribe resolves constitutional context (`scribe.resolve-context`)
-- Scribe runs full compliance check on all planning artifacts
+**large → base (constitution-gate — constitution skill):**
+- Constitution skill resolves constitutional context (`constitution.resolve-context`)
+- Constitution skill runs full compliance check on all planning artifacts
 - 4-level inheritance: Org → Domain → Service → Repo
 - BLOCK if `fail_count > 0` (warnings allowed — recorded as `passed_with_warnings`)
 
 **[3] Create Promotion PR**
-- Casey creates PR: `{initiative_root}-{source_audience}` → `{initiative_root}-{target_audience}`
+- Git-orchestration creates PR: `{initiative_root}-{source_audience}` → `{initiative_root}-{target_audience}`
 - Title: `[promotion] {source_audience} → {target_audience}: {initiative.name}`
 - Body includes: phases included, artifacts reviewed, gate status
 

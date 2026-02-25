@@ -1,8 +1,8 @@
 ---
 name: repo-discover
 description: Inventory TargetProjects vs service map (no mutation)
-agent: scout
-trigger: "@scout discover"
+agent: "@lens/discovery"
+trigger: "@lens discover"
 category: discovery
 mutates: false
 ---
@@ -160,7 +160,7 @@ ${endif}
 
 Inventory saved to: _bmad-output/lens-work/repo-inventory.yaml
 
-Next: Run '@scout reconcile' to clone missing repos
+Next: Run '@lens reconcile' to clone missing repos
 ```
 
 ### 7. Commit Inventory Changes

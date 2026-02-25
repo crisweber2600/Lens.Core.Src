@@ -1,14 +1,14 @@
 # Skill: git-orchestration
 
 **Module:** lens-work
-**Owner:** Casey agent (delegated via Compass)
+**Skill of:** `@lens` agent
 **Type:** Internal delegation skill
 
 ---
 
 ## Purpose
 
-Manages all git branch operations for the lens-work lifecycle. Handles branch creation, targeted commits, pushes, and topology validation. Formalizes the Casey agent's API contract.
+Manages all git branch operations for the lens-work lifecycle. Handles branch creation, targeted commits, pushes, and topology validation. Formalizes the git-orchestration skill's API contract.
 
 ## Responsibilities
 

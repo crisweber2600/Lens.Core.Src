@@ -64,7 +64,7 @@ Child constitutions may add but not contradict these articles.
 
 ---
 
-_Ratified on {today_date} by Scribe (Cornelius)_
+_Ratified on {today_date} by constitution skill_
 ```
 
 ---
@@ -92,8 +92,8 @@ Ratify this constitution? [Y/N/Edit]
 
 **IF "Y" or "yes":**
 - Write file to `{constitution_root}/{layer_path}/constitution.md`
-- Log `constitution-created` via Tracey
-- Request Casey commit with governance-prefixed message
+- Log `constitution-created` via state-management skill
+- Request git-orchestration skill commit with governance-prefixed message
 - Display success message
 
 **IF "N" or "no":**

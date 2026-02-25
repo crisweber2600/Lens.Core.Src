@@ -279,7 +279,7 @@ full_results: {...}  # complete analysis_results
 report_path: "{docs_output_path}/{domain}/{service}/analysis-summary.md"
 ```
 
-### 4. Update Scout Sidecar State
+### 4. Update Discovery Sidecar State
 Update `_bmad/lens-work/_memory/scout-sidecar/scout-discoveries.md`:
 
 ```yaml

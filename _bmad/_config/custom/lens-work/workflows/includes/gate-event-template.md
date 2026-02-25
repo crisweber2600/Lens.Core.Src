@@ -18,7 +18,7 @@ This document defines all gate types, event log formats, and validation rules us
 | `audience-promotion-gate` | Validates audience promotion readiness | Audience boundary crossing | Manual (PR approval + review) |
 | `adversarial-review-gate` | Party-mode cross-agent review | small → medium promotion | Manual (party-mode) |
 | `stakeholder-approval-gate` | Stakeholder sign-off on planning | medium → large promotion | Manual (approval) |
-| `constitution-gate` | Constitutional compliance for base merge | large → base promotion | Auto (Scribe) |
+| `constitution-gate` | Constitutional compliance for base merge | large → base promotion | Auto (constitution skill) |
 | `merge-gate` | Validates workflow merged before next workflow starts | Workflow transition | Auto (ancestry check) |
 | `deploy-gate` | Validates implementation ready for deployment | Post-sprintplan completion | Manual (checklist) |
 
@@ -74,7 +74,7 @@ Logged when a gate is evaluated.
   "gate_type": "phase-gate",
   "status": "passed",
   "initiative": "rate-limit-x7k2m9",
-  "actor": "compass",
+  "actor": "lens",
   "details": {
     "artifacts_checked": 3,
     "artifacts_passed": 3,
@@ -96,7 +96,7 @@ Logged when a gate blocks progression.
   "gate_type": "phase-gate",
   "status": "blocked",
   "initiative": "rate-limit-x7k2m9",
-  "actor": "compass",
+  "actor": "lens",
   "reason": "Required artifact missing: techplan-architecture.md",
   "remediation": "Complete /businessplan workflows before proceeding to /techplan"
 }
@@ -218,7 +218,7 @@ validation:
     fail_message: "Stakeholder approval not received. Request review."
     applies_to: "medium-to-large"
 
-  # large → base: constitution gate (Scribe)
+  # large → base: constitution gate (constitution skill)
   - check: constitution_compliance
     rule: "Constitutional compliance check passed"
     pass_if: compliance_status == "COMPLIANT"
@@ -267,11 +267,11 @@ validation:
 
 ### Auto-Gate Pattern
 
-Used by router workflows (Compass) at phase transitions. No user interaction required.
+Used by router workflows (@lens) at phase transitions. No user interaction required.
 
 ```yaml
 # Router workflow Step 1 pattern
-invoke: casey.check-gate
+invoke: git-orchestration.check-gate
 params:
   gate_type: phase-gate
   gate_name: "phase-${prev_phase_name}"

@@ -11,7 +11,7 @@ Summarize changes.
 
 ## Instructions
 - List recreated branches and next steps.
-- Log recovery operation summary through Tracey.
+- Log recovery operation summary through state-management skill.
 
 ## Output
 - `recreate_summary`

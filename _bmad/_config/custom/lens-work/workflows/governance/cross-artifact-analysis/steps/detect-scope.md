@@ -119,7 +119,7 @@ scope:
 
 Options:
 [1] Select initiative manually
-[2] Return to Scribe main menu
+[2] Return to constitution skill main menu
 ```
 
 **If all expected artifacts missing:**

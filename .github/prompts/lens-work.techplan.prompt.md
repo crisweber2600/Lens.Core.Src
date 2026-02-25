@@ -45,7 +45,7 @@ Use `#think` before making architectural decisions or selecting technology stack
 - Loads `{docs_path}/product-brief.md` from preplan phase
 - Loads `{docs_path}/architecture.md` as baseline from businessplan
 - Loads repo README/architecture docs from `{repo_docs_path}/` if available
-- Constitutional context resolved by Scribe before artifact generation
+- Constitutional context resolved by constitution skill before artifact generation
 
 **Branch lifecycle:**
 - START: `{initiative_root}-small-techplan` created from `{initiative_root}-small`, pushed immediately

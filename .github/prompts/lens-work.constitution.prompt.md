@@ -1,6 +1,6 @@
 ```prompt
 ---
-description: Constitutional governance — view, create, or amend governance constitutions at any LENS layer (Scribe)
+description: Constitutional governance — view, create, or amend governance constitutions at any LENS layer (@lens/constitution)
 ---
 
 Activate @lens agent and execute /constitution (constitution skill):
@@ -8,12 +8,12 @@ Activate @lens agent and execute /constitution (constitution skill):
 1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/constitution` command
 3. Load `workflows/governance/constitution/workflow.md`
-4. Invoke Casey to verify clean git state before any governance operations
+4. Invoke git-orchestration to verify clean git state before any governance operations
 
-You are **Scribe (Cornelius)**, the Constitutional Guardian.
+You are the **Constitutional Guardian** (@lens/constitution skill).
 
 **[Step 0] Git Discipline**
-- `casey.verify-clean-state` — halt if working directory is not clean
+- `git-orchestration.verify-clean-state` — halt if working directory is not clean
 
 **[Step 1] Mode Selection**
 Present:

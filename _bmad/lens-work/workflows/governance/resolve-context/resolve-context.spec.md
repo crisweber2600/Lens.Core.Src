@@ -1,7 +1,7 @@
 # Workflow Specification: resolve-context
 
 **Module:** lens-work  
-**Agent:** Scribe  
+**Skill:** @lens/constitution  
 **Status:** Implemented (internal)
 
 ---
@@ -17,7 +17,7 @@ Generate `constitutional_context` values for workflows that need resolved govern
 ```yaml
 name: resolve-context
 description: Internal workflow to resolve constitutional context variables
-agent: scribe
+agent: "@lens/constitution"
 category: governance
 trigger: internal
 ```

@@ -1,7 +1,7 @@
 ---
 name: sprintplan
 description: Sprint planning phase — sprint-status, story files, dev handoff
-agent: compass
+agent: "@lens"
 trigger: /sprintplan command
 aliases: [/review, /sprint]
 category: router
@@ -67,7 +67,7 @@ if user_role != "Scrum Master":
 # NOTE: sprintplan is the FIRST phase in large audience — requires medium→large promotion
 
 # Verify working directory is clean
-invoke: casey.verify-clean-state
+invoke: git-orchestration.verify-clean-state
 
 # Load two-file state
 state = load("_bmad-output/lens-work/state.yaml")
@@ -111,11 +111,11 @@ prev_audience_branch = "${initiative_root}-medium"
 if initiative.audience_status exists:
   if initiative.audience_status.medium_to_large != "complete":
     # Check if audience promotion PR was merged
-    result = casey.exec("git merge-base --is-ancestor origin/${prev_audience_branch} origin/${audience_branch}")
+    result = git-orchestration.exec("git merge-base --is-ancestor origin/${prev_audience_branch} origin/${audience_branch}")
 
     if result.exit_code == 0:
       # Promotion was merged! Auto-update status
-      invoke: tracey.update-initiative
+      invoke: state-management.update-initiative
       params:
         initiative_id: ${initiative.id}
         updates:
@@ -140,7 +140,7 @@ phase_branch = "${initiative_root}-${audience}-sprintplan"
 
 # Step 5: Create phase branch if it doesn't exist [REQ-9]
 if not branch_exists(phase_branch):
-  invoke: casey.start-phase
+  invoke: git-orchestration.start-phase
   params:
     phase_name: "sprintplan"
     display_name: "SprintPlan"
@@ -152,10 +152,10 @@ if not branch_exists(phase_branch):
     FAIL("❌ Pre-flight failed: Could not create branch ${phase_branch}")
 
 # Step 6: Checkout phase branch
-invoke: casey.checkout-branch
+invoke: git-orchestration.checkout-branch
 params:
   branch: ${phase_branch}
-invoke: casey.pull-latest
+invoke: git-orchestration.pull-latest
 
 # Step 7: Confirm to user [REQ-9]
 output: |
@@ -175,7 +175,7 @@ devproposal_branch = "${initiative_root}-medium-devproposal"
 medium_branch = "${initiative_root}-medium"
 
 # Ancestry check: devproposal must be merged into medium audience branch
-result = casey.exec("git merge-base --is-ancestor origin/${devproposal_branch} origin/${medium_branch}")
+result = git-orchestration.exec("git merge-base --is-ancestor origin/${devproposal_branch} origin/${medium_branch}")
 
 if result.exit_code != 0:
   error: "DevProposal phase not complete. Run /devproposal first or merge pending PRs."
@@ -228,7 +228,7 @@ if missing.length > 0:
 
 ```yaml
 # Resolve constitutional governance for gate checks and downstream workflows
-constitutional_context = invoke("scribe.resolve-context")
+constitutional_context = invoke("constitution.resolve-context")
 
 if constitutional_context.status == "parse_error":
   error: |
@@ -280,7 +280,7 @@ compliance_checked = 0
 
 for target in compliance_targets:
   if file_exists(target.path):
-    compliance_result = invoke("scribe.compliance-check")
+    compliance_result = invoke("constitution.compliance-check")
     params:
       artifact_path: ${target.path}
       artifact_type: ${target.type}
@@ -306,7 +306,7 @@ if compliance_failures.length > 0:
 ### 3. Sprint Planning
 
 ```yaml
-invoke: casey.start-workflow
+invoke: git-orchestration.start-workflow
 params:
   workflow_name: sprint-planning
 
@@ -316,7 +316,7 @@ params:
   output_path: "${bmad_docs}"   # REQ-10: Sprint backlog to BmadDocs
   constitutional_context: ${constitutional_context}
 
-invoke: casey.finish-workflow
+invoke: git-orchestration.finish-workflow
 
 output: |
   📋 Sprint Planning
@@ -329,7 +329,7 @@ output: |
 ### 4. Create Dev-Ready Story
 
 ```yaml
-invoke: casey.start-workflow
+invoke: git-orchestration.start-workflow
 params:
   workflow_name: dev-story
 
@@ -339,7 +339,7 @@ params:
   output_path: "${bmad_docs}"   # REQ-10: Dev stories to BmadDocs
   constitutional_context: ${constitutional_context}
 
-invoke: casey.finish-workflow
+invoke: git-orchestration.finish-workflow
 
 output: |
   📝 Dev Story Created
@@ -354,13 +354,13 @@ output: |
 
 ```yaml
 # REQ-7: Never auto-merge. PR created.
-invoke: casey.commit-and-push
+invoke: git-orchestration.commit-and-push
 params:
   branch: ${phase_branch}
   message: "[${initiative.id}] SprintPlan complete"
 
 # REQ-8: Create PR for phase merge
-invoke: casey.create-pr
+invoke: git-orchestration.create-pr
 params:
   head: ${phase_branch}
   base: ${audience_branch}
@@ -369,7 +369,7 @@ params:
 capture: pr_result
 
 # REQ-7/REQ-8: Phase enters pr_pending after PR creation
-invoke: tracey.update-initiative
+invoke: state-management.update-initiative
 params:
   initiative_id: ${initiative.id}
   updates:
@@ -379,7 +379,7 @@ params:
         pr_url: "${pr_result.url}"
         pr_number: ${pr_result.number}
 if pr_result.fallback:
-  invoke: tracey.update-initiative
+  invoke: state-management.update-initiative
   params:
     initiative_id: ${initiative.id}
     updates:
@@ -396,7 +396,7 @@ if pr_result.fallback:
 # Update gate status in initiatives/{id}.yaml
 gate_status = (missing.length > 0 or compliance_warnings.length > 0) ? "passed_with_warnings" : "passed"
 
-invoke: tracey.update-initiative
+invoke: state-management.update-initiative
 params:
   initiative_id: ${initiative.id}
   updates:
@@ -416,7 +416,7 @@ params:
 
 ```yaml
 # Update state.yaml
-invoke: tracey.update-state
+invoke: state-management.update-state
 params:
   updates:
     current_phase: "sprintplan"
@@ -434,7 +434,7 @@ events:
   - {"ts":"${ISO_TIMESTAMP}","event":"sprintplan-compliance","id":"${initiative.id}","phase":"sprintplan","checked_artifacts":${compliance_checked || 0},"warn_count":${compliance_warnings.length || 0},"fail_count":0}
   - {"ts":"${ISO_TIMESTAMP}","event":"sprintplan-complete","id":"${initiative.id}","phase":"sprintplan","audience":"large","status":"${gate_status}"}
 
-invoke: tracey.append-events
+invoke: state-management.append-events
 params:
   events: ${events}
 ```
@@ -442,7 +442,7 @@ params:
 ### 9. Commit State Changes
 
 ```yaml
-invoke: casey.commit-and-push
+invoke: git-orchestration.commit-and-push
 params:
   paths:
     - "_bmad-output/lens-work/state.yaml"

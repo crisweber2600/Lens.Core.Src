@@ -1,7 +1,7 @@
 ---
 name: story-gen
 description: Story generation phase — create implementation stories from architecture
-agent: compass
+agent: "@lens"
 trigger: /story-gen command
 category: router
 phase: 4
@@ -55,7 +55,7 @@ phase_name: Story Generation
 # GATE: All steps must pass before proceeding to artifact work
 
 # Verify working directory is clean
-invoke: casey.verify-clean-state
+invoke: git-orchestration.verify-clean-state
 
 # Load two-file state
 state = load("_bmad-output/lens-work/state.yaml")
@@ -76,11 +76,11 @@ prev_audience_branch = "${initiative.featureBranchRoot}-small"
 if initiative.phases[prev_phase] exists:
   if initiative.phases[prev_phase].status == "pr_pending":
     # Check if the audience branch contains the phase commits (merged via PR)
-    result = casey.exec("git merge-base --is-ancestor origin/${prev_phase_branch} origin/${prev_audience_branch}")
+    result = git-orchestration.exec("git merge-base --is-ancestor origin/${prev_phase_branch} origin/${prev_audience_branch}")
     
     if result.exit_code == 0:
       # PR was merged! Auto-update status
-      invoke: tracey.update-initiative
+      invoke: state-management.update-initiative
       params:
         initiative_id: ${initiative.id}
         updates:
@@ -112,7 +112,7 @@ phase_branch = "${featureBranchRoot}-medium-devproposal"
 
 # Step 5: Create phase branch if it doesn't exist [REQ-9]
 if not branch_exists(phase_branch):
-  invoke: casey.create-and-push-branch
+  invoke: git-orchestration.create-and-push-branch
   params:
     branch: ${phase_branch}
     from: ${audience_branch}
@@ -120,10 +120,10 @@ if not branch_exists(phase_branch):
     FAIL("❌ Pre-flight failed: Could not create branch ${phase_branch}")
 
 # Step 6: Checkout phase branch
-invoke: casey.checkout-branch
+invoke: git-orchestration.checkout-branch
 params:
   branch: ${phase_branch}
-invoke: casey.pull-latest
+invoke: git-orchestration.pull-latest
 
 # Step 7: Confirm to user
 output: |
@@ -209,7 +209,7 @@ params:
 ```yaml
 # REQ-7: Never auto-merge. PR created in S1.2.
 # Commit all story-gen artifacts
-invoke: casey.targeted-commit
+invoke: git-orchestration.targeted-commit
 params:
   branch: ${phase_branch}
   files:
@@ -220,7 +220,7 @@ params:
 # Phase branch remains alive — PR handles merge to audience branch
 
 # REQ-8: Create PR for phase merge
-invoke: casey.create-pr
+invoke: git-orchestration.create-pr
 params:
   head: ${phase_branch}
   base: ${audience_branch}
@@ -229,7 +229,7 @@ params:
 capture: pr_result  # { url, number } or fallback message
 
 # REQ-7/REQ-8: Phase enters pr_pending after PR creation
-invoke: tracey.update-initiative
+invoke: state-management.update-initiative
 params:
   initiative_id: ${initiative.id}
   updates:
@@ -240,7 +240,7 @@ params:
         pr_number: ${pr_result.number}
 # If manual fallback (no PAT), still set pr_pending with null PR info
 if pr_result.fallback:
-  invoke: tracey.update-initiative
+  invoke: state-management.update-initiative
   params:
     initiative_id: ${initiative.id}
     updates:

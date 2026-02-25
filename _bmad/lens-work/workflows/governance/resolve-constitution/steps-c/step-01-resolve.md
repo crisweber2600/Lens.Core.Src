@@ -6,7 +6,7 @@ Resolve and display accumulated constitutional rules.
 
 ## Load LENS Context
 
-**Get from Compass:**
+**Get from @lens:**
 - Current layer type: `{layer_type}`
 - Current layer path: `{layer_path}`
 - Constitution root: `{constitution_root}`
@@ -155,7 +155,7 @@ View format options:
 
 ## Audit Trail
 
-Log `constitution-resolved` through Tracey with:
+Log `constitution-resolved` via state-management skill with:
 - timestamp
 - target_layer
 - layers_walked

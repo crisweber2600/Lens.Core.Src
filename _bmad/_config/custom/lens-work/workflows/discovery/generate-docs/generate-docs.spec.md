@@ -97,11 +97,11 @@ installed_path: '{project-root}/_bmad/lens-work/workflows/generate-docs'
 
 ## Agent Integration
 
-### Primary Agent
+### Primary Skill
 
-Scout
+@lens/discovery
 
-### Other Agents
+### Other Skills
 
 Link (propagation)
 

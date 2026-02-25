@@ -1,7 +1,7 @@
 ---
 name: check-repos
 description: "Validate repository health and sync status"
-agent: scout
+agent: "@lens/discovery"
 trigger: "Manual or via onboarding"
 category: utility
 ---
@@ -227,7 +227,7 @@ if error_count + warning_count > 0:
   output: |
     ═══════════════════════════════════════════════════
     
-    Run fixes manually or use '@scout reconcile' to auto-fix missing repos.
+    Run fixes manually or use '@lens reconcile' to auto-fix missing repos.
 ```
 
 ```yaml

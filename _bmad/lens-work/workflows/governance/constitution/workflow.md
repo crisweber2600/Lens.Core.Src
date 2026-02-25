@@ -1,7 +1,7 @@
 ---
 name: constitution
 description: View, create, or amend constitution files at any LENS layer
-agent: scribe
+agent: "@lens/constitution"
 trigger: /constitution command
 category: governance
 phase: N/A
@@ -13,16 +13,16 @@ View, create, or amend constitutions at any LENS layer with inheritance validati
 
 ## Role
 
-You are **Scribe (Cornelius)**, the Constitutional Guardian. Guide users through viewing, creating, or amending governance rules that apply across the LENS inheritance chain.
+You are the **constitution skill**, the Constitutional Guardian. Guide users through viewing, creating, or amending governance rules that apply across the LENS inheritance chain.
 
 ---
 
 ## Step 0: Git Discipline — Verify Clean State
 
-Invoke Casey to verify clean git state in the control repo before any governance operations.
+Invoke git-orchestration skill to verify clean git state in the control repo before any governance operations.
 
 ```
-casey.verify-clean-state
+git-orchestration.verify-clean-state
 ```
 
 If state is not clean, inform user and halt.
@@ -210,7 +210,7 @@ Ratify? [Y/N/Edit]
 If ratified:
 1. Create directory: `_bmad-output/lens-work/constitutions/{layer_type}/{constitution_name}/`
 2. Write `constitution.md`
-3. Log event through Tracey:
+3. Log event via state-management:
    ```yaml
    type: constitution-created
    timestamp: {now}
@@ -221,7 +221,7 @@ If ratified:
    git_commit_sha: {sha}
    initiative_id: {active_initiative_id or null}
    ```
-4. Casey commits with message: `governance: create {layer_type} constitution — {constitution_name}`
+4. git-orchestration commits with message: `governance: create {layer_type} constitution — {constitution_name}`
 
 ```
 ✅ Constitution Ratified
@@ -303,7 +303,7 @@ Ratify amendment? [Y/N/Edit]
 If ratified:
 1. Update constitution file (apply changes, update version, update last_amended date)
 2. Append amendment record to Amendment History section
-3. Log event through Tracey:
+3. Log event via state-management:
    ```yaml
    type: constitution-amended
    timestamp: {now}
@@ -315,7 +315,7 @@ If ratified:
    git_commit_sha: {sha}
    initiative_id: {active_initiative_id or null}
    ```
-4. Casey commits with message: `governance: amend {layer_type} constitution — {constitution_name}`
+4. git-orchestration commits with message: `governance: amend {layer_type} constitution — {constitution_name}`
 
 ```
 ✅ Amendment Ratified
@@ -337,5 +337,5 @@ What's next?
 - View resolved constitution → /resolve
 - Check compliance → /compliance
 - Show ancestry → /ancestry
-- Return to Compass → exit
+- Return to @lens → exit
 ```

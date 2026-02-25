@@ -1,14 +1,14 @@
 ---
 name: init-initiative
 description: User-facing initiative creation with two-file state architecture
-agent: compass
+agent: "@lens"
 trigger: "/new-domain, /new-service, /new-feature (canonical); #new-* accepted"
 category: router
 ---
 
 # Init Initiative Router
 
-**Purpose:** Accept user input, resolve target repos, delegate git ops to Casey, and write the two-file state architecture for a new initiative.
+**Purpose:** Accept user input, resolve target repos, delegate git ops to git-orchestration skill, and write the two-file state architecture for a new initiative.
 
 ---
 
@@ -663,11 +663,11 @@ else:
 ${endif}
 ```
 
-### 5. Delegate Branch Creation to Casey
+### 5. Delegate Branch Creation to Git-Orchestration
 
 ```yaml
-# Hand off to Casey for git operations
-invoke: casey.init-initiative
+# Hand off to git-orchestration skill for git operations
+invoke: git-orchestration.init-initiative
 params:
   initiative_id: ${initiative_id}
   initiative_name: "${initiative_name}"
@@ -676,14 +676,14 @@ params:
   target_repos: ${target_repos}
 
 ${if layer == "domain"}
-# Domain-layer: Casey creates ONLY the domain branch (pushed immediately to remote):
+# Domain-layer: git-orchestration creates ONLY the domain branch (pushed immediately to remote):
 # - ${domain_prefix}
 #
 # Domain branches are organizational — no audience/phase branches needed.
 # Service/feature initiatives within this domain will create their own topology.
 # PUSH: git push -u origin ${domain_prefix}
 ${elif layer == "service"}
-# Service-layer: Casey creates ONLY the service branch (pushed immediately to remote):
+# Service-layer: git-orchestration creates ONLY the service branch (pushed immediately to remote):
 # - ${domain_prefix}-${service_prefix}  (hyphen-separated, e.g., bmaddomain-lens)
 #
 # Service branches are organizational — no audience/phase branches needed.
@@ -694,7 +694,7 @@ ${else}
 #
 # initiative_root = ${initiative_root} (computed in Step 4c)
 #
-# Casey creates branches based on track (ALL pushed immediately to remote):
+# git-orchestration creates branches based on track (ALL pushed immediately to remote):
 # - ${initiative_root}                    (initiative root / base)
 # - ${initiative_root}-small              (always created)
 # - ${initiative_root}-medium             (if track has medium audience)
@@ -1142,9 +1142,9 @@ done
 # and profile.lens_work.selected_branch is populated for this initiative
 ```
 
-### 11. Return Control to Compass
+### 11. Return Control to @lens
 
-Output to Compass:
+Output to @lens:
 
 ${if layer == "domain"}
 ```
@@ -1335,7 +1335,7 @@ last_sync_date = profile.lens_work.last_sync.date
 | Push failed | Check remote connectivity, retry with backoff |
 | Service map not found | Error: "service-map.yaml missing. Run bootstrap first." |
 | initiatives/ dir creation failed | Ensure _bmad-output/lens-work/ exists and is writable |
-| Casey delegation failed | Output Casey error, allow retry |
+| git-orchestration delegation failed | Output error, allow retry |
 | state.yaml already exists | Warn: "Active initiative found. Switch or archive first." |
 | Sync-and-select-branch workflow failed | Retry manually with `/sync-now` after resolving connectivity |
 
@@ -1351,7 +1351,7 @@ last_sync_date = profile.lens_work.last_sync.date
 - [ ] `event-log.jsonl` entry appended and committed
 - [ ] **Target repos synced and branches selected** (via sync-and-select-branch)
 - [ ] `profile.lens_work.selected_branch` and `last_sync.date` updated
-- [ ] Control returned to Compass
+- [ ] Control returned to @lens
 
 ### Domain-Layer Specific
 - [ ] `initiative_id` = `domain_prefix` (no random suffix)
@@ -1373,8 +1373,8 @@ last_sync_date = profile.lens_work.last_sync.date
 
 ### Microservice/Feature Layers
 - [ ] Track selected and active_phases derived from lifecycle.yaml
-- [ ] Branch count depends on track (via Casey: {initiative_root} + track-specific audiences)
+- [ ] Branch count depends on track (via git-orchestration: {initiative_root} + track-specific audiences)
 - [ ] Phase branches NOT created at init (created by phase routers, e.g., /preplan creates -small-preplan)
 - [ ] Initiative config written with lifecycle_version: 2, track, active_phases, phase_status
 - [ ] Personal state written with lifecycle_version: 2, audience_status
-- [ ] Control returned to Compass for /${start_phase} routing
+- [ ] Control returned to @lens for /${start_phase} routing

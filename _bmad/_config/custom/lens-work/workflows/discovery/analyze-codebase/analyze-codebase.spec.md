@@ -75,11 +75,11 @@ installed_path: '{project-root}/_bmad/lens-work/workflows/analyze-codebase'
 
 ## Agent Integration
 
-### Primary Agent
+### Primary Skill
 
-Scout
+@lens/discovery
 
-### Other Agents
+### Other Skills
 
 Bridge (target alignment)
 

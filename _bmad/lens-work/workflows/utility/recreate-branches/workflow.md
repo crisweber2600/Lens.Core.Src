@@ -1,8 +1,8 @@
 ---
 name: recreate-branches
 description: Recreate missing lens-work branches from initiative topology
-agent: casey
-trigger: "@casey recreate-branches"
+agent: "@lens/git-orchestration"
+trigger: "@lens recreate-branches"
 category: utility
 mutates: true
 ---
@@ -11,7 +11,7 @@ mutates: true
 
 **Purpose:** Scan for missing branches and recreate them from initiative topology definitions stored in `_bmad-output/lens-work/initiatives/{id}.yaml`.
 
-**Agent:** Casey (all git operations). Recovery logged through Tracey.
+**Skill:** @lens/git-orchestration (all git operations). Recovery logged through state-management skill.
 
 ---
 
@@ -44,7 +44,7 @@ state_path: "_bmad-output/lens-work/state.yaml"
 ### Step 0: Verify Clean Git State
 
 ```bash
-# Casey verifies clean working tree
+# Verify clean working tree
 if ! git diff-index --quiet HEAD --; then
   error "Uncommitted changes detected. Commit or stash before recreate-branches."
   exit 1
@@ -244,7 +244,7 @@ for plan_entry in recreation_plan:
       recreated.append(plan_entry)
 ```
 
-### Step 4: Log Recovery Through Tracey
+### Step 4: Log Recovery Through State-Management
 
 ```yaml
 # Append recovery event to event log
@@ -359,5 +359,5 @@ main
 - [ ] Missing branches identified
 - [ ] Recreation plan determined with parent resolution
 - [ ] Branches recreated (partial reconstruction supported)
-- [ ] Recovery event logged through Tracey
+- [ ] Recovery event logged through state-management skill
 - [ ] Returned to active branch

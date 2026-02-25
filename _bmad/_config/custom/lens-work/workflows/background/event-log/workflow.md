@@ -1,7 +1,7 @@
 ---
 name: event-log
 description: Append to event-log.jsonl on every state mutation
-agent: tracey
+agent: "@lens/state-management"
 trigger: "background (auto-triggered)"
 category: background
 ---

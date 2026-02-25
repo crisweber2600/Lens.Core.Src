@@ -6,7 +6,7 @@ Show constitutional heritage with visual hierarchy.
 
 ## Load LENS Context
 
-**Get from Compass:**
+**Get from @lens:**
 - Current layer: `{layer_path}`
 - Layer type: `{layer_type}`
 - Constitution root: `{constitution_root}`

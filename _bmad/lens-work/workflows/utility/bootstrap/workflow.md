@@ -1,8 +1,8 @@
 ---
 name: bootstrap
 description: Setup TargetProjects from service map
-agent: scout
-trigger: "@scout bootstrap"
+agent: "@lens/discovery"
+trigger: "@lens bootstrap"
 category: utility
 ---
 
@@ -168,7 +168,7 @@ if service_map == null:
 ### 3. Run Discovery
 
 ```yaml
-invoke: scout.repo-discover
+invoke: discovery.repo-discover
 
 inventory = load("_bmad-output/lens-work/repo-inventory.yaml")
 ```
@@ -196,13 +196,13 @@ output: |
 
 ```yaml
 if confirmed:
-  invoke: scout.repo-reconcile
+  invoke: discovery.repo-reconcile
 ```
 
 ### 6. Run Documentation
 
 ```yaml
-invoke: scout.repo-document
+invoke: discovery.repo-document
 params:
   mode: "full"
 ```

@@ -1,8 +1,8 @@
 ---
 name: repo-reconcile
 description: Clone/fix/checkout repos with snapshot + rollback support
-agent: scout
-trigger: "@scout reconcile"
+agent: "@lens/discovery"
+trigger: "@lens reconcile"
 category: discovery
 mutates: true
 snapshots: true
@@ -22,7 +22,7 @@ snapshots: true
 inventory = load("_bmad-output/lens-work/repo-inventory.yaml")
 
 if inventory == null:
-  output: "No inventory found. Run '@scout discover' first."
+  output: "No inventory found. Run '@lens discover' first."
   exit: 1
 
 missing_repos = inventory.repos.missing
@@ -54,7 +54,7 @@ save(snapshot, "${snapshot_path}/snapshot.yaml")
 
 output: |
   📸 Snapshot created: ${snapshot_id}
-  └── Rollback available: @scout rollback ${snapshot_id}
+  └── Rollback available: @lens rollback ${snapshot_id}
 ```
 
 ### 3. Clone Missing Repos
@@ -110,7 +110,7 @@ for repo in inventory.repos.matched:
 
 ```yaml
 # Re-run discovery to update inventory
-invoke: scout.repo-discover
+invoke: discovery.repo-discover
 
 output: "📋 Inventory updated"
 ```
@@ -142,7 +142,7 @@ ${for repo in manual_fixes}
 ${endfor}
 ${endif}
 
-Rollback: @scout rollback ${snapshot_id}
+Rollback: @lens rollback ${snapshot_id}
 ```
 
 ---
@@ -152,7 +152,7 @@ Rollback: @scout rollback ${snapshot_id}
 If something goes wrong:
 
 ```bash
-@scout rollback ${snapshot_id}
+@lens rollback ${snapshot_id}
 ```
 
 Rollback process:

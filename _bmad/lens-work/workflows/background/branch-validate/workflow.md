@@ -1,7 +1,7 @@
 ---
 name: branch-validate
 description: Verify branch topology matches expected patterns (v2 — named phases)
-agent: casey
+agent: "@lens/git-orchestration"
 trigger: "background (auto-triggered)"
 category: background
 imports: lifecycle.yaml
@@ -132,7 +132,7 @@ for branch in $(git branch -r --list "origin/${initiative_root}-*"); do
   segment="${branch#origin/${initiative_root}-}"
   if [[ "$segment" =~ ^(small|medium|large)-p[0-9]+ ]]; then
     echo "⚠️ Legacy branch: ${branch}"
-    echo "└── Run @tracey migrate-lifecycle to rename"
+    echo "└── Run @lens migrate-lifecycle to rename"
   fi
 done
 ```

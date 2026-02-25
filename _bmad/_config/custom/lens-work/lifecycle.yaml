@@ -338,19 +338,25 @@ agents:
     execution_context: target-projects
     capabilities: [test-automation, test-review]
 
-  # Infrastructure agents (cross-cutting)
-  compass:
+  # @lens unified agent skills (cross-cutting)
+  # In v2, all infrastructure roles are skills of the single @lens agent
+  lens:
     role: Router
+    skill: "@lens (core)"
     description: "User-facing lifecycle router — decides what workflow/agent to invoke"
-  casey:
+  git-orchestration:
     role: Git Discipline
+    skill: "@lens/git-orchestration"
     description: "Branch topology, PR creation, merge gate validation"
-  tracey:
+  state-management:
     role: State Management
+    skill: "@lens/state-management"
     description: "Personal state, event log, resume/sync"
-  scout:
+  discovery:
     role: Discovery
+    skill: "@lens/discovery"
     description: "Repo inventory, doc generation, impact analysis"
-  scribe:
+  constitution:
     role: Governance
+    skill: "@lens/constitution"
     description: "Constitution validation, compliance checks, promotion gates"

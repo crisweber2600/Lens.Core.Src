@@ -1,7 +1,7 @@
 ---
 name: audience-promotion
 description: Promote initiative from one audience level to the next with gate validation
-agent: compass
+agent: "@lens"
 trigger: audience promotion boundary (small→medium, medium→large, large→base)
 category: core
 imports: lifecycle.yaml
@@ -20,7 +20,7 @@ imports: lifecycle.yaml
 ```
 small → medium    (gate: adversarial-review, mode: party)
 medium → large    (gate: stakeholder-approval)
-large → base      (gate: constitution-gate, enforcer: Scribe)
+large → base      (gate: constitution-gate, enforcer: constitution skill)
 ```
 
 ---
@@ -51,7 +51,7 @@ initiative = load("_bmad-output/lens-work/initiatives/${initiative_id}.yaml")
 lifecycle = load("lifecycle.yaml")
 
 # Verify working directory is clean
-invoke: casey.verify-clean-state
+invoke: git-orchestration.verify-clean-state
 
 # Derive promotion details from lifecycle contract
 initiative_root = initiative.initiative_root
@@ -102,7 +102,7 @@ for phase_name in required_phases:
   # For pr_pending phases, verify the PR was actually merged
   if phase_status != null and phase_status.status == "pr_pending":
     phase_branch = "${initiative_root}-${source_audience}-${phase_name}"
-    result = casey.exec("git merge-base --is-ancestor origin/${phase_branch} origin/${source_branch}")
+    result = git-orchestration.exec("git merge-base --is-ancestor origin/${phase_branch} origin/${source_branch}")
     if result.exit_code != 0:
       incomplete_phases.append("${phase_name} (PR not merged)")
 
@@ -181,17 +181,17 @@ elif gate_type == "stakeholder-approval":
   output: "✅ Stakeholder approval gate passed"
 
 elif gate_type == "constitution-gate":
-  # === Large → Base: Constitution Gate (Scribe) ===
+  # === Large → Base: Constitution Gate ===
   output: |
-    📜 Constitution gate — Scribe validates compliance
+    📜 Constitution gate — constitution skill validates compliance
     ├── All planning artifacts checked against constitutional rules
     └── 4-level inheritance: org → domain → service → repo
 
   # Resolve constitutional context
-  constitutional_context = invoke("scribe.resolve-context")
+  constitutional_context = invoke("constitution.resolve-context")
 
   # Run full compliance check
-  compliance_result = invoke("scribe.full-compliance-check")
+  compliance_result = invoke("constitution.full-compliance-check")
   params:
     initiative_id: ${initiative_id}
     docs_path: ${docs_path}
@@ -212,7 +212,7 @@ elif gate_type == "constitution-gate":
 
 ```yaml
 # Merge source audience branch into target audience branch via PR
-invoke: casey.create-pr
+invoke: git-orchestration.create-pr
 params:
   head: ${source_branch}
   base: ${target_branch}
@@ -238,7 +238,7 @@ capture: pr_result
 # Update audience_status in initiative config
 promotion_key = "${source_audience}_to_${target_audience}"
 
-invoke: tracey.update-initiative
+invoke: state-management.update-initiative
 params:
   initiative_id: ${initiative_id}
   updates:
@@ -251,7 +251,7 @@ params:
       ${promotion_key}_gate_at: "${ISO_TIMESTAMP}"
 
 # Update state.yaml
-invoke: tracey.update-state
+invoke: state-management.update-state
 params:
   updates:
     last_promotion: "${promotion_key}"
@@ -265,7 +265,7 @@ events:
   - {"ts":"${ISO_TIMESTAMP}","event":"audience_promotion","id":"${initiative_id}","source":"${source_audience}","target":"${target_audience}","gate":"${gate_type}","gate_status":"passed"}
   - {"ts":"${ISO_TIMESTAMP}","event":"promotion_pr_created","id":"${initiative_id}","pr_url":"${pr_result.url}","source":"${source_branch}","target":"${target_branch}"}
 
-invoke: tracey.append-events
+invoke: state-management.append-events
 params:
   events: ${events}
 ```

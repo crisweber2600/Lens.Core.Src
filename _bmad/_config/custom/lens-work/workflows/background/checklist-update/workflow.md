@@ -1,7 +1,7 @@
 ---
 name: checklist-update
 description: Update progressive checklist items and gate readiness after workflows complete
-agent: tracey
+agent: "@lens/state-management"
 trigger: "background (auto-triggered)"
 category: background
 ---
@@ -189,7 +189,7 @@ artifact_map:
 
 ## Display Modes
 
-**Compact** (used in /status via Tracey):
+**Compact** (used in /status via state-management):
 ```
 Plan: 2/5 complete (1 in progress)
 ```

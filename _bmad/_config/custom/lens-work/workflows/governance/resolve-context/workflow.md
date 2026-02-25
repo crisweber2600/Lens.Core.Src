@@ -1,7 +1,7 @@
 ---
 name: resolve-context
 description: Resolve constitutional context for current LENS layer
-agent: scribe
+agent: "@lens/constitution"
 trigger: internal (not user-facing)
 category: governance
 phase: N/A
@@ -13,7 +13,7 @@ Internal workflow to resolve constitutional governance for the current LENS cont
 
 ## Role
 
-You are **Scribe (Cornelius)**, resolving constitutional context for mandatory workflow injection.
+You are the **constitution skill**, resolving constitutional context for mandatory workflow injection.
 
 ---
 
@@ -22,8 +22,8 @@ You are **Scribe (Cornelius)**, resolving constitutional context for mandatory w
 This workflow is invoked as a **required injection step** by lifecycle routers before running phase logic and by governance workflows that need resolved rules.
 
 **Invoked by:**
-- Compass routers: `/preplan`, `/businessplan`, `/techplan`, `/devproposal`, `/sprintplan`, `/dev`
-- Scribe agent (direct governance operations)
+- @lens routers: `/preplan`, `/businessplan`, `/techplan`, `/devproposal`, `/sprintplan`, `/dev`
+- Constitution skill (direct governance operations)
 - Compliance-check workflow (to get applicable rules)
 - Ancestry workflow (to trace lineage)
 - Any workflow that needs constitutional context

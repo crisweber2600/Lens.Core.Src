@@ -7,7 +7,7 @@ imports: lifecycle.yaml
 
 # Branch Topology Reference (v2 — Lifecycle Contract)
 
-This document defines the branch hierarchy used by lens-work to manage initiative lifecycle branches. All branch operations are orchestrated by Casey and triggered through Compass phase commands. The authoritative source for phase definitions, audience roles, and track configurations is `lifecycle.yaml`.
+This document defines the branch hierarchy used by lens-work to manage initiative lifecycle branches. All branch operations are orchestrated by the git-orchestration skill and triggered through @lens phase commands. The authoritative source for phase definitions, audience roles, and track configurations is `lifecycle.yaml`.
 
 **Branch naming convention:** `{initiative_root}-{audience}-{phase_name}-{workflow}`
 
@@ -91,7 +91,7 @@ Root branch for the initiative. Created at init via `init-initiative` workflow. 
 **Rules:**
 - Created from `main` (or current HEAD) at initiative start
 - Never worked on directly — only receives merges from audience branches
-- Protected: requires constitution gate (Scribe validation) for final promotion
+- Protected: requires constitution gate (constitution skill validation) for final promotion
 - One root branch per initiative
 - Pushed to remote immediately on creation
 
@@ -114,7 +114,7 @@ Audiences are the primary progression axis in the lifecycle. Phases happen WITHI
 | `small` | IC creation work | preplan, businessplan, techplan | (none — starting audience) | `init-initiative` |
 | `medium` | Lead review | devproposal | adversarial-review (party mode) | `init-initiative` |
 | `large` | Stakeholder approval | sprintplan | stakeholder-approval | `init-initiative` |
-| `base` | Ready for execution | (none) | constitution-gate (Scribe) | = initiative root |
+| `base` | Ready for execution | (none) | constitution-gate (constitution skill) | = initiative root |
 
 > **v2 change:** In the legacy model, phases p2/p3 mapped to medium/large audiences. In v2, ALL creation phases (preplan, businessplan, techplan) live in `small`. Audience promotions happen BETWEEN creation and review phases.
 
@@ -134,7 +134,7 @@ Audiences are the primary progression axis in the lifecycle. Phases happen WITHI
 **large group (`{initiative_root}-large`):**
 - Receives promoted content from `medium` after stakeholder sign-off
 - Contains 1 phase: sprintplan (Bob/SM) — sprint status, story files
-- After sprintplan complete → constitution gate (Scribe) → PR to initiative root (base)
+- After sprintplan complete → constitution gate (constitution skill) → PR to initiative root (base)
 
 #### Track-Aware Audience Creation
 
@@ -192,7 +192,7 @@ small audience:    preplan → businessplan → techplan
 medium audience:   devproposal
                    ↓ (stakeholder approval)
 large audience:    sprintplan
-                   ↓ (constitution gate — Scribe)
+                   ↓ (constitution gate — constitution skill)
 base:              initiative root (ready for execution)
 ```
 
@@ -250,7 +250,7 @@ Workflow ──squash──► Phase ──PR+delete──► Audience ──pro
 | phase → audience | `-{aud}-{phase}` → `-{aud}` | PR + delete phase branch | Phase gate | `finish-phase` PR |
 | small → medium | `-small` → `-medium` | PR merge | Adversarial review (party mode) | `audience-promotion` |
 | medium → large | `-medium` → `-large` | PR merge | Stakeholder approval | `audience-promotion` |
-| large → root (base) | `-large` → `{initiative_root}` | PR merge | Constitution gate (Scribe) | `audience-promotion` |
+| large → root (base) | `-large` → `{initiative_root}` | PR merge | Constitution gate (constitution skill) | `audience-promotion` |
 
 ### Phase Transition Flow (Full Track)
 
@@ -280,7 +280,7 @@ LARGE AUDIENCE (Stakeholder)                    ┌─────────�
                                                 └──────┬─────┘
                                                        │
                                           ═════════════╪═══════════════════
-                                          CONSTITUTION GATE (Scribe)
+                                          CONSTITUTION GATE (constitution skill)
                                           ═════════════╪═══════════════════
                                                        ▼
 BASE                                            ┌──────────────┐
@@ -295,8 +295,8 @@ BASE                                            ┌─────────�
 |-----------|-----------|---------|-------------|
 | small → medium | adversarial-review | All small phases complete (preplan, businessplan, techplan) | Party mode — multi-agent group review |
 | medium → large | stakeholder-approval | All medium phases complete (devproposal) | Stakeholder sign-off |
-| large → base | constitution-gate | All large phases complete (sprintplan) | Scribe validates compliance |
-| small → base (hotfix) | constitution-gate | All small phases complete (techplan only) | Scribe adversarial review |
+| large → base | constitution-gate | All large phases complete (sprintplan) | Constitution skill validates compliance |
+| small → base (hotfix) | constitution-gate | All small phases complete (techplan only) | Constitution skill adversarial review |
 
 ### Phase Branch Lifecycle
 
@@ -307,7 +307,7 @@ At each phase:
 
 ### Merge Validation
 
-Before any merge, Casey validates:
+Before any merge, git-orchestration validates:
 
 1. **Clean state:** No uncommitted changes in working tree
 2. **Ancestry:** Source branch is ahead of target (has commits to merge)
@@ -326,7 +326,7 @@ git merge --no-commit --no-ff ${source_branch} && git merge --abort
 
 ## Branch Naming Validation
 
-Casey validates branch names against these patterns:
+git-orchestration validates branch names against these patterns:
 
 ```regex
 # Domain-layer branches (domain-only):
@@ -350,7 +350,7 @@ Casey validates branch names against these patterns:
 # Branch patterns use named phases only (v2.0.0)
 ```
 
-> **Note:** All branches are flat (no `/` separators). Casey determines the layer from the initiative config to select the appropriate validation regex.
+> **Note:** All branches are flat (no `/` separators). git-orchestration determines the layer from the initiative config to select the appropriate validation regex.
 
 ### Parsing Branch Components
 

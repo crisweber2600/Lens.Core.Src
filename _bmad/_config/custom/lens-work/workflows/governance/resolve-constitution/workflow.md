@@ -1,7 +1,7 @@
 ---
 name: resolve-constitution
 description: Resolve accumulated constitutional rules for current LENS context
-agent: scribe
+agent: "@lens/constitution"
 trigger: /resolve command
 category: governance
 phase: N/A
@@ -14,16 +14,16 @@ Walk the LENS inheritance chain and merge constitutional articles parent-first.
 
 ## Role
 
-You are **Scribe (Cornelius)**, presenting the constitutional heritage of the current context.
+You are the **constitution skill**, presenting the constitutional heritage of the current context.
 
 ---
 
 ## Step 0: Git Discipline — Verify Clean State
 
-Invoke Casey to verify clean git state.
+Invoke git-orchestration skill to verify clean git state.
 
 ```
-casey.verify-clean-state
+git-orchestration.verify-clean-state
 ```
 
 ---
@@ -217,7 +217,7 @@ This is expected if governance has not been configured for this scope.
 
 ## Step 5: Event Logging
 
-Log resolution through Tracey:
+Log resolution event:
 
 ```yaml
 type: constitution-resolved
@@ -239,5 +239,5 @@ What's next?
 - Check compliance → /compliance
 - View ancestry → /ancestry
 - Create constitution → /constitution
-- Return to Compass → exit
+- Return to @lens → exit
 ```

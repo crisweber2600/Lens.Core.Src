@@ -8,8 +8,8 @@ Build the constitutional context from the inheritance chain.
 
 **Read from session:**
 ```yaml
-current_layer: {from Compass}
-layer_path: {from Compass}
+current_layer: {from @lens}
+layer_path: {from @lens}
 project_root: {from config}
 constitution_root: {default: _bmad-output/lens-work/constitutions}
 ```

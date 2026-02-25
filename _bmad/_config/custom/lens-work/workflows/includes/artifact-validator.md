@@ -12,7 +12,7 @@ This document defines validation schemas for all artifact types, validation rule
 
 ## Overview
 
-The artifact validator runs at phase transitions to ensure all required artifacts exist, contain required sections, and are non-empty. It is invoked automatically by router workflows (Compass) and can be run manually via `status` workflow.
+The artifact validator runs at phase transitions to ensure all required artifacts exist, contain required sections, and are non-empty. It is invoked automatically by router workflows (@lens) and can be run manually via `status` workflow.
 
 ---
 
@@ -357,7 +357,7 @@ validate_csv() {
 
 ### Router Invocation Pattern
 
-Router workflows (Compass) call the validator before allowing phase progression:
+Router workflows (@lens) call the validator before allowing phase progression:
 
 ```yaml
 # Example: /businessplan router checking preplan artifacts before allowing businessplan
@@ -485,7 +485,7 @@ function validate_artifact(artifact_name, docs_path):
   if file_exists(primary):
     return { path: primary, status: "OK" }
   elif file_exists(legacy):
-    emit_warning("⚠️ Artifact found at legacy path. Run migration: /compass migrate")
+    emit_warning("⚠️ Artifact found at legacy path. Run migration: /fix or migrate-lifecycle")
     return { path: legacy, status: "LEGACY" }
   else:
     return { path: null, status: "MISSING" }
@@ -502,7 +502,7 @@ function validate_artifact(artifact_name, docs_path):
 When an artifact is found ONLY at the legacy path:
 - Validation still **passes** (artifact exists)
 - A **deprecation warning** is emitted in the validation output
-- The warning includes the migration command: `/compass migrate`
+- The warning includes the migration command: `/fix` or `migrate-lifecycle`
 - The validation result includes `status: "LEGACY"` for programmatic detection
 
 ## Required Planning Artifacts

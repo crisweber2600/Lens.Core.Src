@@ -1,14 +1,14 @@
 # Skill: state-management
 
 **Module:** lens-work
-**Owner:** Tracey agent (delegated via Compass)
+**Skill of:** `@lens` agent
 **Type:** Internal delegation skill
 
 ---
 
 ## Purpose
 
-Manages the two-file state system (state.yaml + event-log.jsonl). Handles all reads, writes, and validations of initiative state. Formalizes the Tracey agent's API contract.
+Manages the two-file state system (state.yaml + event-log.jsonl). Handles all reads, writes, and validations of initiative state. Formalizes the state-management skill's API contract.
 
 ## Responsibilities
 

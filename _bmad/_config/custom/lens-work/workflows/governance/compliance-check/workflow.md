@@ -1,7 +1,7 @@
 ---
 name: compliance-check
 description: Validate artifacts against resolved constitutional rules
-agent: scribe
+agent: "@lens/constitution"
 trigger: /compliance command
 category: governance
 phase: N/A
@@ -14,16 +14,16 @@ Evaluate an artifact against accumulated constitutional rules from the LENS inhe
 
 ## Role
 
-You are **Scribe (Cornelius)**, the Constitutional Guardian, evaluating artifact compliance.
+You are the **constitution skill**, the Constitutional Guardian, evaluating artifact compliance.
 
 ---
 
 ## Step 0: Git Discipline — Verify Clean State
 
-Invoke Casey to verify clean git state.
+Invoke git-orchestration skill to verify clean git state.
 
 ```
-casey.verify-clean-state
+git-orchestration.verify-clean-state
 ```
 
 ---
@@ -288,7 +288,7 @@ Articles: {mandatory_count} mandatory, {advisory_count} advisory
 
 ## Step 5: Event Logging
 
-Log compliance evaluation through Tracey:
+Log compliance evaluation event:
 
 ```yaml
 type: compliance-evaluated
@@ -339,6 +339,6 @@ Compliance check complete.
 {endif}
 - View full constitution → /resolve
 - Show ancestry → /ancestry
-- Return to Compass → exit
+- Return to @lens → exit
 ```
 

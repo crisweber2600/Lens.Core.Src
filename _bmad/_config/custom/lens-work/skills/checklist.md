@@ -1,14 +1,14 @@
 # Skill: checklist
 
 **Module:** lens-work
-**Owner:** Tracey agent (delegated via Compass)
+**Skill of:** `@lens` agent
 **Type:** Internal delegation skill
 
 ---
 
 ## Purpose
 
-Progressive phase gate checklists with artifact auto-detection. Tracks what's needed to pass each gate, automatically detects when artifacts are created, and updates checklist status. Formalizes the Tracey agent's checklist API contract.
+Progressive phase gate checklists with artifact auto-detection. Tracks what's needed to pass each gate, automatically detects when artifacts are created, and updates checklist status. Formalizes the checklist skill's API contract.
 
 ## Responsibilities
 
@@ -58,7 +58,7 @@ Progressive phase gate checklists with artifact auto-detection. Tracks what's ne
 - [ ] Dev branch strategy confirmed
 
 ### [large→base promotion] → dev
-- [ ] Constitution gate passed (Scribe compliance check)
+- [ ] Constitution gate passed (compliance check)
 - [ ] All large-audience phase PRs merged
 
 ## Auto-Detection Logic

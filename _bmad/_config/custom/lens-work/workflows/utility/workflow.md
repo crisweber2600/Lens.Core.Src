@@ -1,8 +1,8 @@
 ---
 name: switch
 description: "Interactive context switcher with branch checkout and state sync"
-agent: compass
-trigger: "/switch via Compass"
+agent: "@lens"
+trigger: "/switch via @lens"
 category: utility
 ---
 
@@ -83,7 +83,7 @@ if state.active_initiative != null:
   initiative = load("_bmad-output/lens-work/initiatives/${state.active_initiative}.yaml")
   if initiative == null:
     error: "Initiative config not found: initiatives/${state.active_initiative}.yaml"
-    hint: "Run @tracey migrate or check initiatives/ directory."
+    hint: "Run @lens migrate or check initiatives/ directory."
     exit: 1
 else if state.initiative != null:
   # Legacy single-file format
@@ -136,7 +136,7 @@ output: |
   ├── Size: ${current_size}
   └── Branch: ${current_branch}
   ${if legacy_warning}
-  ⚠️  Legacy state format detected. Consider running @tracey migrate.
+  ⚠️  Legacy state format detected. Consider running @lens migrate.
   ${endif}
 ```
 
@@ -287,12 +287,12 @@ if selected.id == initiative.id:
   output: "Already on this initiative. No change needed."
   exit: 0
 
-# Casey: checkout the selected initiative's active branch
+# git-orchestration: checkout the selected initiative's active branch
 output: "🔀 Switching to initiative: ${selected.name}..."
 ```
 
 ```bash
-# Casey integration: branch-status check
+# git-orchestration integration: branch-status check
 target_branch="${selected.active_branch}"
 
 # Fetch latest
@@ -454,7 +454,7 @@ output: "🔀 Switching to phase ${selected_phase.name} (${selected_phase.audien
 ```
 
 ```bash
-# Casey integration: checkout-branch or create-branch-if-missing
+# git-orchestration integration: checkout-branch or create-branch-if-missing
 target_branch="${target_branch}"
 
 git fetch origin
@@ -565,7 +565,7 @@ output: "🔀 Switching to ${selected_size.code} size..."
 ```
 
 ```bash
-# Casey integration: checkout-branch or create-branch
+# git-orchestration integration: checkout-branch or create-branch
 target_branch="${target_branch}"
 size_branch="${size_branch}"
 
@@ -661,7 +661,7 @@ if initiative_modified:
 event = {
   ts: now_iso(),
   event: "context_switch",
-  agent: "compass",
+  agent: "lens",
   workflow: "switch",
   details: {
     type: sub_command or menu_choice_label,
@@ -733,14 +733,14 @@ output: |
 |-------|----------|
 | Uncommitted changes | Offer stash or abort |
 | State file missing | Prompt to create initiative |
-| Initiative config not found | Suggest @tracey migrate or check initiatives/ |
+| Initiative config not found | Suggest @lens migrate or check initiatives/ |
 | Branch not found locally | Attempt fetch from remote |
 | Branch not found on remote | Create from parent (size or base branch) |
 | Size branch missing | Create from base branch |
 | Phase branch missing | Create from size branch |
 | Git fetch/push failure | Check remote connectivity, retry |
 | Invalid menu selection | Re-display menu with guidance |
-| Legacy state format | Warn and suggest @tracey migrate |
+| Legacy state format | Warn and suggest @lens migrate |
 
 ---
 

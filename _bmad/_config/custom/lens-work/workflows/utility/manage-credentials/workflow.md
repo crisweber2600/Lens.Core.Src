@@ -1,8 +1,8 @@
 ---
 name: manage-credentials
 description: Add, update, remove, or view git host credentials (PATs) in user profile
-agent: scout
-trigger: '@compass /credentials or @scout credentials'
+agent: "@lens/discovery"
+trigger: '@lens /credentials or @lens credentials'
 category: utility
 ---
 
@@ -29,7 +29,7 @@ profile_path = "_bmad-output/personal/profile.yaml"
 
 if not file_exists(profile_path):
   output: |
-    ⚠️ No profile found. Run @scout onboard first to create your profile.
+    ⚠️ No profile found. Run @lens onboard first to create your profile.
   exit: 1
 
 profile = load(profile_path)
@@ -256,7 +256,7 @@ if action == "5":
 
 | Error | Recovery |
 |-------|----------|
-| Profile not found | Direct to @scout onboard |
+| Profile not found | Direct to @lens onboard |
 | Invalid PAT format | Warn but accept (validation happens at test) |
 | Test fails | Report HTTP code, suggest regenerating PAT |
 | Network unreachable | Skip test, warn user |

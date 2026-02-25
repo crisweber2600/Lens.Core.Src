@@ -2,7 +2,7 @@
 
 **Module:** lens-work
 **Category:** discovery
-**Agent:** Scout
+**Skill:** @lens/discovery
 **Status:** Specification
 
 ---
@@ -11,7 +11,7 @@
 
 ### Trigger
 
-`@scout discover` or during `#new-*` initialization
+`@lens discover` or during `#new-*` initialization
 
 ### Purpose
 
@@ -36,7 +36,7 @@ Inventory TargetProjects vs service map (read-only, no mutations).
 
 ### Trigger
 
-`@scout document` or during bootstrap
+`@lens document` or during bootstrap
 
 ### Purpose
 
@@ -88,7 +88,7 @@ Run document-project + quick-spec per in-scope repo with incremental logic.
 
 ### Trigger
 
-`@scout reconcile` or during bootstrap
+`@lens reconcile` or during bootstrap
 
 ### Purpose
 
@@ -118,7 +118,7 @@ snapshot:
   repos_captured: [list]
 ```
 
-If error → `@scout rollback` restores from snapshot.
+If error → `@lens rollback` restores from snapshot.
 
 ---
 
@@ -126,7 +126,7 @@ If error → `@scout rollback` restores from snapshot.
 
 ### Trigger
 
-`@scout repo-status` or as pre-check for confidence scoring
+`@lens repo-status` or as pre-check for confidence scoring
 
 ### Purpose
 

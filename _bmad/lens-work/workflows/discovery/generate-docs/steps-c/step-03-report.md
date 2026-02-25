@@ -227,7 +227,7 @@ docs_generation:
   output_location: {target_path}
 ```
 
-### 7. Log to Scout Discoveries (if applicable)
+### 7. Log to Discovery Results (if applicable)
 ```yaml
 # _bmad/lens-work/_memory/scout-sidecar/scout-discoveries.md append
 - discovery_type: docs_generated

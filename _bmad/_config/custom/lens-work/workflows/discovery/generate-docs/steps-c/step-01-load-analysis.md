@@ -14,7 +14,7 @@ Load and validate analysis results that will drive documentation generation. Enr
 ### 1. Load Primary Analysis Data
 Based on preflight source detection:
 
-**From Scout Sidecar Cache:**
+**From Discovery Sidecar Cache:**
 ```yaml
 # _bmad/lens-work/_memory/scout-sidecar/analysis/{target}.yaml
 cache_data:

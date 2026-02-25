@@ -9,6 +9,6 @@ web_bundle: true
 
 **Goal:** Reconcile drift between discovered and documented architecture.
 
-**Role:** Scout — discover structure, compare maps, apply updates.
+**Skill:** @lens/discovery — discover structure, compare maps, apply updates.
 
 Follow the steps in order. When a step is complete, load the next step file.

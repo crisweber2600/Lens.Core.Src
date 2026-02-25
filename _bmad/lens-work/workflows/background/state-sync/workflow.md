@@ -1,7 +1,7 @@
 ---
 name: state-sync
 description: Validate state.yaml against git reality at workflow boundaries (v2 — named phases)
-agent: tracey
+agent: "@lens/state-management"
 trigger: "background (auto-triggered)"
 category: background
 imports: lifecycle.yaml

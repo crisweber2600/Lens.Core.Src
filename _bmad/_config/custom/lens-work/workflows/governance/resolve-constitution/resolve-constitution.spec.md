@@ -1,7 +1,7 @@
 # Workflow Specification: resolve-constitution
 
 **Module:** lens-work  
-**Agent:** Scribe  
+**Skill:** @lens/constitution  
 **Status:** Implemented
 
 ---
@@ -17,7 +17,7 @@ Resolve constitutional inheritance parent-first and return accumulated rules for
 ```yaml
 name: resolve-constitution
 description: Resolve accumulated constitutional rules from inheritance hierarchy
-agent: scribe
+agent: "@lens/constitution"
 category: governance
 ```
 
@@ -28,4 +28,4 @@ category: governance
 - Resolve order: Domain -> Service -> Microservice -> Feature.
 - Skip missing layers gracefully.
 - Detect contradictions and surface conflict details.
-- Emit `constitution-resolved` via Tracey with layers walked and article totals.
+- Emit `constitution-resolved` via state-management skill with layers walked and article totals.

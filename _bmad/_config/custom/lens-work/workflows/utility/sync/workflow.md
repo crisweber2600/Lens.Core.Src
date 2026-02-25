@@ -1,8 +1,8 @@
 ---
 name: sync
 description: Fetch + re-validate + update state
-agent: tracey
-trigger: "@tracey SY"
+agent: "@lens/state-management"
+trigger: "@lens SY"
 category: utility
 ---
 
@@ -17,8 +17,8 @@ category: utility
 ### 1. Git Fetch
 
 ```yaml
-# Delegate to Casey
-invoke: casey.git-fetch
+# Delegate to git-orchestration skill
+invoke: git-orchestration.git-fetch
 
 output: "🔄 Fetching from remote..."
 ```

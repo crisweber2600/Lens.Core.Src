@@ -73,11 +73,11 @@ installed_path: '{project-root}/_bmad/lens-work/workflows/lens-sync'
 
 ## Agent Integration
 
-### Primary Agent
+### Primary Skill
 
-Compass
+@lens
 
-### Other Agents
+### Other Skills
 
 None
 

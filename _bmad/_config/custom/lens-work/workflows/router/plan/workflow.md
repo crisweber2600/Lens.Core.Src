@@ -1,7 +1,7 @@
 ---
 name: devproposal
 description: Implementation proposal (Epics/Stories/Readiness)
-agent: compass
+agent: "@lens"
 trigger: /devproposal command
 aliases: [/plan]
 category: router
@@ -53,7 +53,7 @@ imports: lifecycle.yaml
 # NOTE: devproposal is the FIRST phase in medium audience — requires small→medium promotion
 
 # Verify working directory is clean
-invoke: casey.verify-clean-state
+invoke: git-orchestration.verify-clean-state
 
 # Load two-file state
 state = load("_bmad-output/lens-work/state.yaml")
@@ -81,7 +81,7 @@ if docs_path == null or docs_path == "":
   docs_path = "_bmad-output/planning-artifacts/"
   repo_docs_path = null
   warning: "⚠️ DEPRECATED: Initiative missing docs.path configuration."
-  warning: "  → Run: /compass migrate <initiative-id> to add docs.path"
+  warning: "  → Run: /lens migrate <initiative-id> to add docs.path"
   warning: "  → This fallback will be removed in a future version."
 
 output_path = docs_path
@@ -110,11 +110,11 @@ prev_audience_branch = "${initiative_root}-small"
 if initiative.audience_status exists:
   if initiative.audience_status.small_to_medium != "complete":
     # Check if audience promotion PR was merged
-    result = casey.exec("git merge-base --is-ancestor origin/${prev_audience_branch} origin/${audience_branch}")
+    result = git-orchestration.exec("git merge-base --is-ancestor origin/${prev_audience_branch} origin/${audience_branch}")
 
     if result.exit_code == 0:
       # Promotion was merged! Auto-update status
-      invoke: tracey.update-initiative
+      invoke: state-management.update-initiative
       params:
         initiative_id: ${initiative.id}
         updates:
@@ -139,7 +139,7 @@ phase_branch = "${initiative_root}-${audience}-devproposal"
 
 # Step 5: Create phase branch if it doesn't exist [REQ-9]
 if not branch_exists(phase_branch):
-  invoke: casey.start-phase
+  invoke: git-orchestration.start-phase
   params:
     phase_name: "devproposal"
     display_name: "DevProposal"
@@ -151,10 +151,10 @@ if not branch_exists(phase_branch):
     FAIL("❌ Pre-flight failed: Could not create branch ${phase_branch}")
 
 # Step 6: Checkout phase branch
-invoke: casey.checkout-branch
+invoke: git-orchestration.checkout-branch
 params:
   branch: ${phase_branch}
-invoke: casey.pull-latest
+invoke: git-orchestration.pull-latest
 
 # Step 7: Confirm to user
 output: |
@@ -175,7 +175,7 @@ techplan_branch = "${initiative_root}-small-techplan"
 small_branch = "${initiative_root}-small"
 
 # Ancestry check: techplan must be merged into small audience branch
-result = casey.exec("git merge-base --is-ancestor origin/${techplan_branch} origin/${small_branch}")
+result = git-orchestration.exec("git merge-base --is-ancestor origin/${techplan_branch} origin/${small_branch}")
 
 if result.exit_code != 0:
   error: "TechPlan phase not complete. Run /techplan first or merge pending PRs."
@@ -228,7 +228,7 @@ assert: current_branch == phase_branch
 
 ```yaml
 # Resolve constitutional governance for this context before solutioning workflows
-constitutional_context = invoke("scribe.resolve-context")
+constitutional_context = invoke("constitution.resolve-context")
 
 if constitutional_context.status == "parse_error":
   error: |
@@ -256,7 +256,7 @@ if initiative.question_mode == "batch":
 
 #### Epics — Story Breakdown Integration:
 ```yaml
-invoke: casey.start-workflow
+invoke: git-orchestration.start-workflow
 params:
   workflow_name: epics
 
@@ -268,7 +268,7 @@ params:
   output_path: "${docs_path}/"
   constitutional_context: ${constitutional_context}
 
-invoke: casey.finish-workflow
+invoke: git-orchestration.finish-workflow
 ```
 
 #### Epic Stress Gate (Required: Adversarial + Party Mode):
@@ -307,7 +307,7 @@ for epic_id in epic_ids:
 ```
 #### Stories — Story Breakdown Integration:
 ```yaml
-invoke: casey.start-workflow
+invoke: git-orchestration.start-workflow
 params:
   workflow_name: stories
 
@@ -319,12 +319,12 @@ params:
   output_path: "${docs_path}/"
   constitutional_context: ${constitutional_context}
 
-invoke: casey.finish-workflow
+invoke: git-orchestration.finish-workflow
 ```
 
 #### Readiness Checklist:
 ```yaml
-invoke: casey.start-workflow
+invoke: git-orchestration.start-workflow
 params:
   workflow_name: readiness
 
@@ -339,7 +339,7 @@ params:
   output_path: "${docs_path}/"
   constitutional_context: ${constitutional_context}
 
-invoke: casey.finish-workflow
+invoke: git-orchestration.finish-workflow
 ```
 
 ### 4. Phase Completion — Push Only
@@ -347,14 +347,14 @@ invoke: casey.finish-workflow
 ```yaml
 # REQ-7: Never auto-merge. PR created in S1.2.
 if all_workflows_complete("devproposal"):
-  invoke: casey.commit-and-push
+  invoke: git-orchestration.commit-and-push
   params:
     branch: ${phase_branch}
     message: "[${initiative.id}] DevProposal complete"
   # Phase branch remains alive — PR handles merge to audience branch
 
   # REQ-8: Create PR for phase merge
-  invoke: casey.create-pr
+  invoke: git-orchestration.create-pr
   params:
     head: ${phase_branch}
     base: ${audience_branch}
@@ -363,7 +363,7 @@ if all_workflows_complete("devproposal"):
   capture: pr_result  # { url, number } or fallback message
 
   # REQ-7/REQ-8: Phase enters pr_pending after PR creation
-  invoke: tracey.update-initiative
+  invoke: state-management.update-initiative
   params:
     initiative_id: ${initiative.id}
     updates:
@@ -374,7 +374,7 @@ if all_workflows_complete("devproposal"):
           pr_number: ${pr_result.number}
   # If manual fallback (no PAT), still set pr_pending with null PR info
   if pr_result.fallback:
-    invoke: tracey.update-initiative
+    invoke: state-management.update-initiative
     params:
       initiative_id: ${initiative.id}
       updates:
@@ -399,7 +399,7 @@ if all_workflows_complete("devproposal"):
 
 ```yaml
 # Update initiative file: _bmad-output/lens-work/initiatives/${initiative.id}.yaml
-invoke: tracey.update-initiative
+invoke: state-management.update-initiative
 params:
   initiative_id: ${initiative.id}
   updates:
@@ -412,7 +412,7 @@ params:
       small_to_medium: "complete"
 
 # Update state.yaml
-invoke: tracey.update-state
+invoke: state-management.update-state
 params:
   updates:
     current_phase: "devproposal"
@@ -423,8 +423,8 @@ params:
 ### 6. Commit State Changes
 
 ```yaml
-# Casey commits all state and artifact changes
-invoke: casey.commit-and-push
+# git-orchestration commits all state and artifact changes
+invoke: git-orchestration.commit-and-push
 params:
   paths:
     - "_bmad-output/lens-work/state.yaml"

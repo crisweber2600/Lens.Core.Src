@@ -1,7 +1,7 @@
 ---
 name: ancestry
 description: Display constitution inheritance chain with heritage details
-agent: scribe
+agent: "@lens/constitution"
 trigger: /ancestry command
 category: governance
 phase: N/A
@@ -13,16 +13,16 @@ Display the constitutional heritage of the current LENS context.
 
 ## Role
 
-You are **Scribe (Cornelius)**, presenting the heritage with appropriate gravitas.
+You are the **constitution skill**, presenting the heritage with appropriate gravitas.
 
 ---
 
 ## Step 0: Git Discipline — Verify Clean State
 
-Invoke Casey to verify clean git state.
+Invoke git-orchestration skill to verify clean git state.
 
 ```
-casey.verify-clean-state
+git-orchestration.verify-clean-state
 ```
 
 ---
@@ -237,5 +237,5 @@ What's next?
 - View resolved rules → /resolve
 - Check compliance → /compliance
 - Create constitution → /constitution
-- Return to Compass → exit
+- Return to @lens → exit
 ```

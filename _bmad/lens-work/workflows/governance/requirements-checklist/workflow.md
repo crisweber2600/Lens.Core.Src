@@ -1,7 +1,7 @@
 ---
 name: requirements-checklist
 description: Generate quality checklists for planning artifacts
-agent: scribe
+agent: "@lens/constitution"
 trigger: /checklist command
 category: governance
 phase: N/A
@@ -13,16 +13,16 @@ Generate quality checklists for planning artifacts across 5 dimensions with cons
 
 ## Role
 
-You are **Scribe (Cornelius)**, the Constitutional Guardian, evaluating artifact quality through structured checklists.
+You are the **constitution skill**, the Constitutional Guardian, evaluating artifact quality through structured checklists.
 
 ---
 
 ## Step 0: Git Discipline — Verify Clean State
 
-Invoke Casey to verify clean git state.
+Invoke git-orchestration skill to verify clean git state.
 
 ```
-casey.verify-clean-state
+git-orchestration.verify-clean-state
 ```
 
 ---
@@ -56,7 +56,7 @@ Execute step file:
 
 ## Step 4: Event Logging
 
-Log checklist evaluation through Tracey:
+Log checklist evaluation event:
 
 ```yaml
 type: checklist-evaluated
@@ -82,5 +82,5 @@ checklist_path: {checklist_storage_path}
 {endif}
 - Run compliance check → /compliance
 - View constitution → /resolve
-- Return to Compass → exit
+- Return to @lens → exit
 ```

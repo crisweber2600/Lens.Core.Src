@@ -58,7 +58,7 @@ Use `#think` before decomposing architecture into epics or estimating scope.
 **Context injection:**
 - Loads `{docs_path}/product-brief.md`, `{docs_path}/prd.md`, `{docs_path}/architecture.md`
 - Loads repo README/SETUP from `{repo_docs_path}/` if available
-- Constitutional context resolved by Scribe before artifact generation
+- Constitutional context resolved by constitution skill before artifact generation
 
 **Branch lifecycle:**
 - START: `{initiative_root}-medium-devproposal` created from `{initiative_root}-medium`, pushed immediately

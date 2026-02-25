@@ -165,7 +165,7 @@ workflow_categories:
       - switch
       - check-repos
       - migrate-state
-      - migrate-lifecycle  # NEW: v1→v2 lifecycle contract migration
+      - migrate-lifecycle  # v1→v2 lifecycle contract migration
       - recreate-branches
 
   governance:
@@ -197,7 +197,7 @@ prompts:
   files:
     # System
     - lens-work.start.prompt.md
-    - lens-work.compass.prompt.md        # TODO: rename to lens-work.lens.prompt.md (v1 carry-forward)
+    - lens-work.compass.prompt.md        # Legacy alias — routes to @lens agent
     # Phase Router (@lens)
     - lens-work.preplan.prompt.md      # v2: renamed from pre-plan
     - lens-work.spec.prompt.md

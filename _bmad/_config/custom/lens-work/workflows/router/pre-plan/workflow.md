@@ -1,7 +1,7 @@
 ---
 name: preplan
 description: Launch PrePlan phase (brainstorm/research/product brief)
-agent: compass
+agent: "@lens"
 trigger: /preplan command
 aliases: [/pre-plan]
 category: router
@@ -78,7 +78,7 @@ Full documentation: [User Interaction Keywords](../../docs/user-interaction-keyw
 # GATE: All steps must pass before proceeding to artifact work
 
 # Verify working directory is clean
-invoke: casey.verify-clean-state
+invoke: git-orchestration.verify-clean-state
 
 # Load two-file state
 state = load("_bmad-output/lens-work/state.yaml")
@@ -106,7 +106,7 @@ if docs_path == null or docs_path == "":
   docs_path = "_bmad-output/planning-artifacts/"
   repo_docs_path = null
   warning: "⚠️ DEPRECATED: Initiative missing docs.path configuration."
-  warning: "  → Run: /compass migrate <initiative-id> to add docs.path"
+  warning: "  → Run: /lens migrate <initiative-id> to add docs.path"
   warning: "  → This fallback will be removed in a future version."
 
 output_path = docs_path
@@ -124,7 +124,7 @@ else:
 
 # Step 5: Create phase branch if it doesn't exist [REQ-9]
 if not branch_exists(phase_branch):
-  invoke: casey.start-phase
+  invoke: git-orchestration.start-phase
   params:
     phase_name: "preplan"
     display_name: "PrePlan"
@@ -132,16 +132,16 @@ if not branch_exists(phase_branch):
     audience: ${audience}
     initiative_root: ${initiative_root}
     parent_branch: ${audience_branch}
-  # Casey creates: ${phase_branch} from ${audience_branch}
-  # Casey pushes: git push -u origin ${phase_branch}
+  # git-orchestration creates: ${phase_branch} from ${audience_branch}
+  # git-orchestration pushes: git push -u origin ${phase_branch}
   if start_phase.exit_code != 0:
     FAIL("❌ Pre-flight failed: Could not create branch ${phase_branch}")
 
 # Step 6: Checkout phase branch
-invoke: casey.checkout-branch
+invoke: git-orchestration.checkout-branch
 params:
   branch: ${phase_branch}
-invoke: casey.pull-latest
+invoke: git-orchestration.pull-latest
 
 # Step 7: Confirm to user
 output: |
@@ -175,7 +175,7 @@ if initiative.current_phase not in [null, "preplan"]:
 
 ```yaml
 # Resolve constitutional governance for the active initiative context
-constitutional_context = invoke("scribe.resolve-context")
+constitutional_context = invoke("constitution.resolve-context")
 
 # Parse errors are hard failures because governance cannot be evaluated
 if constitutional_context.status == "parse_error":
@@ -199,7 +199,7 @@ for repo in initiative.target_repos:
   if repo not in inventory.repos:
     warning: |
       ⚠️ Discovery not run for repo: ${repo}
-      Run @scout discover for better analysis context.
+      Run @lens discover for better analysis context.
       Proceeding without discovery data.
 ```
 
@@ -261,7 +261,7 @@ Select workflow(s) to run: [1] [2] [3] [A]ll [S]kip to Product Brief
 
 #### If Brainstorming selected:
 ```yaml
-invoke: casey.start-workflow
+invoke: git-orchestration.start-workflow
 params:
   workflow_name: brainstorm
 
@@ -270,12 +270,12 @@ params:
   context: "${initiative.name} at ${initiative.layer} layer"
   constitutional_context: ${constitutional_context}
 
-invoke: casey.finish-workflow
+invoke: git-orchestration.finish-workflow
 ```
 
 #### If Research selected:
 ```yaml
-invoke: casey.start-workflow
+invoke: git-orchestration.start-workflow
 params:
   workflow_name: research
 
@@ -283,12 +283,12 @@ invoke: cis.research  # CIS module workflow
 params:
   constitutional_context: ${constitutional_context}
 
-invoke: casey.finish-workflow
+invoke: git-orchestration.finish-workflow
 ```
 
 #### Product Brief (always):
 ```yaml
-invoke: casey.start-workflow
+invoke: git-orchestration.start-workflow
 params:
   workflow_name: product-brief
 
@@ -297,7 +297,7 @@ params:
   output_path: "_bmad-output/planning-artifacts/"
   constitutional_context: ${constitutional_context}
 
-invoke: casey.finish-workflow
+invoke: git-orchestration.finish-workflow
 ```
 
 ### 5. Phase Completion — Push Only
@@ -306,14 +306,14 @@ invoke: casey.finish-workflow
 # REQ-7: Never auto-merge. PR created in S1.2.
 if all_workflows_complete("preplan"):
   # Push final state to phase branch
-  invoke: casey.commit-and-push
+  invoke: git-orchestration.commit-and-push
   params:
     branch: ${phase_branch}
     message: "[${initiative.id}] PrePlan complete"
   # Phase branch remains alive — PR handles merge to audience branch
 
   # REQ-8: Create PR for phase merge
-  invoke: casey.create-pr
+  invoke: git-orchestration.create-pr
   params:
     head: ${phase_branch}
     base: ${audience_branch}
@@ -322,7 +322,7 @@ if all_workflows_complete("preplan"):
   capture: pr_result  # { url, number } or fallback message
 
   # REQ-7/REQ-8: Phase enters pr_pending after PR creation
-  invoke: tracey.update-initiative
+  invoke: state-management.update-initiative
   params:
     initiative_id: ${initiative.id}
     updates:
@@ -333,7 +333,7 @@ if all_workflows_complete("preplan"):
           pr_number: ${pr_result.number}
   # If manual fallback (no PAT), still set pr_pending with null PR info
   if pr_result.fallback:
-    invoke: tracey.update-initiative
+    invoke: state-management.update-initiative
     params:
       initiative_id: ${initiative.id}
       updates:
@@ -359,7 +359,7 @@ if all_workflows_complete("preplan"):
 
 ```yaml
 # Update initiative file: _bmad-output/lens-work/initiatives/${initiative.id}.yaml
-invoke: tracey.update-initiative
+invoke: state-management.update-initiative
 params:
   initiative_id: ${initiative.id}
   updates:
@@ -370,7 +370,7 @@ params:
         started_at: "${ISO_TIMESTAMP}"
 
 # Update state.yaml
-invoke: tracey.update-state
+invoke: state-management.update-state
 params:
   updates:
     current_phase: "preplan"
@@ -381,8 +381,8 @@ params:
 ### 7. Commit State Changes
 
 ```yaml
-# Casey commits all state and artifact changes
-invoke: casey.commit-and-push
+# git-orchestration commits all state and artifact changes
+invoke: git-orchestration.commit-and-push
 params:
   paths:
     - "_bmad-output/lens-work/state.yaml"
@@ -405,8 +405,8 @@ params:
 Ready to continue?
 
 **[C]** Continue to /businessplan (BusinessPlan phase)
-**[P]** Pause here (resume later with @compass /businessplan)
-**[S]** Show status (@tracey ST)
+**[P]** Pause here (resume later with @lens /businessplan)
+**[S]** Show status (@lens ST)
 ```
 
 ---

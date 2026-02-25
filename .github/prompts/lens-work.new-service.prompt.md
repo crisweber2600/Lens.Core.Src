@@ -26,7 +26,7 @@ Activate @lens agent and execute /new-service:
 - That's it — everything else is derived
 
 **Process mirrors /new-domain:**
-1. Casey creates service branch ONLY (no audience/phase branches) and pushes immediately
+1. Git-orchestration creates service branch ONLY (no audience/phase branches) and pushes immediately
 2. Scaffold service folders under domain: `{domain}/{service}`
 3. Create Service.yaml (service descriptor + initiative config)
 4. Route to `/new-feature` within this service

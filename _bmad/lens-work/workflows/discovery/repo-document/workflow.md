@@ -1,8 +1,8 @@
 ---
 name: repo-document
 description: Run document-project + quick-spec per in-scope repo
-agent: scout
-trigger: "@scout document"
+agent: "@lens/discovery"
+trigger: "@lens document"
 category: discovery
 mutates: true
 ---
@@ -21,7 +21,7 @@ mutates: true
 inventory = load("_bmad-output/lens-work/repo-inventory.yaml")
 
 if inventory == null:
-  output: "No inventory found. Run '@scout discover' first."
+  output: "No inventory found. Run '@lens discover' first."
   exit: 1
 ```
 

@@ -199,7 +199,7 @@ Options:
 [5] Export full report to file
 [6] Show coverage metrics only
 [7] Re-run analysis (if changes made)
-[8] Return to Scribe main menu
+[8] Return to constitution skill main menu
 
 Select option:
 ```
@@ -311,7 +311,7 @@ if auto_export:
 
 ---
 
-## Tracey Event
+## State-Management Event
 
 **Event:** `cross-artifact-analyzed`
 
@@ -345,8 +345,8 @@ report_exported: ${report_path || null}
 - ✅ Findings categorized by severity with line numbers and remediation
 - ✅ Interactive menu for finding exploration
 - ✅ Report exported (if auto-export enabled or user-requested)
-- ✅ Tracey event logged for audit trail
-- ✅ User directed to next action (fix issues or return to Scribe menu)
+- ✅ state-management event logged for audit trail
+- ✅ User directed to next action (fix issues or return to constitution skill menu)
 
 ---
 
@@ -367,5 +367,5 @@ report_exported: ${report_path || null}
 
 [1] Review all findings
 [2] Export report for team review
-[3] Return to Scribe menu
+[3] Return to constitution skill menu
 ```

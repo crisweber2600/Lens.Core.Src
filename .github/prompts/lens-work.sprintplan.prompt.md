@@ -37,12 +37,12 @@ Use `#think` before prioritizing stories or allocating sprint capacity.
 
 **Workflow sequence:**
 - **[1] Re-run Readiness Checklist** (required) — validate all artifacts in validate mode; BLOCK on readiness blockers
-- **[2] Constitutional Compliance Check** (required) — scribe validates all artifacts against resolved constitutional rules; BLOCK on compliance failures
+- **[2] Constitutional Compliance Check** (required) — constitution skill validates all artifacts against resolved constitutional rules; BLOCK on compliance failures
 - **[3] Sprint Planning** (required) — Bob prioritizes stories, allocates capacity, creates sprint backlog
 - **[4] Dev Story Creation** (required) — Bob creates dev-ready story file(s) for immediate developer handoff
 
 **Constitutional compliance gate:**
-- Scribe evaluates: `product-brief.md`, `prd.md`, `architecture.md`, `epics.md`, `stories.md`, `readiness-checklist.md`
+- Constitution skill evaluates: `product-brief.md`, `prd.md`, `architecture.md`, `epics.md`, `stories.md`, `readiness-checklist.md`
 - FAIL (block) on any compliance failures; WARN on warnings (passed_with_warnings)
 - Gate status stored in `initiative_config.phase_status.sprintplan`
 
@@ -63,7 +63,7 @@ Use `#think` before prioritizing stories or allocating sprint capacity.
 - `{initiative.docs.bmad_docs}/sprint-backlog.md` (required)
 - `{initiative.docs.bmad_docs}/dev-story-{id}.md` (required, one per selected story)
 
-**After SprintPlan:** Run large → base audience promotion (constitution gate via Scribe) before `/dev`
+**After SprintPlan:** Run large → base audience promotion (constitution gate via constitution skill) before `/dev`
 
 **Next steps:**
 1. Merge sprintplan PR into `{initiative_root}-large`

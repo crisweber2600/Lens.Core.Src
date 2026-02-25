@@ -2,7 +2,7 @@
 
 **Module:** lens-work
 **Category:** router (user-facing)
-**Agent:** Compass
+**Agent:** @lens
 **Status:** Specification
 **Lifecycle Version:** 2 (named phases, audience-as-promotion-backbone)
 
@@ -13,9 +13,9 @@
 Router workflows are the user-facing phase commands that map to BMAD lifecycle phases. Each command:
 
 1. Validates prerequisites (layer detected, gates passed, audience promotion complete)
-2. Invokes Casey to manage git branches (named phase branches)
+2. Invokes git-orchestration skill to manage git branches (named phase branches)
 3. Routes to appropriate BMM/CIS/TEA workflows
-4. Tracks progress via Tracey (dual-write: state.yaml + initiative config)
+4. Tracks progress via state-management skill (dual-write: state.yaml + initiative config)
 
 ### Lifecycle Flow
 
@@ -55,10 +55,10 @@ PO, Architect, Tech Lead
 ### Sequence
 
 1. Validate layer detected
-2. Casey: start-phase (if needed), start-workflow
+2. git-orchestration: start-phase (if needed), start-workflow
 3. Route to brainstorming/research (if requested)
 4. Route to product-brief workflow
-5. Casey: finish-workflow
+5. git-orchestration: finish-workflow
 6. Offer: continue to /businessplan or pause
 
 ---
@@ -83,10 +83,10 @@ PO, Architect, Tech Lead
 ### Sequence
 
 1. Validate /preplan complete (preplan merged into small audience branch)
-2. Casey: start-phase, start-workflow
+2. git-orchestration: start-phase, start-workflow
 3. Route to PRD workflow
 4. Route to UX workflow (if UI involved)
-5. Casey: finish-workflow
+5. git-orchestration: finish-workflow
 6. Offer: continue to /techplan or pause
 
 ---
@@ -112,11 +112,11 @@ Architect, Tech Lead
 ### Sequence
 
 1. Validate /businessplan complete (businessplan merged into small audience branch)
-2. Casey: start-phase, start-workflow
+2. git-orchestration: start-phase, start-workflow
 3. Route to architecture design workflow
 4. Route to technology decisions workflow
 5. Optional: Route to API contracts workflow
-6. Casey: finish-workflow
+6. git-orchestration: finish-workflow
 7. Offer: run audience promotion (small → medium) or pause
 
 ---
@@ -147,11 +147,11 @@ PO, Architect, Tech Lead
 ### Sequence
 
 1. Validate audience promotion (small → medium) complete
-2. Casey: start-phase, start-workflow
+2. git-orchestration: start-phase, start-workflow
 3. Route to Epics workflow (with adversarial + party mode stress gate)
 4. Route to Stories workflow
 5. Route to Readiness workflow
-6. Casey: finish-workflow
+6. git-orchestration: finish-workflow
 7. Offer: run audience promotion (medium → large) or pause
 
 ---
@@ -209,7 +209,7 @@ Developer (post-sprintplan only)
 ### Sequence
 
 1. Validate audience promotion (large → base) complete — constitution gate passed
-2. Casey: checkout TargetProjects repo (not BMAD branches)
+2. git-orchestration: checkout TargetProjects repo (not BMAD branches)
 3. Developer implements in actual repo (GitFlow: feature/{jira-storyid})
 4. Return to BMAD directory for code review
 5. Route to code-review workflow
@@ -226,7 +226,7 @@ Developer (post-sprintplan only)
 |-----------|------|------|
 | small → medium | adversarial-review | party mode |
 | medium → large | stakeholder-approval | manual |
-| large → base | constitution-gate | Scribe enforcement |
+| large → base | constitution-gate | constitution skill enforcement |
 
 ### Sequence
 

@@ -1,8 +1,8 @@
 ---
 name: batch-process
 description: Process batch question files and run party-mode review
-agent: compass
-trigger: "@compass batch-process"
+agent: "@lens"
+trigger: "@lens batch-process"
 category: utility
 ---
 
@@ -44,7 +44,7 @@ if docs_path == null or docs_path == "":
   docs_path = "_bmad-output/planning-artifacts/"
   repo_docs_path = null
   warning: "⚠️ DEPRECATED: Initiative missing docs.path configuration."
-  warning: "  → Run: /compass migrate <initiative-id> to add docs.path"
+  warning: "  → Run: /lens migrate <initiative-id> to add docs.path"
   warning: "  → This fallback will be removed in a future version."
 
 ensure_directory(docs_path)
@@ -196,7 +196,7 @@ if party_mode.status != "pass":
 ### 6. Update State
 
 ```yaml
-invoke: tracey.update-initiative
+invoke: state-management.update-initiative
 params:
   initiative_id: ${initiative.id}
   updates:
@@ -225,31 +225,31 @@ if phase_number == "3":
   }
 
 if gate_updates not empty:
-  invoke: tracey.update-initiative
+  invoke: state-management.update-initiative
   params:
     initiative_id: ${initiative.id}
     updates:
       gates: ${gate_updates}
 
-invoke: tracey.update-state
+invoke: state-management.update-state
 params:
   updates:
     current_phase: "p${phase_number}"
     current_phase_name: ${phase_name}
 
-invoke: casey.finish-phase
+invoke: git-orchestration.finish-phase
 
 if phase_number == "2":
-  invoke: casey.open-large-review
+  invoke: git-orchestration.open-large-review
 
 if phase_number == "3":
-  invoke: casey.open-final-pbr
+  invoke: git-orchestration.open-final-pbr
 ```
 
 ### 7. Commit Results
 
 ```yaml
-invoke: casey.commit-and-push
+invoke: git-orchestration.commit-and-push
 params:
   paths:
     - "_bmad-output/lens-work/state.yaml"
@@ -266,7 +266,7 @@ params:
 ```yaml
 event = {"ts":"${ISO_TIMESTAMP}","event":"batch-process","id":"${initiative.id}","phase":"p${phase_number}","status":"complete","docs":"${output_file}"}
 
-invoke: tracey.append-events
+invoke: state-management.append-events
 params:
   events:
     - ${event}

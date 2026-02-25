@@ -1,7 +1,7 @@
 ---
 name: fix-story
 description: Quick correction loop (Quick-Spec → Adversarial Review → Quick-Dev)
-agent: compass
+agent: "@lens"
 trigger: "#fix-story <initiative_id>"
 category: utility
 ---

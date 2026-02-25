@@ -1,6 +1,6 @@
 ```prompt
 ---
-description: Create user profile, set up GitHub PAT, and bootstrap TargetProjects for new team members (Scout)
+description: 'Create user profile, set up GitHub PAT, and bootstrap TargetProjects for new team members (@lens/discovery)'
 ---
 
 Activate @lens agent and execute /onboard (discovery skill):
@@ -15,7 +15,7 @@ This is the **first-run workflow** for new team members. It sets up profile, cre
 **Execution sequence:**
 
 **[1] Welcome**
-- Scout greets the user and explains the 3-step process: profile → credentials → repos
+- @lens/discovery greets the user and explains the 3-step process: profile → credentials → repos
 
 **[2] Create Profile**
 - Read `git config user.name` and `git config user.email`
@@ -52,7 +52,7 @@ cd "{PROJECT_ROOT}"; .\_bmad\lens-work\scripts\store-github-pat.ps1
 - Clone missing repos into `TargetProjects/` using configured remote URLs
 
 **[5] Documentation Generation**
-- Run `scout.repo-document` in full mode on all repos
+- Run `@lens/discovery repo-document` in full mode on all repos
 - Write canonical docs to `Docs/{domain}/{service}/{repo}/`
 - Update `_bmad-output/lens-work/repo-inventory.yaml`
 

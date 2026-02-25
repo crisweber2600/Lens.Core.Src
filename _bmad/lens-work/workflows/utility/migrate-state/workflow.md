@@ -1,8 +1,8 @@
 ---
 name: migrate-state
 description: Migrate from single-file state to two-file state architecture (v2 lifecycle-aware)
-agent: tracey
-trigger: "@tracey migrate"
+agent: "@lens/state-management"
+trigger: "@lens migrate"
 category: utility
 imports: lifecycle.yaml
 ---
@@ -138,7 +138,7 @@ Write to `_bmad-output/lens-work/initiatives/${migration_data.id}.yaml`:
 
 ```yaml
 # Written by migrate-state — lifecycle_version: 1 (legacy)
-# Run @tracey migrate-lifecycle to upgrade to v2 named phases
+# Run @lens migrate-lifecycle to upgrade to v2 named phases
 lifecycle_version: 1
 
 id: ${migration_data.id}
@@ -171,7 +171,7 @@ branches:
   active: "${migration_data.branches.active}"
 
 # Legacy fields preserved for backward compat
-# Run @tracey migrate-lifecycle to convert to:
+# Run @lens migrate-lifecycle to convert to:
 #   lifecycle_version: 2, track, active_phases, phase_status, initiative_root
 featureBranchRoot: "${migration_data.branches.base}"
 review_audience_map:
@@ -194,7 +194,7 @@ Overwrite `_bmad-output/lens-work/state.yaml`:
 
 ```yaml
 # Written by migrate-state — preserves legacy phase naming
-# Run @tracey migrate-lifecycle to upgrade to v2 named phases
+# Run @lens migrate-lifecycle to upgrade to v2 named phases
 lifecycle_version: 1
 
 active_initiative: ${migration_data.id}
@@ -256,11 +256,11 @@ Append to `_bmad-output/lens-work/event-log.jsonl`:
    git push
    ```
 
-3. Verify with: @tracey ST
+3. Verify with: @lens ST
 
 4. (Optional) Upgrade to v2 lifecycle contract:
    ```bash
-   @tracey migrate-lifecycle
+   @lens migrate-lifecycle
    ```
    This converts p1-p4 phases to named phases (preplan, businessplan, etc.),
    adds track selection, and renames branches if desired.

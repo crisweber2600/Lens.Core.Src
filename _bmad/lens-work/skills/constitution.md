@@ -1,14 +1,14 @@
 # Skill: constitution
 
 **Module:** lens-work
-**Owner:** Scribe/Cornelius agent (delegated via Compass)
+**Skill of:** `@lens` agent
 **Type:** Internal delegation skill
 
 ---
 
 ## Purpose
 
-Runs inline governance checks at every workflow step. Constitution checks are skills, not separate workflows — they execute as part of every workflow step automatically. Formalizes the Scribe agent's governance API contract.
+Runs inline governance checks at every workflow step. Constitution checks are skills, not separate workflows — they execute as part of every workflow step automatically. Formalizes the constitution skill's governance API contract.
 
 ## Responsibilities
 

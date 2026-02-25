@@ -1,7 +1,7 @@
 ---
 name: businessplan
 description: Launch BusinessPlan phase (PRD/UX Design)
-agent: compass
+agent: "@lens"
 trigger: /businessplan command
 aliases: [/spec]
 category: router
@@ -52,7 +52,7 @@ imports: lifecycle.yaml
 # GATE: All steps must pass before proceeding to artifact work
 
 # Verify working directory is clean
-invoke: casey.verify-clean-state
+invoke: git-orchestration.verify-clean-state
 
 # Load two-file state
 state = load("_bmad-output/lens-work/state.yaml")
@@ -80,7 +80,7 @@ if docs_path == null or docs_path == "":
   docs_path = "_bmad-output/planning-artifacts/"
   repo_docs_path = null
   warning: "⚠️ DEPRECATED: Initiative missing docs.path configuration."
-  warning: "  → Run: /compass migrate <initiative-id> to add docs.path"
+  warning: "  → Run: /lens migrate <initiative-id> to add docs.path"
   warning: "  → This fallback will be removed in a future version."
 
 output_path = docs_path
@@ -106,11 +106,11 @@ prev_phase_branch = "${initiative_root}-${audience}-preplan"
 if initiative.phase_status[prev_phase] exists:
   if initiative.phase_status[prev_phase].status == "pr_pending":
     # Check if the audience branch contains the phase commits (merged via PR)
-    result = casey.exec("git merge-base --is-ancestor origin/${prev_phase_branch} origin/${audience_branch}")
+    result = git-orchestration.exec("git merge-base --is-ancestor origin/${prev_phase_branch} origin/${audience_branch}")
 
     if result.exit_code == 0:
       # PR was merged! Auto-update status
-      invoke: tracey.update-initiative
+      invoke: state-management.update-initiative
       params:
         initiative_id: ${initiative.id}
         updates:
@@ -137,7 +137,7 @@ phase_branch = "${initiative_root}-${audience}-businessplan"
 
 # Step 5: Create phase branch if it doesn't exist [REQ-9]
 if not branch_exists(phase_branch):
-  invoke: casey.start-phase
+  invoke: git-orchestration.start-phase
   params:
     phase_name: "businessplan"
     display_name: "BusinessPlan"
@@ -149,10 +149,10 @@ if not branch_exists(phase_branch):
     FAIL("❌ Pre-flight failed: Could not create branch ${phase_branch}")
 
 # Step 6: Checkout phase branch
-invoke: casey.checkout-branch
+invoke: git-orchestration.checkout-branch
 params:
   branch: ${phase_branch}
-invoke: casey.pull-latest
+invoke: git-orchestration.pull-latest
 
 # Step 7: Confirm to user
 output: |
@@ -173,7 +173,7 @@ preplan_branch = "${initiative_root}-${audience}-preplan"
 
 if not phase_complete("preplan"):
   # Ancestry check: preplan must be merged into audience branch
-  result = casey.exec("git merge-base --is-ancestor origin/${preplan_branch} origin/${audience_branch}")
+  result = git-orchestration.exec("git merge-base --is-ancestor origin/${preplan_branch} origin/${audience_branch}")
 
   if result.exit_code != 0:
     error: "PrePlan phase not complete. Run /preplan first or merge pending PRs."
@@ -221,7 +221,7 @@ assert: current_branch == phase_branch
 
 ```yaml
 # Resolve constitutional governance for this context before planning workflows
-constitutional_context = invoke("scribe.resolve-context")
+constitutional_context = invoke("constitution.resolve-context")
 
 if constitutional_context.status == "parse_error":
   error: |
@@ -263,7 +263,7 @@ Select workflow(s): [1] [2] [3] [A]ll
 
 #### PRD:
 ```yaml
-invoke: casey.start-workflow
+invoke: git-orchestration.start-workflow
 params:
   workflow_name: prd
 
@@ -273,12 +273,12 @@ params:
   output_path: "${docs_path}/"
   constitutional_context: ${constitutional_context}
 
-invoke: casey.finish-workflow
+invoke: git-orchestration.finish-workflow
 ```
 
 #### UX (if selected):
 ```yaml
-invoke: casey.start-workflow
+invoke: git-orchestration.start-workflow
 params:
   workflow_name: ux-design
 
@@ -286,12 +286,12 @@ invoke: bmm.create-ux-design
 params:
   constitutional_context: ${constitutional_context}
 
-invoke: casey.finish-workflow
+invoke: git-orchestration.finish-workflow
 ```
 
 #### Architecture — Technical Spec Generation:
 ```yaml
-invoke: casey.start-workflow
+invoke: git-orchestration.start-workflow
 params:
   workflow_name: architecture
 
@@ -303,7 +303,7 @@ params:
   output_path: "${docs_path}/"
   constitutional_context: ${constitutional_context}
 
-invoke: casey.finish-workflow
+invoke: git-orchestration.finish-workflow
 ```
 
 ### 5. Phase Completion — Push Only
@@ -311,14 +311,14 @@ invoke: casey.finish-workflow
 ```yaml
 # REQ-7: Never auto-merge. PR created in S1.2.
 if all_workflows_complete("businessplan"):
-  invoke: casey.commit-and-push
+  invoke: git-orchestration.commit-and-push
   params:
     branch: ${phase_branch}
     message: "[${initiative.id}] BusinessPlan complete"
   # Phase branch remains alive — PR handles merge to audience branch
 
   # REQ-8: Create PR for phase merge
-  invoke: casey.create-pr
+  invoke: git-orchestration.create-pr
   params:
     head: ${phase_branch}
     base: ${audience_branch}
@@ -327,7 +327,7 @@ if all_workflows_complete("businessplan"):
   capture: pr_result  # { url, number } or fallback message
 
   # REQ-7/REQ-8: Phase enters pr_pending after PR creation
-  invoke: tracey.update-initiative
+  invoke: state-management.update-initiative
   params:
     initiative_id: ${initiative.id}
     updates:
@@ -338,7 +338,7 @@ if all_workflows_complete("businessplan"):
           pr_number: ${pr_result.number}
   # If manual fallback (no PAT), still set pr_pending with null PR info
   if pr_result.fallback:
-    invoke: tracey.update-initiative
+    invoke: state-management.update-initiative
     params:
       initiative_id: ${initiative.id}
       updates:
@@ -363,7 +363,7 @@ if all_workflows_complete("businessplan"):
 
 ```yaml
 # Update initiative file: _bmad-output/lens-work/initiatives/${initiative.id}.yaml
-invoke: tracey.update-initiative
+invoke: state-management.update-initiative
 params:
   initiative_id: ${initiative.id}
   updates:
@@ -376,7 +376,7 @@ params:
         status: "complete"
 
 # Update state.yaml
-invoke: tracey.update-state
+invoke: state-management.update-state
 params:
   updates:
     current_phase: "businessplan"
@@ -387,8 +387,8 @@ params:
 ### 7. Commit State Changes
 
 ```yaml
-# Casey commits all state and artifact changes
-invoke: casey.commit-and-push
+# git-orchestration commits all state and artifact changes
+invoke: git-orchestration.commit-and-push
 params:
   paths:
     - "_bmad-output/lens-work/state.yaml"

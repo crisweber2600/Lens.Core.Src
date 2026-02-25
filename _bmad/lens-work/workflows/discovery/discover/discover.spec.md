@@ -81,9 +81,9 @@ installed_path: '{project-root}/_bmad/lens-work/workflows/discover'
 
 ## Agent Integration
 
-### Primary Agent
+### Primary Skill
 
-Scout
+@lens/discovery
 
 ### Other Agents
 

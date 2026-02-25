@@ -1,8 +1,8 @@
 ---
 name: impact-analysis
 description: Analyze cross-boundary impacts of proposed changes
-agent: scout
-trigger: "@scout impact-analysis"
+agent: "@lens/discovery"
+trigger: "@lens impact-analysis"
 category: discovery
 mutates: false
 ---
@@ -11,7 +11,7 @@ mutates: false
 
 **Purpose:** Analyze cross-boundary impacts of proposed changes across domains, services, and repositories.
 
-**Agent:** Scout (discovery), with Compass for routing context.
+**Skill:** @lens/discovery, with @lens for routing context.
 
 ---
 
@@ -39,10 +39,10 @@ target_projects_root: "TargetProjects/"
 
 ## Execution Sequence
 
-### Step 0: Verify Clean Git State (Casey)
+### Step 0: Verify Clean Git State
 
 ```bash
-# Casey verifies clean working tree in BMAD control repo
+# Verify clean working tree in BMAD control repo
 if ! git diff-index --quiet HEAD --; then
   error "Uncommitted changes detected. Commit or stash before impact-analysis."
   exit 1
@@ -90,7 +90,7 @@ if sources_loaded.length == 0:
     - _bmad-output/lens-work/service-map.yaml
     - _bmad-output/lens-work/repo-inventory.yaml
 
-    Run '@scout discover' or '@scout bootstrap' first.
+    Run '@lens discover' or '@lens bootstrap' first.
   exit: 1
 ```
 
@@ -262,12 +262,12 @@ if overall_risk == "high":
   next_actions.append("Consider splitting into domain-scoped initiatives")
 
 if not domain_map:
-  next_actions.append("Run '@scout domain-map' to enrich future analyses")
+  next_actions.append("Run '@lens domain-map' to enrich future analyses")
 
 if affected_repos.length > 1:
   next_actions.append("Verify repo-level branch alignment for multi-repo changes")
 
-next_actions.append("Run '@compass /plan' to begin planning with impact context")
+next_actions.append("Run '@lens /plan' to begin planning with impact context")
 
 output: |
   Next Actions:

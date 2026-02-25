@@ -1,8 +1,8 @@
 ---
 name: phase-lifecycle
 description: Start and finish phase operations (v2 — named phases)
-agent: casey
-trigger: Phase transitions via Compass
+agent: "@lens/git-orchestration"
+trigger: Phase transitions via @lens
 category: core
 auto_triggered: true
 imports: lifecycle.yaml
@@ -168,7 +168,7 @@ initiative_id: string
    if pat == null:
      error: |
        ⚠️ HARD GATE: No PAT found for host '${remote_host}'
-       ├── Run @scout onboard to configure git credentials
+       ├── Run @lens onboard to configure git credentials
        └── Then re-run finish-phase
      exit: 1
    ```
@@ -302,7 +302,7 @@ When all phases within an audience are complete, content flows up through the pr
 ```
 small (preplan + businessplan + techplan complete) → medium via adversarial review (party mode)
 medium (devproposal complete) → large via stakeholder approval
-large (sprintplan complete) → base (initiative root) via constitution gate (Scribe)
+large (sprintplan complete) → base (initiative root) via constitution gate (constitution skill)
 ```
 
 ### Promotion Trigger Check
@@ -342,7 +342,7 @@ if all_audience_phases_complete "large"; then
   echo "📋 Final Review Ready (Constitution Gate)"
   echo "├── PR: ${pr_link}"
   echo "├── All phases complete across all audiences"
-  echo "├── Gate: Scribe constitution validation required"
+  echo "├── Gate: Constitution skill validation required"
   echo "└── Ready for final promotion to base"
 fi
 ```

@@ -1,8 +1,8 @@
 ---
 name: resume
 description: Rehydrate from state.yaml, explain context
-agent: tracey
-trigger: "@tracey RS"
+agent: "@lens/state-management"
+trigger: "@lens RS"
 category: utility
 ---
 
@@ -30,7 +30,7 @@ if state.active_initiative != null:
   initiative = load("_bmad-output/lens-work/initiatives/${state.active_initiative}.yaml")
   if initiative == null:
     error: "Initiative config not found: initiatives/${state.active_initiative}.yaml"
-    hint: "Run @tracey migrate to convert legacy state, or check initiatives/ directory."
+    hint: "Run @lens migrate to convert legacy state, or check initiatives/ directory."
     exit: 1
 else if state.initiative != null:
   # LEGACY single-file format — use inline initiative data
@@ -70,7 +70,7 @@ context:
 ```
 🔄 Resuming lens-work Session
 ${if legacy_warning}
-⚠️  Legacy state format detected. Run @tracey migrate to upgrade to two-file architecture.
+⚠️  Legacy state format detected. Run @lens migrate to upgrade to two-file architecture.
 ${endif}
 
 **Initiative:** ${context.initiative} (${context.initiative_id})
@@ -99,12 +99,12 @@ ${describe_last_action(last_event)}
 **What you can do now:**
 ${if state.current.workflow_status == "in_progress"}
 ├── Continue working on ${state.current.workflow}
-├── Or finish with: @compass done
+├── Or finish with: @lens done
 ${else}
-├── Continue to next phase with: @compass /${next_phase_command}
-├── Check full status with: @tracey ST
+├── Continue to next phase with: @lens /${next_phase_command}
+├── Check full status with: @lens ST
 ${endif}
-└── Get help with: @compass H
+└── Get help with: @lens H
 
 State files:
 ├── Personal: _bmad-output/lens-work/state.yaml

@@ -26,11 +26,11 @@ LENS Workbench transforms BMAD from a "large framework you must learn" into a **
 LENS Workbench is designed for **GitHub Copilot Chat integration** in BMAD control repos. When installed, the module includes comprehensive Copilot guidance:
 
 - **Documentation:** [Copilot Instructions](docs/copilot-instructions.md) — How to work effectively with Copilot in BMAD repos
-- **Agent Loading:** Copilot loads LENS agents (Compass, Casey, Tracey, Scout, Scribe) from `.github/agents/` stubs
+- **Agent Loading:** Copilot loads the unified `@lens` agent, which delegates to internal skills (git-orchestration, state-management, discovery, constitution, checklist)
 - **Workflow Guidance:** Copilot provides context for phase routing, git operations, and state management
-- **Command Reference:** See `.github/prompts/` for prompt files used by Compass routing commands
+- **Command Reference:** See `.github/prompts/` for prompt files used by phase routing commands
 
-**Start here:** Load Compass in Copilot Chat (`@compass`) and run `/preplan` to bootstrap your repository.
+**Start here:** Load LENS in Copilot Chat (`@lens`) and run `/preplan` to bootstrap your repository.
 
 ---
 
@@ -92,15 +92,17 @@ All branches use flat hyphen-separated names (no `/` separators). All branches p
 
 **Key design principle:** You can reconstruct the entire project lifecycle from the git log alone.
 
-### Agent Responsibility Matrix
+### Skill Responsibility Matrix
 
-| Agent | Role | Trigger | Responsibility |
+The unified `@lens` agent delegates to internal skills:
+
+| Skill | Role | Trigger | Responsibility |
 |-------|------|---------|----------------|
-| **Compass** | Phase Router | User commands | Routes `/preplan` through `/dev`, manages tracks, context switches, audience promotions |
-| **Casey** | Git Conductor | Auto-triggered | Creates/validates branches, commits state, pushes to remote — never invoked directly by users |
-| **Tracey** | State Manager | User shortcodes | Reads/writes `state.yaml`, manages recovery, provides status, handles overrides and archival |
-| **Scout** | Discovery Lead | User commands | Bootstraps repos, runs discovery scans, generates canonical docs, reconciles repo inventory |
-| **Scribe** | Constitutional Guardian | Auto-triggered | 4-level governance (org/domain/service/repo), track enforcement, compliance checks |
+| **@lens** (router) | Phase Router | User commands | Routes `/preplan` through `/dev`, manages tracks, context switches, audience promotions |
+| **git-orchestration** | Git Conductor | Auto-triggered | Creates/validates branches, commits state, pushes to remote — never invoked directly by users |
+| **state-management** | State Manager | User shortcodes | Reads/writes `state.yaml`, manages recovery, provides status, handles overrides and archival |
+| **discovery** | Discovery Lead | User commands | Bootstraps repos, runs discovery scans, generates canonical docs, reconciles repo inventory |
+| **constitution** | Constitutional Guardian | Auto-triggered | 4-level governance (org/domain/service/repo), track enforcement, compliance checks |
 
 ---
 
@@ -119,7 +121,7 @@ Medium Audience (lead review):
          ↓ [stakeholder approval gate]
 Large Audience (stakeholder):
   SprintPlan (Bob)
-         ↓ [constitution gate — Scribe]
+         ↓ [constitution gate — @lens]
 Base (execution):
   Dev → Code Review → Retro
 ```
@@ -151,7 +153,7 @@ Tracks control which phases are required (defined in `lifecycle.yaml`):
 |-----------|-----------|-----------|
 | small → medium | Adversarial Review | Party-mode cross-agent review |
 | medium → large | Stakeholder Approval | PR approval from stakeholders |
-| large → base | Constitution Gate | Scribe compliance check (4-level) |
+| large → base | Constitution Gate | Constitution skill compliance check (4-level) |
 
 Audience branches are created at `init-initiative`. Phase branches (e.g., `-small-preplan`) are created by phase routers.
 
@@ -163,60 +165,60 @@ Audience branches are created at `init-initiative`. Phase branches (e.g., `-smal
 
 ### Complete Command Reference
 
-#### Phase Router Commands (Compass)
+#### Phase Router Commands (@lens)
 
 | Command | Phase | Audience | Agent | Description |
 |---------|-------|----------|-------|-------------|
 | `/preplan` | PrePlan | small | Mary/Analyst | Brainstorm, research, product brief |
 | `/businessplan` | BusinessPlan | small | John/PM + Sally/UX | PRD, UX design |
 | `/techplan` | TechPlan | small | Winston/Architect | Architecture, tech decisions, API contracts |
-| `/promote` | — | — | Compass | Audience promotion gate |
+| `/promote` | — | — | @lens | Audience promotion gate |
 | `/devproposal` | DevProposal | medium | John/PM | Epics, stories, readiness checklist |
 | `/sprintplan` | SprintPlan | large | Bob/SM | Sprint planning, story selection |
 | `/dev` | Dev | base | Dev Team | Sprint execution, code review, retro |
 
 **Aliases:** `/pre-plan`→`/preplan`, `/spec`→`/businessplan`, `/tech-plan`→`/techplan`, `/plan`→`/devproposal`, `/review`→`/sprintplan`
 
-#### Context Commands (Compass)
+#### Context Commands (@lens)
 
 | Command | Agent | Description |
 |---------|-------|-------------|
-| `/switch` | Compass | Switch context — initiative, lens, phase, or size |
-| `/context` | Compass | Display current context (active initiative, phase, size, workflow) |
-| `/constitution` | Compass | Display operating rules and compliance constraints |
-| `/lens` | Compass | Show or change the current lens focus |
+| `/switch` | @lens | Switch context — initiative, lens, phase, or size |
+| `/context` | @lens | Display current context (active initiative, phase, size, workflow) |
+| `/constitution` | @lens | Display operating rules and compliance constraints |
+| `/lens` | @lens | Show or change the current lens focus |
 
-#### Initiative Commands (Compass)
-
-| Command | Agent | Description |
-|---------|-------|-------------|
-| `/new-domain` | Compass | Create domain-level initiative (multi-service, org-wide) |
-| `/new-service` | Compass | Create service-level initiative (single service/API) |
-| `/new-feature` | Compass | Create feature-level initiative (single feature within a service) |
-| `#fix-story` | Compass | Correction loop — fix a story that failed review or has defects |
-
-#### State & Recovery Commands (Tracey)
+#### Initiative Commands (@lens)
 
 | Command | Agent | Description |
 |---------|-------|-------------|
-| `?` | Tracey | Quick status — one-line summary of current state |
-| `ST` | Tracey | Full status — detailed initiative, phase, gate, and branch info |
-| `RS` | Tracey | Resume — pick up where you left off after interruption |
-| `SY` | Tracey | Sync — reconcile state.yaml with actual git branch state |
-| `FX` | Tracey | Fix state — repair corrupted or inconsistent state |
-| `OR` | Tracey | Override — manually set state values (advanced, use with caution) |
-| `AR` | Tracey | Archive — archive completed or abandoned initiatives |
+| `/new-domain` | @lens | Create domain-level initiative (multi-service, org-wide) |
+| `/new-service` | @lens | Create service-level initiative (single service/API) |
+| `/new-feature` | @lens | Create feature-level initiative (single feature within a service) |
+| `#fix-story` | @lens | Correction loop — fix a story that failed review or has defects |
 
-#### Discovery Commands (Scout)
+#### State & Recovery Commands (@lens)
 
-| Command | Agent | Description |
+| Command | Skill | Description |
 |---------|-------|-------------|
-| `onboard` | Scout | First-time setup — create profile, bootstrap target repos |
-| `bootstrap` | Scout | Re-run bootstrap for new or changed repos |
-| `discover` | Scout | Deep scan repos for tech stack, structure, patterns |
-| `document` | Scout | Generate canonical docs from discovery data |
-| `reconcile` | Scout | Reconcile repo inventory with service-map |
-| `repo-status` | Scout | Check health/status of all managed repos |
+| `?` | state-management | Quick status — one-line summary of current state |
+| `ST` | state-management | Full status — detailed initiative, phase, gate, and branch info |
+| `RS` | state-management | Resume — pick up where you left off after interruption |
+| `SY` | state-management | Sync — reconcile state.yaml with actual git branch state |
+| `FX` | state-management | Fix state — repair corrupted or inconsistent state |
+| `OR` | state-management | Override — manually set state values (advanced, use with caution) |
+| `AR` | state-management | Archive — archive completed or abandoned initiatives |
+
+#### Discovery Commands (@lens)
+
+| Command | Skill | Description |
+|---------|-------|-------------|
+| `onboard` | discovery | First-time setup — create profile, bootstrap target repos |
+| `bootstrap` | discovery | Re-run bootstrap for new or changed repos |
+| `discover` | discovery | Deep scan repos for tech stack, structure, patterns |
+| `document` | discovery | Generate canonical docs from discovery data |
+| `reconcile` | discovery | Reconcile repo inventory with service-map |
+| `repo-status` | discovery | Check health/status of all managed repos |
 
 ### Role Gating
 
@@ -237,7 +239,7 @@ Audience branches are created at `init-initiative`. Phase branches (e.g., `-smal
 # 1. Create the initiative (select track: feature)
 #new-feature "rate-limiting"
 
-# Compass auto-detects layer, Casey creates and pushes branches:
+# @lens auto-detects layer, git-orchestration creates and pushes branches:
 #   bmaddomain-lens-rate-limit-x7k2m9         (root)
 #   bmaddomain-lens-rate-limit-x7k2m9-small   (small audience)
 #   bmaddomain-lens-rate-limit-x7k2m9-medium  (medium audience)
@@ -279,7 +281,7 @@ Audience branches are created at `init-initiative`. Phase branches (e.g., `-smal
 # Switch to a different initiative
 /switch
 
-# Compass presents active initiatives:
+# @lens presents active initiatives:
 #   1. rate-limit-x7k2m9  (DevProposal - medium)
 #   2. auth-refactor-b3j1  (PrePlan - small)
 # Select: 2
@@ -293,26 +295,26 @@ Audience branches are created at `init-initiative`. Phase branches (e.g., `-smal
 
 ```
 # Quick check
-@tracey ?
+@lens ?
 # → rate-limit-x7k2m9 | DevProposal | medium | track:full | epics in progress
 
 # Full status
-@tracey ST
+@lens ST
 # → Detailed breakdown with branch state, gate status, recent events
 
 # Something looks wrong? Sync state with git
-@tracey SY
+@lens SY
 ```
 
 ### Full Lifecycle Walkthrough
 
 ```
 # Bootstrap (first time only)
-@scout onboard
+@lens onboard
 
 # Discovery — learn about the repos
-@scout discover
-@scout document
+@lens discover
+@lens document
 
 # New initiative
 #new-domain "payment-platform"
@@ -332,7 +334,7 @@ Audience branches are created at `init-initiative`. Phase branches (e.g., `-smal
 /dev            # Dev: sprint execution loop
 
 # When done
-@tracey AR    # Archive the completed initiative
+@lens AR    # Archive the completed initiative
 ```
 
 ---
@@ -396,12 +398,12 @@ lens-work/
 ├── README.md                            # This file
 ├── service-map.yaml                     # Target repo mapping
 │
-├── agents/
-│   ├── compass.agent.yaml               # Phase router agent
-│   ├── casey.agent.yaml                 # Git conductor agent
-│   ├── tracey.agent.yaml               # State manager agent
-│   ├── scout.agent.yaml                # Discovery & bootstrap agent
-│   └── scribe.agent.yaml              # Constitutional guardian agent
+├── skills/                              # @lens agent skill definitions
+│   ├── checklist.md                     # Progressive phase gate checklists
+│   ├── constitution.md                  # Inline governance checks
+│   ├── discovery.md                     # Repo scanning & doc generation
+│   ├── git-orchestration.md             # Branch operations & git discipline
+│   └── state-management.md             # Two-file state system management
 │
 ├── workflows/
 │   ├── core/                            # Auto-triggered lifecycle operations
@@ -455,36 +457,24 @@ lens-work/
 │       └── artifact-validator.md        # Artifact validation rules
 │
 ├── prompts/                             # Entry-point prompt files
-│   ├── lens-work.start.prompt.md
-│   ├── lens-work.compass.prompt.md
-│   ├── lens-work.pre-plan.prompt.md
-│   ├── lens-work.spec.prompt.md
-│   ├── lens-work.plan.prompt.md
-│   ├── lens-work.review.prompt.md
-│   ├── lens-work.dev.prompt.md
-│   ├── lens-work.new-domain.prompt.md
-│   ├── lens-work.new-service.prompt.md
-│   ├── lens-work.new-feature.prompt.md
-│   ├── lens-work.fix-story.prompt.md
-│   ├── lens-work.switch.prompt.md
-│   ├── lens-work.context.prompt.md
+│   ├── lens-work.businessplan.prompt.md
 │   ├── lens-work.constitution.prompt.md
-│   ├── lens-work.compliance.prompt.md
-│   ├── lens-work.focus.prompt.md
-│   ├── lens-work.lens.prompt.md
-│   ├── lens-work.status.prompt.md
-│   ├── lens-work.resume.prompt.md
-│   ├── lens-work.sync.prompt.md
+│   ├── lens-work.devproposal.prompt.md
+│   ├── lens-work.discovery.prompt.md
 │   ├── lens-work.fix.prompt.md
-│   ├── lens-work.override.prompt.md
-│   ├── lens-work.archive.prompt.md
+│   ├── lens-work.new-initiative.prompt.md
 │   ├── lens-work.onboard.prompt.md
-│   ├── lens-work.bootstrap.prompt.md
-│   ├── lens-work.discover.prompt.md
-│   ├── lens-work.document.prompt.md
-│   ├── lens-work.reconcile.prompt.md
-│   ├── lens-work.repo-status.prompt.md
-│   └── lens-work.rollback.prompt.md
+│   ├── lens-work.preplan.prompt.md
+│   ├── lens-work.promote-base.prompt.md
+│   ├── lens-work.promote-large.prompt.md
+│   ├── lens-work.promote-medium.prompt.md
+│   ├── lens-work.sprintplan.prompt.md
+│   ├── lens-work.start.prompt.md
+│   ├── lens-work.status.prompt.md
+│   ├── lens-work.switch.prompt.md
+│   ├── lens-work.sync.prompt.md
+│   ├── lens-work.techplan.prompt.md
+│   └── lens-work.impl-*.prompt.md       # Implementation-detail prompts (~20 files)
 │
 ├── docs/                                # Documentation
 │   ├── migration-guide.md

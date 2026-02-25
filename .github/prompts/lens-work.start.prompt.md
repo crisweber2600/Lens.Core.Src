@@ -1,6 +1,6 @@
 ```prompt
 ---
-description: Run LENS Workbench preflight check and activate Compass for lifecycle navigation
+description: Run LENS Workbench preflight check and activate @lens for lifecycle navigation
 ---
 
 Activate @lens agent and run preflight check:

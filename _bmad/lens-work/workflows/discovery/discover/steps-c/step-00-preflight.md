@@ -83,7 +83,7 @@ git --version
 - Skip JIRA checks
 - Note in output
 
-### 8. Load Scout Sidecar State
+### 8. Load Discovery Sidecar State
 Read `_memory/scout-sidecar/scout-discoveries.md`:
 ```yaml
 discovered_targets: [list of previously discovered items]

@@ -693,7 +693,7 @@ microservices:
       docs_path: "{relative_path_to_docs}/"
 ```
 
-### 10. Update Scout Sidecar
+### 10. Update Discovery Sidecar
 Update `_bmad/lens-work/_memory/scout-sidecar/scout-discoveries.md`:
 
 ```yaml
@@ -783,6 +783,6 @@ generation_result:
 
 **CRITICAL:** After completing document generation, you MUST proceed to step-05 to present the deep scan prompt to the user.
 
-**Proceed to:** [./step-05-handoff-scout.md](./step-05-handoff-scout.md)
+**Proceed to:** [./step-05-handoff-discovery.md](./step-05-handoff-discovery.md)
 
 **DO NOT skip step-05.** The user must be asked whether they want to run a deep scan.

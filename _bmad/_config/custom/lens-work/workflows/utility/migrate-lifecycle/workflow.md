@@ -1,8 +1,8 @@
 ---
 name: migrate-lifecycle
 description: Migrate initiative from legacy p1-p6 phase model to lifecycle contract v2 (named phases + tracks)
-agent: tracey
-trigger: "@tracey migrate-lifecycle"
+agent: "@lens/state-management"
+trigger: "@lens migrate-lifecycle"
 category: utility
 depends_on: lifecycle.yaml
 ---
@@ -450,7 +450,7 @@ git push origin ":${new_branch}" "${old_branch}"
 After migration, verify with:
 
 ```
-@tracey ST
+@lens ST
 ```
 
 Expected output should show:
@@ -472,7 +472,7 @@ Audience Promotions:
   ⏳ large → base (constitution gate)
 ```
 
-If the status report shows unexpected values, run `@tracey FIX` to reconcile state from git reality.
+If the status report shows unexpected values, run `@lens FIX` to reconcile state from git reality.
 
 ---
 
@@ -490,7 +490,7 @@ for config in _bmad-output/lens-work/initiatives/*.yaml; do
 done
 ```
 
-Then run `@tracey migrate-lifecycle` for each initiative using `@tracey switch` to make it active first.
+Then run `@lens migrate-lifecycle` for each initiative using `@lens switch` to make it active first.
 
 ---
 
@@ -501,7 +501,7 @@ Then run `@tracey migrate-lifecycle` for each initiative using `@tracey switch` 
 | lifecycle.yaml not found | Install lifecycle contract first (Phase 0) |
 | Already v2 | Output: "Already migrated." Exit cleanly. |
 | No active initiative | Output: "No active initiative." Exit cleanly. |
-| initiative config not found | Check initiatives/ directory, run @tracey FIX |
+| initiative config not found | Check initiatives/ directory, run @lens FIX |
 | featureBranchRoot missing | Build from domain/service/id using naming convention |
 | Branch rename conflicts with existing branch | Prompt user to resolve manually |
 | PR retarget fails | Output error, continue with remaining PRs |
@@ -517,4 +517,4 @@ Then run `@tracey migrate-lifecycle` for each initiative using `@tracey switch` 
 - [ ] Migration event logged to event-log.jsonl
 - [ ] Branches optionally renamed to named-phase convention
 - [ ] Open PRs optionally retargeted to new branch names
-- [ ] Status report (`@tracey ST`) displays correctly with new format
+- [ ] Status report (`@lens ST`) displays correctly with new format
