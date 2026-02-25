@@ -3,9 +3,9 @@
 description: Constitutional governance — view, create, or amend governance constitutions at any LENS layer (Scribe)
 ---
 
-Activate Scribe agent and execute /constitution:
+Activate @lens agent and execute /constitution (constitution skill):
 
-1. Load agent: `_bmad/lens-work/agents/scribe.agent.yaml`
+1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/constitution` command
 3. Load `workflows/governance/constitution/workflow.md`
 4. Invoke Casey to verify clean git state before any governance operations

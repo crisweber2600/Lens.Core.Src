@@ -3,9 +3,9 @@
 description: Fetch from remote, re-validate all gates, and update state to reflect current reality (Tracey)
 ---
 
-Activate Tracey agent and execute /sync:
+Activate @lens agent and execute /sync (state-management skill):
 
-1. Load agent: `_bmad/lens-work/agents/tracey.agent.yaml`
+1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/sync` command
 3. Load `workflows/utility/sync/workflow.md`
 4. Delegate all git operations to Casey

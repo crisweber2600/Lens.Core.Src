@@ -3,9 +3,9 @@
 description: Launch SprintPlan phase — sprint backlog and dev-ready stories (Bob/Scrum Master, large audience, requires medium→large promotion)
 ---
 
-Activate Compass agent and execute /sprintplan:
+Activate @lens agent and execute /sprintplan:
 
-1. Load agent: `_bmad/lens-work/agents/compass.agent.yaml`
+1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/sprintplan` command to launch the SprintPlan phase
 3. Load lifecycle contract: `_bmad/lens-work/lifecycle.yaml`
 4. Pre-flight: verify clean working directory, load two-file state (state.yaml + initiative config)

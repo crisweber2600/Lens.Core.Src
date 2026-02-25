@@ -3,9 +3,9 @@
 description: Launch Dev phase — implementation loop with code review and retrospective (Amelia/Developer, base audience, requires large→base promotion)
 ---
 
-Activate Compass agent and execute /dev:
+Activate @lens agent and execute /dev:
 
-1. Load agent: `_bmad/lens-work/agents/compass.agent.yaml`
+1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/dev` command to launch the Dev phase
 3. Load lifecycle contract: `_bmad/lens-work/lifecycle.yaml`
 4. Pre-flight: verify clean working directory, load two-file state (state.yaml + initiative config)

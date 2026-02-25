@@ -3,9 +3,9 @@
 description: Run LENS Workbench preflight check and activate Compass for lifecycle navigation
 ---
 
-Activate Compass agent and run preflight check:
+Activate @lens agent and run preflight check:
 
-1. Load agent: `_bmad/lens-work/agents/compass.agent.yaml`
+1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Load lifecycle contract: `_bmad/lens-work/lifecycle.yaml`
 3. Load module config: `_bmad/lens-work/config.yaml`
 4. Check if user profile exists: `_bmad-output/lens-work/personal/profile.yaml`

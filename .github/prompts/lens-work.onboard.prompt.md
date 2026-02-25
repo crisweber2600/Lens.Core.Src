@@ -3,9 +3,9 @@
 description: Create user profile, set up GitHub PAT, and bootstrap TargetProjects for new team members (Scout)
 ---
 
-Activate Scout agent and execute /onboard:
+Activate @lens agent and execute /onboard (discovery skill):
 
-1. Load agent: `_bmad/lens-work/agents/scout.agent.yaml`
+1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/onboard` command — full onboarding workflow
 3. Load `workflows/utility/onboarding/workflow.md`
 4. Load repo inventory from `_bmad-output/lens-work/repo-inventory.yaml` (if exists)

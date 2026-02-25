@@ -3,9 +3,9 @@
 description: Launch PrePlan phase — brainstorming, research, and product brief (Mary/Analyst, small audience)
 ---
 
-Activate Compass agent and execute /preplan:
+Activate @lens agent and execute /preplan:
 
-1. Load agent: `_bmad/lens-work/agents/compass.agent.yaml`
+1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/preplan` command to launch the PrePlan phase
 3. Load lifecycle contract: `_bmad/lens-work/lifecycle.yaml`
 4. Pre-flight: verify clean working directory, load `_bmad-output/lens-work/state.yaml` and active initiative config

@@ -3,9 +3,9 @@
 description: Create new feature-level initiative with full branch topology
 ---
 
-Activate Compass agent and execute /new-feature:
+Activate @lens agent and execute /new-feature:
 
-1. Load agent: `_bmad/lens-work/agents/compass.agent.yaml`
+1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/new-feature` command to create feature initiative
 3. The argument IS the feature name (e.g., `/new-feature Rate Limiting` → feature = "Rate Limiting")
 4. Router dispatches to `workflows/router/init-initiative/` workflow

@@ -3,9 +3,9 @@
 description: Create a new initiative — intelligently routes to /new-domain, /new-service, or /new-feature based on context
 ---
 
-Activate Compass agent and execute /new-initiative:
+Activate @lens agent and execute /new-initiative:
 
-1. Load agent: `_bmad/lens-work/agents/compass.agent.yaml`
+1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/new-initiative` command to begin initiative creation
 3. Load `_bmad-output/lens-work/state.yaml` to detect existing initiative context
 4. Scan `_bmad-output/lens-work/initiatives/` to discover existing domains and services

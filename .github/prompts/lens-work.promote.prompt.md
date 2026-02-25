@@ -3,9 +3,9 @@
 description: Promote the active initiative to the next audience level — runs the appropriate gate and creates a promotion PR (Compass)
 ---
 
-Activate Compass agent and execute /promote:
+Activate @lens agent and execute /promote:
 
-1. Load agent: `_bmad/lens-work/agents/compass.agent.yaml`
+1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/promote` command
 3. Load lifecycle contract: `_bmad/lens-work/lifecycle.yaml`
 4. Load `workflows/core/audience-promotion/workflow.md`

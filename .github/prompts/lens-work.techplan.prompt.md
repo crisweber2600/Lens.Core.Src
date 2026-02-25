@@ -3,9 +3,9 @@
 description: Launch TechPlan phase — technical design and architecture decisions (Winston/Architect, small audience)
 ---
 
-Activate Compass agent and execute /techplan:
+Activate @lens agent and execute /techplan:
 
-1. Load agent: `_bmad/lens-work/agents/compass.agent.yaml`
+1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/techplan` command to launch the TechPlan phase
 3. Load lifecycle contract: `_bmad/lens-work/lifecycle.yaml`
 4. Pre-flight: verify clean working directory, load two-file state (state.yaml + initiative config)

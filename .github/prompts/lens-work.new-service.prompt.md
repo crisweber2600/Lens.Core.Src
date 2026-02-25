@@ -3,9 +3,9 @@
 description: Create new service-level initiative with service-only branch and folder scaffolding
 ---
 
-Activate Compass agent and execute /new-service:
+Activate @lens agent and execute /new-service:
 
-1. Load agent: `_bmad/lens-work/agents/compass.agent.yaml`
+1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/new-service` command to create service initiative
 3. The argument IS the service name (e.g., `/new-service Lens` → service = "Lens")
 4. Router dispatches to `workflows/router/init-initiative/` workflow

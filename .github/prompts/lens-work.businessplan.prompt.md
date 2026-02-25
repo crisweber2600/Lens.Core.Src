@@ -3,9 +3,9 @@
 description: Launch BusinessPlan phase — PRD, UX design, and architecture (John/PM + Sally/UX, small audience)
 ---
 
-Activate Compass agent and execute /businessplan:
+Activate @lens agent and execute /businessplan:
 
-1. Load agent: `_bmad/lens-work/agents/compass.agent.yaml`
+1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/businessplan` command to launch the BusinessPlan phase
 3. Load lifecycle contract: `_bmad/lens-work/lifecycle.yaml`
 4. Pre-flight: verify clean working directory, load two-file state (state.yaml + initiative config)
