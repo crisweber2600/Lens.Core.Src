@@ -18,6 +18,10 @@ target_projects_path: ../TargetProjects
 
 docs_output_path: Docs
 
-repos: []
-# No repositories mapped yet.
-# Use '@scout discover' after adding repos here, or run '@lens /new-domain' to create an initiative.
+repos:
+  - name: bmad.lens.src
+    remote_url: https://github.com/crisweber2600/bmad.lens.src
+    local_path: TargetProjects/lens/lens-work/bmad.lens.src
+    default_branch: main
+    domain: lens
+    service: lens-work
