@@ -61,7 +61,7 @@ Route based on selection:
    - Extract `domain`, `service`, `layer`, `name`
    - If no active initiative: prompt user for layer and name
 
-2. Build inheritance chain (parent-first): Domain → Service → Microservice → Feature
+2. Build inheritance chain (parent-first per lifecycle.yaml): Org → Domain → Service → Repo
 
 3. For each layer in chain:
    - Check if `_bmad-output/lens-work/constitutions/{layer}/{name}/constitution.md` exists
@@ -108,12 +108,12 @@ Would you like to create one? [Y/N]
 ```
 📜 Creating a new constitution.
 
-What layer is this constitution for?
+What layer is this constitution for? (per lifecycle.yaml lens_hierarchy)
 
-1. Domain     — Enterprise-wide rules (applies to everything)
-2. Service    — Service boundary rules (applies to service + children)
-3. Microservice — API/component rules (applies to microservice + features)
-4. Feature    — Feature-specific rules (narrowest scope)
+1. Org        — Organization-wide rules (applies to all domains, services, repos)
+2. Domain     — Domain-wide rules (applies to all services and repos in domain)
+3. Service    — Service boundary rules (applies to service + repos)
+4. Repo       — Repository-specific rules (narrowest scope)
 
 [Enter 1-4 or layer name]
 ```
@@ -126,10 +126,10 @@ Set `{layer_type}` based on selection.
 What name for this constitution?
 
 Examples:
+- "acme-corp" (Org)
 - "bmad" (Domain)
 - "lens" (Service)
-- "auth" (Microservice)
-- "governance-migration" (Feature)
+- "bmad-lens-api" (Repo)
 ```
 
 Store as `{constitution_name}`.
@@ -167,13 +167,14 @@ Minimum 1 article required. Recommend at least 3 for meaningful governance.
 
 ### Step 7C: Validate Inheritance
 
-If layer is NOT Domain:
-1. Walk up inheritance chain to find parent constitutions
+If layer is NOT Org:
+1. Walk up inheritance chain to find parent constitutions (per lifecycle.yaml resolution_order)
 2. Load parent articles
 3. Check new articles for contradictions with parent rules
 4. If contradictions found: present resolution options (modify, narrow scope, escalate, withdraw)
+5. Validate additive inheritance: children can only ADD rules, never remove or weaken parent rules
 
-If no contradictions (or Domain level):
+If no contradictions (or Org level):
 ```
 ✅ Inheritance Validation Passed
 ```

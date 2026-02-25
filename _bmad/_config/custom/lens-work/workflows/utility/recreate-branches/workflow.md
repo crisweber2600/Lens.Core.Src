@@ -25,17 +25,17 @@ initiative_config_path: "_bmad-output/lens-work/initiatives/{id}.yaml"
 state_path: "_bmad-output/lens-work/state.yaml"
 
 # Branch naming pattern (CRITICAL)
-# Flat, hyphen-separated: {featureBranchRoot}[-{audience}[-p{N}]]
+# Flat, hyphen-separated: {featureBranchRoot}[-{audience}[-{phaseName}]]
 # featureBranchRoot = {domain}-{service}-{feature} or {domain}-{service}-{repo}-{feature}
 # Examples:
 #   chat-spark-backend-alignment-50cf37                    (root)
 #   chat-spark-backend-alignment-50cf37-small              (audience: small)
 #   chat-spark-backend-alignment-50cf37-large              (audience: large)
-#   chat-spark-backend-alignment-50cf37-small-p1           (phase 1)
-#   chat-spark-backend-alignment-50cf37-small-p2           (phase 2)
+#   chat-spark-backend-alignment-50cf37-small-preplan      (phase: preplan)
+#   chat-spark-backend-alignment-50cf37-small-businessplan (phase: businessplan)
 ```
 
-> **CRITICAL:** Branch names use flat hyphen-separated format `{featureBranchRoot}-{audience}-p{N}`. The old `{domain}/{id}/{size}-{N}` pattern is obsolete. `lead` is now `large`. `lane` is now audience.
+> **CRITICAL:** Branch names use flat hyphen-separated format `{featureBranchRoot}-{audience}-{phaseName}`. The old `{domain}/{id}/{size}-{N}` and `{audience}-p{N}` patterns are obsolete. `lead` is now `large`. `lane` is now audience. Phase names are canonical: preplan, businessplan, techplan, devproposal, sprintplan.
 
 ---
 
@@ -88,8 +88,8 @@ if initiative.branches.audiences:
   if initiative.branches.audiences.large:
     expected_branches.large = initiative.branches.audiences.large
 
-# Phase branches (e.g., -small-p1, -small-p2)
-for phase_key in [p1, p2, p3, p4, p5]:
+# Phase branches (e.g., -small-preplan, -small-businessplan)
+for phase_key in [preplan, businessplan, techplan, devproposal, sprintplan]:
   if initiative.branches[phase_key]:
     expected_branches[phase_key] = initiative.branches[phase_key]
 
@@ -319,20 +319,22 @@ The branch hierarchy for a lens-work initiative follows this pattern:
 
 ```
 main
-  └── {featureBranchRoot}                              (initiative root)
-        ├── {featureBranchRoot}-small                   (audience: small)
-        │     ├── {featureBranchRoot}-small-p1           (phase 1)
-        │     ├── {featureBranchRoot}-small-p2           (phase 2)
-        │     └── {featureBranchRoot}-small-p3           (phase 3)
-        ├── {featureBranchRoot}-medium                  (audience: medium)
-        └── {featureBranchRoot}-large                   (audience: large)
+  └── {featureBranchRoot}                                    (initiative root)
+        ├── {featureBranchRoot}-small                         (audience: small)
+        │     ├── {featureBranchRoot}-small-preplan            (phase: preplan)
+        │     ├── {featureBranchRoot}-small-businessplan       (phase: businessplan)
+        │     └── {featureBranchRoot}-small-techplan           (phase: techplan)
+        ├── {featureBranchRoot}-medium                        (audience: medium)
+        │     └── {featureBranchRoot}-medium-devproposal      (phase: devproposal)
+        └── {featureBranchRoot}-large                         (audience: large)
+              └── {featureBranchRoot}-large-sprintplan        (phase: sprintplan)
 ```
 
 **Naming rules:**
 - `{featureBranchRoot}` = flat hyphen-separated root (e.g., `chat-spark-backend-alignment-50cf37`)
 - Built from: `{domain}-{service}-{feature}` or `{domain}-{service}-{repo}-{feature}`
 - `-small` / `-medium` / `-large` = audience branches (old naming `lane` / `lead` is obsolete)
-- `-small-p{N}` = phase branches (e.g., `-small-p1`, `-small-p2`)
+- `-{audience}-{phaseName}` = phase branches (e.g., `-small-preplan`, `-medium-devproposal`)
 
 ---
 

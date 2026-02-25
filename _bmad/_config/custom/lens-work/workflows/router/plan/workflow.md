@@ -1,39 +1,57 @@
 ---
-name: plan
-description: Complete Solutioning (Epics/Stories/Readiness)
+name: devproposal
+description: Implementation proposal (Epics/Stories/Readiness)
 agent: compass
-trigger: /plan command
+trigger: /devproposal command
+aliases: [/plan]
 category: router
-phase: 3
-phase_name: Solutioning
+phase_name: devproposal
+display_name: DevProposal
+agent_owner: john
+agent_role: PM
+imports: lifecycle.yaml
 ---
 
-# /plan — Solutioning Phase Router
+# /devproposal — DevProposal Phase Router
 
-**Purpose:** Complete the Solutioning phase with Epics, Stories, and Readiness checklist, including mandatory adversarial and party-mode stress tests for epic quality.
+**Purpose:** Complete the DevProposal phase with Epics, Stories, and Readiness checklist, including mandatory adversarial and party-mode stress tests for epic quality.
+
+**Lifecycle:** `devproposal` phase, audience `medium`, owned by John (PM).
 
 ---
 
 ## Role Authorization
 
-**Authorized:** PO, Architect, Tech Lead
+**Authorized:** PO, Architect, Tech Lead (phase owner: John/PM)
 
 ---
 
 ## Prerequisites
 
-- [x] `/spec` complete (Phase 2 merged)
-- [x] Large review approved (small → large merged)
+- [x] Small → Medium audience promotion complete (adversarial review gate passed)
+- [x] `/techplan` complete (techplan phase merged into small audience branch)
+- [x] PRD + Architecture exist
 - [x] state.yaml + initiatives/{id}.yaml exist
-- [x] P2 gate passed (Planning artifacts committed)
+- [x] techplan gate passed (TechPlan artifacts committed)
 
 ---
 
 ## Execution Sequence
 
-### 0. Git Discipline — Verify Clean State
+### 0. Pre-Flight [REQ-9]
 
 ```yaml
+# PRE-FLIGHT (mandatory, never skip) [REQ-9]
+# 1. Verify working directory is clean
+# 2. Load two-file state (state.yaml + initiative config)
+# 3. Validate audience promotion (small → medium must be complete)
+# 4. Determine correct phase branch: {initiative_root}-{audience}-{phase_name}
+# 5. Create phase branch if it doesn't exist
+# 6. Checkout phase branch
+# 7. Confirm to user: "Now on branch: {branch_name}"
+# GATE: All steps must pass before proceeding to artifact work
+# NOTE: devproposal is the FIRST phase in medium audience — requires small→medium promotion
+
 # Verify working directory is clean
 invoke: casey.verify-clean-state
 
@@ -41,9 +59,18 @@ invoke: casey.verify-clean-state
 state = load("_bmad-output/lens-work/state.yaml")
 initiative = load("_bmad-output/lens-work/initiatives/${state.active_initiative}.yaml")
 
-# Read size from initiative config (shared, canonical)
+# Load lifecycle contract for phase → audience mapping
+lifecycle = load("lifecycle.yaml")
+
+# Read initiative config
 size = initiative.size
 domain_prefix = initiative.domain_prefix
+
+# Derive audience from lifecycle contract (devproposal → medium)
+current_phase = "devproposal"
+audience = lifecycle.phases[current_phase].audience    # "medium"
+initiative_root = initiative.initiative_root
+audience_branch = "${initiative_root}-${audience}"     # {initiative_root}-medium
 
 # === Path Resolver (S01-S06: Context Enhancement) ===
 docs_path = initiative.docs.path    # e.g., "docs/BMAD/LENS/BMAD.Lens/context-enhancement-9bfe4e"
@@ -75,39 +102,89 @@ if repo_docs_path != null:
 else:
   repo_context = null
 
-# Validate we're on the correct branch (or can switch)
-# Branch pattern: {featureBranchRoot}-{audience}-p{N}
-expected_branch: "${initiative.featureBranchRoot}-${audience}-p3"
-current_branch = casey.get-current-branch()
+# REQ-9: Validate audience promotion gate (small → medium)
+# devproposal is in medium — requires adversarial-review gate to have passed
+prev_audience = "small"
+prev_audience_branch = "${initiative_root}-small"
 
-if current_branch != expected_branch:
-  if branch_exists(expected_branch):
-    invoke: casey.checkout-branch
-    params:
-      branch: ${expected_branch}
-    invoke: casey.pull-latest
-  # else: branch will be created in Step 2
+if initiative.audience_status exists:
+  if initiative.audience_status.small_to_medium != "complete":
+    # Check if audience promotion PR was merged
+    result = casey.exec("git merge-base --is-ancestor origin/${prev_audience_branch} origin/${audience_branch}")
+
+    if result.exit_code == 0:
+      # Promotion was merged! Auto-update status
+      invoke: tracey.update-initiative
+      params:
+        initiative_id: ${initiative.id}
+        updates:
+          audience_status:
+            small_to_medium: "complete"
+      output: "✅ Audience promotion (small → medium) complete — adversarial review gate passed"
+    else:
+      output: |
+        ❌ Audience promotion (small → medium) not complete
+        ├── Gate: adversarial-review (party mode)
+        ├── All small-audience phases (preplan, businessplan, techplan) must be complete
+        └── Run audience promotion before starting devproposal
+
+      ask: "Continue anyway? [Y]es / [N]o"
+      if no:
+        exit: 0
+else:
+  warning: "⚠️ No audience_status in initiative config — legacy format detected"
+
+# Determine phase branch [REQ-9]
+phase_branch = "${initiative_root}-${audience}-devproposal"
+
+# Step 5: Create phase branch if it doesn't exist [REQ-9]
+if not branch_exists(phase_branch):
+  invoke: casey.start-phase
+  params:
+    phase_name: "devproposal"
+    display_name: "DevProposal"
+    initiative_id: ${initiative.id}
+    audience: ${audience}
+    initiative_root: ${initiative_root}
+    parent_branch: ${audience_branch}
+  if start_phase.exit_code != 0:
+    FAIL("❌ Pre-flight failed: Could not create branch ${phase_branch}")
+
+# Step 6: Checkout phase branch
+invoke: casey.checkout-branch
+params:
+  branch: ${phase_branch}
+invoke: casey.pull-latest
+
+# Step 7: Confirm to user
+output: |
+  📋 Pre-flight complete [REQ-9]
+  ├── Initiative: ${initiative.name} (${initiative.id})
+  ├── Phase: DevProposal (devproposal)
+  ├── Audience: medium (lead review)
+  ├── Branch: ${phase_branch}
+  └── Working directory: clean ✅
 ```
 
 ### 1. Validate Prerequisites & Gate Check
 
 ```yaml
-# Gate check — verify P2 (Spec/Planning) is complete
-# Branch pattern: {featureBranchRoot}-{audience}-p{N}
-p2_branch = "${initiative.featureBranchRoot}-${audience}-p2"
-audience_branch = "${initiative.featureBranchRoot}-${audience}"
+# Gate check — verify techplan phase artifacts exist and small→medium promotion done
+# devproposal is in medium audience — all small phases must be complete
+techplan_branch = "${initiative_root}-small-techplan"
+small_branch = "${initiative_root}-small"
 
-# Ancestry check: P2 must be merged into size branch
-result = casey.exec("git merge-base --is-ancestor origin/${p2_branch} origin/${audience_branch}")
+# Ancestry check: techplan must be merged into small audience branch
+result = casey.exec("git merge-base --is-ancestor origin/${techplan_branch} origin/${small_branch}")
 
 if result.exit_code != 0:
-  error: "Phase 2 (Planning) not complete. Run /spec first or merge pending PRs."
+  error: "TechPlan phase not complete. Run /techplan first or merge pending PRs."
 
-# Verify large review is merged (if applicable)
-if not large_review_merged():
-  warning: "Large review PR not merged. Proceeding but architecture may change."
+# Verify audience promotion gate (small → medium) passed
+if initiative.audience_status.small_to_medium != "complete":
+  error: "Audience promotion (small → medium) not complete. Run audience-promotion first."
 
-# Verify P2 artifacts exist
+# Verify prior artifacts exist
 required_artifacts:
   - "${docs_path}/prd.md"
   - "${docs_path}/architecture.md"
@@ -129,8 +206,8 @@ for artifact in required_artifacts:
 # Mode: ADVISORY (log warnings, do not block)
 invoke: lens-work.compliance-check
 params:
-  phase: "p3"
-  phase_name: "Solutioning"
+  phase: "devproposal"
+  phase_name: "DevProposal"
   initiative_id: ${initiative.id}
   target_repos: ${initiative.target_repos}
   mode: "ADVISORY"
@@ -139,28 +216,12 @@ params:
 # Warnings are surfaced to user but do not block workflow progression
 ```
 
-### 2. Start Phase 3 — Auto-Branch Creation
+### 2. Branch Verification (consolidated into Pre-Flight)
 
 ```yaml
-# Casey creates P3 branch if it doesn't exist
-# Branch pattern: {featureBranchRoot}-{audience}-p{N}
-if not branch_exists("${initiative.featureBranchRoot}-${audience}-p3"):
-  invoke: casey.start-phase
-  params:
-    phase_number: 3
-    phase_name: "Solutioning"
-    initiative_id: ${initiative.id}
-    audience: ${audience}
-    featureBranchRoot: ${initiative.featureBranchRoot}
-  # Casey creates: ${featureBranchRoot}-${audience}-p3 and pushes to remote
-
-  invoke: casey.pull-latest
-else:
-  # Branch exists, ensure we're on it
-  invoke: casey.checkout-branch
-  params:
-    branch: "${initiative.featureBranchRoot}-${audience}-p3"
-  invoke: casey.pull-latest
+# Branch creation and checkout handled in Step 0 Pre-Flight [REQ-9]
+# Phase branch ${phase_branch} is already checked out at this point.
+assert: current_branch == phase_branch
 ```
 
 ### 2a. Constitutional Context Injection (Required)
@@ -184,10 +245,10 @@ session.constitutional_context = constitutional_context
 if initiative.question_mode == "batch":
   invoke: lens-work.batch-process
   params:
-    phase_number: "3"
-    phase_name: "Solutioning"
-    template_path: "templates/phase-3-solutioning-questions.template.md"
-    output_filename: "phase-3-solutioning-questions.md"
+    phase_name: "devproposal"
+    display_name: "DevProposal"
+    template_path: "templates/devproposal-questions.template.md"
+    output_filename: "devproposal-questions.md"
   exit: 0
 ```
 
@@ -281,19 +342,57 @@ params:
 invoke: casey.finish-workflow
 ```
 
-### 4. Phase Completion
+### 4. Phase Completion — Push Only
 
 ```yaml
-if all_workflows_complete("p3"):
-  invoke: casey.finish-phase
-  invoke: casey.open-final-pbr  # PR: large → base
-  
+# REQ-7: Never auto-merge. PR created in S1.2.
+if all_workflows_complete("devproposal"):
+  invoke: casey.commit-and-push
+  params:
+    branch: ${phase_branch}
+    message: "[${initiative.id}] DevProposal complete"
+  # Phase branch remains alive — PR handles merge to audience branch
+
+  # REQ-8: Create PR for phase merge
+  invoke: casey.create-pr
+  params:
+    head: ${phase_branch}
+    base: ${audience_branch}
+    title: "[devproposal] DevProposal: ${initiative.name}"
+    body: "DevProposal phase complete for ${initiative.id}.\n\nArtifacts: epics.md, stories.md, readiness-checklist.md"
+  capture: pr_result  # { url, number } or fallback message
+
+  # REQ-7/REQ-8: Phase enters pr_pending after PR creation
+  invoke: tracey.update-initiative
+  params:
+    initiative_id: ${initiative.id}
+    updates:
+      phase_status:
+        devproposal:
+          status: "pr_pending"
+          pr_url: "${pr_result.url}"
+          pr_number: ${pr_result.number}
+  # If manual fallback (no PAT), still set pr_pending with null PR info
+  if pr_result.fallback:
+    invoke: tracey.update-initiative
+    params:
+      initiative_id: ${initiative.id}
+      updates:
+        phase_status:
+          devproposal:
+            status: "pr_pending"
+            pr_url: null
+            pr_number: null
+
   output: |
-    ✅ /plan complete
-    ├── Phase 3 (Solutioning) finished
-    ├── Final PBR PR opened (large → base)
+    ✅ /devproposal complete
+    ├── Phase: DevProposal (devproposal) finished
+    ├── Audience: medium (lead review)
+    ├── Branch pushed: ${phase_branch}
+    ├── PR: ${pr_result}
+    ├── Status: pr_pending (awaiting merge)
     ├── Stories ready for sprint planning
-    └── Next: Run /review for implementation gate
+    └── Next: Run audience promotion (medium → large), then /sprintplan
 ```
 
 ### 5. Update State Files
@@ -304,27 +403,21 @@ invoke: tracey.update-initiative
 params:
   initiative_id: ${initiative.id}
   updates:
-    current_phase: "p3"
-    current_phase_name: "Solutioning"
-    phases:
-      p3:
+    current_phase: "devproposal"
+    phase_status:
+      devproposal:
         status: "in_progress"
         started_at: "${ISO_TIMESTAMP}"
-    gates:
-      p2_complete:
-        status: "passed"
-        verified_at: "${ISO_TIMESTAMP}"
-      large_review:
-        status: "passed"
-        verified_at: "${ISO_TIMESTAMP}"
+    audience_status:
+      small_to_medium: "complete"
 
 # Update state.yaml
 invoke: tracey.update-state
 params:
   updates:
-    current_phase: "p3"
-    current_phase_name: "Solutioning"
-    active_branch: "${initiative.featureBranchRoot}-${audience}-p3"
+    current_phase: "devproposal"
+    workflow_status: "pr_pending"
+    active_branch: "${phase_branch}"
 ```
 
 ### 6. Commit State Changes
@@ -338,14 +431,14 @@ params:
     - "_bmad-output/lens-work/initiatives/${initiative.id}.yaml"
     - "_bmad-output/lens-work/event-log.jsonl"
     - "${docs_path}/"
-  message: "[lens-work] /plan: Phase 3 Solutioning — ${initiative.id}"
-  branch: "${initiative.featureBranchRoot}-${audience}-p3"
+  message: "[lens-work] /devproposal: DevProposal — ${initiative.id}"
+  branch: "${phase_branch}"
 ```
 
 ### 7. Log Event
 
 ```json
-{"ts":"${ISO_TIMESTAMP}","event":"plan","id":"${initiative.id}","phase":"p3","workflow":"plan","status":"complete"}
+{"ts":"${ISO_TIMESTAMP}","event":"devproposal","id":"${initiative.id}","phase":"devproposal","audience":"medium","workflow":"devproposal","status":"complete"}
 ```
 
 ---
@@ -367,12 +460,12 @@ params:
 
 | Error | Recovery |
 |-------|----------|
-| P2 not complete | Error with merge instructions |
-| Large review not merged | Warn but allow proceeding |
+| TechPlan not complete | Error with merge instructions |
+| Audience promotion (small→medium) not done | Error — run audience-promotion first |
 | PRD/Architecture missing | Warn, proceeding may produce incomplete epics |
 | Dirty working directory | Prompt to stash or commit changes first |
 | Branch creation failed | Check remote connectivity, retry with backoff |
-| P2 ancestry check failed | Prompt to merge P2 PR before continuing |
+| Audience promotion check failed | Prompt to run audience-promotion before continuing |
 | Epic/Story generation failed | Retry or allow manual creation |
 | Epic adversarial review failed | Resolve implementation-readiness findings and re-run /plan |
 | Epic party-mode review failed | Address party-mode findings and re-run /plan |
@@ -383,13 +476,13 @@ params:
 ## Post-Conditions
 
 - [ ] Working directory clean (all changes committed)
-- [ ] On correct branch: `{featureBranchRoot}-{audience}-p3`
-- [ ] state.yaml updated with phase p3
-- [ ] initiatives/{id}.yaml updated with p3 status and p2 gate passed
+- [ ] On phase branch: `{initiative_root}-medium-devproposal` (REQ-7: no auto-merge)
+- [ ] state.yaml updated with phase devproposal
+- [ ] initiatives/{id}.yaml phase_status.devproposal updated
+- [ ] audience_status.small_to_medium marked complete
 - [ ] event-log.jsonl entry appended
 - [ ] Planning artifacts written to `${docs_path}/` (epics, stories, readiness-checklist)
 - [ ] Epic adversarial review executed and passed
 - [ ] Epic party-mode review executed and report generated
-- [ ] Final PBR PR opened (large → base)
 - [ ] All changes pushed to origin
 

@@ -1,3 +1,4 @@
+````prompt
 ---
 description: 'Activate the Scribe agent (Cornelius) for constitutional governance'
 ---
@@ -10,4 +11,6 @@ description: 'Activate the Scribe agent (Cornelius) for constitutional governanc
 Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.scribe.prompt.md
 ```
 
-Source: [lens-work.scribe.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.scribe.prompt.md)
+Source: [lens-work.scribe.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/4.0.0/.github/prompts/lens-work.scribe.prompt.md)
+
+````

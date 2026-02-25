@@ -1,26 +1,13 @@
-```prompt
 ---
-description: Create user profile and bootstrap TargetProjects for new team members
+name: onboard-workflow
+description: Four-step onboarding flow for new and returning users
 ---
 
-Activate Scout agent and execute onboard:
+# Stub: /onboard Workflow
 
-1. Load agent: `_bmad/lens-work/agents/scout.agent.yaml`
-2. Execute `onboard` command to create profile and setup
-3. Run discovery, reconcile, and documentation
-4. Confirm readiness for lens-work
-
-**Workflow:**
-1. Create user profile (git identity or manual)
-2. Verify TargetProjects path
-3. Run repo-discover
-4. Run repo-reconcile (clone missing repos)
-5. Run repo-document (generate canonical docs)
-6. Confirm setup complete
-
-**Output:**
-- User profile in `_bmad-output/lens-work/profiles/`
-- Repos cloned to TargetProjects
-- Canonical docs in `Docs/{domain}/{service}/{repo}/`
-
+This is a stub prompt. The actual implementation reads from:
 ```
+bmad.lens.release/.github/prompts/lens-work.onboard.md
+```
+
+**Load from release repository when integrating full implementations.**

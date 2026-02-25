@@ -1,5 +1,6 @@
+````prompt
 ---
-description: Activate Compass agent for phase-aware lifecycle navigation
+description: 'Activate Compass agent for phase-aware lifecycle navigation'
 ---
 
 # lens-work.compass (Stub)
@@ -10,4 +11,6 @@ description: Activate Compass agent for phase-aware lifecycle navigation
 Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.compass.prompt.md
 ```
 
-Source: [lens-work.compass.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.compass.prompt.md)
+Source: [lens-work.compass.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/4.0.0/.github/prompts/lens-work.compass.prompt.md)
+
+````

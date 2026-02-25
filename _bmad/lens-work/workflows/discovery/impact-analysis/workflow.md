@@ -30,7 +30,7 @@ target_projects_root: "TargetProjects/"
 
 # Branch naming pattern for initiative context
 # Flat, hyphen-separated: {featureBranchRoot}[-{audience}[-p{N}]]
-# Example: chat-spark-backend-alignment-50cf37-small-p1
+# Example: chat-spark-backend-alignment-50cf37-small-preplan
 ```
 
 > **Note:** The domain map enhances impact analysis with richer boundary information, but is not required. The workflow operates with service map and/or repo inventory alone.

@@ -4,8 +4,8 @@ description: Implementation loop (dev-story/code-review/retro)
 agent: compass
 trigger: /dev command
 category: router
-phase: 4
-phase_name: Implementation
+phase: dev
+phase_name: Dev
 ---
 
 # /dev — Implementation Phase Router
@@ -26,19 +26,29 @@ phase_name: Implementation
 
 ## Prerequisites
 
-- [x] `/review` complete
+- [x] `/sprintplan` complete (large → base promotion passed)
 - [x] Dev story exists (interactive mode)
 - [x] Developer assigned (or self-assigned)
 - [x] state.yaml + initiatives/{id}.yaml exist
-- [x] Implementation gate passed (P3 Solutioning complete)
+- [x] Constitution gate passed (large → base audience promotion)
 
 ---
 
 ## Execution Sequence
 
-### 0. Git Discipline — Verify Clean State
+### 0. Pre-Flight [REQ-9]
 
 ```yaml
+# PRE-FLIGHT (mandatory, never skip) [REQ-9]
+# 1. Verify working directory is clean
+# 2. Load two-file state (state.yaml + initiative config)
+# 3. Check previous phase status (if applicable)
+# 4. Determine correct phase branch: {initiative_root}-{audience}-{phase_name}
+# 5. Create phase branch if it doesn't exist
+# 6. Checkout phase branch
+# 7. Confirm to user: "Now on branch: {branch_name}"
+# GATE: All steps must pass before proceeding to artifact work
+
 # Verify working directory is clean
 invoke: casey.verify-clean-state
 
@@ -46,9 +56,14 @@ invoke: casey.verify-clean-state
 state = load("_bmad-output/lens-work/state.yaml")
 initiative = load("_bmad-output/lens-work/initiatives/${state.active_initiative}.yaml")
 
-# Read size from initiative config (shared, canonical)
+# Read initiative config
 size = initiative.size
 domain_prefix = initiative.domain_prefix
+
+# Derive audience for dev phase (base) [REQ-9]
+audience = "base"
+initiative_root = initiative.initiative_root
+audience_branch = "base"
 
 # === Path Resolver (S01-S06: Context Enhancement) ===
 docs_path = initiative.docs.path    # e.g., "docs/BMAD/LENS/BMAD.Lens/context-enhancement-9bfe4e"
@@ -65,6 +80,9 @@ if docs_path == null or docs_path == "":
 # NOTE: docs_path is READ-ONLY in /dev — used for context loading (S11)
 # Dev outputs go to _bmad-output/implementation-artifacts/ (unchanged)
 
+# REQ-10: Resolve BmadDocs path for per-initiative output co-location
+bmad_docs = initiative.docs.bmad_docs   # REQ-10
+
 # === Context Loader (S11: Context Enhancement) ===
 # Load planning context for dev reference (read-only)
 if docs_path != "_bmad-output/planning-artifacts/":
@@ -74,54 +92,101 @@ if docs_path != "_bmad-output/planning-artifacts/":
 else:
   planning_context = null
 
+# REQ-7/REQ-9: Validate previous phase (sprintplan) and audience promotion [S1.5]
+prev_phase = "sprintplan"
+prev_audience = "large"
+prev_phase_branch = "${initiative.initiative_root}-${prev_audience}-sprintplan"
+prev_audience_branch = "${initiative.initiative_root}-${prev_audience}"
+
+if initiative.phase_status[prev_phase] exists:
+  if initiative.phase_status[prev_phase] == "pr_pending":
+    # Check if the audience branch contains the phase commits (merged via PR)
+    result = casey.exec("git merge-base --is-ancestor origin/${prev_phase_branch} origin/${prev_audience_branch}")
+
+    if result.exit_code == 0:
+      # PR was merged! Auto-update status
+      invoke: tracey.update-initiative
+      params:
+        initiative_id: ${initiative.id}
+        updates:
+          phase_status:
+            sprintplan: "complete"
+      output: "✅ Previous phase (sprintplan) PR merged — status updated to complete"
+    else:
+      # PR not merged yet — warn but allow proceeding
+      pr_url = initiative.phase_status.sprintplan_pr_url || "(no PR URL recorded)"
+      output: |
+        ⚠️  Previous phase (sprintplan) PR not yet merged
+        ├── Status: pr_pending
+        ├── PR: ${pr_url}
+        └── You may continue, but phase artifacts may not be on the audience branch
+
+      ask: "Continue anyway? [Y]es / [N]o"
+      if no:
+        exit: 0  # User chose to wait for merge
+
 # Require dev story for interactive mode
 if initiative.question_mode != "batch" and not dev_story_exists():
-  error: "/review has not produced a dev-ready story. Run /review first."
+  error: "/sprintplan has not produced a dev-ready story. Run /sprintplan first."
 
-# Size validation — verify current size allows dev phase
-# Dev (P4) must be on small size
-if size != "small":
+# Audience validation — verify large→base promotion passed
+if initiative.audience_status.large_to_base != "passed":
   error: |
-    ❌ Size validation failed
-    ├── Current size: ${size}
-    ├── Required: small
-    └── Dev phase (P4) only runs on the small size.
+    ❌ Audience promotion validation failed
+    ├── Required: large → base promotion (constitution gate)
+    └── Run /promote to pass the constitution gate before /dev
 
-# Validate we're on the correct branch (or can switch)
-# Branch pattern: {featureBranchRoot}-{audience}-p{N}
-expected_branch: "${initiative.featureBranchRoot}-${audience}-p4"
-current_branch = casey.get-current-branch()
+# Determine phase branch [REQ-9]
+phase_branch = "${initiative.initiative_root}-dev"
 
-if current_branch != expected_branch:
-  if branch_exists(expected_branch):
-    invoke: casey.checkout-branch
-    params:
-      branch: ${expected_branch}
-    invoke: casey.pull-latest
-  # else: branch will be created in Step 1a
+# Step 5: Create phase branch if it doesn't exist [REQ-9]
+if not branch_exists(phase_branch):
+  invoke: casey.start-phase
+  params:
+    phase_name: "dev"
+    initiative_id: ${initiative.id}
+    audience: ${audience}
+    initiative_root: ${initiative.initiative_root}
+    parent_branch: ${audience_branch}
+  if start_phase.exit_code != 0:
+    FAIL("❌ Pre-flight failed: Could not create branch ${phase_branch}")
+
+# Step 6: Checkout phase branch
+invoke: casey.checkout-branch
+params:
+  branch: ${phase_branch}
+invoke: casey.pull-latest
+
+# Step 7: Confirm to user
+output: |
+  📋 Pre-flight complete [REQ-9]
+  ├── Initiative: ${initiative.name} (${initiative.id})
+  ├── Phase: Dev (Implementation)
+  ├── Branch: ${phase_branch}
+  └── Working directory: clean ✅
 ```
 
-### 1. Merge Gate Check — P3 Complete
+### 1. Audience Promotion Check — large → base Complete
 
 ```yaml
-# Merge gate checking — verify P3 (Solutioning) is complete before allowing dev
-# Branch pattern: {featureBranchRoot}-{audience}-p{N}
-p3_branch = "${initiative.featureBranchRoot}-${audience}-p3"
-audience_branch = "${initiative.featureBranchRoot}-${audience}"
+# Verify large→base audience promotion gate passed (constitution gate via Scribe)
+# All large-audience phases (sprintplan) must be merged
+sprintplan_branch = "${initiative.initiative_root}-large-sprintplan"
+large_branch = "${initiative.initiative_root}-large"
 
-# Ancestry check: P3 must be merged into audience branch
-result = casey.exec("git merge-base --is-ancestor origin/${p3_branch} origin/${audience_branch}")
+# Ancestry check: sprintplan must be merged into large audience branch
+result = casey.exec("git merge-base --is-ancestor origin/${sprintplan_branch} origin/${large_branch}")
 
 if result.exit_code != 0:
   error: |
     ❌ Merge gate blocked
-    ├── P3 (Solutioning) not merged into audience branch
-    ├── Expected: ${p3_branch} is ancestor of ${audience_branch}
-    └── Action: Complete /plan and merge P3 PR first
+    ├── SprintPlan not merged into large audience branch
+    ├── Expected: ${sprintplan_branch} is ancestor of ${large_branch}
+    └── Action: Complete /sprintplan and merge PR first
 
-# Verify implementation gate passed
-if initiative.gates.implementation_gate.status not in ["passed", "passed_with_warnings"]:
-  error: "Implementation gate not passed. Run /review first."
+# Verify constitution gate (large→base) passed
+if initiative.audience_status.large_to_base not in ["passed", "passed_with_warnings"]:
+  error: "Constitution gate not passed. Run /promote to complete large → base promotion."
 ```
 
 ### 1a. Constitutional Context Injection (Required)
@@ -139,27 +204,12 @@ if constitutional_context.status == "parse_error":
 session.constitutional_context = constitutional_context
 ```
 
-### 1b. Auto-Branch Creation - P4
+### 1b. Branch Verification (consolidated into Pre-Flight)
 
 ```yaml
-# Casey creates P4 branch if it doesn't exist
-# Branch pattern: {featureBranchRoot}-{audience}-p{N}
-if not branch_exists("${initiative.featureBranchRoot}-${audience}-p4"):
-  invoke: casey.start-phase
-  params:
-    phase_number: 4
-    phase_name: "Implementation"
-    initiative_id: ${initiative.id}
-    audience: ${audience}
-    featureBranchRoot: ${initiative.featureBranchRoot}
-  # Casey creates: ${featureBranchRoot}-${audience}-p4 and pushes to remote
-
-  invoke: casey.pull-latest
-else:
-  invoke: casey.checkout-branch
-  params:
-    branch: "${initiative.featureBranchRoot}-${audience}-p4"
-  invoke: casey.pull-latest
+# Branch creation and checkout handled in Step 0 Pre-Flight [REQ-9]
+# Phase branch ${phase_branch} is already checked out at this point.
+assert: current_branch == phase_branch
 ```
 
 ### 1c. Batch Mode (Single-File Questions)
@@ -168,35 +218,42 @@ else:
 if initiative.question_mode == "batch":
   invoke: lens-work.batch-process
   params:
-    phase_number: "4"
-    phase_name: "Implementation"
+    phase_name: "dev"
     template_path: "templates/phase-4-implementation-questions.template.md"
-    output_filename: "phase-4-implementation-questions.md"
+    output_filename: "dev-implementation-questions.md"
   exit: 0
 ```
 
 ### 2. Load Dev Story
 
 ```yaml
-dev_story = load("_bmad-output/implementation-artifacts/dev-story-${id}.md")
+# REQ-10: Read dev story from BmadDocs first, fallback to legacy location
+if bmad_docs != null and file_exists("${bmad_docs}/dev-story-${id}.md"):   # REQ-10
+  dev_story = load("${bmad_docs}/dev-story-${id}.md")
+  dev_story_source = "${bmad_docs}/dev-story-${id}.md"
+else:
+  dev_story = load("_bmad-output/implementation-artifacts/dev-story-${id}.md")
+  dev_story_source = "_bmad-output/implementation-artifacts/dev-story-${id}.md"
 
 output: |
   🚀 /dev — Implementation Phase
   
   **Story:** ${dev_story.title}
+  **Source:** ${dev_story_source}   # REQ-10
   **Acceptance Criteria:**
   ${dev_story.acceptance_criteria}
   
   **Technical Notes:**
   ${dev_story.technical_notes}
   
-  **Branch:** ${initiative.featureBranchRoot}-${audience}-p4
+  **Branch:** ${initiative.initiative_root}-dev
 ```
 
 ### 2a. Dev Story Constitution Check (Required)
 
 ```yaml
-dev_story_path = "_bmad-output/implementation-artifacts/dev-story-${id}.md"
+# REQ-10: Use BmadDocs path if available, fallback to legacy
+dev_story_path = dev_story_source   # REQ-10: set by Step 2 fallback logic
 
 dev_story_compliance = invoke("scribe.compliance-check")
 params:
@@ -359,14 +416,11 @@ invoke: tracey.update-initiative
 params:
   initiative_id: ${initiative.id}
   updates:
-    current_phase: "p4"
-    current_phase_name: "Implementation"
-    phases:
-      p4:
-        status: "in_progress"
-        started_at: "${ISO_TIMESTAMP}"
+    current_phase: "dev"
+    phase_status:
+      dev: "in_progress"
     gates:
-      p3_complete:
+      large_to_base:
         status: "passed"
         verified_at: "${ISO_TIMESTAMP}"
       dev_started:
@@ -374,19 +428,19 @@ params:
         started_at: "${ISO_TIMESTAMP}"
         story_id: "${story_id}"
 
-# Update state.yaml current phase to p4
+# Update state.yaml current phase to dev
 invoke: tracey.update-state
 params:
   updates:
-    current_phase: "p4"
-    current_phase_name: "Implementation"
-    active_branch: "${initiative.featureBranchRoot}-${audience}-p4"
+    current_phase: "dev"
+    active_branch: "${initiative.initiative_root}-dev"
     workflow_status: "in_progress"
 ```
 
 ### 8. Commit State Changes
 
 ```yaml
+# REQ-7: Never auto-merge. PR created in S1.2.
 # Casey commits all state and artifact changes
 invoke: casey.commit-and-push
 params:
@@ -395,14 +449,14 @@ params:
     - "_bmad-output/lens-work/initiatives/${initiative.id}.yaml"
     - "_bmad-output/lens-work/event-log.jsonl"
     - "_bmad-output/implementation-artifacts/"
-  message: "[lens-work] /dev: Phase 4 Implementation — ${initiative.id} — ${story_id}"
-  branch: "${initiative.featureBranchRoot}-${audience}-p4"
+  message: "[lens-work] /dev: Dev Implementation — ${initiative.id} — ${story_id}"
+  branch: "${initiative.initiative_root}-dev"
 ```
 
 ### 9. Log Event
 
 ```json
-{"ts":"${ISO_TIMESTAMP}","event":"dev","id":"${initiative.id}","phase":"p4","workflow":"dev","story":"${story_id}","status":"in_progress"}
+{"ts":"${ISO_TIMESTAMP}","event":"dev","id":"${initiative.id}","phase":"dev","workflow":"dev","story":"${story_id}","status":"in_progress"}
 ```
 
 ### 10. Complete Initiative (when all done)
@@ -415,10 +469,8 @@ if all_phases_complete():
     updates:
       status: "complete"
       completed_at: "${ISO_TIMESTAMP}"
-      phases:
-        p4:
-          status: "complete"
-          completed_at: "${ISO_TIMESTAMP}"
+      phase_status:
+        dev: "complete"
 
   invoke: tracey.archive
   
@@ -469,10 +521,10 @@ Throughout `/dev`, the user may work in TargetProjects for actual coding, but al
 
 | Error | Recovery |
 |-------|----------|
-| No dev story | Prompt to run /review first |
-| P3 not merged | Error with merge gate blocked message |
-| Implementation gate not passed | Error — run /review first |
-| Size validation failed | Error — must be on small size for P4 |
+| No dev story | Prompt to run /sprintplan first |
+| SprintPlan not merged | Error with merge gate blocked message |
+| Constitution gate not passed | Error — run /promote for large → base first |
+| Audience promotion failed | Error — must complete large → base promotion |
 | Dirty working directory | Prompt to stash or commit changes first |
 | Target repo checkout failed | Check target_repos config, retry |
 | Branch creation failed | Check remote connectivity, retry with backoff |
@@ -489,10 +541,10 @@ Throughout `/dev`, the user may work in TargetProjects for actual coding, but al
 ## Post-Conditions
 
 - [ ] Working directory clean (all changes committed)
-- [ ] On correct branch: `{featureBranchRoot}-{audience}-p4`
-- [ ] Size validated as "small" for dev phase
-- [ ] state.yaml updated with phase p4
-- [ ] initiatives/{id}.yaml updated with p4 status and gate entries
+- [ ] On correct branch: `{initiative_root}-dev`
+- [ ] Audience promotion validated (large → base passed)
+- [ ] state.yaml updated with phase dev
+- [ ] initiatives/{id}.yaml updated with dev status and gate entries
 - [ ] event-log.jsonl entries appended
 - [ ] Dev story loaded and implementation started
 - [ ] Dev story compliance gate passed

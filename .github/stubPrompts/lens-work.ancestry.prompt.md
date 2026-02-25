@@ -10,4 +10,4 @@ description: 'Display constitution inheritance chain for current context'
 Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.ancestry.prompt.md
 ```
 
-Source: [lens-work.ancestry.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.ancestry.prompt.md)
+Source: [lens-work.ancestry.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/4.0.0/.github/prompts/lens-work.ancestry.prompt.md)

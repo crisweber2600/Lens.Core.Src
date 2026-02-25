@@ -1,5 +1,6 @@
+````prompt
 ---
-description: Switch active initiative, lens, phase, or size
+description: 'Switch active initiative, lens, phase, or size'
 ---
 
 # lens-work.switch (Stub)
@@ -10,4 +11,6 @@ description: Switch active initiative, lens, phase, or size
 Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.switch.prompt.md
 ```
 
-Source: [lens-work.switch.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.switch.prompt.md)
+Source: [lens-work.switch.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/4.0.0/.github/prompts/lens-work.switch.prompt.md)
+
+````

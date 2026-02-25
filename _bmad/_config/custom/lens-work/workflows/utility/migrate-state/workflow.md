@@ -1,14 +1,15 @@
 ---
 name: migrate-state
-description: Migrate from single-file state to two-file state architecture
+description: Migrate from single-file state to two-file state architecture (v2 lifecycle-aware)
 agent: tracey
 trigger: "@tracey migrate"
 category: utility
+imports: lifecycle.yaml
 ---
 
 # Migrate State Workflow
 
-**Purpose:** Migrate from the legacy single-file `state.yaml` format to the new two-file state architecture (personal state + initiative config).
+**Purpose:** Migrate from the legacy single-file `state.yaml` format to the new two-file state architecture (personal state + initiative config). Produces v2 lifecycle contract output when possible.
 
 ---
 
@@ -136,6 +137,10 @@ mkdir -p "_bmad-output/lens-work/initiatives"
 Write to `_bmad-output/lens-work/initiatives/${migration_data.id}.yaml`:
 
 ```yaml
+# Written by migrate-state — lifecycle_version: 1 (legacy)
+# Run @tracey migrate-lifecycle to upgrade to v2 named phases
+lifecycle_version: 1
+
 id: ${migration_data.id}
 name: "${migration_data.name}"
 layer: ${migration_data.layer}
@@ -164,6 +169,16 @@ ${endfor}
 branches:
   base: "${migration_data.branches.base}"
   active: "${migration_data.branches.active}"
+
+# Legacy fields preserved for backward compat
+# Run @tracey migrate-lifecycle to convert to:
+#   lifecycle_version: 2, track, active_phases, phase_status, initiative_root
+featureBranchRoot: "${migration_data.branches.base}"
+review_audience_map:
+  p1: small
+  p2: medium
+  p3: large
+  p4: large
 ```
 
 ### 5. Backup Old State
@@ -178,12 +193,22 @@ echo "Backup created: state.yaml.backup"
 Overwrite `_bmad-output/lens-work/state.yaml`:
 
 ```yaml
+# Written by migrate-state — preserves legacy phase naming
+# Run @tracey migrate-lifecycle to upgrade to v2 named phases
+lifecycle_version: 1
+
 active_initiative: ${migration_data.id}
+current_phase: ${migration_data.current.phase}
+workflow_status: ${migration_data.current.workflow_status}
+
+# Legacy fields (preserved from old state)
 current:
   phase: ${migration_data.current.phase}
   phase_name: "${migration_data.current.phase_name}"
   workflow: ${migration_data.current.workflow}
   workflow_status: ${migration_data.current.workflow_status}
+
+background_errors: []
 ```
 
 ### 7. Log Migration Event
@@ -232,6 +257,13 @@ Append to `_bmad-output/lens-work/event-log.jsonl`:
    ```
 
 3. Verify with: @tracey ST
+
+4. (Optional) Upgrade to v2 lifecycle contract:
+   ```bash
+   @tracey migrate-lifecycle
+   ```
+   This converts p1-p4 phases to named phases (preplan, businessplan, etc.),
+   adds track selection, and renames branches if desired.
 
 **State loading pattern (all workflows):**
   state = load("_bmad-output/lens-work/state.yaml")

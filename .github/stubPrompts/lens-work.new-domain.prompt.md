@@ -1,5 +1,6 @@
+````prompt
 ---
-description: Create new domain-level initiative with domain-only branch and folder scaffolding
+description: 'Create new domain-level initiative with domain-only branch and folder scaffolding'
 ---
 
 # lens-work.new-domain (Stub)
@@ -10,4 +11,6 @@ description: Create new domain-level initiative with domain-only branch and fold
 Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.new-domain.prompt.md
 ```
 
-Source: [lens-work.new-domain.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.new-domain.prompt.md)
+Source: [lens-work.new-domain.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/4.0.0/.github/prompts/lens-work.new-domain.prompt.md)
+
+````

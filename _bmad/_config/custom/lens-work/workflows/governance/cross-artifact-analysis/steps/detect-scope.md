@@ -25,20 +25,20 @@ initiative_id = state.active_initiative
 
 ```yaml
 artifact_map:
-  p1:  # Analysis
+  preplan:  # PrePlan
     - product-brief.md
     
-  p2:  # Planning
+  businessplan:  # BusinessPlan
     - product-brief.md
     - prd.md
     
-  p3:  # Solutioning
+  techplan:  # TechPlan
     - product-brief.md
     - prd.md
     - architecture.md
     - epics.md
     
-  p4:  # Implementation
+  devproposal:  # DevProposal
     - product-brief.md
     - prd.md
     - architecture.md

@@ -1,5 +1,6 @@
+````prompt
 ---
-description: Revert bootstrap to previous snapshot
+description: 'Revert bootstrap to previous snapshot'
 ---
 
 # lens-work.rollback (Stub)
@@ -10,4 +11,6 @@ description: Revert bootstrap to previous snapshot
 Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.rollback.prompt.md
 ```
 
-Source: [lens-work.rollback.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.rollback.prompt.md)
+Source: [lens-work.rollback.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/4.0.0/.github/prompts/lens-work.rollback.prompt.md)
+
+````

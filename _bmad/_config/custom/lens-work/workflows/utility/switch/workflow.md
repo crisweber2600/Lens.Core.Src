@@ -8,14 +8,14 @@ category: utility
 
 # Switch Context Workflow
 
-**Purpose:** Interactively switch between initiatives, lenses (domain/service/microservice/feature), phases (P0–P4), and sizes (small/medium/large), with branch checkout and state synchronization.
+**Purpose:** Interactively switch between initiatives, lenses (org/domain/service/repo), phases (named phases per lifecycle.yaml), and audiences (small/medium/large/base), with branch checkout and state synchronization.
 
 ---
 
 ## Input Parameters
 
 ```yaml
-sub_command: enum | null   # initiative | lens | phase | size — if omitted, show interactive menu
+sub_command: enum | null   # initiative | lens | phase | audience — if omitted, show interactive menu
 target: string | null      # Optional direct target (initiative id, phase number, size name, etc.)
 ```
 
@@ -151,9 +151,9 @@ if sub_command == null:
   output: |
     🧭 Switch Context
     ├── [1] Switch Initiative (change active initiative)
-    ├── [2] Switch Lens (domain/service/microservice/feature)
-    ├── [3] Switch Phase (P0-P4)
-    ├── [4] Switch Size (small/medium/large)
+    ├── [2] Switch Lens (org/domain/service/repo)
+    ├── [3] Switch Phase (named phases per track)
+    ├── [4] Switch Audience (small/medium/large/base)
     └── [0] Cancel
   
   read: menu_choice
@@ -175,9 +175,9 @@ else:
     "initiative": goto Step 3
     "lens": goto Step 4
     "phase": goto Step 5
-    "size": goto Step 6
+    "audience": goto Step 6
     default: |
-      output: "Unknown sub-command: ${sub_command}. Use: initiative | lens | phase | size"
+      output: "Unknown sub-command: ${sub_command}. Use: initiative | lens | phase | audience"
 
       exit: 1
 ```
@@ -298,21 +298,21 @@ goto: Step 7
 # Change the layer/lens focus within current initiative
 output: |
   🔍 Switch Lens — Current: ${current_layer}
-  
+
   Available layers:
-  ├── [1] Domain   — Full domain scope (all repos)
-  ├── [2] Service  — Single service focus
-  ├── [3] Microservice — Sub-service component
-  ├── [4] Feature  — Feature-level scope
+  ├── [1] Org      — Organization scope (cross-domain)
+  ├── [2] Domain   — Full domain scope (all repos)
+  ├── [3] Service  — Single service focus
+  ├── [4] Repo     — Repository-level scope
   └── [0] Cancel
 
 read: lens_choice
 
 lens_map:
-  "1": "domain"
-  "2": "service"
-  "3": "microservice"
-  "4": "feature"
+  "1": "org"
+  "2": "domain"
+  "3": "service"
+  "4": "repo"
 
 if lens_choice == "0" or lens_choice == null:
   output: "Cancelled. Lens unchanged."
@@ -368,27 +368,31 @@ goto: Step 7
 
 ```yaml
 # Show available phases with current position
-phase_map = {
-  "0": { code: "p0", name: "Pre-Plan",       description: "Discovery & initial analysis" },
-  "1": { code: "p1", name: "Analysis",        description: "Deep analysis & product brief" },
-  "2": { code: "p2", name: "Planning",        description: "PRD & UX design" },
-  "3": { code: "p3", name: "Solutioning",     description: "Architecture & epics/stories" },
-  "4": { code: "p4", name: "Implementation",  description: "Sprint planning & development" }
+# Load phase list from lifecycle.yaml for initiative's track
+track = initiative.track or "full"
+lifecycle = load("lifecycle.yaml")
+track_phases = lifecycle.tracks[track].phases
+
+phase_display = {
+  "preplan":      { name: "PrePlan",      audience: "small",  description: "Brainstorm, research, product brief" },
+  "businessplan": { name: "BusinessPlan", audience: "small",  description: "PRD & UX design" },
+  "techplan":     { name: "TechPlan",     audience: "small",  description: "Architecture & tech decisions" },
+  "devproposal":  { name: "DevProposal",  audience: "medium", description: "Epics, stories, readiness" },
+  "sprintplan":   { name: "SprintPlan",   audience: "large",  description: "Sprint planning & story selection" },
+  "dev":          { name: "Dev",          audience: "base",   description: "Implementation & code review" }
 }
 
-current_phase_num = extract_phase_number(current_phase)
-
 output: |
-  📐 Switch Phase — Current: ${current_phase} (${current_phase_name})
-  
-  Available phases:
-  ${for num, phase in phase_map}
-  ${num == current_phase_num ? "▶" : " "} [${num}] P${num} — ${phase.name}
-       ${phase.description}
+  📐 Switch Phase — Current: ${current_phase} (Track: ${track})
+
+  Available phases for ${track} track:
+  ${for i, phase_key in enumerate(track_phases)}
+  ${phase_key == current_phase ? "▶" : " "} [${i+1}] ${phase_display[phase_key].name}
+       ${phase_display[phase_key].description} (audience: ${phase_display[phase_key].audience})
   ${endfor}
-  
+
   ⚠️  Switching phase will create/checkout the phase branch.
-  
+
   [C] Cancel
 
 read: phase_choice
@@ -397,22 +401,24 @@ if phase_choice == "C" or phase_choice == "c" or phase_choice == null:
   output: "Cancelled. Phase unchanged."
   exit: 0
 
-selected_phase = phase_map[phase_choice]
-
-if selected_phase == null:
-  output: "Invalid choice. Please select 0-4 or C to cancel."
+selected_idx = int(phase_choice) - 1
+if selected_idx < 0 or selected_idx >= track_phases.length:
+  output: "Invalid choice. Please select 1-${track_phases.length} or C to cancel."
   goto: Step 5
 
-if phase_choice == current_phase_num:
-  output: "Already on P${phase_choice} (${selected_phase.name}). No change needed."
+selected_phase_key = track_phases[selected_idx]
+selected_phase = phase_display[selected_phase_key]
+
+if selected_phase_key == current_phase:
+  output: "Already on ${selected_phase.name}. No change needed."
   exit: 0
 
 # Determine target branch for selected phase
-# Branch pattern: {featureBranchRoot}-{audience}-p{phaseNumber}
-# featureBranchRoot is stored in initiative.featureBranchRoot (e.g., domain-service-feature)
-target_branch = "${initiative.featureBranchRoot}-${current_size}-p${phase_choice}"
+# Branch pattern: {initiative_root}-{audience}-{phase_name}
+target_audience = selected_phase.audience
+target_branch = "${initiative.initiative_root}-${target_audience}-${selected_phase_key}"
 
-output: "🔀 Switching to phase P${phase_choice} (${selected_phase.name})..."
+output: "🔀 Switching to phase ${selected_phase.name} (${target_audience})..."
 ```
 
 ```bash
@@ -435,7 +441,7 @@ else
   echo "Branch '${target_branch}' does not exist. Creating..."
   
   # Audience branch is the parent for phase branches
-  audience_branch="${initiative.featureBranchRoot}-${current_size}"
+  audience_branch="${initiative.initiative_root}-${target_audience}"
   
   # Ensure audience branch exists
   if git show-ref --verify --quiet "refs/heads/${audience_branch}"; then
@@ -455,16 +461,16 @@ fi
 
 ```yaml
 # Update state with new phase
-state.current.phase = "P${phase_choice}"
+state.current.phase = selected_phase_key
 state.current.phase_name = selected_phase.name
 state.current.workflow = null
 state.current.workflow_status = null
 
 # Update initiative config
-initiative.current_phase = "P${phase_choice}"
+initiative.current_phase = selected_phase_key
 initiative.branches.active = target_branch
 
-output: "✅ Phase switched: ${current_phase} → P${phase_choice} (${selected_phase.name})"
+output: "✅ Phase switched: ${current_phase} → ${selected_phase.name} (${target_audience})"
 
 # Continue to Step 7 for state sync
 goto: Step 7
@@ -472,58 +478,63 @@ goto: Step 7
 
 ---
 
-### Step 6: Switch Size
+### Step 6: Switch Audience
 
 ```yaml
-# Available sizes
-size_map = {
-  "1": { code: "small",  description: "Small team — planning & development track" },
-  "2": { code: "medium", description: "Medium team — multi-track coordination" },
-  "3": { code: "large",  description: "Large team — review & governance" }
+# Available audiences
+audience_map = {
+  "1": { code: "small",  description: "IC creation — preplan, businessplan, techplan" },
+  "2": { code: "medium", description: "Lead review — devproposal" },
+  "3": { code: "large",  description: "Stakeholder — sprintplan" },
+  "4": { code: "base",   description: "Execution — dev" }
 }
 
+current_audience = initiative.current_audience or "small"
+
 output: |
-  🛤️  Switch Size — Current: ${current_size}
-  
-  Available sizes:
-  ${for num, size in size_map}
-  ${num == current_size_idx ? "▶" : " "} [${num}] ${size.code}
-       ${size.description}
+  🛤️  Switch Audience — Current: ${current_audience}
+
+  Available audiences:
+  ${for num, aud in audience_map}
+  ${aud.code == current_audience ? "▶" : " "} [${num}] ${aud.code}
+       ${aud.description}
   ${endfor}
-  
-  ⚠️  Switching size will create/checkout the size branch.
-  
+
+  ⚠️  Switching audience will checkout the audience branch.
+
   [C] Cancel
 
-read: size_choice
+read: audience_choice
 
-if size_choice == "C" or size_choice == "c" or size_choice == null:
-  output: "Cancelled. Size unchanged."
+if audience_choice == "C" or audience_choice == "c" or audience_choice == null:
+  output: "Cancelled. Audience unchanged."
   exit: 0
 
-selected_size = size_map[size_choice]
+selected_audience = audience_map[audience_choice]
 
-if selected_size == null:
-  output: "Invalid choice. Please select 1-3 or C to cancel."
+if selected_audience == null:
+  output: "Invalid choice. Please select 1-4 or C to cancel."
   goto: Step 6
 
-if selected_size.code == current_size:
-  output: "Already on ${current_size} size. No change needed."
+if selected_audience.code == current_audience:
+  output: "Already on ${current_audience} audience. No change needed."
   exit: 0
 
-# Determine target branch for selected size (audience)
-# Branch pattern: {featureBranchRoot}-{audience}
-size_branch = "${initiative.featureBranchRoot}-${selected_size.code}"
+# Determine target branch for selected audience
+# Branch pattern: {initiative_root}-{audience}
+audience_branch = "${initiative.initiative_root}-${selected_audience.code}"
 
-# If currently on a phase branch, also create the phase branch under the new audience
-current_phase_num = extract_phase_number(current_phase)
-if current_phase_num != null:
-  phase_branch = "${initiative.featureBranchRoot}-${selected_size.code}-p${current_phase_num}"
-  target_branch = phase_branch
+# If currently on a phase branch, find the current phase in the new audience
+if current_phase != null and current_phase != "unknown":
+  phase_audience = phase_display[current_phase].audience
+  if phase_audience == selected_audience.code:
+    target_branch = "${initiative.initiative_root}-${selected_audience.code}-${current_phase}"
+  else:
+    target_branch = audience_branch
 else:
-  target_branch = size_branch
+  target_branch = audience_branch
 
-output: "🔀 Switching to ${selected_size.code} size..."
+output: "🔀 Switching to ${selected_audience.code} audience..."
 ```
 
 ```bash
@@ -540,8 +551,8 @@ elif git show-ref --verify --quiet "refs/remotes/origin/${size_branch}"; then
   git checkout -b "${size_branch}" "origin/${size_branch}"
   git checkout -  # go back, we'll checkout target below
 else
-  # Create audience branch from featureBranchRoot
-  root_branch="${initiative.featureBranchRoot}"
+  # Create audience branch from initiative_root
+  root_branch="${initiative.initiative_root}"
   if git show-ref --verify --quiet "refs/heads/${root_branch}"; then
     git checkout "${root_branch}"
   elif git show-ref --verify --quiet "refs/remotes/origin/${root_branch}"; then
@@ -577,13 +588,13 @@ fi
 ```
 
 ```yaml
-# Update size in initiative config (stored in shared config, not personal state)
-initiative.size = selected_size.code
+# Update audience in initiative config
+initiative.current_audience = selected_audience.code
 
 # Update initiative config
 initiative.branches.active = target_branch
 
-output: "✅ Size switched: ${current_size} → ${selected_size.code}"
+output: "✅ Audience switched: ${current_audience} → ${selected_audience.code}"
 
 # Continue to Step 7 for state sync
 goto: Step 7
@@ -662,11 +673,12 @@ fi
 ```yaml
 # Determine next suggested command based on new position
 phase_commands = {
-  "P0": "/pre-plan",
-  "P1": "/pre-plan or /spec",
-  "P2": "/spec or /plan",
-  "P3": "/plan or /review",
-  "P4": "/dev"
+  "preplan": "/preplan",
+  "businessplan": "/businessplan",
+  "techplan": "/techplan",
+  "devproposal": "/devproposal",
+  "sprintplan": "/sprintplan",
+  "dev": "/dev"
 }
 
 new_branch = exec("git branch --show-current")
@@ -677,7 +689,7 @@ output: |
   ├── Initiative: ${initiative.name} (${initiative.id})
   ├── Lens: ${initiative.layer}
   ├── Phase: ${state.current.phase} (${state.current.phase_name})
-  ├── Size: ${initiative.size}
+  ├── Audience: ${initiative.current_audience}
   ├── Branch: ${new_branch}
   └── Ready for: ${next_command}
   
@@ -708,8 +720,8 @@ output: |
 
 ## Post-Conditions
 
-- [ ] state.yaml updated with new position (initiative, phase, size)
-- [ ] Initiative config updated if layer/lens changed
+- [ ] state.yaml updated with new position (initiative, phase, audience)
+- [ ] Initiative config updated if layer/lens/audience changed
 - [ ] Git branch checked out matching new position
 - [ ] event-log.jsonl entry appended for switch event
 - [ ] State changes committed and pushed

@@ -18,24 +18,30 @@ Manages all git branch operations for the lens-work lifecycle. Handles branch cr
 4. **Push management** — Push branches at workflow boundaries
 5. **PR preparation** — Set up pull request metadata
 
-## Branch Patterns
+## Branch Patterns (v2 — Lifecycle Contract)
 
 ```yaml
 domain: "{domain_prefix}"
 service: "{domain_prefix}-{service_prefix}"
-root: "{featureBranchRoot}"
-audience: "{featureBranchRoot}-{audience}"
-phase: "{featureBranchRoot}-{audience}-p{N}"
-workflow: "{featureBranchRoot}-{audience}-p{N}-{workflow}"
+root: "{initiative_root}"
+audience: "{initiative_root}-{audience}"
+phase: "{initiative_root}-{audience}-{phase_name}"
+workflow: "{initiative_root}-{audience}-{phase_name}-{workflow}"
+
+# Branch patterns use named phases only (v2.0.0)
 ```
+
+> Named phases: preplan, businessplan, techplan, devproposal, sprintplan
+> Audiences: small (IC creation), medium (lead review), large (stakeholder), base (initiative root)
 
 ## Trigger Conditions
 
-- Initiative creation (`/new-*`) — create root + audience branches
-- Phase start — create phase branch
-- Workflow start — create workflow branch (optional)
+- Initiative creation (`/new-*`) — create root + audience branches (track-aware)
+- Phase start — create named phase branch from audience
+- Workflow start — create workflow branch from phase
 - Workflow end — commit, push
-- Phase end — PR, merge, delete phase branch, checkout next
+- Phase end — PR into audience branch, delete phase branch
+- Audience promotion — PR from one audience to next (with gate validation)
 
 ## Git Discipline Rules
 
@@ -56,9 +62,12 @@ workflow: "{featureBranchRoot}-{audience}-p{N}-{workflow}"
 
 ## State Fields Touched
 
-- `active_initiative.current_phase_branch`
-- `active_initiative.feature_branch_root`
-- `active_initiative.audiences`
+- `state.current_phase` (v2: named phase — preplan|businessplan|techplan|devproposal|sprintplan)
+- `state.phase_status` (v2: named phase keys)
+- `state.audience_status` (v2: promotion tracking — small_to_medium|medium_to_large|large_to_base)
+- `initiative.initiative_root` (v2: replaces featureBranchRoot)
+- `initiative.active_phases` (v2: derived from track)
+- `initiative.audiences` (v2: derived from track)
 
 ---
 

@@ -1,5 +1,6 @@
+````prompt
 ---
-description: Setup TargetProjects from service map with discovery and documentation
+description: 'Setup TargetProjects from service map with discovery and documentation'
 ---
 
 # lens-work.bootstrap (Stub)
@@ -10,4 +11,6 @@ description: Setup TargetProjects from service map with discovery and documentat
 Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.bootstrap.prompt.md
 ```
 
-Source: [lens-work.bootstrap.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.bootstrap.prompt.md)
+Source: [lens-work.bootstrap.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/4.0.0/.github/prompts/lens-work.bootstrap.prompt.md)
+
+````

@@ -1,5 +1,6 @@
+````prompt
 ---
-description: Display current initiative state, blocks, topology, and next steps
+description: 'Display current initiative state, blocks, topology, and next steps'
 ---
 
 # lens-work.status (Stub)
@@ -10,4 +11,6 @@ description: Display current initiative state, blocks, topology, and next steps
 Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.status.prompt.md
 ```
 
-Source: [lens-work.status.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.status.prompt.md)
+Source: [lens-work.status.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/4.0.0/.github/prompts/lens-work.status.prompt.md)
+
+````

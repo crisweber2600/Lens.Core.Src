@@ -1,16 +1,13 @@
-```prompt
 ---
-mode: 'agent'
-agent: 'bmad-agent-lens-work-scribe'
-description: 'Governance constitution management — View, Create, or Amend constitutions'
+name: constitution-command
+description: Display or manage constitution rules
 ---
 
-Manage constitutions for the current initiative context.
+# Stub: S-016 /constitution Command
 
-## Instructions
-1. Load the Scribe agent (Cornelius)
-2. Execute the /constitution command
-3. Present View/Create/Amend selector (View as default)
-4. Reference: workflows/governance/constitution/workflow.md
-
+This is a stub prompt. The actual implementation reads from:
 ```
+bmad.lens.release/.github/prompts/lens-work.constitution.md
+```
+
+**Load from release repository when integrating full implementations.**

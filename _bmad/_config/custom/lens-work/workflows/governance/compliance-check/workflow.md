@@ -5,6 +5,7 @@ agent: scribe
 trigger: /compliance command
 category: governance
 phase: N/A
+imports: lifecycle.yaml
 ---
 
 # Compliance Check Workflow — Governance
@@ -72,16 +73,18 @@ Validate artifact exists and is readable. Load its content.
 Call resolve-constitution logic to get accumulated rules for current context:
 
 1. Determine hierarchy from active initiative
-2. Walk chain parent-first: Domain → Service → Microservice → Feature
+2. Walk chain parent-first: Org → Domain → Service → Repo (per lifecycle.yaml resolution_order)
 3. Collect all applicable articles
+4. Collect track permissions, required gates, and additional review participants
 
 ```
 Resolving constitution for current context...
 
 Found {constitution_count} constitution(s):
-{list constitutions}
+{list constitutions with layers}
 
 Total articles to check: {article_count}
+Track governance: {permitted_tracks_count} track rules, {required_gates_count} gate rules
 ```
 
 **If no constitutions found:**
@@ -108,7 +111,46 @@ compliance_result:
   fail_count: 0
   constitution_count: 0
   article_count: 0
+  track_permitted: true
+  gate_violations: []
 ```
+
+---
+
+## Step 2a: Track & Gate Validation
+
+Before evaluating articles, validate initiative track and gate compliance:
+
+```yaml
+# Load initiative context
+initiative = load("_bmad-output/lens-work/initiatives/{active_id}.yaml")
+track = initiative.track  # e.g., "full", "feature", "tech-change"
+
+# Track permission check (intersection of all permitted_tracks in chain)
+if permitted_tracks and track not in permitted_tracks:
+  track_violation = {
+    severity: "FAIL",
+    rule: "Track '${track}' not permitted by constitution chain",
+    restricting_layers: [layers that excluded this track],
+    permitted: list(permitted_tracks)
+  }
+
+# Required gate check (union of all required_gates in chain)
+# Compare against track's default gates from lifecycle.yaml
+track_config = lifecycle.tracks[track]
+track_default_gates = derive_gates_from_track(track_config)
+
+missing_gates = required_gates - track_default_gates
+if missing_gates:
+  gate_violations = [{
+    severity: "WARN",
+    rule: "Constitution requires gate '${gate}' but track '${track}' skips it",
+    gate: gate,
+    required_by: [layers that require this gate]
+  } for gate in missing_gates]
+```
+
+Track violations produce FAIL (blocking). Gate violations produce WARN (advisory — the gate will be enforced at promotion time regardless).
 
 ---
 ## Step 3: Evaluate Each Article
@@ -150,9 +192,23 @@ Evaluating Article {id}: {title} [{MANDATORY|ADVISORY}]...
 Artifact: {artifact_path}
 Type: {artifact_type}
 Context: {layer} — {name}
+Track: {track}
 
 Checking against: {constitution_count} constitution(s), {article_count} articles
+Resolution chain: {chain_layers} (per lifecycle.yaml)
 Date: {today_date}
+
+{if track_violation:}
+❌ TRACK VIOLATION: Track '{track}' not permitted by {restricting_layers}
+   Permitted tracks: {permitted_tracks}
+{endif}
+
+{if gate_violations:}
+⚠️ GATE ADVISORIES:
+{for each gate_violation:}
+  - Gate '{gate}' required by {required_by} but skipped by track '{track}'
+{endfor}
+{endif}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
@@ -160,11 +216,13 @@ Date: {today_date}
 ### Verdict
 
 Determine overall verdict (enforcement-aware):
+- Track violation (track not permitted) → **NON-COMPLIANT** (always blocking)
 - Any FAIL from a **MANDATORY** article → **NON-COMPLIANT**
 - All PASS → **COMPLIANT**
-- Mix of PASS and WARN (including ADVISORY-capped WARNs) → **CONDITIONAL PASS**
+- Mix of PASS and WARN (including ADVISORY-capped WARNs and gate advisories) → **CONDITIONAL PASS**
 
 Note: `(ADVISORY)` article violations are capped at WARN and **never** trigger NON-COMPLIANT.
+Note: Gate violations are WARN-level — they advise but don't block (gates are enforced at promotion time).
 
 ```
 {if COMPLIANT:}
@@ -262,6 +320,9 @@ compliance_result:
   fail_count: {fail_count}
   constitution_count: {constitution_count}
   article_count: {article_count}
+  track_permitted: {true|false}
+  gate_violations: [{gate_name, required_by}]
+  resolution_chain: [{layer, name}]
 ```
 
 `NO_RULES` is returned when no constitutions exist for the context.

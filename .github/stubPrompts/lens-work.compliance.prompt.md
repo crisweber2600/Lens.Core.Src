@@ -1,3 +1,4 @@
+````prompt
 ---
 description: 'Check constitutional compliance of an artifact or initiative'
 ---
@@ -10,4 +11,6 @@ description: 'Check constitutional compliance of an artifact or initiative'
 Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.compliance.prompt.md
 ```
 
-Source: [lens-work.compliance.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.compliance.prompt.md)
+Source: [lens-work.compliance.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/4.0.0/.github/prompts/lens-work.compliance.prompt.md)
+
+````

@@ -408,21 +408,21 @@ goto: Step 7
 ```yaml
 # Show available phases with current position
 phase_map = {
-  "0": { code: "p0", name: "Pre-Plan",       description: "Discovery & initial analysis" },
-  "1": { code: "p1", name: "Analysis",        description: "Deep analysis & product brief" },
-  "2": { code: "p2", name: "Planning",        description: "PRD & UX design" },
-  "3": { code: "p3", name: "Solutioning",     description: "Architecture & epics/stories" },
-  "4": { code: "p4", name: "Implementation",  description: "Sprint planning & development" }
+  "preplan":      { name: "PrePlan",       description: "Discovery & initial analysis",         audience: "small" },
+  "businessplan": { name: "BusinessPlan",   description: "PRD & UX design",                     audience: "small" },
+  "techplan":     { name: "TechPlan",       description: "Architecture & epics/stories",         audience: "small" },
+  "devproposal":  { name: "DevProposal",    description: "Adversarial review & dev proposal",    audience: "medium" },
+  "sprintplan":   { name: "SprintPlan",     description: "Sprint planning & development",        audience: "large" }
 }
 
-current_phase_num = extract_phase_number(current_phase)
+current_phase_key = current_phase
 
 output: |
   📐 Switch Phase — Current: ${current_phase} (${current_phase_name})
   
   Available phases:
-  ${for num, phase in phase_map}
-  ${num == current_phase_num ? "▶" : " "} [${num}] P${num} — ${phase.name}
+  ${for key, phase in phase_map}
+  ${key == current_phase_key ? "▶" : " "} [${key}] ${phase.name} (${phase.audience})
        ${phase.description}
   ${endfor}
   
@@ -439,18 +439,18 @@ if phase_choice == "C" or phase_choice == "c" or phase_choice == null:
 selected_phase = phase_map[phase_choice]
 
 if selected_phase == null:
-  output: "Invalid choice. Please select 0-4 or C to cancel."
+  output: "Invalid choice. Please select a valid phase name or C to cancel."
   goto: Step 5
 
-if phase_choice == current_phase_num:
-  output: "Already on P${phase_choice} (${selected_phase.name}). No change needed."
+if phase_choice == current_phase_key:
+  output: "Already on ${selected_phase.name}. No change needed."
   exit: 0
 
 # Determine target branch for selected phase
-# Branch pattern: {featureBranchRoot}-{audience}-p{phaseNumber}
-target_branch = "${initiative.featureBranchRoot}-${current_size}-p${phase_choice}"
+# Branch pattern: {featureBranchRoot}-{audience}-{phaseName}
+target_branch = "${initiative.featureBranchRoot}-${selected_phase.audience}-${phase_choice}"
 
-output: "🔀 Switching to phase P${phase_choice} (${selected_phase.name})..."
+output: "🔀 Switching to phase ${selected_phase.name} (${selected_phase.audience})..."
 ```
 
 ```bash
@@ -493,16 +493,16 @@ fi
 
 ```yaml
 # Update state with new phase
-state.current.phase = "P${phase_choice}"
+state.current.phase = phase_choice
 state.current.phase_name = selected_phase.name
 state.current.workflow = null
 state.current.workflow_status = null
 
 # Update initiative config
-initiative.current_phase = "P${phase_choice}"
+initiative.current_phase = phase_choice
 initiative.branches.active = target_branch
 
-output: "✅ Phase switched: ${current_phase} → P${phase_choice} (${selected_phase.name})"
+output: "✅ Phase switched: ${current_phase} → ${selected_phase.name}"
 
 # Continue to Step 7 for state sync
 goto: Step 7

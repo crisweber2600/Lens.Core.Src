@@ -33,23 +33,25 @@ Determine the current LENS context using this priority:
 
 1. **Active initiative** (primary):
    - Load `_bmad-output/lens-work/initiatives/{active_id}.yaml`
-   - Extract: `domain`, `service`, `layer`, `name`, `microservice` (optional)
+   - Extract: `org` (optional), `domain`, `service`, `layer`, `name`, `repo` (optional)
+   - Also extract: `track` (for track governance display)
 
 2. **Branch pattern** (fallback):
-   - If current branch matches `{featureBranchRoot}-{audience}-p{N}-{workflow}` (flat, hyphen-separated):
-   - Parse featureBranchRoot, load initiative by ID, recurse with loaded context
+   - If current branch matches `{initiative_root}-{audience}-{phase_name}-{workflow}` (named phases):
+   - Parse initiative_root, load initiative by ID, recurse with loaded context
+   - Legacy support: also match `{featureBranchRoot}-{audience}-p{N}-{workflow}`
 
 3. **User input** (last resort):
-   - Prompt: "Which layer? [domain/service/microservice/feature]"
+   - Prompt: "Which layer? [org/domain/service/repo]"
    - Prompt: "Name for this layer?"
 
 ---
 
 ## Step 2: Trace Lineage
 
-Walk the inheritance chain from Domain to the current layer.
+Walk the inheritance chain from Org to the current layer (per lifecycle.yaml `constitution.resolution_order: [org, domain, service, repo]`).
 
-**For each layer (Domain → Feature):**
+**For each layer (Org → Repo):**
 
 1. Build path: `_bmad-output/lens-work/constitutions/{layer}/{name}/constitution.md`
 2. If file exists:
@@ -64,8 +66,9 @@ Walk the inheritance chain from Domain to the current layer.
 ancestry:
   depth: {layer_count}
   current: {current_layer_name}
+  track: {initiative_track}
   chain:
-    - layer: Domain
+    - layer: Org
       name: {name}
       version: {version}
       ratified: {date}
@@ -73,7 +76,28 @@ ancestry:
       local_articles: {count}
       inherited_articles: 0
       total_articles: {count}
+      permitted_tracks: {list or null}
+      required_gates: {list or null}
+    - layer: Domain
+      name: {name}
+      version: {version}
+      ratified: {date}
+      amended: {date}
+      local_articles: {count}
+      inherited_articles: {parent_total}
+      total_articles: {sum}
+      permitted_tracks: {list or null}
+      required_gates: {list or null}
     - layer: Service
+      name: {name}
+      version: {version}
+      ratified: {date}
+      amended: {date}
+      local_articles: {count}
+      inherited_articles: {parent_total}
+      total_articles: {sum}
+      required_gates: {list or null}
+    - layer: Repo
       name: {name}
       version: {version}
       ratified: {date}
@@ -94,30 +118,37 @@ Your Position: {layer_type} at {name}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-{domain_name} Domain Constitution (ratified {domain_ratified})
-├─ {domain_articles} articles
-├─ Version: {domain_version}
-├─ Last amended: {domain_amended}
+{if org exists:}
+{org_name} Org Constitution (ratified {org_ratified})
+├─ {org_articles} articles
+├─ Version: {org_version}
+├─ Last amended: {org_amended}
+├─ Permitted tracks: {org_permitted_tracks or "all"}
+├─ Required gates: {org_required_gates or "none"}
 │
-{if service exists:}
-└─ {service_name} Service Constitution (ratified {service_ratified})
-   ├─ {service_local} articles (+{service_inherited} inherited = {service_total} total)
-   ├─ Version: {service_version}
-   ├─ Last amended: {service_amended}
+{endif}
+{if domain exists:}
+└─ {domain_name} Domain Constitution (ratified {domain_ratified})
+   ├─ {domain_local} articles (+{domain_inherited} inherited = {domain_total} total)
+   ├─ Version: {domain_version}
+   ├─ Last amended: {domain_amended}
+   ├─ Permitted tracks: {domain_permitted_tracks or "inherits parent"}
+   ├─ Required gates: {domain_required_gates or "none"}
    │
 {endif}
-{if microservice exists:}
-   └─ {ms_name} Constitution (ratified {ms_ratified})
-      ├─ {ms_local} articles (+{ms_inherited} inherited = {ms_total} total)
-      ├─ Version: {ms_version}
-      ├─ Last amended: {ms_amended}
+{if service exists:}
+   └─ {service_name} Service Constitution (ratified {service_ratified})
+      ├─ {service_local} articles (+{service_inherited} inherited = {service_total} total)
+      ├─ Version: {service_version}
+      ├─ Last amended: {service_amended}
+      ├─ Required gates: {service_required_gates or "none"}
       │
 {endif}
-{if feature exists:}
-      └─ {feature_name} Constitution (ratified {feature_ratified})
-         ├─ {feature_local} articles (+{feature_inherited} inherited = {feature_total} total)
-         ├─ Version: {feature_version}
-         ├─ Last amended: {feature_amended}
+{if repo exists:}
+      └─ {repo_name} Repo Constitution (ratified {repo_ratified})
+         ├─ {repo_local} articles (+{repo_inherited} inherited = {repo_total} total)
+         ├─ Version: {repo_version}
+         ├─ Last amended: {repo_amended}
          │
 {endif}
          └─ [YOU ARE HERE]
@@ -127,7 +158,10 @@ Your Position: {layer_type} at {name}
 Governance Summary:
 
 Total inherited articles: {total_articles}
-Constitution depth: {depth} layer(s)
+Constitution depth: {depth} layer(s) (max 4: Org → Domain → Service → Repo)
+Track: {initiative_track} — {✅ permitted / ❌ not permitted}
+Effective permitted tracks: {intersection of all permitted_tracks}
+Effective required gates: {union of all required_gates}
 Oldest ratification: {oldest_date}
 Most recent amendment: {newest_amendment}
 
@@ -138,15 +172,15 @@ Most recent amendment: {newest_amendment}
 
 ## Step 4: Handle Sparse Chain
 
-**If gaps exist in the chain** (e.g., Service but no Microservice):
+**If gaps exist in the chain** (e.g., Domain but no Service):
 
 ```
 Note: There are gaps in your constitutional lineage:
 
+- Org Constitution: ✅ Present / ❌ Not found / ⬜ Not applicable
 - Domain Constitution: ✅ Present / ❌ Not found
-- Service Constitution: ✅ Present / ❌ Not found
-- Microservice Constitution: ✅ Present / ❌ Not found
-- Feature Constitution: ✅ Present / ❌ Not found
+- Service Constitution: ✅ Present / ❌ Not found / ⬜ Not applicable
+- Repo Constitution: ✅ Present / ❌ Not found / ⬜ Not applicable
 
 {If gaps:}
 The {current_layer} constitution inherits directly from the nearest ancestor.

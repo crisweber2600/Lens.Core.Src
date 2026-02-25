@@ -104,10 +104,10 @@ created: 2026-02-05
 
 | # | Test | Expected Result |
 |---|------|-----------------|
-| 2.2.1 | Creates phase branch via Casey if missing | New branch created matching `{featureBranchRoot}-{audience}-p{N}` |
-| 2.2.2 | Validates phase ordering (can't skip phases) | Attempting to skip from p1 to p3 shows gate violation error |
-| 2.2.3 | Updates `state.yaml` `current.phase` | Phase field updated to target phase number |
-| 2.2.4 | Branch pattern matches `{featureBranchRoot}-{audience}-p{N}` | Regex validation passes for created branch name |
+| 2.2.1 | Creates phase branch via Casey if missing | New branch created matching `{featureBranchRoot}-{audience}-{phaseName}` |
+| 2.2.2 | Validates phase ordering (can't skip phases) | Attempting to skip from preplan to techplan shows gate violation error |
+| 2.2.3 | Updates `state.yaml` `current.phase` | Phase field updated to target canonical phase name |
+| 2.2.4 | Branch pattern matches `{featureBranchRoot}-{audience}-{phaseName}` | Regex validation passes for created branch name |
 | 2.2.5 | Cannot switch to phase without passing previous gate | Gate check blocks advancement; shows required artifacts |
 | 2.2.6 | Switching to current phase is a no-op | Message: "Already on phase {N}" |
 
@@ -141,7 +141,7 @@ created: 2026-02-05
 | 3.1.3 | Creates small audience branch (feature) | `{featureBranchRoot}-small` branch exists and pushed |
 | 3.1.4 | Creates medium audience branch (feature) | `{featureBranchRoot}-medium` branch exists and pushed |
 | 3.1.5 | Creates large audience branch (feature) | `{featureBranchRoot}-large` branch exists and pushed |
-| 3.1.6 | No phase branches created at init (feature) | No `-small-p1` or other phase branches exist after init |
+| 3.1.6 | No phase branches created at init (feature) | No `-small-preplan` or other phase branches exist after init |
 | 3.1.7 | Writes initiative config with required fields (feature) | `initiatives/{id}.yaml` contains: `id`, `name`, `layer`, `target_repos`, `featureBranchRoot`, `branches`, `review_audience_map`, `gates`, `blocks` |
 | 3.1.8 | Logs init event to `event-log.jsonl` | Last entry has `event: init-initiative`, matching `initiative_id` |
 | 3.1.9 | Returns control to Compass | After init, Compass menu is displayed |
@@ -186,8 +186,8 @@ created: 2026-02-05
 | # | Test | Expected Result |
 |---|------|-----------------|
 | 4.1.1.1 | Loads two-file state | Both `state.yaml` and active initiative file read |
-| 4.1.1.2 | Gate check allows entry at p1 | Pre-plan available when on phase 1 |
-| 4.1.1.3 | Auto-creates phase branch if missing | Branch `{featureBranchRoot}-{audience}-p1` created if not present |
+| 4.1.1.2 | Gate check allows entry at preplan | PrePlan available when on preplan phase |
+| 4.1.1.3 | Auto-creates phase branch if missing | Branch `{featureBranchRoot}-small-preplan` created if not present |
 | 4.1.1.4 | State updates persist after execution | `state.yaml` updated with workflow progress |
 | 4.1.1.5 | Git discipline validates clean state | Dirty working directory blocks workflow start |
 | 4.1.1.6 | Constitutional context is injected | `constitutional_context` is resolved and available before analysis workflow calls |
@@ -197,9 +197,9 @@ created: 2026-02-05
 | # | Test | Expected Result |
 |---|------|-----------------|
 | 4.1.2.1 | Loads two-file state | Both files read successfully |
-| 4.1.2.2 | Gate check requires p1 completion | Cannot enter spec without pre-plan artifacts |
-| 4.1.2.3 | Creates p2 branch via Casey | Branch `{featureBranchRoot}-{audience}-p2` created |
-| 4.1.2.4 | State updates persist | Phase advanced to p2 in state |
+| 4.1.2.2 | Gate check requires preplan completion | Cannot enter spec without pre-plan artifacts |
+| 4.1.2.3 | Creates businessplan branch via Casey | Branch `{featureBranchRoot}-small-businessplan` created |
+| 4.1.2.4 | State updates persist | Phase advanced to businessplan in state |
 | 4.1.2.5 | Git discipline validates clean state | Blocks on dirty working directory |
 | 4.1.2.6 | Constitutional context is injected | `constitutional_context` is resolved before PRD/UX/architecture workflows run |
 
@@ -208,9 +208,9 @@ created: 2026-02-05
 | # | Test | Expected Result |
 |---|------|-----------------|
 | 4.1.3.1 | Loads two-file state | Both files read successfully |
-| 4.1.3.2 | Gate check requires p2 completion | Cannot enter plan without spec artifacts |
-| 4.1.3.3 | Creates p3 branch via Casey | Branch `{featureBranchRoot}-{audience}-p3` created |
-| 4.1.3.4 | State updates persist | Phase advanced to p3 in state |
+| 4.1.3.2 | Gate check requires businessplan completion | Cannot enter plan without spec artifacts |
+| 4.1.3.3 | Creates techplan branch via Casey | Branch `{featureBranchRoot}-small-techplan` created |
+| 4.1.3.4 | State updates persist | Phase advanced to techplan in state |
 | 4.1.3.5 | Git discipline validates clean state | Blocks on dirty working directory |
 | 4.1.3.6 | Constitutional context is injected | `constitutional_context` is resolved before epics/stories/readiness workflows run |
 | 4.1.3.7 | Epic adversarial stress gate runs | `bmm.check-implementation-readiness` executes after epics generation and blocks on fail |
@@ -221,7 +221,7 @@ created: 2026-02-05
 | # | Test | Expected Result |
 |---|------|-----------------|
 | 4.1.4.1 | Loads two-file state | Both files read successfully |
-| 4.1.4.2 | Gate check requires p3 completion | Cannot enter review without plan artifacts |
+| 4.1.4.2 | Gate check requires techplan completion | Cannot enter review without plan artifacts |
 | 4.1.4.3 | Creates review branch if needed | Branch created following naming convention |
 | 4.1.4.4 | State updates persist | Review status tracked in state |
 | 4.1.4.5 | Git discipline validates clean state | Blocks on dirty working directory |
@@ -234,8 +234,8 @@ created: 2026-02-05
 |---|------|-----------------|
 | 4.1.5.1 | Loads two-file state | Both files read successfully |
 | 4.1.5.2 | Gate check requires review completion | Cannot enter dev without review pass |
-| 4.1.5.3 | Creates p4 branch via Casey | Branch `{featureBranchRoot}-{audience}-p4` created |
-| 4.1.5.4 | State updates persist | Phase advanced to p4 in state |
+| 4.1.5.3 | Creates sprintplan branch via Casey | Branch `{featureBranchRoot}-large-sprintplan` created |
+| 4.1.5.4 | State updates persist | Phase advanced to sprintplan in state |
 | 4.1.5.5 | Git discipline validates clean state | Blocks on dirty working directory |
 | 4.1.5.6 | Constitutional context is injected | `constitutional_context` is resolved before implementation guidance and review loops |
 | 4.1.5.7 | Dev story compliance gate blocks FAILs | `scribe.compliance-check` on dev story exits `/dev` on any FAIL |

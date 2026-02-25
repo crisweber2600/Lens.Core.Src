@@ -21,7 +21,7 @@ The artifact validator runs at phase transitions to ensure all required artifact
 All validation results use this standard output format:
 
 ```
-📋 Artifact Validation: {phase_name} (P{N})
+📋 Artifact Validation: {phase_name}
 ├── ✅ {filename} — {pass_message}
 ├── ⚠️ {filename} — {warning_message}
 ├── ❌ {filename} — {error_message}
@@ -40,13 +40,15 @@ All validation results use this standard output format:
 
 ## Required Artifacts Per Phase
 
-### P1 — Analysis
+### PrePlan — Analysis
 
 ```yaml
-phase: p1
-phase_name: Analysis
+phase: preplan
+phase_name: PrePlan
+agent: Mary/Analyst
+audience: small
 artifacts:
-  - path: "_bmad-output/planning-artifacts/{id}/p1-product-brief.md"
+  - path: "_bmad-output/planning-artifacts/{id}/preplan-product-brief.md"
     required: true
     sections:
       - "Problem Statement"
@@ -55,26 +57,28 @@ artifacts:
       - "Success Metrics"
     min_length: 500  # characters
 
-  - path: "_bmad-output/planning-artifacts/{id}/p1-research-notes.md"
+  - path: "_bmad-output/planning-artifacts/{id}/preplan-research-notes.md"
     required: false
     sections:
       - "Competitors"
       - "Market Analysis"
     min_length: 200
 
-  - path: "_bmad-output/planning-artifacts/{id}/p1-brainstorm-notes.md"
+  - path: "_bmad-output/planning-artifacts/{id}/preplan-brainstorm-notes.md"
     required: false
     sections: []
     min_length: 100
 ```
 
-### P2 — Planning
+### BusinessPlan — Planning
 
 ```yaml
-phase: p2
-phase_name: Planning
+phase: businessplan
+phase_name: BusinessPlan
+agent: John/PM + Sally/UX
+audience: small
 artifacts:
-  - path: "_bmad-output/planning-artifacts/{id}/p2-prd.md"
+  - path: "_bmad-output/planning-artifacts/{id}/businessplan-prd.md"
     required: true
     sections:
       - "Overview"
@@ -84,15 +88,24 @@ artifacts:
       - "Constraints"
     min_length: 1000
 
-  - path: "_bmad-output/planning-artifacts/{id}/p2-ux-design.md"
+  - path: "_bmad-output/planning-artifacts/{id}/businessplan-ux-design.md"
     required: false
     sections:
       - "User Flows"
       - "Wireframes"
       - "Accessibility"
     min_length: 500
+```
 
-  - path: "_bmad-output/planning-artifacts/{id}/p2-architecture.md"
+### TechPlan — Architecture
+
+```yaml
+phase: techplan
+phase_name: TechPlan
+agent: Winston/Architect
+audience: small
+artifacts:
+  - path: "_bmad-output/planning-artifacts/{id}/techplan-architecture.md"
     required: true
     sections:
       - "System Overview"
@@ -102,21 +115,35 @@ artifacts:
       - "Technology Stack"
       - "Security Considerations"
     min_length: 1500
+
+  - path: "_bmad-output/planning-artifacts/{id}/techplan-tech-decisions.md"
+    required: false
+    sections:
+      - "Decision Log"
+    min_length: 300
+
+  - path: "_bmad-output/planning-artifacts/{id}/techplan-api-contracts.md"
+    required: false
+    sections:
+      - "Endpoints"
+    min_length: 200
 ```
 
-### P3 — Solutioning
+### DevProposal — Solutioning
 
 ```yaml
-phase: p3
-phase_name: Solutioning
+phase: devproposal
+phase_name: DevProposal
+agent: John/PM
+audience: medium
 artifacts:
-  - path: "_bmad-output/planning-artifacts/{id}/p3-epics.md"
+  - path: "_bmad-output/planning-artifacts/{id}/devproposal-epics.md"
     required: true
     sections:
       - "Epic List"
     min_length: 300
 
-  - path: "_bmad-output/planning-artifacts/{id}/p3-stories/"
+  - path: "_bmad-output/planning-artifacts/{id}/devproposal-stories/"
     required: true
     type: directory
     min_files: 1
@@ -125,7 +152,7 @@ artifacts:
       - "Description"
       - "Acceptance Criteria"
 
-  - path: "_bmad-output/planning-artifacts/{id}/p3-readiness-checklist.md"
+  - path: "_bmad-output/planning-artifacts/{id}/devproposal-readiness-checklist.md"
     required: true
     sections:
       - "Architecture Review"
@@ -153,20 +180,31 @@ artifacts:
     min_rows: 1
 ```
 
-### P4 — Implementation
+### SprintPlan — Sprint Planning
 
 ```yaml
-phase: p4
-phase_name: Implementation
+phase: sprintplan
+phase_name: SprintPlan
+agent: Bob/SM
+audience: large
 artifacts:
-  - path: "_bmad-output/implementation-artifacts/{id}/p4-sprint-plan.md"
-    required: false
+  - path: "_bmad-output/implementation-artifacts/{id}/sprintplan-sprint-plan.md"
+    required: true
     sections:
       - "Sprint Goals"
       - "Story Assignments"
     min_length: 200
+```
 
-  - path: "_bmad-output/implementation-artifacts/{id}/p4-dev-stories/"
+### Dev — Implementation
+
+```yaml
+phase: dev
+phase_name: Dev
+agent: Dev Team
+audience: base
+artifacts:
+  - path: "_bmad-output/implementation-artifacts/{id}/dev-stories/"
     required: true
     type: directory
     min_files: 1
@@ -175,13 +213,13 @@ artifacts:
       - "Implementation Plan"
       - "Definition of Done"
 
-  - path: "_bmad-output/implementation-artifacts/{id}/p4-review-notes.md"
+  - path: "_bmad-output/implementation-artifacts/{id}/dev-review-notes.md"
     required: false
     sections:
       - "Review Summary"
     min_length: 100
 
-  - path: "_bmad-output/implementation-artifacts/{id}/p4-retro.md"
+  - path: "_bmad-output/implementation-artifacts/{id}/dev-retro.md"
     required: false
     sections:
       - "What Went Well"
@@ -322,19 +360,19 @@ validate_csv() {
 Router workflows (Compass) call the validator before allowing phase progression:
 
 ```yaml
-# Example: /spec router checking P1 artifacts before allowing P2
+# Example: /businessplan router checking preplan artifacts before allowing businessplan
 validate_phase_artifacts:
-  phase: p1
+  phase: preplan
   initiative_id: ${initiative.id}
   artifact_path: "_bmad-output/planning-artifacts/${initiative.id}"
 
-  result = run_validation(phase="p1", initiative_id=${initiative.id})
+  result = run_validation(phase="preplan", initiative_id=${initiative.id})
 
   if result.status == "BLOCKED":
     output: |
       ❌ Phase gate blocked — missing required artifacts
       ${result.output}
-      
+
       Action: Complete the missing artifacts before proceeding.
     exit: 1
 
@@ -342,8 +380,8 @@ validate_phase_artifacts:
     output: |
       ⚠️ Phase gate passed with warnings
       ${result.output}
-      
-      Proceeding to P2 — consider addressing warnings.
+
+      Proceeding to businessplan — consider addressing warnings.
 ```
 
 ### Full Validation Run
@@ -391,46 +429,44 @@ output: |
 
 ## Validation Examples
 
-### P1 — All Passed
+### PrePlan — All Passed
 
 ```
-📋 Artifact Validation: Analysis (P1)
-├── ✅ p1-product-brief.md — all required sections present
-├── ✅ p1-research-notes.md — all required sections present
-├── ✅ p1-brainstorm-notes.md — file exists
+📋 Artifact Validation: PrePlan
+├── ✅ preplan-product-brief.md — all required sections present
+├── ✅ preplan-research-notes.md — all required sections present
+├── ✅ preplan-brainstorm-notes.md — file exists
 └── Result: PASSED (3 passed, 0 warnings, 0 failed)
 ```
 
-### P2 — Passed with Warnings
+### BusinessPlan — Passed with Warnings
 
 ```
-📋 Artifact Validation: Planning (P2)
-├── ✅ p2-prd.md — all required sections present
-├── ⚠️ p2-ux-design.md — missing sections: Accessibility
-├── ✅ p2-architecture.md — all required sections present
-└── Result: PASSED_WITH_WARNINGS (2 passed, 1 warning, 0 failed)
+📋 Artifact Validation: BusinessPlan
+├── ✅ businessplan-prd.md — all required sections present
+├── ⚠️ businessplan-ux-design.md — missing sections: Accessibility
+└── Result: PASSED_WITH_WARNINGS (1 passed, 1 warning, 0 failed)
 ```
 
-### P3 — Blocked
+### DevProposal — Blocked
 
 ```
-📋 Artifact Validation: Solutioning (P3)
-├── ✅ p3-epics.md — all required sections present
-├── ❌ p3-stories/ — directory not found
-├── ⚠️ p3-readiness-checklist.md — content too short (120/300 chars)
+📋 Artifact Validation: DevProposal
+├── ✅ devproposal-epics.md — all required sections present
+├── ❌ devproposal-stories/ — directory not found
+├── ⚠️ devproposal-readiness-checklist.md — content too short (120/300 chars)
 ├── ⚠️ stories.csv — CSV not found
 └── Result: BLOCKED (1 passed, 2 warnings, 1 failed)
 ```
 
-### P4 — Partial
+### Dev — Partial
 
 ```
-📋 Artifact Validation: Implementation (P4)
-├── ⚠️ p4-sprint-plan.md — optional file not found
-├── ✅ p4-dev-stories/ — 3 files found
-├── ⚠️ p4-review-notes.md — optional file not found
-├── ⚠️ p4-retro.md — optional file not found
-└── Result: PASSED_WITH_WARNINGS (1 passed, 3 warnings, 0 failed)
+📋 Artifact Validation: Dev
+├── ✅ dev-stories/ — 3 files found
+├── ⚠️ dev-review-notes.md — optional file not found
+├── ⚠️ dev-retro.md — optional file not found
+└── Result: PASSED_WITH_WARNINGS (1 passed, 2 warnings, 0 failed)
 ```
 
 ---
@@ -473,12 +509,12 @@ When an artifact is found ONLY at the legacy path:
 
 | Artifact | Required By Phase |
 |----------|------------------|
-| product-brief.md | spec, plan, review |
-| prd.md | plan, review |
-| architecture.md | plan, review |
-| epics.md | review |
-| stories.md | review |
-| readiness-checklist.md | review |
+| product-brief.md | businessplan, techplan, devproposal |
+| prd.md | techplan, devproposal, sprintplan |
+| architecture.md | devproposal, sprintplan |
+| epics.md | sprintplan |
+| stories.md | sprintplan |
+| readiness-checklist.md | sprintplan |
 
 ---
 

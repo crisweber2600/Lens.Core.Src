@@ -20,35 +20,46 @@ Progressive phase gate checklists with artifact auto-detection. Tracks what's ne
 
 ## Checklist Items Per Gate
 
-### pre-plan → plan
+### preplan → businessplan
 - [ ] Vision document exists
 - [ ] Stakeholder map defined
 - [ ] Initial scope outlined
 - [ ] Constitution mode selected
 
-### plan → tech-plan
+### businessplan → techplan
 - [ ] PRD/requirements complete
 - [ ] User stories drafted
 - [ ] Acceptance criteria defined
-- [ ] Audience routing configured
 
-### tech-plan → story-gen
+### techplan → [small→medium promotion]
 - [ ] Architecture document complete
 - [ ] Technology stack defined
 - [ ] Data model specified
 - [ ] Integration points documented
 
-### story-gen → review
+### [small→medium promotion] → devproposal
+- [ ] Adversarial review (party mode) completed
+- [ ] All small-audience phase PRs merged
+
+### devproposal → [medium→large promotion]
 - [ ] All stories generated
 - [ ] Story acceptance criteria defined
 - [ ] Dependencies mapped
 - [ ] Estimation complete
+- [ ] Readiness checklist passed
 
-### review → dev
-- [ ] Review complete
-- [ ] Approval recorded
+### [medium→large promotion] → sprintplan
+- [ ] Stakeholder approval recorded
 - [ ] Implementation priority set
+
+### sprintplan → [large→base promotion]
+- [ ] Sprint plan approved
+- [ ] Story assignments confirmed
 - [ ] Dev branch strategy confirmed
+
+### [large→base promotion] → dev
+- [ ] Constitution gate passed (Scribe compliance check)
+- [ ] All large-audience phase PRs merged
 
 ## Auto-Detection Logic
 
@@ -67,7 +78,7 @@ Checklist state persisted in `state.yaml` under `checklist:` key:
 
 ```yaml
 checklist:
-  current_gate: plan_to_tech_plan
+  current_gate: businessplan_to_techplan
   items:
     - id: prd_complete
       status: complete

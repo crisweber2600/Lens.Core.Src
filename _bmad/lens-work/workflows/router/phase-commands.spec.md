@@ -1,9 +1,10 @@
-# Router Workflows — Phase Commands
+# Router Workflows — Phase Commands (v2 Lifecycle Contract)
 
 **Module:** lens-work
 **Category:** router (user-facing)
 **Agent:** Compass
 **Status:** Specification
+**Lifecycle Version:** 2 (named phases, audience-as-promotion-backbone)
 
 ---
 
@@ -11,18 +12,35 @@
 
 Router workflows are the user-facing phase commands that map to BMAD lifecycle phases. Each command:
 
-1. Validates prerequisites (layer detected, gates passed)
-2. Invokes Casey to manage git branches
+1. Validates prerequisites (layer detected, gates passed, audience promotion complete)
+2. Invokes Casey to manage git branches (named phase branches)
 3. Routes to appropriate BMM/CIS/TEA workflows
-4. Tracks progress via Tracey
+4. Tracks progress via Tracey (dual-write: state.yaml + initiative config)
+
+### Lifecycle Flow
+
+```
+/preplan → /businessplan → /techplan → [small→medium] → /devproposal → [medium→large] → /sprintplan → [large→base] → /dev
+```
+
+### Audience Progression
+
+```
+small (IC creation: preplan, businessplan, techplan)
+  → medium (lead review: devproposal) [gate: adversarial-review]
+    → large (stakeholder: sprintplan) [gate: stakeholder-approval]
+      → base (ready for execution) [gate: constitution-gate]
+```
 
 ---
 
-## Workflow: pre-plan (`/pre-plan`)
+## Workflow: preplan (`/preplan`)
+
+**Legacy alias:** `/pre-plan`
 
 ### Phase
 
-Analysis (Phase 1)
+PrePlan — audience: small, agent: Mary (Analyst)
 
 ### Role Authorization
 
@@ -41,15 +59,17 @@ PO, Architect, Tech Lead
 3. Route to brainstorming/research (if requested)
 4. Route to product-brief workflow
 5. Casey: finish-workflow
-6. Offer: continue to /spec or pause
+6. Offer: continue to /businessplan or pause
 
 ---
 
-## Workflow: spec (`/spec`)
+## Workflow: businessplan (`/businessplan`)
+
+**Legacy alias:** `/spec`
 
 ### Phase
 
-Planning (Phase 2)
+BusinessPlan — audience: small, agent: John (PM) + Sally (UX Designer)
 
 ### Role Authorization
 
@@ -58,30 +78,65 @@ PO, Architect, Tech Lead
 ### BMM Workflows Invoked
 
 - PRD
-- UX (if applicable)
-- Architecture
+- UX Design (if applicable)
 
 ### Sequence
 
-1. Validate /pre-plan complete
+1. Validate /preplan complete (preplan merged into small audience branch)
 2. Casey: start-phase, start-workflow
 3. Route to PRD workflow
 4. Route to UX workflow (if UI involved)
-5. Route to Architecture workflow
-6. Casey: finish-workflow, finish-phase
-7. Casey: open-large-review (if p2 + arch complete)
+5. Casey: finish-workflow
+6. Offer: continue to /techplan or pause
 
 ---
 
-## Workflow: plan (`/plan`)
+## Workflow: techplan (`/techplan`)
+
+**Legacy alias:** `/tech-plan`
 
 ### Phase
 
-Solutioning (Phase 3)
+TechPlan — audience: small, agent: Winston (Architect)
+
+### Role Authorization
+
+Architect, Tech Lead
+
+### BMM Workflows Invoked
+
+- Architecture document
+- Technology decisions
+- API contracts (optional)
+
+### Sequence
+
+1. Validate /businessplan complete (businessplan merged into small audience branch)
+2. Casey: start-phase, start-workflow
+3. Route to architecture design workflow
+4. Route to technology decisions workflow
+5. Optional: Route to API contracts workflow
+6. Casey: finish-workflow
+7. Offer: run audience promotion (small → medium) or pause
+
+---
+
+## Workflow: devproposal (`/devproposal`)
+
+**Legacy alias:** `/plan`
+
+### Phase
+
+DevProposal — audience: medium, agent: John (PM)
 
 ### Role Authorization
 
 PO, Architect, Tech Lead
+
+### Prerequisites
+
+- All small-audience phases complete (preplan, businessplan, techplan)
+- Audience promotion (small → medium) complete — adversarial review gate passed
 
 ### BMM Workflows Invoked
 
@@ -91,25 +146,32 @@ PO, Architect, Tech Lead
 
 ### Sequence
 
-1. Validate /spec complete
+1. Validate audience promotion (small → medium) complete
 2. Casey: start-phase, start-workflow
-3. Route to Epics workflow
+3. Route to Epics workflow (with adversarial + party mode stress gate)
 4. Route to Stories workflow
 5. Route to Readiness workflow
-6. Casey: finish-workflow, finish-phase
-7. Offer: proceed to /review
+6. Casey: finish-workflow
+7. Offer: run audience promotion (medium → large) or pause
 
 ---
 
-## Workflow: review (`/review`)
+## Workflow: sprintplan (`/sprintplan`)
+
+**Legacy alias:** `/review`
 
 ### Phase
 
-Implementation Gate
+SprintPlan — audience: large, agent: Bob (Scrum Master)
 
 ### Role Authorization
 
-Scrum Master (gate owner)
+Scrum Master (phase owner)
+
+### Prerequisites
+
+- DevProposal phase complete
+- Audience promotion (medium → large) complete — stakeholder approval gate passed
 
 ### BMM Workflows Invoked
 
@@ -119,12 +181,12 @@ Scrum Master (gate owner)
 
 ### Sequence
 
-1. Validate /plan complete
+1. Validate audience promotion (medium → large) complete
 2. Re-run readiness checklist
-3. Sprint planning (if Scrum)
+3. Sprint planning (prioritize stories, allocate capacity)
 4. Create dev-ready story
 5. Hand off to Developer
-6. Casey: open-final-pbr (if large review complete)
+6. Offer: run audience promotion (large → base) then /dev
 
 ---
 
@@ -132,11 +194,11 @@ Scrum Master (gate owner)
 
 ### Phase
 
-Implementation (Phase 4)
+Implementation — audience: base (post all promotions)
 
 ### Role Authorization
 
-Developer (post-review only)
+Developer (post-sprintplan only)
 
 ### BMM Workflows Invoked
 
@@ -146,9 +208,9 @@ Developer (post-review only)
 
 ### Sequence
 
-1. Validate /review complete (dev story exists)
+1. Validate audience promotion (large → base) complete — constitution gate passed
 2. Casey: checkout TargetProjects repo (not BMAD branches)
-3. Developer implements in actual repo
+3. Developer implements in actual repo (GitFlow: feature/{jira-storyid})
 4. Return to BMAD directory for code review
 5. Route to code-review workflow
 6. Optional: route to retro workflow
@@ -156,16 +218,52 @@ Developer (post-review only)
 
 ---
 
-## Role Gating Table
+## Audience Promotion (`/promote`)
 
-| Command | Authorized Roles | Entry Condition |
-|---------|------------------|-----------------|
-| `/pre-plan` | PO, Architect, Tech Lead | `#new-*` initiated |
-| `/spec` | PO, Architect, Tech Lead | `/pre-plan` complete |
-| `/plan` | PO, Architect, Tech Lead | `/spec` complete |
-| `/review` | Scrum Master | `/plan` complete |
-| `/dev` | Developer | `/review` produces dev story |
+### Gate Types
+
+| Promotion | Gate | Mode |
+|-----------|------|------|
+| small → medium | adversarial-review | party mode |
+| medium → large | stakeholder-approval | manual |
+| large → base | constitution-gate | Scribe enforcement |
+
+### Sequence
+
+1. Validate all source audience phases complete
+2. Run appropriate gate check
+3. Create PR: source audience branch → target audience branch
+4. Update audience_status in initiative config
+5. Log promotion event
 
 ---
 
-_Workflow spec created on 2026-02-03 via BMAD Module workflow_
+## Role Gating Table
+
+| Command | Authorized Roles | Phase Owner | Entry Condition |
+|---------|------------------|-------------|-----------------|
+| `/preplan` | PO, Architect, Tech Lead | Mary (Analyst) | `#new-*` initiated |
+| `/businessplan` | PO, Architect, Tech Lead | John (PM) | `/preplan` complete |
+| `/techplan` | Architect, Tech Lead | Winston (Architect) | `/businessplan` complete |
+| `/promote` (small→medium) | Any | N/A | All small phases complete |
+| `/devproposal` | PO, Architect, Tech Lead | John (PM) | small→medium promotion done |
+| `/promote` (medium→large) | Any | N/A | devproposal complete |
+| `/sprintplan` | Scrum Master | Bob (SM) | medium→large promotion done |
+| `/promote` (large→base) | Any | N/A | sprintplan complete |
+| `/dev` | Developer | Amelia (Dev) | large→base promotion done |
+
+---
+
+## Branch Naming (v2)
+
+```
+{initiative_root}-small-preplan
+{initiative_root}-small-businessplan
+{initiative_root}-small-techplan
+{initiative_root}-medium-devproposal
+{initiative_root}-large-sprintplan
+```
+
+---
+
+_Phase commands spec updated for lifecycle v2 on 2026-02-23_

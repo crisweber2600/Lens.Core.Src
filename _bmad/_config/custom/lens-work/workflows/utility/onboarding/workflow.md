@@ -148,6 +148,47 @@ else:
     
     (from project root directory)
 
+# REQ-2: Question mode preference prompt
+output: |
+  
+  **Question Mode**
+  
+  How would you like to answer phase questions?
+  [1] Interactive (guided chat — recommended)
+  [2] Batch MD (single markdown file per phase)
+
+qm_input = prompt_user()
+if qm_input.strip() == "2":
+  question_mode = "batch"
+else:
+  question_mode = "interactive"
+
+# REQ-3: Tracker preference prompt
+output: |
+  
+  **Work Item Tracker**
+  
+  What work item tracker do you use?
+  [1] Jira
+  [2] Azure DevOps
+  [3] None
+
+tracker_input = prompt_user()
+if tracker_input.strip() == "1":
+  tracker = "jira"
+  output: |
+    Jira base URL (optional):
+    Example: https://mycompany.atlassian.net
+    Press Enter to skip.
+  jira_url_input = prompt_user()
+  jira_base_url = jira_url_input.strip() if jira_url_input.strip() else null
+elif tracker_input.strip() == "2":
+  tracker = "azure-devops"
+  jira_base_url = null
+else:
+  tracker = "none"
+  jira_base_url = null
+
 profile = {
   name: name,
   email: email,
@@ -156,9 +197,18 @@ profile = {
   created_at: now(),
   preferences: {
     communication_style: "professional",
-    auto_fetch: true
+    auto_fetch: true,
+    question_mode: question_mode,  # REQ-2
+    tracker: tracker,  # REQ-3
+    jira_base_url: jira_base_url if tracker == "jira" and jira_base_url else null  # REQ-3
   }
 }
+
+# REQ-4
+# ANTI-PATTERN: Do NOT create profiles/*.yaml files.
+# User preferences go ONLY in: personal/profile.yaml
+# Team roster info goes in: roster/{name}.yaml
+# The profiles/ directory must NOT exist.
 
 # Save personal profile (local/gitignored)
 save(profile, "_bmad-output/lens-work/personal/profile.yaml")
@@ -179,50 +229,6 @@ roster_entry = {
 save(roster_entry, "_bmad-output/lens-work/roster/${sanitize(name)}.yaml")
 ```
 
-### 2a. Clone Stub Prompts from GitHub (Optional)
-
-```yaml
-# Clone stub prompts from the control repo defined in settings.json.
-# settings.json is written by the installer with:
-#   github.repo            - full HTTPS URL of the control repository
-#   github.branch          - branch to sparse-checkout
-#   github.stubsTargetPath - local destination (.github/stubPrompts)
-
-settings_path = "_bmad-output/lens-work/settings.json"
-
-if file_exists(settings_path):
-  settings = load_json(settings_path)
-  enabled    = settings.github.cloneOnboardingStubsEnabled
-  repo_url   = settings.github.repo
-  branch     = settings.github.branch
-  target_dir = settings.github.stubsTargetPath  # .github/stubPrompts
-
-  if enabled and repo_url:
-    output: |
-
-      📥 Syncing stub prompts from control repository...
-
-      Repository : ${repo_url}
-      Branch     : ${branch}
-      Target     : ${target_dir}
-
-    shell: |
-      set -e
-      mkdir -p "${target_dir}"
-      TMP=$(mktemp -d)
-      git clone --branch "${branch}" --depth 1 --filter=blob:none --sparse "${repo_url}" "$TMP" 2>&1
-      git -C "$TMP" sparse-checkout set .github/stubPrompts
-      cp -f "$TMP"/.github/stubPrompts/*.prompt.md "${target_dir}/"
-      rm -rf "$TMP"
-
-    output: "✅ Stub prompts synced to ${target_dir}"
-
-  else:
-    output: "⏭️  Stub prompt cloning is disabled (cloneOnboardingStubsEnabled=false)"
-else:
-  output: "⏭️  settings.json not found — stub cloning skipped (run installer first)"
-```
-
 ### 3. Determine Bootstrap Scope
 
 ```yaml
@@ -232,6 +238,22 @@ if scope == "all":
 else:
   bootstrap_scope = scope
   output: "Will bootstrap repos for ${scope}"
+```
+
+### 3a. Ensure TargetProjects Directory <!-- REQ-5 -->
+
+```yaml
+# REQ-5: Auto-create TargetProjects directory before discovery
+# Reads target_projects_path from service-map.yaml, then ensures it exists.
+# Idempotent — no error if directory already exists.
+
+service_map = load_yaml("_bmad/lens-work/service-map.yaml")
+target_path = service_map.target_projects_path
+
+shell: mkdir -p "${target_path}"
+
+output: |
+  📂 TargetProjects directory ensured: ${target_path}
 ```
 
 ### 4. Run Discovery
@@ -313,6 +335,9 @@ created_at: 2026-02-03T10:00:00Z
 preferences:
   communication_style: professional
   auto_fetch: true
+  question_mode: interactive  # REQ-2
+  tracker: jira  # REQ-3
+  jira_base_url: https://mycompany.atlassian.net  # REQ-3 (only if tracker is jira)
 ```
 
 ### GitHub Credentials (Gitignored)

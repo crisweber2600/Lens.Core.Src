@@ -1,5 +1,6 @@
+````prompt
 ---
-description: Inventory TargetProjects vs service map (read-only, no mutations)
+description: 'Inventory TargetProjects vs service map (read-only, no mutations)'
 ---
 
 # lens-work.discover (Stub)
@@ -10,4 +11,6 @@ description: Inventory TargetProjects vs service map (read-only, no mutations)
 Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.discover.prompt.md
 ```
 
-Source: [lens-work.discover.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.discover.prompt.md)
+Source: [lens-work.discover.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/4.0.0/.github/prompts/lens-work.discover.prompt.md)
+
+````

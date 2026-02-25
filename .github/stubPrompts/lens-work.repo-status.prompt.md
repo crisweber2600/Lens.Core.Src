@@ -1,5 +1,6 @@
+````prompt
 ---
-description: Fast health check for confidence scoring without full discovery
+description: 'Fast health check for confidence scoring without full discovery'
 ---
 
 # lens-work.repo-status (Stub)
@@ -10,4 +11,6 @@ description: Fast health check for confidence scoring without full discovery
 Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.repo-status.prompt.md
 ```
 
-Source: [lens-work.repo-status.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.repo-status.prompt.md)
+Source: [lens-work.repo-status.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/4.0.0/.github/prompts/lens-work.repo-status.prompt.md)
+
+````

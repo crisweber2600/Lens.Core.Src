@@ -15,9 +15,12 @@ This document defines all gate types, event log formats, and validation rules us
 | Gate Type | Purpose | Trigger | Automation |
 |-----------|---------|---------|------------|
 | `phase-gate` | Validates phase completion before next phase starts | Phase transition | Auto (ancestry check) |
-| `review-gate` | Large-size review of planning artifacts | PR: small → large | Manual (PR approval) |
+| `audience-promotion-gate` | Validates audience promotion readiness | Audience boundary crossing | Manual (PR approval + review) |
+| `adversarial-review-gate` | Party-mode cross-agent review | small → medium promotion | Manual (party-mode) |
+| `stakeholder-approval-gate` | Stakeholder sign-off on planning | medium → large promotion | Manual (approval) |
+| `constitution-gate` | Constitutional compliance for base merge | large → base promotion | Auto (Scribe) |
 | `merge-gate` | Validates workflow merged before next workflow starts | Workflow transition | Auto (ancestry check) |
-| `deploy-gate` | Validates implementation ready for deployment | Post-P4 completion | Manual (checklist) |
+| `deploy-gate` | Validates implementation ready for deployment | Post-sprintplan completion | Manual (checklist) |
 
 ---
 
@@ -67,7 +70,7 @@ Logged when a gate is evaluated.
 {
   "ts": "2026-02-05T14:30:00-06:00",
   "event": "gate-check",
-  "gate": "phase-p2",
+  "gate": "phase-businessplan",
   "gate_type": "phase-gate",
   "status": "passed",
   "initiative": "rate-limit-x7k2m9",
@@ -89,13 +92,13 @@ Logged when a gate blocks progression.
 {
   "ts": "2026-02-05T14:30:00-06:00",
   "event": "gate-blocked",
-  "gate": "phase-p2",
+  "gate": "phase-businessplan",
   "gate_type": "phase-gate",
   "status": "blocked",
   "initiative": "rate-limit-x7k2m9",
   "actor": "compass",
-  "reason": "Required artifact missing: architecture.md",
-  "remediation": "Complete /spec architecture workflow before proceeding to /plan"
+  "reason": "Required artifact missing: techplan-architecture.md",
+  "remediation": "Complete /businessplan workflows before proceeding to /techplan"
 }
 ```
 
@@ -107,12 +110,12 @@ Logged when a gate is manually skipped.
 {
   "ts": "2026-02-05T14:30:00-06:00",
   "event": "gate-override",
-  "gate": "review-gate",
-  "gate_type": "review-gate",
+  "gate": "audience-promotion-gate",
+  "gate_type": "audience-promotion-gate",
   "status": "skipped",
   "initiative": "rate-limit-x7k2m9",
   "actor": "user",
-  "reason": "Small initiative, large review not required",
+  "reason": "Small initiative, audience promotion review not required",
   "override_by": "user"
 }
 ```
@@ -128,7 +131,7 @@ Logged when a gate is manually skipped.
 #### start-phase
 
 ```json
-{"ts":"${ISO_TIMESTAMP}","event":"start-phase","phase":"p${phase_number}","phase_name":"${phase_name}","size":"${size}","initiative":"${initiative_id}"}
+{"ts":"${ISO_TIMESTAMP}","event":"start-phase","phase":"${phase_name}","audience":"${audience}","initiative":"${initiative_id}"}
 ```
 
 #### finish-phase
@@ -140,7 +143,7 @@ Logged when a gate is manually skipped.
 #### start-workflow
 
 ```json
-{"ts":"${ISO_TIMESTAMP}","event":"start-workflow","workflow":"${workflow_name}","phase":"${phase}","size":"${size}","initiative":"${initiative_id}"}
+{"ts":"${ISO_TIMESTAMP}","event":"start-workflow","workflow":"${workflow_name}","phase":"${phase_name}","audience":"${audience}","initiative":"${initiative_id}"}
 ```
 
 #### finish-workflow
@@ -161,9 +164,9 @@ Validates that a phase is complete before the next phase can begin.
 gate: phase-gate
 validation:
   - check: ancestry
-    command: "git merge-base --is-ancestor origin/${phase_branch} origin/${size_branch}"
+    command: "git merge-base --is-ancestor origin/${phase_branch} origin/${audience_branch}"
     pass_if: exit_code == 0
-    fail_message: "Phase ${phase} not merged into size. Complete all workflows and merge PR."
+    fail_message: "Phase ${phase_name} not merged into audience branch. Complete all workflows and merge PR."
 
   - check: artifacts
     rule: "All required artifacts for phase exist and are non-empty"
@@ -172,7 +175,7 @@ validation:
 
   - check: state
     rule: "state.yaml shows phase as complete"
-    pass_if: current.phase > checked_phase
+    pass_if: phase_status[checked_phase] == "complete"
     fail_message: "State not updated. Run fix-state if needed."
 ```
 
@@ -194,17 +197,33 @@ validation:
     fail_message: "Another workflow is active. Finish it first."
 ```
 
-### Review Gate (Manual)
+### Audience Promotion Gate (Manual)
 
-Validates large review before final PBR.
+Validates audience promotion readiness at each boundary.
 
 ```yaml
-gate: review-gate
+gate: audience-promotion-gate
 validation:
-  - check: pr_approved
-    rule: "PR from small → large has at least 1 approval"
+  # small → medium: adversarial review (party mode)
+  - check: adversarial_review
+    rule: "Party-mode cross-agent review completed"
+    pass_if: party_mode_review == "completed"
+    fail_message: "Adversarial review not completed. Run /promote to initiate."
+    applies_to: "small-to-medium"
+
+  # medium → large: stakeholder approval
+  - check: stakeholder_approval
+    rule: "PR from medium → large has stakeholder approval"
     pass_if: pr_approvals >= 1
-    fail_message: "Large review PR not approved. Request review."
+    fail_message: "Stakeholder approval not received. Request review."
+    applies_to: "medium-to-large"
+
+  # large → base: constitution gate (Scribe)
+  - check: constitution_compliance
+    rule: "Constitutional compliance check passed"
+    pass_if: compliance_status == "COMPLIANT"
+    fail_message: "Constitutional compliance failed. Run /compliance to review."
+    applies_to: "large-to-base"
 
   - check: no_changes_requested
     rule: "No outstanding change requests on PR"
@@ -237,7 +256,7 @@ validation:
 
   - check: retro_complete
     rule: "Retrospective document exists"
-    pass_if: file_exists("p4-retro.md")
+    pass_if: file_exists("dev-retro.md")
     warn_message: "No retrospective document. Consider running retro workflow."
     severity: warning
 ```
@@ -255,7 +274,7 @@ Used by router workflows (Compass) at phase transitions. No user interaction req
 invoke: casey.check-gate
 params:
   gate_type: phase-gate
-  gate_name: "phase-p${prev_phase}"
+  gate_name: "phase-${prev_phase_name}"
   initiative_id: ${initiative_id}
 
 if gate.status == "blocked":
@@ -290,8 +309,8 @@ if gate_status == "blocked":
   output: |
     Action required:
     1. Address PR feedback
-    2. Get large review approval
-    3. Re-run /review to check gate
+    2. Get audience promotion approval
+    3. Re-run /promote to check gate
 ```
 
 ---
@@ -302,21 +321,21 @@ Gates are tracked in `state.yaml` under the `gates` array:
 
 ```yaml
 gates:
-  - name: "phase-p1"
+  - name: "phase-preplan"
     type: "phase-gate"
     status: "passed"
     checked_at: "2026-02-03T10:00:00Z"
     passed_at: "2026-02-03T10:00:00Z"
 
-  - name: "merge-gate/p2/w/prd"
+  - name: "merge-gate/businessplan/w/prd"
     type: "merge-gate"
     status: "passed"
     checked_at: "2026-02-04T14:00:00Z"
     passed_at: "2026-02-04T14:00:00Z"
     pr_link: "https://github.com/org/repo/pull/42"
 
-  - name: "review-gate"
-    type: "review-gate"
+  - name: "audience-promotion/small-to-medium"
+    type: "audience-promotion-gate"
     status: "open"
     checked_at: "2026-02-05T09:00:00Z"
 ```

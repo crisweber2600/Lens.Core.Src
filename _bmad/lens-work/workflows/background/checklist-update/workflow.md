@@ -54,7 +54,7 @@ category: background
 
 ## Default Checklists by Phase
 
-### pre-plan → plan gate
+### preplan → businessplan gate
 ```yaml
 - item: "Product brief complete"
   status: not-started
@@ -70,12 +70,9 @@ category: background
   required: false
 ```
 
-### plan → tech-plan gate
+### businessplan → techplan gate
 ```yaml
 - item: "PRD complete"
-  status: not-started
-  required: true
-- item: "Epics defined"
   status: not-started
   required: true
 - item: "User stories mapped"
@@ -89,7 +86,7 @@ category: background
   required: false
 ```
 
-### tech-plan → story-gen gate
+### techplan → [small→medium promotion] gate
 ```yaml
 - item: "Architecture doc complete"
   status: not-started
@@ -105,8 +102,21 @@ category: background
   required: false
 ```
 
-### story-gen → review gate
+### [small→medium] → devproposal gate
 ```yaml
+- item: "Adversarial review (party mode) passed"
+  status: not-started
+  required: true
+- item: "All small-audience phase PRs merged"
+  status: not-started
+  required: true
+```
+
+### devproposal → [medium→large promotion] gate
+```yaml
+- item: "Epics defined"
+  status: not-started
+  required: true
 - item: "Stories generated"
   status: not-started
   required: true
@@ -116,22 +126,36 @@ category: background
 - item: "Dependencies mapped"
   status: not-started
   required: true
+- item: "Readiness checklist passed"
+  status: not-started
+  required: true
 ```
 
-### review → dev gate
+### [medium→large] → sprintplan gate
 ```yaml
-- item: "All stories reviewed"
+- item: "Stakeholder approval received"
   status: not-started
   required: true
-- item: "Readiness checks pass"
-  status: not-started
-  required: true
-- item: "Constitution compliance"
-  status: not-started
-  required: true
+```
+
+### sprintplan → [large→base promotion] gate
+```yaml
 - item: "Sprint plan approved"
   status: not-started
-  required: false
+  required: true
+- item: "Story assignments confirmed"
+  status: not-started
+  required: true
+```
+
+### [large→base] → dev gate
+```yaml
+- item: "Constitution compliance passed"
+  status: not-started
+  required: true
+- item: "All large-audience phase PRs merged"
+  status: not-started
+  required: true
 ```
 
 ---
@@ -142,29 +166,23 @@ Maps filenames (relative to initiative docs_path) to checklist items:
 
 ```yaml
 artifact_map:
-  pre-plan:
-    "product-brief.md": "Product brief complete"
-    "brainstorm-notes.md": "Brainstorm notes"
-    "research-summary.md": "Discovery complete"
-  plan:
-    "prd.md": "PRD complete"
-    "epics.md": "Epics defined"
-    "user-stories.md": "User stories mapped"
-    "acceptance-criteria.md": "Acceptance criteria written"
-    "ux-wireframes.md": "UX wireframes"
-  tech-plan:
-    "architecture.md": "Architecture doc complete"
-    "tech-decisions.md": "Tech decisions logged"
-    "api-contracts.md": "API contracts defined"
-    "data-model.md": "Data model specified"
-  story-gen:
-    "implementation-stories.md": "Stories generated"
-    "story-estimates.md": "Estimates added"
-    "dependency-map.md": "Dependencies mapped"
-  review:
-    "review-report.md": "All stories reviewed"
-    "readiness-check.md": "Readiness checks pass"
-    "compliance-report.md": "Constitution compliance"
+  preplan:
+    "preplan-product-brief.md": "Product brief complete"
+    "preplan-brainstorm-notes.md": "Brainstorm notes"
+    "preplan-research-notes.md": "Discovery complete"
+  businessplan:
+    "businessplan-prd.md": "PRD complete"
+    "businessplan-ux-design.md": "UX wireframes"
+  techplan:
+    "techplan-architecture.md": "Architecture doc complete"
+    "techplan-tech-decisions.md": "Tech decisions logged"
+    "techplan-api-contracts.md": "API contracts defined"
+  devproposal:
+    "devproposal-epics.md": "Epics defined"
+    "devproposal-stories/": "Stories generated"
+    "devproposal-readiness-checklist.md": "Readiness checklist passed"
+  sprintplan:
+    "sprintplan-sprint-plan.md": "Sprint plan approved"
 ```
 
 ---

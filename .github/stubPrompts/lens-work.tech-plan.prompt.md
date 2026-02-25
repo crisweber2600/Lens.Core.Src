@@ -1,5 +1,6 @@
+````prompt
 ---
-description: Launch Technical Planning phase (Architecture/Tech Decisions/API Contracts)
+description: 'Launch Technical Planning phase (Architecture/Tech Decisions/API Contracts)'
 ---
 
 # lens-work.tech-plan (Stub)
@@ -10,4 +11,6 @@ description: Launch Technical Planning phase (Architecture/Tech Decisions/API Co
 Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.tech-plan.prompt.md
 ```
 
-Source: [lens-work.tech-plan.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.tech-plan.prompt.md)
+Source: [lens-work.tech-plan.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/4.0.0/.github/prompts/lens-work.tech-plan.prompt.md)
+
+````

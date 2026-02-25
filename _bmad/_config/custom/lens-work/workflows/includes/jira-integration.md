@@ -40,7 +40,7 @@ story:
   sprint: string            # Sprint identifier
   priority: enum            # critical | high | medium | low
   labels: list              # Tags for categorization
-  phase: string             # p3 (solutioning) or p4 (implementation)
+  phase: string             # techplan (solutioning) or devproposal (implementation)
   initiative_id: string     # Parent lens initiative
 ```
 
@@ -82,7 +82,7 @@ story:
 
 **Story ID:** {id}
 **Sprint:** {sprint}
-**Branch:** {featureBranchRoot}-small-p4-dev-story
+**Branch:** {featureBranchRoot}-medium-devproposal-dev-story
 
 ## Implementation Plan
 
@@ -223,7 +223,7 @@ id,title,epic,status,points,assignee,sprint,priority,phase,created_at,updated_at
 | `assignee` | string | Developer name or handle | No |
 | `sprint` | string | Sprint identifier | No |
 | `priority` | enum | `critical`, `high`, `medium`, `low` | No |
-| `phase` | string | `p3` or `p4` | Yes |
+| `phase` | string | `techplan` or `devproposal` | Yes |
 | `created_at` | ISO8601 | Creation timestamp | Yes |
 | `updated_at` | ISO8601 | Last update timestamp | Yes |
 
@@ -231,10 +231,10 @@ id,title,epic,status,points,assignee,sprint,priority,phase,created_at,updated_at
 
 ```csv
 id,title,epic,status,points,assignee,sprint,priority,phase,created_at,updated_at
-S-001,Set up API gateway routing,E-01,done,3,alice,sprint-1,high,p4,2026-02-01T10:00:00Z,2026-02-03T14:30:00Z
-S-002,Implement rate limiting middleware,E-01,in_progress,5,bob,sprint-1,high,p4,2026-02-01T10:00:00Z,2026-02-04T09:15:00Z
-S-003,Add request validation,E-01,ready,3,,sprint-2,medium,p4,2026-02-01T10:00:00Z,2026-02-01T10:00:00Z
-S-004,Write integration tests for rate limiter,E-02,backlog,5,,,medium,p4,2026-02-01T10:00:00Z,2026-02-01T10:00:00Z
+S-001,Set up API gateway routing,E-01,done,3,alice,sprint-1,high,devproposal,2026-02-01T10:00:00Z,2026-02-03T14:30:00Z
+S-002,Implement rate limiting middleware,E-01,in_progress,5,bob,sprint-1,high,devproposal,2026-02-01T10:00:00Z,2026-02-04T09:15:00Z
+S-003,Add request validation,E-01,ready,3,,sprint-2,medium,devproposal,2026-02-01T10:00:00Z,2026-02-01T10:00:00Z
+S-004,Write integration tests for rate limiter,E-02,backlog,5,,,medium,devproposal,2026-02-01T10:00:00Z,2026-02-01T10:00:00Z
 ```
 
 ### Epic CSV Location
