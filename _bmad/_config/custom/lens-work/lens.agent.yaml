@@ -10,29 +10,27 @@ description: "Unified agent orchestrating the lens-work lifecycle engine with fi
 icon: "🔬"
 version: "2.0.0"
 
-initiative: "upgrade-cjki9q"
-
 # Agent Skills
 skills:
   - name: "git-orchestration"
     description: "Branch creation, PR operations, topology management"
-    file: "./skills/git-orchestration.md"
+    file: "_bmad/lens-work/skills/git-orchestration.md"
   
   - name: "state-management"
     description: "Lifecycle state, event log, dual-write contract"
-    file: "./skills/state-management.md"
+    file: "_bmad/lens-work/skills/state-management.md"
   
   - name: "discovery"
     description: "Initiative discovery, artifact resolution, onboarding"
-    file: "./skills/discovery.md"
+    file: "_bmad/lens-work/skills/discovery.md"
   
   - name: "constitution"
     description: "Governance rules, 4-level hierarchy, gate validation"
-    file: "./skills/constitution.md"
+    file: "_bmad/lens-work/skills/constitution.md"
   
   - name: "checklist"
     description: "Gate readiness, progressive checklist, artifact checks"
-    file: "./skills/checklist.md"
+    file: "_bmad/lens-work/skills/checklist.md"
 
 # Top-Level Menu
 menu:

@@ -1,13 +1,13 @@
 ---
-name: S-038-dogfood
-description: End-to-end execution test through all phases
+description: 'End-to-end execution test through all phases'
 ---
 
-# Stub: S-038 Dogfood
+# lens-work.impl-dogfood (Stub)
 
-This is a stub prompt. The actual implementation reads from:
+> **This is a stub.** Load and execute the full prompt from the bmad.lens.release control repository.
+
 ```
-bmad.lens.release/.github/prompts/S-038-dogfood.md
+Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.impl-dogfood.prompt.md
 ```
 
-**Load from release repository when integrating full implementations.**
+Source: [lens-work.impl-dogfood.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.impl-dogfood.prompt.md)

@@ -2,7 +2,7 @@
 name: "retrospective"
 description: 'Post-epic review to extract lessons and assess success. Use when the user says "run a retrospective" or "lets retro the epic [epic]"'
 
-config_source: "{project-root}/_bmad/bmm/config.yaml"
+config_source: "{project-root}/_bmad/bmm/bmadconfig.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
 user_skill_level: "{config_source}:user_skill_level"

@@ -25,7 +25,7 @@ This uses **step-file architecture** for focused execution:
 
 ### Configuration Loading
 
-Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
+Load config from `{project-root}/_bmad/bmm/bmadconfig.yaml` and resolve:
 
 - `user_name`, `communication_language`, `user_skill_level`
 - `planning_artifacts`, `implementation_artifacts`

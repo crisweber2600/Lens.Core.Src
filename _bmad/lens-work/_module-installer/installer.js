@@ -86,7 +86,7 @@ async function install(options) {
             await fsHelpers.ensureDir(configDir);
         }
 
-        const configFile = path.join(configDir, 'config.yaml');
+        const configFile = path.join(configDir, 'bmadconfig.yaml');
         if (!(await fsHelpers.pathExists(configFile))) {
             const configContent = `# LENS Workbench Configuration
 # Generated during installation

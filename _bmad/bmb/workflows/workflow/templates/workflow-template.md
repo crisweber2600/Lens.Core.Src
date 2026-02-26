@@ -53,7 +53,7 @@ web_bundle: [true/false] # Set to true for inclusion in web bundle builds
 
 ### 1. Module Configuration Loading
 
-Load and read full config from {project-root}/_bmad/[MODULE FOLDER]/config.yaml and resolve:
+Load and read full config from {project-root}/_bmad/[MODULE FOLDER]/bmadconfig.yaml and resolve:
 
 - `project_name`, `output_folder`, `user_name`, `communication_language`, `document_output_language`, [MODULE VARS]
 
@@ -75,7 +75,7 @@ Copy the template above and replace:
 - `[true/false]` → Whether to include in web bundle
 - `[role]` → AI's role in this workflow
 - `[user type]` → Who the user is
-- `[CONFIG_PATH]` → Path to config file (usually `bmm/config.yaml` or `bmb/config.yaml`)
+- `[CONFIG_PATH]` → Path to config file (usually `bmm/bmadconfig.yaml` or `bmb/bmadconfig.yaml`)
 - `[WORKFLOW_PATH]` → Path to your workflow folder
 - `[MODULE VARS]` → Extra config variables available in a module configuration that the workflow would need to use
 

@@ -5,7 +5,7 @@ description: 'Document brownfield projects for AI context. Use when the user say
 author: "BMad"
 
 # Critical variables
-config_source: "{project-root}/_bmad/bmm/config.yaml"
+config_source: "{project-root}/_bmad/bmm/bmadconfig.yaml"
 project_knowledge: "{config_source}:project_knowledge"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"

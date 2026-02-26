@@ -212,7 +212,7 @@ Command guidance and templates:
 
 ### Module Configuration
 - Format: YAML
-- Location: `_bmad/{module}/config.yaml`
+- Location: `_bmad/{module}/bmadconfig.yaml`
 - Content: User settings, output paths, language, features
 
 ### Path Tokens
@@ -239,7 +239,7 @@ Command guidance and templates:
 
 ### Module Independence
 - Each module (`bmm`, `bmb`, `cis`, `tea`, `gds`, `lens-work`) is **self-contained**
-- Own `config.yaml`, `agents/`, `workflows/`, `data/`, `teams/` directories
+- Own `bmadconfig.yaml`, `agents/`, `workflows/`, `data/`, `teams/` directories
 - Can be installed, updated, or removed independently
 
 ### Custom Layer

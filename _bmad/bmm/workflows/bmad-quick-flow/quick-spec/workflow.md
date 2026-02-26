@@ -1,7 +1,7 @@
 ---
 name: quick-spec
 description: 'Very quick process to create implementation-ready quick specs for small changes or features. Use when the user says "create a quick spec" or "generate a quick tech spec"'
-main_config: '{project-root}/_bmad/bmm/config.yaml'
+main_config: '{project-root}/_bmad/bmm/bmadconfig.yaml'
 
 # Checkpoint handler paths
 advanced_elicitation: '{project-root}/_bmad/core/workflows/advanced-elicitation/workflow.xml'

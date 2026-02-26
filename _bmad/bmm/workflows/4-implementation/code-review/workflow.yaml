@@ -3,7 +3,7 @@ name: code-review
 description: 'Perform adversarial code review finding specific issues. Use when the user says "run code review" or "review this code"'
 
 # Critical variables from config
-config_source: "{project-root}/_bmad/bmm/config.yaml"
+config_source: "{project-root}/_bmad/bmm/bmadconfig.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
 user_skill_level: "{config_source}:user_skill_level"

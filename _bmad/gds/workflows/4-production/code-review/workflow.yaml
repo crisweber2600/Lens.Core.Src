@@ -4,7 +4,7 @@ description: 'Adversarial game dev code review. Use when the user says "lets rev
 author: "BMad"
 
 # Critical variables from config
-config_source: "{project-root}/_bmad/gds/config.yaml"
+config_source: "{project-root}/_bmad/gds/bmadconfig.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
 game_dev_experience: "{config_source}:game_dev_experience"

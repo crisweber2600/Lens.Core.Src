@@ -5,7 +5,7 @@ description: 'Brownfield project documentation scanner. Use when the user says "
 author: "BMad"
 
 # Critical variables
-config_source: "{project-root}/_bmad/gds/config.yaml"
+config_source: "{project-root}/_bmad/gds/bmadconfig.yaml"
 output_folder: "{config_source}:project_knowledge"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"

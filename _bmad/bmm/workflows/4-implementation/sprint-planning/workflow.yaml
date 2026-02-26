@@ -3,7 +3,7 @@ description: 'Generate sprint status tracking from epics. Use when the user says
 author: "BMad"
 
 # Critical variables from config
-config_source: "{project-root}/_bmad/bmm/config.yaml"
+config_source: "{project-root}/_bmad/bmm/bmadconfig.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
 date: system-generated

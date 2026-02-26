@@ -3,7 +3,7 @@ name: "innovation-strategy"
 description: 'Identify disruption opportunities and architect business model innovation. Use when the user says "lets create an innovation strategy" or "I want to find disruption opportunities"'
 
 # Critical variables load from config_source
-config_source: "{project-root}/_bmad/cis/config.yaml"
+config_source: "{project-root}/_bmad/cis/bmadconfig.yaml"
 output_folder: "{config_source}:output_folder"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"

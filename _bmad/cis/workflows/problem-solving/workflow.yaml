@@ -3,7 +3,7 @@ name: "problem-solving"
 description: 'Apply systematic problem-solving methodologies to complex challenges. Use when the user says "guide me through structured problem solving" or "I want to crack this challenge with guided problem solving techniques"'
 
 # Critical variables load from config_source
-config_source: "{project-root}/_bmad/cis/config.yaml"
+config_source: "{project-root}/_bmad/cis/bmadconfig.yaml"
 output_folder: "{config_source}:output_folder"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"

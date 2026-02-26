@@ -2,7 +2,7 @@ name: create-story
 description: 'Creates a dedicated story file with all the context the agent will need to implement it later. Use when the user says "create the next story" or "create story [story identifier]"'
 
 # Critical variables from config
-config_source: "{project-root}/_bmad/bmm/config.yaml"
+config_source: "{project-root}/_bmad/bmm/bmadconfig.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
 document_output_language: "{config_source}:document_output_language"

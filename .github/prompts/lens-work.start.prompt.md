@@ -7,7 +7,7 @@ Activate @lens agent and run preflight check:
 
 1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Load lifecycle contract: `_bmad/lens-work/lifecycle.yaml`
-3. Load module config: `_bmad/lens-work/config.yaml`
+3. Load module config: `_bmad/lens-work/bmadconfig.yaml`
 4. Check if user profile exists: `_bmad-output/lens-work/personal/profile.yaml`
 5. Load state: `_bmad-output/lens-work/state.yaml` (if exists)
 6. Determine current context and present orientation report

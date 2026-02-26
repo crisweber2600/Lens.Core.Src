@@ -2,7 +2,7 @@
 name: "correct-course"
 description: 'Manage significant changes during sprint execution. Use when the user says "correct course" or "propose sprint change"'
 
-config_source: "{project-root}/_bmad/bmm/config.yaml"
+config_source: "{project-root}/_bmad/bmm/bmadconfig.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
 user_skill_level: "{config_source}:user_skill_level"
