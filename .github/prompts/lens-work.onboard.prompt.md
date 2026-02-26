@@ -35,7 +35,7 @@ Present the following command for the user to run in a **separate terminal**:
 
 ```bash
 # macOS / Linux / Git Bash
-cd "{PROJECT_ROOT}" && bash _bmad/lens-work/scripts/store-github-pat.sh
+cd "{PROJECT_ROOT}" && bash bmad.lens.release/_bmad/lens-work/scripts/store-github-pat.sh
 
 # Windows PowerShell
 cd "{PROJECT_ROOT}"; .\_bmad\lens-work\scripts\store-github-pat.ps1
