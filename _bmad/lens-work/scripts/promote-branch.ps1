@@ -1,5 +1,5 @@
 #Requires -Version 5.1
-<#!
+<#
 .SYNOPSIS
     LENS Workbench — Branch promotion + cleanup helper
 
@@ -256,6 +256,8 @@ function Invoke-GitHubPrCreate {
         Remove-Item Env:\GH_TOKEN -ErrorAction SilentlyContinue
     }
 }
+
+function Get-RepoRoot {
     $root = Invoke-Git -Args @('rev-parse', '--show-toplevel') -AllowFailure
     if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($root)) {
         return $root.Trim()

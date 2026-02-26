@@ -47,7 +47,7 @@ echo ""
 mkdir -p "$(dirname "${PROFILE_FILE}")"
 
 # ── Load existing profile or initialize ──────────────────────
-declare -a EXISTING_CREDENTIALS
+EXISTING_CREDENTIALS=()
 if [[ -f "${PROFILE_FILE}" ]]; then
   # Parse existing git_credentials from profile.yaml
   IN_CREDS=false
@@ -150,8 +150,8 @@ echo ""
 
 # ── Prepare credential collection ──────────────────────────────
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -Iseconds 2>/dev/null || echo "$(date)")
-declare -a ALL_CREDENTIALS
-declare -a UPDATED_HOSTS
+ALL_CREDENTIALS=()
+UPDATED_HOSTS=()
 STORED=0
 SKIPPED=0
 

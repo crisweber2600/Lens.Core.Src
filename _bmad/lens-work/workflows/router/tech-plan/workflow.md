@@ -176,6 +176,17 @@ assert: current_branch == phase_branch
 
 ### 4. Architecture Design
 
+**⚠️ CRITICAL — Interactive Workflow Rules:**
+Each sub-workflow uses sequential step-file architecture.
+- 🛑 **NEVER** auto-complete or batch-generate content without user input
+- ⏸️ **ALWAYS** STOP and wait for user input/confirmation at each step
+- 🚫 **NEVER** load the next step file until user explicitly confirms (Continue / C)
+- 📋 Back-and-forth dialogue is REQUIRED — you are a facilitator, not a generator
+- 💾 Save/update frontmatter after completing each step before loading the next
+- 🎯 Read the ENTIRE step file before taking any action within it
+
+**Agent:** Adopt Winston (Architect) persona — load `_bmad/bmm/agents/architect.md`
+
 ```yaml
 # Load context from previous phases
 product_brief = load_file("${docs_path}/product-brief.md")
@@ -195,13 +206,21 @@ output: |
   3. API contracts (if applicable)
   4. Data model specification (if applicable)
 
-# Guide through architecture decisions
-invoke: workflow-step
+# RESOLVED: workflow-step architecture-design → Read fully and follow:
+#   _bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md
+# Agent persona: Winston (Architect) — _bmad/bmm/agents/architect.md
+# Context: pass existing architecture.md as baseline for refinement
+# Uses step-file architecture with steps/ folder — load steps one at a time
+# NEVER load multiple step files simultaneously
+# ALWAYS halt at menus and wait for user input before proceeding
+agent_persona: "_bmad/bmm/agents/architect.md"
+read_and_follow: "_bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md"
 params:
-  step: architecture-design
   context: { product_brief, prd, epics }
   output_file: "${docs_path}/architecture.md"
 
+# Tech decisions — inline workflow (continue as Winston)
+# Present decisions one at a time, wait for user review/approval of each
 invoke: workflow-step
 params:
   step: tech-decisions
@@ -216,6 +235,16 @@ if answer == "Y":
     step: api-contracts
     context: { architecture }
     output_file: "${docs_path}/api-contracts.md"
+
+# RESOLVED: Implementation readiness check → Read fully and follow:
+#   _bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md
+# Validate architecture is buildable and stories can be derived from it
+# Halt and present readiness findings to user before marking complete
+read_and_follow: "_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md"
+params:
+  architecture: "${docs_path}/architecture.md"
+  prd: "${docs_path}/prd.md"
+  tech_decisions: "${docs_path}/tech-decisions.md"
 ```
 
 ### 5. Commit & Gate

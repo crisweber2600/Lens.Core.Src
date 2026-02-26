@@ -14,13 +14,15 @@ Activate @lens agent and execute /dev:
 7. Verify dev story exists (interactive mode) at `{bmad_docs}/dev-story-{id}.md` or fallback to `_bmad-output/implementation-artifacts/dev-story-{id}.md`
 8. Derive audience from lifecycle contract: `dev` → `base`
 9. Create and checkout phase branch `{initiative_root}-dev` from base (push immediately)
-10. Delegate implementation to Amelia (Developer)
+10. Activate Amelia (Developer) as agent owner for this phase:
+    - Load and adopt persona from: `_bmad/bmm/agents/dev.md`
+    - Remain as Amelia for implementation work; switch persona for code review and retro as noted below
 
 Use `#think` before decomposing implementation tasks or selecting code patterns.
 
 **Phase identity:**
 - Phase: `dev` | Display: Dev | Audience: `base`
-- Agent owner: Amelia (Developer)
+- Agent owner: Amelia (Developer) — `_bmad/bmm/agents/dev.md`
 - Branch pattern: `{initiative_root}-dev`
 - Role gate: Developer (post-review only)
 
@@ -35,6 +37,14 @@ Use `#think` before decomposing implementation tasks or selecting code patterns.
 - Constitution skill resolves and validates all artifacts against constitutional rules
 - Entry condition: all large-audience phases merged into `{initiative_root}-large`
 - Dev phase is blocked until this gate passes
+
+**⚠️ CRITICAL — Workflow Engine Rules:**
+Sub-workflows [4], [5], and [7] use YAML-based workflow.yaml files with the workflow engine.
+- Load `_bmad/core/tasks/workflow.xml` FIRST as the execution engine
+- Pass the `workflow.yaml` path to the engine
+- Follow the engine instructions precisely — execute steps sequentially
+- Save outputs after completing EACH engine step (never batch)
+- STOP and wait for user at decision points
 
 **Execution sequence:**
 
@@ -64,24 +74,33 @@ Use `#think` before decomposing implementation tasks or selecting code patterns.
 - Git-orchestration switches from BMAD control repo to `TargetProjects/{repo}/`
 - Checkout feature branch in target repo (creates if needed, pushes immediately)
 
-**[4] Implementation Loop (repeating per task)**
-- Amelia implements task per dev story guidance and constitutional context
-- Code review after EACH task (not at end): constitution-aware adversarial review
-- Push implementation commits to feature branch in target repo
+**[4] Implementation Loop (repeating per task)** — Continue as Amelia (Developer)
+  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.xml`
+  → Pass to engine: `_bmad/bmm/workflows/4-implementation/dev-story/workflow.yaml`
+  → Amelia implements task per dev story guidance and constitutional context
+  → Engine executes steps sequentially — save outputs after EACH step
+  → STOP and wait for user at decision points
+  → Push implementation commits to feature branch in target repo
 
-**[5] Code Review (per task, constitution-aware)**
-- Adversarial review of implementation against: story acceptance criteria, constitutional rules, architecture decisions
-- FAIL blocks the task (not the whole story)
-- WARN records in review-log but allows continuation
+**[5] Code Review (per task, constitution-aware)** — Switch to Quinn (QA) persona: `_bmad/bmm/agents/qa.md`
+  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.xml`
+  → Pass to engine: `_bmad/bmm/workflows/4-implementation/code-review/workflow.yaml`
+  → Adversarial review against: story acceptance criteria, constitutional rules, architecture decisions
+  → FAIL blocks the task (not the whole story)
+  → WARN records in review-log but allows continuation
+  → After review: switch back to Amelia for next task
 
 **[6] Epic Completion Check**
 - After all tasks in story complete: verify all acceptance criteria met
-- If this story is the last story in an epic: run epic teardown (party mode review of the epic)
-- Epic teardown participants: Winston (Arch), Mary (Analyst), Quinn (QA)
+- If this story is the last story in an epic: run epic teardown (party mode review)
+  → Read fully and follow `_bmad/core/workflows/party-mode/workflow.md`
+  → Epic teardown participants: Winston (Arch) `_bmad/bmm/agents/architect.md`, Mary (Analyst) `_bmad/bmm/agents/analyst.md`, Quinn (QA) `_bmad/bmm/agents/qa.md`
 
-**[7] Retrospective**
-- Bob conducts sprint retrospective
-- Output: `retro.md` documenting what worked, what didn't, action items
+**[7] Retrospective** — Switch to Bob (Scrum Master) persona: `_bmad/bmm/agents/sm.md`
+  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.xml`
+  → Pass to engine: `_bmad/bmm/workflows/4-implementation/retrospective/workflow.yaml`
+  → Bob conducts sprint retrospective
+  → Output: `retro.md` documenting what worked, what didn't, action items
 
 **User interaction keywords:**
 - `defaults` / `best defaults` → apply defaults to current step only

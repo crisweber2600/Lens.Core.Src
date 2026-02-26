@@ -8,7 +8,7 @@ Activate @lens agent and execute /promote:
 1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/promote` command
 3. Load lifecycle contract: `_bmad/lens-work/lifecycle.yaml`
-4. Load `workflows/core/audience-promotion/workflow.md`
+4. Load `_bmad/lens-work/workflows/core/audience-promotion/workflow.md`
 5. Pre-flight: verify clean working directory, load two-file state
 
 Use `#think` before determining which gate to run and which phases must be complete.
@@ -19,6 +19,11 @@ small   →  medium   gate: adversarial-review   (party mode, lead: Winston)
 medium  →  large    gate: stakeholder-approval  (manual confirmation)
 large   →  base     gate: constitution-gate     (constitution skill validates all artifacts)
 ```
+
+**⚠️ CRITICAL — Interactive Workflow Rules (for party-mode gates):**
+- 🛑 **NEVER** auto-complete or batch-generate review content without user input
+- ⏸️ **ALWAYS** STOP and wait for user input/confirmation at each review step
+- 📋 Back-and-forth dialogue is REQUIRED — you are a facilitator, not a generator
 
 **[0] Pre-Flight**
 - Git-orchestration: verify clean git state
@@ -37,8 +42,11 @@ large   →  base     gate: constitution-gate     (constitution skill validates 
 
 **small → medium (adversarial-review — party mode):**
 - Collect artifacts from all small-audience phases (`product-brief.md`, `prd.md`, `architecture.md`)
-- For each artifact: run `core.party-mode` review
-- Participants: Winston (Architect), Mary (Analyst), Sally (UX Designer)
+- For each artifact: Read fully and follow `_bmad/core/workflows/party-mode/workflow.md`
+- Participants (adopt each persona in turn):
+  - Winston (Architect) — `_bmad/bmm/agents/architect.md` (lead reviewer)
+  - Mary (Analyst) — `_bmad/bmm/agents/analyst.md`
+  - Sally (UX Designer) — `_bmad/bmm/agents/ux-designer.md`
 - Write review to `{docs_path}/reviews/promotion-small-to-medium-{artifact}-review.md`
 - BLOCK if any artifact fails party-mode review
 

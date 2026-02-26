@@ -7,7 +7,7 @@ Activate @lens agent and execute /new-domain:
 
 1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/new-domain` command to create domain initiative
-3. Router dispatches to `workflows/router/init-initiative/` workflow
+3. Router dispatches to `_bmad/lens-work/workflows/router/init-initiative/` workflow
 4. Git-orchestration creates domain branch ONLY (no audience/phase branches) and pushes immediately
 5. Scaffold domain folders and Domain.yaml
 6. Route to `/new-service` or `/new-feature` within this domain

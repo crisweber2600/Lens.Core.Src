@@ -37,6 +37,16 @@ lens_hierarchy:
 # Audiences are the primary progression axis. Phases happen WITHIN audiences.
 # Promotion between audiences IS the review gate.
 audiences:
+  # NOTE ON AUDIENCE ASSIGNMENT CONVENTION:
+  # The `phases` list here defines which phases were *created during* this audience scope.
+  # However, the prompts for devproposal and sprintplan branch from medium and large
+  # respectively (post-promotion). This is intentional:
+  #   - preplan, businessplan, techplan → branch from small (created in small scope)
+  #   - devproposal → branches from medium (requires small→medium promotion first)
+  #   - sprintplan → branches from large (requires medium→large promotion first)
+  #   - dev → branches from base (requires large→base promotion first)
+  # The `audience: small` field on each phase below indicates the IC work context,
+  # while the prompt/router `branch_pattern` determines the actual branching audience.
   small:
     role: "IC creation work"
     description: "Where ALL 5 planning phases happen — individual contributor generates artifacts"

@@ -254,14 +254,31 @@ if initiative.question_mode == "batch":
 
 ### 3. Execute Workflows
 
+**⚠️ CRITICAL — Interactive Workflow Rules:**
+Each sub-workflow uses sequential step-file architecture.
+- 🛑 **NEVER** auto-complete or batch-generate content without user input
+- ⏸️ **ALWAYS** STOP and wait for user input/confirmation at each step
+- 🚫 **NEVER** load the next step file until user explicitly confirms (Continue / C)
+- 📋 Back-and-forth dialogue is REQUIRED — you are a facilitator, not a generator
+- 💾 Save/update frontmatter after completing each step before loading the next
+- 🎯 Read the ENTIRE step file before taking any action within it
+
+**Agent:** Adopt John (PM) persona — load `_bmad/bmm/agents/pm.md`
+
 #### Epics — Story Breakdown Integration:
 ```yaml
 invoke: git-orchestration.start-workflow
 params:
   workflow_name: epics
 
-# Reference Epic generation workflow from BMM module
-invoke: bmm.create-epics
+# RESOLVED: bmm.create-epics → Read fully and follow this workflow file:
+#   _bmad/bmm/workflows/3-solutioning/create-epics-and-stories/workflow.md
+# Agent persona: John (PM) — _bmad/bmm/agents/pm.md
+# Uses step-file architecture with steps/ folder
+# Load steps one at a time (JIT) — NEVER load multiple step files simultaneously
+# ALWAYS halt at menus and wait for user input before proceeding
+agent_persona: "_bmad/bmm/agents/pm.md"
+read_and_follow: "_bmad/bmm/workflows/3-solutioning/create-epics-and-stories/workflow.md"
 params:
   architecture: "${docs_path}/architecture.md"
   prd: "${docs_path}/prd.md"
@@ -274,17 +291,20 @@ invoke: git-orchestration.finish-workflow
 #### Epic Stress Gate (Required: Adversarial + Party Mode):
 ```yaml
 # Run adversarial + party-mode teardown for EACH generated epic
-epic_ids = extract_epic_ids("_bmad-output/planning-artifacts/epics.md")
+epic_ids = extract_epic_ids("${docs_path}/epics.md")
 
 for epic_id in epic_ids:
-  readiness_adversarial = invoke("bmm.check-implementation-readiness")
+  # RESOLVED: bmm.check-implementation-readiness → Read fully and follow:
+  #   _bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md
+  # Run in adversarial mode scoped to individual epic
+  read_and_follow: "_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md"
   params:
     mode: "adversarial"
     scope: "epic"
     epic_id: ${epic_id}
-    prd: "_bmad-output/planning-artifacts/prd.md"
-    architecture: "_bmad-output/planning-artifacts/architecture.md"
-    epics: "_bmad-output/planning-artifacts/epics.md"
+    prd: "${docs_path}/prd.md"
+    architecture: "${docs_path}/architecture.md"
+    epics: "${docs_path}/epics.md"
     constitutional_context: ${constitutional_context}
 
   if readiness_adversarial.status in ["blocked", "fail"]:
@@ -292,18 +312,21 @@ for epic_id in epic_ids:
       Epic adversarial review failed for ${epic_id}.
       Resolve implementation-readiness findings before continuing.
 
-  invoke: core.party-mode
+  # RESOLVED: core.party-mode → Read fully and follow:
+  #   _bmad/core/workflows/party-mode/workflow.md
+  # Uses step-file architecture — halt at each step, wait for user input
+  read_and_follow: "_bmad/core/workflows/party-mode/workflow.md"
   params:
-    input_file: "_bmad-output/planning-artifacts/epics.md"
+    input_file: "${docs_path}/epics.md"
     focus_epic: ${epic_id}
-    artifacts_path: "_bmad-output/planning-artifacts/"
-    output_file: "_bmad-output/planning-artifacts/epic-${epic_id}-party-mode-review.md"
+    artifacts_path: "${docs_path}/"
+    output_file: "${docs_path}/epic-${epic_id}-party-mode-review.md"
     constitutional_context: ${constitutional_context}
 
   if party_mode.status not in ["pass", "complete"]:
     error: |
       Epic party-mode review flagged unresolved issues for ${epic_id}.
-      Address _bmad-output/planning-artifacts/epic-${epic_id}-party-mode-review.md and re-run /plan.
+      Address ${docs_path}/epic-${epic_id}-party-mode-review.md and re-run /plan.
 ```
 #### Stories — Story Breakdown Integration:
 ```yaml
@@ -311,9 +334,14 @@ invoke: git-orchestration.start-workflow
 params:
   workflow_name: stories
 
-# Reference Story generation workflow from BMM module
-invoke: bmm.create-stories
+# RESOLVED: bmm.create-stories → Continue the epics-and-stories workflow:
+#   _bmad/bmm/workflows/3-solutioning/create-epics-and-stories/workflow.md
+# Story generation portion — continues from epic output
+# Agent persona: John (PM) — _bmad/bmm/agents/pm.md
+# Uses step-file architecture — halt at each step, wait for user input
+read_and_follow: "_bmad/bmm/workflows/3-solutioning/create-epics-and-stories/workflow.md"
 params:
+  mode: "stories"  # Continue from epic output, generate stories
   epics: "${docs_path}/epics.md"
   architecture: "${docs_path}/architecture.md"
   output_path: "${docs_path}/"
@@ -328,7 +356,12 @@ invoke: git-orchestration.start-workflow
 params:
   workflow_name: readiness
 
-invoke: bmm.readiness-checklist
+# RESOLVED: bmm.readiness-checklist → Read fully and follow:
+#   _bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md
+# Final full-scope readiness validation across all artifacts
+# Agent persona: John (PM) — _bmad/bmm/agents/pm.md
+# Halt and present readiness findings to user before marking complete
+read_and_follow: "_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md"
 params:
   artifacts:
     - product-brief.md

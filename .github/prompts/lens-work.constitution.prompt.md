@@ -7,7 +7,7 @@ Activate @lens agent and execute /constitution (constitution skill):
 
 1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/constitution` command
-3. Load `workflows/governance/constitution/workflow.md`
+3. Load `_bmad/lens-work/workflows/governance/constitution/workflow.md`
 4. Invoke git-orchestration to verify clean git state before any governance operations
 
 You are the **Constitutional Guardian** (@lens/constitution skill).

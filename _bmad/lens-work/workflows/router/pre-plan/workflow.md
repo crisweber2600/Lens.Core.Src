@@ -259,13 +259,28 @@ Select workflow(s) to run: [1] [2] [3] [A]ll [S]kip to Product Brief
 
 ### 4. Execute Selected Workflows
 
+**⚠️ CRITICAL — Interactive Workflow Rules:**
+Each sub-workflow uses sequential step-file architecture.
+- 🛑 **NEVER** auto-complete or batch-generate content without user input
+- ⏸️ **ALWAYS** STOP and wait for user input/confirmation at each step
+- 🚫 **NEVER** load the next step file until user explicitly confirms (Continue / C)
+- 📋 Back-and-forth dialogue is REQUIRED — you are a facilitator, not a generator
+- 💾 Save/update frontmatter after completing each step before loading the next
+- 🎯 Read the ENTIRE step file before taking any action within it
+
+**Agent:** Adopt Mary (Analyst) persona — load `_bmad/bmm/agents/analyst.md`
+
 #### If Brainstorming selected:
 ```yaml
 invoke: git-orchestration.start-workflow
 params:
   workflow_name: brainstorm
 
-invoke: cis.brainstorming  # CIS module workflow
+# RESOLVED: cis.brainstorming → Read fully and follow this workflow file:
+#   _bmad/core/workflows/brainstorming/workflow.md
+# Uses step-file architecture with steps/ folder — load step-01-session-setup.md first
+# STOP and wait for user at each step — do NOT auto-generate brainstorm content
+read_and_follow: "_bmad/core/workflows/brainstorming/workflow.md"
 params:
   context: "${initiative.name} at ${initiative.layer} layer"
   constitutional_context: ${constitutional_context}
@@ -279,7 +294,18 @@ invoke: git-orchestration.start-workflow
 params:
   workflow_name: research
 
-invoke: cis.research  # CIS module workflow
+# RESOLVED: cis.research → Ask user for research type, then follow the correct workflow:
+#   Market:    _bmad/bmm/workflows/1-analysis/research/workflow-market-research.md
+#   Domain:    _bmad/bmm/workflows/1-analysis/research/workflow-domain-research.md
+#   Technical: _bmad/bmm/workflows/1-analysis/research/workflow-technical-research.md
+# Each uses step-file architecture — load steps one at a time, wait for user at each step
+prompt_user: "Which type of research? [M]arket / [D]omain / [T]echnical"
+if research_type == "market":
+  read_and_follow: "_bmad/bmm/workflows/1-analysis/research/workflow-market-research.md"
+elif research_type == "domain":
+  read_and_follow: "_bmad/bmm/workflows/1-analysis/research/workflow-domain-research.md"
+elif research_type == "technical":
+  read_and_follow: "_bmad/bmm/workflows/1-analysis/research/workflow-technical-research.md"
 params:
   constitutional_context: ${constitutional_context}
 
@@ -292,10 +318,24 @@ invoke: git-orchestration.start-workflow
 params:
   workflow_name: product-brief
 
-invoke: bmm.product-brief  # BMM module workflow
+# RESOLVED: bmm.product-brief → Read fully and follow this workflow file:
+#   _bmad/bmm/workflows/1-analysis/create-product-brief/workflow.md
+# Uses JIT step-file architecture:
+#   1. Load step-01-init.md first
+#   2. Only load next step when directed by the current step
+#   3. NEVER load multiple step files simultaneously
+#   4. ALWAYS halt at menus and wait for user input
+#   5. Output goes to: ${docs_path}/product-brief.md
+# Agent persona: Mary (Analyst) — _bmad/bmm/agents/analyst.md
+read_and_follow: "_bmad/bmm/workflows/1-analysis/create-product-brief/workflow.md"
 params:
-  output_path: "_bmad-output/planning-artifacts/"
+  output_path: "${docs_path}/"
   constitutional_context: ${constitutional_context}
+  context:
+    brainstorm_notes: "${docs_path}/brainstorm-notes.md"   # if exists from step [1]
+    research_summary: "${docs_path}/research-summary.md"   # if exists from step [2]
+    repo_readme: "${repo_context.readme}"
+    repo_contributing: "${repo_context.contributing}"
 
 invoke: git-orchestration.finish-workflow
 ```

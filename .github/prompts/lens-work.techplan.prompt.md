@@ -13,13 +13,15 @@ Activate @lens agent and execute /techplan:
 6. Verify required artifacts exist: `{docs_path}/prd.md`, `{docs_path}/architecture.md`
 7. Derive audience from lifecycle contract: `techplan` → `small`
 8. Create and checkout phase branch `{initiative_root}-small-techplan` from `{initiative_root}-small` (push immediately)
-9. Delegate artifact work to Winston (Architect)
+9. Activate Winston (Architect) as agent owner for this phase:
+   - Load and adopt persona from: `_bmad/bmm/agents/architect.md`
+   - Remain as Winston for all artifact work in this phase
 
 Use `#think` before making architectural decisions or selecting technology stacks.
 
 **Phase identity:**
 - Phase: `techplan` | Display: TechPlan | Audience: `small`
-- Agent owner: Winston (Architect)
+- Agent owner: Winston (Architect) — `_bmad/bmm/agents/architect.md`
 - Branch pattern: `{initiative_root}-small-techplan`
 - Role gate: Architect, Tech Lead
 
@@ -29,10 +31,30 @@ Use `#think` before making architectural decisions or selecting technology stack
 - `architecture.md` exists at `{docs_path}/architecture.md`
 - `state.yaml` exists with `active_initiative` set
 
-**Workflow sequence:**
-- **[1] Architecture Refinement** (required) — Winston refines/completes architecture from BusinessPlan, adds technical decisions, component design, and integration patterns
-- **[2] Tech Decisions** (required) — Document key technical decisions, rationale, and trade-offs
-- **[3] Implementation Readiness Check** (required) — Validate architecture is buildable and stories can be derived from it
+**⚠️ CRITICAL — Interactive Workflow Rules:**
+Each sub-workflow below uses sequential step-file architecture.
+- 🛑 **NEVER** auto-complete or batch-generate content without user input
+- ⏸️ **ALWAYS** STOP and wait for user input/confirmation at each step
+- 🚫 **NEVER** load the next step file until user explicitly confirms (Continue / C)
+- 📋 Back-and-forth dialogue is REQUIRED — you are a facilitator, not a generator
+- 💾 Save/update frontmatter after completing each step before loading the next
+- 🎯 Read the ENTIRE step file before taking any action within it
+
+**Workflow sequence (present menu and WAIT for user selection before proceeding):**
+
+- **[1] Architecture Refinement** (required) — Continue as Winston (Architect)
+  → When reached: Read fully and follow `_bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md`
+  → Context: pass existing `{docs_path}/architecture.md` as baseline for refinement, not fresh creation
+  → Uses step-file architecture with `steps/` folder — halt at each step, wait for user input
+
+- **[2] Tech Decisions** (required) — Continue as Winston (Architect)
+  → Document key technical decisions, rationale, and trade-offs
+  → Inline workflow — present decisions one at a time, wait for user review/approval of each
+
+- **[3] Implementation Readiness Check** (required) — Continue as Winston (Architect)
+  → When reached: Read fully and follow `_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md`
+  → Validate architecture is buildable and stories can be derived from it
+  → Halt and present readiness findings to user before marking complete
 
 **User interaction keywords:**
 - `defaults` / `best defaults` → apply defaults to current step only

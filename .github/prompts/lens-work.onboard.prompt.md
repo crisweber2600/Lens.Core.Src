@@ -7,7 +7,7 @@ Activate @lens agent and execute /onboard (discovery skill):
 
 1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/onboard` command — full onboarding workflow
-3. Load `workflows/utility/onboarding/workflow.md`
+3. Load `_bmad/lens-work/workflows/utility/onboarding/workflow.md`
 4. Load repo inventory from `_bmad-output/lens-work/repo-inventory.yaml` (if exists)
 
 This is the **first-run workflow** for new team members. It sets up profile, credentials, and clones/documents target repos.

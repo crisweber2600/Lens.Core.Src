@@ -261,17 +261,41 @@ Select workflow(s): [1] [2] [3] [A]ll
 
 ### 4. Execute Workflows
 
+**⚠️ CRITICAL — Interactive Workflow Rules:**
+Each sub-workflow uses sequential step-file architecture.
+- 🛑 **NEVER** auto-complete or batch-generate content without user input
+- ⏸️ **ALWAYS** STOP and wait for user input/confirmation at each step
+- 🚫 **NEVER** load the next step file until user explicitly confirms (Continue / C)
+- 📋 Back-and-forth dialogue is REQUIRED — you are a facilitator, not a generator
+- 💾 Save/update frontmatter after completing each step before loading the next
+- 🎯 Read the ENTIRE step file before taking any action within it
+
 #### PRD:
 ```yaml
 invoke: git-orchestration.start-workflow
 params:
   workflow_name: prd
 
-invoke: bmm.create-prd
+# RESOLVED: bmm.create-prd → Read fully and follow this workflow file:
+#   _bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-create-prd.md
+# Agent persona: John (PM) — load and adopt _bmad/bmm/agents/pm.md
+# Uses step-file architecture with steps-c/ folder
+# Load steps one at a time (JIT) — NEVER load multiple step files simultaneously
+# ALWAYS halt at menus and wait for user input before proceeding
+agent_persona: "_bmad/bmm/agents/pm.md"
+read_and_follow: "_bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-create-prd.md"
 params:
   product_brief: "${docs_path}/product-brief.md"
   output_path: "${docs_path}/"
   constitutional_context: ${constitutional_context}
+
+# After PRD creation, run PRD validation:
+# RESOLVED: Read fully and follow:
+#   _bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-validate-prd.md
+# Continue as John (PM) — adversarial review of PRD for completeness and buildability
+read_and_follow: "_bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-validate-prd.md"
+params:
+  prd_path: "${docs_path}/prd.md"
 
 invoke: git-orchestration.finish-workflow
 ```
@@ -282,8 +306,18 @@ invoke: git-orchestration.start-workflow
 params:
   workflow_name: ux-design
 
-invoke: bmm.create-ux-design
+# RESOLVED: bmm.create-ux-design → Read fully and follow this workflow file:
+#   _bmad/bmm/workflows/2-plan-workflows/create-ux-design/workflow.md
+# Agent persona: Switch to Sally (UX Designer) — load and adopt _bmad/bmm/agents/ux-designer.md
+# Uses step-file architecture with steps/ folder
+# Load steps one at a time (JIT) — NEVER load multiple step files simultaneously
+# ALWAYS halt at menus and wait for user input before proceeding
+agent_persona: "_bmad/bmm/agents/ux-designer.md"
+read_and_follow: "_bmad/bmm/workflows/2-plan-workflows/create-ux-design/workflow.md"
 params:
+  prd: "${docs_path}/prd.md"
+  product_brief: "${docs_path}/product-brief.md"
+  output_path: "${docs_path}/"
   constitutional_context: ${constitutional_context}
 
 invoke: git-orchestration.finish-workflow
@@ -295,8 +329,14 @@ invoke: git-orchestration.start-workflow
 params:
   workflow_name: architecture
 
-# Reference architecture workflow from BMM module
-invoke: bmm.create-architecture
+# RESOLVED: bmm.create-architecture → Read fully and follow this workflow file:
+#   _bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md
+# Agent persona: Switch to Winston (Architect) — load and adopt _bmad/bmm/agents/architect.md
+# Uses step-file architecture with steps/ folder
+# Load steps one at a time (JIT) — NEVER load multiple step files simultaneously
+# ALWAYS halt at menus and wait for user input before proceeding
+agent_persona: "_bmad/bmm/agents/architect.md"
+read_and_follow: "_bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md"
 params:
   prd: "${docs_path}/prd.md"
   product_brief: "${docs_path}/product-brief.md"

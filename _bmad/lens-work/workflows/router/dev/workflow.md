@@ -308,14 +308,30 @@ You're now working in: ${target_path}
 
 ### 5. Adversarial Code Review + Constitutional Gates (when signaled)
 
+**⚠️ CRITICAL — Workflow Engine Rules:**
+Code review and retrospective use YAML-based workflow.yaml files with the workflow engine.
+- Load `_bmad/core/tasks/workflow.xml` FIRST as the execution engine
+- Pass the `workflow.yaml` path to the engine
+- Follow engine instructions precisely — execute steps sequentially
+- Save outputs after completing EACH engine step (never batch)
+- STOP and wait for user at decision points
+
 ```yaml
 # User signals: @lens done
 invoke: git-orchestration.start-workflow
 params:
   workflow_name: code-review
 
+# RESOLVED: bmm.code-review → Load workflow engine then execute YAML workflow:
+#   1. Load engine: _bmad/core/tasks/workflow.xml
+#   2. Pass config: _bmad/bmm/workflows/4-implementation/code-review/workflow.yaml
+# Agent persona: Quinn (QA) — load and adopt _bmad/bmm/agents/qa.md
 # BMM code-review is explicitly adversarial and must challenge implementation claims
-invoke: bmm.code-review
+# Engine executes steps sequentially — save outputs after EACH step
+# STOP and wait for user at decision points
+agent_persona: "_bmad/bmm/agents/qa.md"
+load_engine: "_bmad/core/tasks/workflow.xml"
+execute_workflow: "_bmad/bmm/workflows/4-implementation/code-review/workflow.yaml"
 params:
   target_repo: "${target_path}"
   branch: "feature/${story_id}"
@@ -335,8 +351,11 @@ if code_review_compliance.fail_count > 0:
     FAIL count: ${code_review_compliance.fail_count}
     Resolve violations and re-run @lens done.
 
+# RESOLVED: core.party-mode → Read fully and follow:
+#   _bmad/core/workflows/party-mode/workflow.md
 # Multi-agent teardown pass to aggressively probe edge cases
-invoke: core.party-mode
+# Uses step-file architecture — halt at each step, wait for user input
+read_and_follow: "_bmad/core/workflows/party-mode/workflow.md"
 params:
   input_file: ${code_review_path}
   artifacts_path: ${target_path}
@@ -351,23 +370,25 @@ if party_mode.status not in ["pass", "complete"]:
 # Epic-level teardown is mandatory when this story completes its parent epic
 current_epic_id = resolve_story_epic_id(
   "${story_id}",
-  "_bmad-output/planning-artifacts/stories.md",
+  "${docs_path}/stories.md",
   ${dev_story_path}
 )
 
 if current_epic_id:
   epic_completion = evaluate_epic_completion(
     "${current_epic_id}",
-    "_bmad-output/planning-artifacts/stories.md",
+    "${docs_path}/stories.md",
     "_bmad-output/implementation-artifacts/"
   )
 
   if epic_completion.status == "complete":
-    epic_adversarial = invoke("bmm.check-implementation-readiness")
+    # RESOLVED: bmm.check-implementation-readiness → Read fully and follow:
+    #   _bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md
+    read_and_follow: "_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md"
     params:
       scope: "epic"
       epic_id: ${current_epic_id}
-      stories: "_bmad-output/planning-artifacts/stories.md"
+      stories: "${docs_path}/stories.md"
       implementation_artifacts: "_bmad-output/implementation-artifacts/"
       constitutional_context: ${constitutional_context}
 
@@ -376,9 +397,12 @@ if current_epic_id:
         Epic adversarial review failed for ${current_epic_id}.
         Resolve implementation-readiness findings and re-run @lens done.
 
-    invoke: core.party-mode
+    # RESOLVED: core.party-mode → Read fully and follow:
+    #   _bmad/core/workflows/party-mode/workflow.md
+    # Epic teardown participants: Winston (Arch), Mary (Analyst), Quinn (QA)
+    read_and_follow: "_bmad/core/workflows/party-mode/workflow.md"
     params:
-      input_file: "_bmad-output/planning-artifacts/epics.md"
+      input_file: "${docs_path}/epics.md"
       focus_epic: ${current_epic_id}
       artifacts_path: ${target_path}
       output_file: "_bmad-output/implementation-artifacts/epic-${current_epic_id}-party-mode-review.md"
@@ -389,6 +413,7 @@ if current_epic_id:
         Epic party-mode teardown found unresolved issues for ${current_epic_id}.
         Address _bmad-output/implementation-artifacts/epic-${current_epic_id}-party-mode-review.md and re-run @lens done.
 
+# After code review: switch back to Amelia (Developer) — _bmad/bmm/agents/dev.md
 invoke: git-orchestration.finish-workflow
 ```
 
@@ -401,8 +426,15 @@ if yes:
   invoke: git-orchestration.start-workflow
   params:
     workflow_name: retro
-    
-  invoke: bmm.retrospective
+
+  # RESOLVED: bmm.retrospective → Load workflow engine then execute YAML workflow:
+  #   1. Load engine: _bmad/core/tasks/workflow.xml
+  #   2. Pass config: _bmad/bmm/workflows/4-implementation/retrospective/workflow.yaml
+  # Agent persona: Switch to Bob (Scrum Master) — load and adopt _bmad/bmm/agents/sm.md
+  # Engine executes steps sequentially — save outputs after EACH step
+  agent_persona: "_bmad/bmm/agents/sm.md"
+  load_engine: "_bmad/core/tasks/workflow.xml"
+  execute_workflow: "_bmad/bmm/workflows/4-implementation/retrospective/workflow.yaml"
   params:
     constitutional_context: ${constitutional_context}
   invoke: git-orchestration.finish-workflow

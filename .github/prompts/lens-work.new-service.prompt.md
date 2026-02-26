@@ -8,7 +8,7 @@ Activate @lens agent and execute /new-service:
 1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/new-service` command to create service initiative
 3. The argument IS the service name (e.g., `/new-service Lens` → service = "Lens")
-4. Router dispatches to `workflows/router/init-initiative/` workflow
+4. Router dispatches to `_bmad/lens-work/workflows/router/init-initiative/` workflow
 
 **Context inheritance — service inherits from active domain:**
 - Load `_bmad-output/lens-work/state.yaml` → `active_initiative`

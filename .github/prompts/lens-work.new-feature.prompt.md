@@ -8,7 +8,7 @@ Activate @lens agent and execute /new-feature:
 1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/new-feature` command to create feature initiative
 3. The argument IS the feature name (e.g., `/new-feature Rate Limiting` → feature = "Rate Limiting")
-4. Router dispatches to `workflows/router/init-initiative/` workflow
+4. Router dispatches to `_bmad/lens-work/workflows/router/init-initiative/` workflow
 
 **Context inheritance — feature inherits from active parent (service OR domain):**
 - Load `_bmad-output/lens-work/state.yaml` → `active_initiative`
