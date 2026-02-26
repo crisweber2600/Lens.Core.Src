@@ -347,6 +347,11 @@ scripts:
 git:
   fetch_strategy: background
   fetch_ttl: 60
+  # How often (seconds) to pull the governance repo in the background.
+  # A marker file at {governance_repo_root}/.last-governance-pull records the
+  # last successful pull timestamp.  If now() - last_pull > governance_sync_ttl,
+  # branch-preflight pulls main before proceeding.  Default: 900 s (15 min).
+  governance_sync_ttl: 900
   branch_patterns:
     # Organizational branches (unchanged)
     domain: "{domain_prefix}"
@@ -370,6 +375,7 @@ git:
 background_triggers:
   workflow_start:
     - state-sync           # Read current state
+    - governance-sync      # Pull governance repo if TTL exceeded (see git.governance_sync_ttl)
     - constitution-check   # Validate governance
   workflow_end:
     - state-sync           # Write updated state

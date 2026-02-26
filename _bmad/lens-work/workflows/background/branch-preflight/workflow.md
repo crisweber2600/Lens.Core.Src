@@ -108,7 +108,54 @@ else:
 log: "Expected branch: ${expected_branch} (${context})"
 ```
 
-### 4a. Governance Write Guard
+### 4a. Governance Periodic Pull
+
+Before any workflow runs, pull the latest `main` from the governance repo if the
+configured TTL has elapsed. This ensures every session sees the latest constitutions,
+roster entries, and policies without requiring a manual `@lens sync`.
+
+```yaml
+# Resolve config
+module = load_yaml("_bmad/lens-work/module.yaml")
+governance_root = module.outputs.governance_repo_root
+ttl_seconds = module.git.governance_sync_ttl  # default 900
+marker_file = "${governance_root}/.last-governance-pull"
+
+# Only run if governance repo is cloned
+if dir_exists(governance_root) and is_git_repo(governance_root):
+
+  last_pull_epoch = 0
+  if file_exists(marker_file):
+    last_pull_epoch = int(read_file(marker_file).strip())
+
+  now_epoch = unix_timestamp()
+  seconds_since_pull = now_epoch - last_pull_epoch
+
+  if seconds_since_pull >= ttl_seconds:
+    log: "Governance repo TTL exceeded (${seconds_since_pull}s >= ${ttl_seconds}s) — pulling origin/main"
+```
+
+```bash
+    git -C "${governance_root}" fetch origin main --quiet --prune
+    git -C "${governance_root}" merge --ff-only origin/main --quiet 2>&1
+```
+
+```yaml
+    if pull_succeeded:
+      write_file(marker_file, str(unix_timestamp()))
+      log: "Governance repo updated from origin/main"
+    else:
+      # Non-fatal: warn and continue — local copy may still be usable
+      warn: |
+        ⚠️  Could not fast-forward governance repo from origin/main.
+        Local copy may be stale.  Run '@lens sync' to investigate.
+  else:
+    log: "Governance repo pull skipped (${seconds_since_pull}s < ${ttl_seconds}s TTL)"
+```
+
+---
+
+### 4b. Governance Write Guard
 
 Before executing any command that will write to the governance repo local path,
 verify the governance repo is cloned and on a valid branch.
