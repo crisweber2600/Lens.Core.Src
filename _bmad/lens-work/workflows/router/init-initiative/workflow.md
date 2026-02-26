@@ -413,13 +413,19 @@ elif response == "edit":
 ### 2. Generate Initiative ID
 
 ```bash
-# REQ-1, REQ-3: Jira ticket prompt for feature-layer when tracker=jira
-jira_ticket=""
-if [ "${layer}" == "feature" ] && [ "${tracker}" == "jira" ]; then
-  # REQ-3: Prompt for optional Jira ticket ID
-  ask: "Jira ticket (optional, e.g., BMAD-123):"
+# REQ-1, REQ-3: Work-item tracker prompt for feature-layer when tracker != "none"
+tracker_id=""
+if [ "${layer}" == "feature" ] && [ "${tracker}" != "none" ]; then
+  # REQ-3: Prompt for work-item ID from the configured tracker
+  if [ "${tracker}" == "jira" ]; then
+    ask: "Jira ticket ID (e.g., BMAD-123):"
+  elif [ "${tracker}" == "azure-devops" ]; then
+    ask: "Azure DevOps work item ID (e.g., 12345 or AB#12345):"
+  else
+    ask: "Work item ID from your tracker:"
+  fi
   if [ -n "${answer}" ]; then
-    jira_ticket="${answer}"  # REQ-3: Store raw Jira ticket ID
+    tracker_id="${answer}"  # REQ-3: Store raw work-item ID
   fi
 fi
 
@@ -436,9 +442,9 @@ elif [ "${layer}" == "service" ]; then
 elif [ "${layer}" == "feature" ]; then
   # REQ-1: Feature ID = sanitized name only (no random suffix)
   sanitized_name=$(echo "${initiative_name}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | sed 's/[^a-z0-9-]//g' | sed 's/-\+/-/g' | sed 's/^-//;s/-$//')
-  # REQ-1, REQ-3: Prepend Jira ticket ID if provided
-  if [ -n "${jira_ticket}" ]; then
-    initiative_id="${jira_ticket}-${sanitized_name}"  # e.g., BMAD-123-onboarding-enhancements
+  # REQ-1, REQ-3: Prepend work-item ID if provided (from any tracker)
+  if [ -n "${tracker_id}" ]; then
+    initiative_id="${tracker_id}-${sanitized_name}"  # e.g., BMAD-123-onboarding-enhancements or 12345-onboarding-enhancements
   else
     initiative_id="${sanitized_name}"
   fi
@@ -736,7 +742,7 @@ domain_prefix: ${domain_prefix}
 service: ${service}
 service_prefix: ${service_prefix}
 question_mode: ${question_mode}
-jira_ticket: ${jira_ticket || ""}          # REQ-1, REQ-3: Jira ticket ID (feature-layer, tracker=jira)
+tracker_id: ${tracker_id || ""}            # REQ-1, REQ-3: Work-item ID (feature-layer, any tracker)
 created_at: "${ISO_TIMESTAMP}"
 created_by: ${git_user}
 target_repos:
