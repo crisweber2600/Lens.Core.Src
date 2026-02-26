@@ -1,4 +1,3 @@
-`````prompt
 ````prompt
 ---
 description: 'Switch context — initiative, lens, phase, or size'
