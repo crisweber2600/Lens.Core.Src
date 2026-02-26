@@ -31,8 +31,17 @@ Activate @lens agent and execute /new-feature:
 - Confirm target repos (default: inherit all from parent)
 - That's it — everything else is derived
 
+**Work Item Tracking:**
+- Reads user's tracker preference from `personal/profile.yaml` (set during onboarding)
+- If tracker is configured (`jira` or `azure-devops`), prompts for work item ID:
+  - Jira: "Jira ticket ID (e.g., BMAD-123):"
+  - Azure DevOps: "Azure DevOps work item ID (e.g., 12345 or AB#12345):"
+- If tracker is `none`, no prompt — uses feature name directly
+
 **Creates:**
-- Initiative ID: `{sanitized_name}-{random_6char}` (always random suffix)
+- Initiative ID:
+  - With tracker ID: `{tracker_id}-{sanitized_name}` (e.g., `BMAD-123-rate-limiting` or `12345-rate-limiting`)
+  - Without tracker ID: `{sanitized_name}` (e.g., `rate-limiting`)
 - Feature branch root (`{featureBranchRoot}`) computed from parent context:
   - Service parent: `{domain_prefix}-{service_prefix}-{initiative_id}`
   - Service parent + multi-repo: `{domain_prefix}-{service_prefix}-{repo}-{initiative_id}`
@@ -45,12 +54,14 @@ Activate @lens agent and execute /new-feature:
 - NOTE: No phase branches at init. Phase branches (e.g., `-small-p1`) created by phase routers.
 - Two-file state:
   - `_bmad-output/lens-work/state.yaml` (active initiative = initiative_id)
-  - `_bmad-output/lens-work/initiatives/{initiative_id}.yaml` (initiative config with parent lineage)
+  - `_bmad-output/lens-work/initiatives/{initiative_id}.yaml` (initiative config with parent lineage and tracker_id)
 
 **Feature-layer identity:**
-- `initiative_id` = `{sanitized_name}-{random_6char}` (always generated)
-- Initiative config records `domain`, `domain_prefix`, `service`, `service_prefix` from parent
-- `service` is null for repo-level features (domain parent)
+- `initiative_id` = `{tracker_id}-{sanitized_name}` (if tracker ID provided) OR `{sanitized_name}` (if no tracker)
+- Initiative config records:
+  - `domain`, `domain_prefix`, `service`, `service_prefix` from parent
+  - `tracker_id` = work item ID (e.g., "BMAD-123" or "12345") or "" if none provided
+  - `service` is null for repo-level features (domain parent)
 
 **In-Scope Repos:** Inherited from parent (service or domain)
 
