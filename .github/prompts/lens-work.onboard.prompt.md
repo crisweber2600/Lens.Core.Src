@@ -38,12 +38,17 @@ Present the following command for the user to run in a **separate terminal**:
 cd "{PROJECT_ROOT}" && bash bmad.lens.release/_bmad/lens-work/scripts/store-github-pat.sh
 
 # Windows PowerShell
-cd "{PROJECT_ROOT}"; .\_bmad\lens-work\scripts\store-github-pat.ps1
+cd "{PROJECT_ROOT}"; .\bmad.lens.release\_bmad\lens-work\scripts\store-github-pat.ps1
 ```
 
 - Wait for user to confirm ("Continue" / "Done")
-- Check if `_bmad-output/lens-work/personal/github-credentials.yaml` was created
+- Check if `_bmad-output/lens-work/personal/profile.yaml` was created with `git_credentials` array
 - Credentials stored per GitHub domain (github.com, enterprise domains detected from repo inventory)
+- **These credentials enable automated PR creation** in:
+  - Phase completion workflows (preplan, businessplan, techplan, devproposal, sprintplan)
+  - Audience promotion workflows (small→medium→large)
+  - Manual promotion via `promote-branch.ps1` script
+- If PATs not configured, workflows will generate PR URLs only (manual creation required)
 
 **[4] Repo Discovery & Reconciliation**
 - Load service map: `_bmad/lens-work/service-map.yaml`

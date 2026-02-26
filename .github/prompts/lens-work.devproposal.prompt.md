@@ -66,6 +66,8 @@ Use `#think` before decomposing architecture into epics or estimating scope.
 - END: PR from `{initiative_root}-medium-devproposal` → `{initiative_root}-medium`; remain on phase branch
 
 **Phase completion:**
+- Verify PAT configured: Check `_bmad-output/lens-work/personal/profile.yaml` has `git_credentials` for current git host
+- If PAT missing: Direct user to run `_bmad\lens-work\scripts\store-github-pat.ps1` in separate terminal, then retry
 - Push artifacts to `{initiative_root}-medium-devproposal`
 - Create PR: `{initiative_root}-medium-devproposal` → `{initiative_root}-medium`
 - Update `phase_status.devproposal: pr_pending` and `audience_status.small_to_medium: complete` in initiative config

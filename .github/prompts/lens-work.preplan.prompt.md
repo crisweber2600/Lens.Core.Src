@@ -46,6 +46,8 @@ Recommended path: 1 → 2 → 3 (or skip to Product Brief if clarity exists)
 - END: PR from `{initiative_root}-small-preplan` → `{initiative_root}-small`; remain on phase branch
 
 **Phase completion:**
+- Verify PAT configured: Check `_bmad-output/lens-work/personal/profile.yaml` has `git_credentials` for current git host
+- If PAT missing: Direct user to run `_bmad\lens-work\scripts\store-github-pat.ps1` in separate terminal, then retry
 - Push artifacts to `{initiative_root}-small-preplan`
 - Create PR: `{initiative_root}-small-preplan` → `{initiative_root}-small`
 - Update `phase_status.preplan: pr_pending` in initiative config

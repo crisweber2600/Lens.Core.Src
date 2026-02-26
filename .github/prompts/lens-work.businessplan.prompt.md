@@ -49,8 +49,8 @@ Use `#think` before defining product requirements or UX scope.
 - WORK: All sub-workflow branches created from `{initiative_root}-small-businessplan`
 - END: PR from `{initiative_root}-small-businessplan` → `{initiative_root}-small`; remain on phase branch
 
-**Phase completion:**
-- Push artifacts to `{initiative_root}-small-businessplan`
+**Phase completion:**- Verify PAT configured: Check `_bmad-output/lens-work/personal/profile.yaml` has `git_credentials` for current git host
+- If PAT missing: Direct user to run `_bmad\lens-work\scripts\store-github-pat.ps1` in separate terminal, then retry- Push artifacts to `{initiative_root}-small-businessplan`
 - Create PR: `{initiative_root}-small-businessplan` → `{initiative_root}-small`
 - Update `phase_status.businessplan: pr_pending` and `phase_status.preplan: complete` in initiative config
 - Update `state.yaml`: `current_phase: businessplan`, `workflow_status: pr_pending`
