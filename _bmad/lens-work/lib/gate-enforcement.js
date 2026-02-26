@@ -4,11 +4,14 @@
  * End-to-end gate enforcement that prevents invalid phase transitions.
  * Verifies that:
  * - All prior phase artifacts exist and pass quality checks
- * - Constitution constraints are satisfied
+ * - Constitution constraints are satisfied (via constitution skill)
  * - PR reviews are completed where required
  * - Event log records gate decisions
  *
  * Acts as the final GateKeeper before phase promotion.
+ *
+ * Constitution logic has been migrated to the BMAD constitution skill:
+ *   _bmad/lens-work/skills/constitution.md
  *
  * @module lib/gate-enforcement
  */
@@ -19,7 +22,10 @@ const gates = require('./gates');
 const artifactChecks = require('./artifact-checks');
 const gateRecorder = require('./gate-recorder');
 const preconditions = require('./preconditions');
-const constitution = require('./constitution');
+// NOTE: constitution.js has been deprecated.
+// Constitution validation is now handled by the @lens/constitution agent and skill.
+// See: _bmad/lens-work/skills/constitution.md (Part 7 — Inline Governance Validation)
+// In an LLM-agent context, checkConstitution delegates to the constitution skill.
 const eventlog = require('./eventlog');
 
 // ---------------------------------------------------------------------------
@@ -119,34 +125,29 @@ function checkPreconditions(projectRoot, phase, stateData, initConfig) {
 /**
  * Check constitution constraints for phase gate.
  *
+ * @deprecated Runtime JS constitution checks are replaced by the constitution skill.
+ *
+ * In an LLM-agent context, constitution validation is performed by the
+ * @lens/constitution agent using the constitution skill (Part 7):
+ *   _bmad/lens-work/skills/constitution.md
+ *
+ * This stub preserves the function signature for backward compatibility
+ * but always returns pass (safe default). The actual governance enforcement
+ * is handled by the constitution skill at every workflow step.
+ *
+ * @see _bmad/lens-work/skills/constitution.md
+ * @see _bmad/lens-work/agents/constitution.md
+ *
  * @param {string} projectRoot
  * @param {string} phase
  * @param {object} initConfig
- * @returns {{ pass: boolean, violations: string[] }}
+ * @returns {{ pass: boolean, violations: string[], delegated: boolean }}
  */
-function checkConstitution(projectRoot, phase, initConfig) {
-  try {
-    const resolved = constitution.loadConstitution(projectRoot);
-    if (!resolved) return { pass: true, violations: [] };
-
-    const violations = [];
-
-    // Check if phase is allowed by constitution
-    if (resolved.allowed_phases) {
-      if (!resolved.allowed_phases.includes(phase)) {
-        violations.push(`Phase "${phase}" not allowed by constitution`);
-      }
-    }
-
-    // Check required reviewers
-    if (resolved.required_reviewers && resolved.required_reviewers[phase]) {
-      violations.push(`Review required by: ${resolved.required_reviewers[phase].join(', ')}`);
-    }
-
-    return { pass: violations.length === 0, violations };
-  } catch {
-    return { pass: true, violations: [] };
-  }
+function checkConstitution(projectRoot, phase, initConfig) { // eslint-disable-line no-unused-vars
+  // Constitution checks are now performed by the @lens/constitution agent/skill.
+  // In an LLM runtime, this function should never be called directly.
+  // Return pass=true (safe default) to avoid blocking existing callers.
+  return { pass: true, violations: [], delegated: true };
 }
 
 // ---------------------------------------------------------------------------

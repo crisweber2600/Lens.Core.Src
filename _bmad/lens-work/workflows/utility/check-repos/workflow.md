@@ -64,8 +64,23 @@ for repo in service_map.repos:
     expected_path: repo.local_path or "TargetProjects/${repo.name}",
     expected_remote: repo.remote_url or null,
     expected_branch: repo.default_branch or "main",
+    role: repo.role or "target",
     source: "service-map"
   })
+
+# Flag the governance repo so downstream steps can surface a clearer error message
+for repo in repos_to_check:
+  if repo.role == "governance":
+    repo.critical = true
+    repo.missing_message = |
+      ❌ Governance repo '${repo.name}' is not cloned at ${repo.expected_path}.
+      
+      This repo holds universal artifacts (constitutions, roster, policies) that
+      are shared across all initiatives.  Without it, governance workflows will fail.
+      
+      Clone it now:
+        git clone ${repo.expected_remote} ${repo.expected_path}
+      then retry.
 
 # Add any inventory-only repos not already in list
 if inventory != null:

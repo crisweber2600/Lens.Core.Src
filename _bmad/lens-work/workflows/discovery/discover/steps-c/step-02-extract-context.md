@@ -47,23 +47,19 @@ git_context:
 ```
 
 ### 2. Extract JIRA/Issue References
-Parse commit messages for issue keys:
+Parse commit messages for issue keys.
 
-```python
-# Common patterns
-patterns = [
-    r'[A-Z]{2,10}-\d{1,6}',     # JIRA: PROJ-123
-    r'#\d+',                     # GitHub: #123
-    r'GH-\d+',                   # GitHub explicit: GH-123
-    r'fixes? #?\d+',             # "fixes #123" or "fix 123"
-    r'closes? #?\d+',            # "closes #123"
-]
+Scan the subject and body of each commit for these text patterns:
 
-# Extract from subject + body
-for commit in commits:
-    refs = extract_all_patterns(commit.subject + commit.body)
-    collect(refs)
-```
+| Pattern | Example matches |
+|---------|----------------|
+| Uppercase letters (2–10), dash, digits (1–6) | `AUTH-123`, `PROJ-456` (JIRA keys) |
+| `#` followed by digits | `#45`, `#123` (GitHub issues) |
+| `GH-` followed by digits | `GH-123` (explicit GitHub) |
+| `fix`/`fixes` optionally followed by `#` and digits | `fixes #45`, `fix 123` |
+| `close`/`closes` optionally followed by `#` and digits | `closes #45` |
+
+For each match found, record: key/number, commit sha(s) that referenced it, date range of references, and total mention count.
 
 Build reference index:
 ```yaml

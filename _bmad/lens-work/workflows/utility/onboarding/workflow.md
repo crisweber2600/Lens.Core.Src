@@ -207,13 +207,26 @@ profile = {
 # REQ-4
 # ANTI-PATTERN: Do NOT create profiles/*.yaml files.
 # User preferences go ONLY in: personal/profile.yaml
-# Team roster info goes in: roster/{name}.yaml
+# Team roster info goes in the GOVERNANCE REPO: roster/{name}.yaml
 # The profiles/ directory must NOT exist.
+# The roster/ directory must NOT exist inside _bmad-output/lens-work/.
 
 # Save personal profile (local/gitignored)
 save(profile, "_bmad-output/lens-work/personal/profile.yaml")
 
-# Create roster entry (for team stats and repo associations)
+# Resolve governance repo root from module.yaml
+module = load_yaml("_bmad/lens-work/module.yaml")
+governance_root = module.outputs.governance_repo_root  # TargetProjects/lens/lens-governance
+
+# Verify governance repo is cloned
+if not dir_exists(governance_root) or not is_git_repo(governance_root):
+  output: |
+    ⚠️  Governance repo not cloned at ${governance_root}.
+    Running check-repos to clone it before saving roster entry...
+  run_workflow("check-repos", repo="bmad.lens.governance")
+
+# Create roster entry in the GOVERNANCE REPO (committed, universal across all initiatives)
+# Branch: universal/onboard-{sanitize(name)} in the governance repo
 roster_entry = {
   name: name,
   email: email,
@@ -226,7 +239,7 @@ roster_entry = {
     last_active: now()
   }
 }
-save(roster_entry, "_bmad-output/lens-work/roster/${sanitize(name)}.yaml")
+save(roster_entry, "${governance_root}/roster/${sanitize(name)}.yaml")
 ```
 
 ### 3. Determine Bootstrap Scope

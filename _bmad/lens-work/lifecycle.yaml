@@ -305,6 +305,73 @@ constitution:
     - enforce_stories
 
 # -----------------------------------------------------------------------------
+# DATA ZONES
+# -----------------------------------------------------------------------------
+# Authoritative classification of every data artifact produced by lens-work.
+# Each zone has a dedicated write location and branch strategy so that changes
+# to one zone can never be accidentally captured on another zone's branch.
+#
+# ENFORCEMENT: Agents MUST refuse to write governance-zone data into the
+# initiatives/ tree of the control repo, and vice versa.
+# -----------------------------------------------------------------------------
+data_zones:
+  governance:
+    description: >
+      Universal artifacts shared across all initiatives and all control repos that
+      clone bmad.lens.release.  Lives in the standalone bmad.lens.governance repo
+      so it has no coupling to any initiative branch.
+    repo: bmad.lens.governance
+    remote_url: https://github.com/crisweber2600/bmad.lens.governance
+    local_path: TargetProjects/lens/lens-governance   # resolved from service-map.yaml
+    artifacts:
+      - constitutions/         # 4-level hierarchy: org / domain / service / repo
+      - roster/                # Team member records
+      - policies/              # Org-wide process and coding policies
+      - repo-inventory.yaml    # Canonical discovered-repo inventory
+    branch_strategy:
+      pattern: "universal/{slug}"
+      merge_target: main
+      description: >-
+        Changes to governance artifacts MUST be made on a universal/* branch in
+        the governance repo, never on a branch in the control repo.
+    write_roles: [Tech Lead, Architect]
+    pr_required: true
+    codeowners: true
+    prerequisite: >
+      @lens MUST verify that TargetProjects/lens/lens-governance is cloned before
+      executing any governance workflow.  If missing, run check-repos first.
+
+  initiative:
+    description: >
+      Initiative-scoped planning artifacts.  Lives in the control repo under
+      _bmad-output/lens-work/initiatives/.  Each initiative has its own branch
+      subtree and never overlaps with governance or personal zones.
+    repo: bmad.lens.release   # this control repo
+    local_path: _bmad-output/lens-work/initiatives/
+    artifacts:
+      - "initiatives/{domain}/"
+      - "initiatives/{domain}/{service}/"
+      - "initiatives/{domain}/{service}/{feature}.yaml"
+      - "initiatives/{domain}/{service}/phases/"
+    branch_strategy:
+      pattern: "{initiative_root}-{audience}-{phase}"
+      merge_target: "{initiative_root}"
+      description: >-
+        Full 5-level branch topology per lifecycle.yaml#planning_repo.
+
+  personal:
+    description: >
+      Machine-local, git-ignored user data.  Never committed to any repo.
+      Contains credentials and user preferences.
+    local_path: _bmad-output/lens-work/personal/
+    git_ignored: true
+    artifacts:
+      - personal/profile.yaml
+      - personal/github-credentials.yaml
+      - personal/personal-repo-inventory.yaml
+    branch_strategy: none   # local only, never pushed
+
+# -----------------------------------------------------------------------------
 # AGENT ROLES
 # -----------------------------------------------------------------------------
 agents:

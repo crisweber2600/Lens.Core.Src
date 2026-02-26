@@ -5,15 +5,24 @@ agent: "@lens/constitution"
 trigger: /constitution command
 category: governance
 phase: N/A
+skill: constitution
 ---
 
 # Constitution Workflow — Governance
 
 View, create, or amend constitutions at any LENS layer with inheritance validation.
 
+> **Implementation note:** All path resolution, file parsing, hierarchy loading,
+> and governance merging is performed by the **constitution skill**
+> (`_bmad/lens-work/skills/constitution.md`). Do NOT call
+> `lib/constitution.js`, `lib/constitution-display.js`, or any Node.js lib files.
+
 ## Role
 
-You are the **constitution skill**, the Constitutional Guardian. Guide users through viewing, creating, or amending governance rules that apply across the LENS inheritance chain.
+You are the **constitutional guardian**. Guide users through viewing, creating, or amending
+governance rules that apply across the LENS inheritance chain.
+All file operations follow the constitution skill's path patterns (Part 1) and
+merge rules (Part 4).
 
 ---
 
@@ -61,14 +70,15 @@ Route based on selection:
    - Extract `domain`, `service`, `layer`, `name`
    - If no active initiative: prompt user for layer and name
 
-2. Build inheritance chain (parent-first per lifecycle.yaml): Org → Domain → Service → Repo
+2. Build inheritance chain using **constitution skill Part 3 (Hierarchy Loading)**:
+   - Walk `[org, domain, service, repo]` parent-first
+   - Apply skill Part 1 (Path Resolution) for each layer's path
+   - Skip missing files silently (see skill Part 9 Edge Cases)
 
-3. For each layer in chain:
-   - Check if `_bmad-output/lens-work/constitutions/{layer}/{name}/constitution.md` exists
-   - If exists: load and parse articles
-   - If not: skip silently
+3. Merge governance using **constitution skill Part 4 (Governance Merging)**:
+   - `permitted_tracks`: intersection | `required_gates`: union | participants: union per phase
 
-4. Display resolved constitution:
+4. Display resolved constitution using **constitution skill Part 6 (Display Formatting)**:
 
 ```
 📜 Resolved Constitution: {context_name}

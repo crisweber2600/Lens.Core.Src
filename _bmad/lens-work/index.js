@@ -10,6 +10,11 @@ const { install } = require('./_module-installer/installer');
 const state = require('./lib/state');
 const initiative = require('./lib/initiative');
 const eventlog = require('./lib/eventlog');
+// constitution, constitutionDisplay, constitutionStress have been migrated to
+// the BMAD constitution skill and @lens/constitution agent. These lib files are
+// deprecated. Kept here as stubs for backward compatibility ONLY.
+// See: _bmad/lens-work/skills/constitution.md
+// See: _bmad/lens-work/agents/constitution.md
 const constitution = require('./lib/constitution');
 const dualwrite = require('./lib/dualwrite');
 const divergence = require('./lib/divergence');
@@ -22,6 +27,8 @@ const phaseBranch = require('./lib/phase-branch');
 const pr = require('./lib/pr');
 const cascade = require('./lib/cascade');
 const gates = require('./lib/gates');
+// constitutionDisplay is deprecated — see _bmad/lens-work/skills/constitution.md Part 6
+// Kept as stub for backward compatibility only.
 const constitutionDisplay = require('./lib/constitution-display');
 const checklist = require('./lib/checklist');
 const preconditions = require('./lib/preconditions');
@@ -38,6 +45,8 @@ const sync = require('./lib/sync');
 const fix = require('./lib/fix');
 const reconstruct = require('./lib/reconstruct');
 const dogfood = require('./lib/dogfood');
+// constitutionStress is deprecated — see _bmad/lens-work/skills/constitution.md Part 9
+// Kept as stub for backward compatibility only.
 const constitutionStress = require('./lib/constitution-stress');
 const gateEnforcement = require('./lib/gate-enforcement');
 
@@ -62,7 +71,9 @@ module.exports = {
 
   /**
    * Constitution loading and governance resolution (S-013).
-   * @see lib/constitution.js
+   * @deprecated Migrated to constitution skill and @lens/constitution agent.
+   * @see _bmad/lens-work/skills/constitution.md
+   * @see _bmad/lens-work/agents/constitution.md
    */
   constitution,
 
@@ -134,7 +145,8 @@ module.exports = {
 
   /**
    * Constitution display formatting (S-016).
-   * @see lib/constitution-display.js
+   * @deprecated Migrated to constitution skill (Part 6 — Display Formatting).
+   * @see _bmad/lens-work/skills/constitution.md
    */
   constitutionDisplay,
 
@@ -230,7 +242,8 @@ module.exports = {
 
   /**
    * Constitution stress testing (S-039).
-   * @see lib/constitution-stress.js
+   * @deprecated Migrated to constitution skill (Part 9 — Edge Cases and Validation).
+   * @see _bmad/lens-work/skills/constitution.md
    */
   constitutionStress,
 

@@ -44,43 +44,20 @@ output_resolution:
 ```
 
 ### 2. Create Output Directory
-```python
-def ensure_output_directory(target_path):
-    if not exists(target_path):
-        makedirs(target_path)
-        log(f"Created output directory: {target_path}")
-    
-    # Check write permissions
-    if not is_writable(target_path):
-        raise PermissionError(f"Cannot write to {target_path}")
-```
+
+Before writing, verify the target path directory exists. If it does not exist, create it (including any missing parent directories). If the directory is not writable, FAIL with a clear permission error message.
 
 ### 3. Write Documentation Files
 For each generated doc:
 
-```python
-def write_doc_file(source_content, dest_path, overwrite_policy):
-    if source_content is None:
-        return {"status": "skipped", "reason": "no content"}
-    
-    if exists(dest_path) and overwrite_policy == "preserve":
-        return {"status": "skipped", "reason": "file exists, preserve mode"}
-    
-    if exists(dest_path) and overwrite_policy == "merge":
-        existing = read_file(dest_path)
-        content = merge_content(existing, source_content)
-    else:
-        content = source_content
-    
-    write_file(dest_path, content)
-    
-    return {
-        "status": "success",
-        "path": dest_path,
-        "size_bytes": len(content),
-        "checksum": md5(content)
-    }
-```
+| Condition | Action |
+|-----------|--------|
+| Content is absent/null | Skip — record status `skipped: no content` |
+| File exists AND policy is `preserve` | Skip — record status `skipped: preserve mode` |
+| File exists AND policy is `merge` | Read existing, apply merge logic from Step 2, write merged content |
+| Otherwise | Write the generated content directly |
+
+After writing, record for each file: `{ status, path, size_bytes }`.
 
 ### 4. Validate Written Files
 ```yaml
@@ -102,39 +79,14 @@ validation_checks:
 ```
 
 **Validation implementation:**
-```python
-def validate_written_docs(written_files):
-    results = []
-    for file_info in written_files:
-        validation = {
-            "file": file_info["path"],
-            "checks": []
-        }
-        
-        # Check file exists
-        if exists(file_info["path"]):
-            validation["checks"].append({"exists": True})
-        else:
-            validation["checks"].append({"exists": False, "error": "File not found after write"})
-            continue
-        
-        # Check content matches
-        content = read_file(file_info["path"])
-        if md5(content) == file_info["checksum"]:
-            validation["checks"].append({"integrity": True})
-        else:
-            validation["checks"].append({"integrity": False, "error": "Checksum mismatch"})
-        
-        # Check markdown structure
-        if has_valid_frontmatter(content):
-            validation["checks"].append({"frontmatter": True})
-        else:
-            validation["checks"].append({"frontmatter": False, "warning": "Invalid or missing frontmatter"})
-        
-        results.append(validation)
-    
-    return results
-```
+
+For each file that was written, run these checks in order and record pass/fail:
+1. **File exists** — confirm the file is present at the path it was written to
+2. **Content readable** — read the file back and confirm it is non-empty
+3. **Markdown structure** — check that at least one markdown heading (`#`) is present
+4. **Frontmatter valid** — if file starts with `---`, check there is a closing `---` and the content between them is valid YAML; if no frontmatter, record as warning only (not failure)
+
+For any check that fails: record the failure with the specific check name and a short reason.
 
 ### 5. Generate Completion Report
 ```yaml

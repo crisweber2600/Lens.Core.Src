@@ -1382,6 +1382,30 @@ git clone <remote_url> TargetProjects/<path>
 @lens discover
 ```
 
+#### Issue 7: Clone checks out main but I need a different branch
+
+**Problem:** After cloning a repo, it's on `main` but you need to be on `develop` or another branch.
+
+**Solution:**
+
+```bash
+# List available remote branches
+cd TargetProjects/<path>
+git branch -r
+
+# Option A: Switch to a specific branch
+git checkout -b develop origin/develop
+
+# Option B: Switch to the most recently updated branch
+MOST_RECENT=$(git for-each-ref --sort=-committerdate --format='%(refname:short)' refs/remotes/origin | head -1 | sed 's|origin/||')
+git checkout -b "$MOST_RECENT" "origin/$MOST_RECENT"
+echo "Checked out: $MOST_RECENT"
+
+# Option C: Use a more readable version (with date display)
+git for-each-ref --sort=-committerdate --format='%(committerdate:short) %(refname:short)' refs/remotes/origin
+# Then manually checkout: git checkout -b <branch-name> origin/<branch-name>
+```
+
 ---
 
 ### Debug Mode

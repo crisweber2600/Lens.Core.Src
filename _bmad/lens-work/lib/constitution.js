@@ -1,26 +1,34 @@
 /**
- * Constitution Module (S-013)
+ * @deprecated S-013 — Constitution Module (DEPRECATED)
  *
- * Loads constitution files from the four-level LENS hierarchy:
- *   org → domain → service → repo
+ * ⚠️  THIS FILE IS DEPRECATED AND SCHEDULED FOR REMOVAL.
  *
- * Resolution order is parent-first (additive inheritance).
- * Children can only ADD rules — never remove or weaken parent rules.
+ * The constitution loading, parsing, hierarchy resolution, and governance
+ * merging logic previously implemented here has been converted to a
+ * fully LLM-executable BMAD skill:
  *
- * Constitution files are Markdown with YAML frontmatter and
- * optional embedded YAML code blocks for structured config
- * (permitted_tracks, required_gates, additional_review_participants).
+ *   _bmad/lens-work/skills/constitution.md
  *
- * Path pattern:
- *   _bmad-output/lens-work/constitutions/org/constitution.md
- *   _bmad-output/lens-work/constitutions/domain/{domain}/constitution.md
- *   _bmad-output/lens-work/constitutions/service/{domain}/{service}/constitution.md
- *   _bmad-output/lens-work/constitutions/repo/{domain}/{service}/{repo}/constitution.md
+ * The skill covers all operations that were in this file:
+ *   - Path resolution (Part 1)
+ *   - File parsing & governance extraction (Parts 2-3)
+ *   - Hierarchy loading (Part 3)
+ *   - Governance merging (Part 4)
+ *   - Track permission checks (Part 5)
+ *   - Display formatting (Part 6)
+ *   - Inline validation (Part 7)
+ *
+ * The accompanying @lens/constitution agent is at:
+ *   _bmad/lens-work/agents/constitution.md
+ *
+ * DO NOT add new callers of this module. Migrate existing callers to
+ * use the constitution skill instructions instead.
  *
  * @module lib/constitution
  */
 
 'use strict';
+
 
 const fs = require('node:fs');
 const path = require('node:path');

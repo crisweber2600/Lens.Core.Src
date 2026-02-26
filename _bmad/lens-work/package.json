@@ -1,6 +1,6 @@
 {
   "name": "@bmad-lens/lens-work",
-  "version": "2.0.0-alpha.1",
+  "version": "2.0.0",
   "description": "LENS Workbench — Guided lifecycle router with git-orchestrated discipline for BMAD workflows",
   "keywords": [
     "bmad",

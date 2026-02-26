@@ -123,32 +123,15 @@ selection:
 ### 4. Expand and Validate Selection
 For hierarchical/filter selections, expand to concrete targets:
 
-```python
-def expand_selection(selection):
-    targets = []
-    
-    if selection.type == "domain":
-        for service in domain.services:
-            for ms in service.microservices:
-                targets.append(ms.path)
-                
-    elif selection.type == "service":
-        for ms in service.microservices:
-            targets.append(ms.path)
-            
-    elif selection.filter == "stale":
-        targets = [t for t in all_targets if t.age_days > 7]
-        
-    elif selection.filter == "never":
-        targets = [t for t in all_targets if t.last_discovered is None]
-    
-    return targets
-```
+| Mode | Expansion rule |
+|------|----------------|
+| `type: domain` | Enumerate all services under the domain, then all microservices under each service |
+| `type: service` | Enumerate all microservices directly under the service |
+| `filter: stale` | Include all targets where last discovery was more than 7 days ago |
+| `filter: never` | Include all targets that have no previous discovery record |
 
-**Validate each expanded target:**
-- Path exists
-- Contains analyzable code
-- Is accessible (read permission)
+After expansion, validate each target: path exists, directory contains analyzable code, readable.
+Remove invalid targets from the list and warn for each one removed.
 
 ### 5. Confirm Batch Discovery
 If multiple targets selected:

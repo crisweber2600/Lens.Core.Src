@@ -108,6 +108,47 @@ else:
 log: "Expected branch: ${expected_branch} (${context})"
 ```
 
+### 4a. Governance Write Guard
+
+Before executing any command that will write to the governance repo local path,
+verify the governance repo is cloned and on a valid branch.
+
+```yaml
+# Resolve governance root from module.yaml
+module = load_yaml("_bmad/lens-work/module.yaml")
+governance_root = module.outputs.governance_repo_root  # TargetProjects/lens/lens-governance
+
+if pending_write_targets_path(governance_root):
+
+  # Governance repo must exist
+  if not dir_exists(governance_root) or not is_git_repo(governance_root):
+    error: |
+      ❌ Governance repo not cloned at ${governance_root}.
+      Run '@lens check-repos' first to clone bmad.lens.governance.
+    exit: 1
+
+  # Governance repo must be on a universal/* branch or main
+  governance_branch = git_current_branch(governance_root)
+
+  if not (governance_branch == "main" or governance_branch.startswith("universal/")):
+    error: |
+      ❌ Governance write blocked.
+
+      You are attempting to write governance data (constitutions, roster, or
+      policies) but the governance repo is on branch: ${governance_branch}
+
+      Governance writes must happen on a 'universal/{slug}' branch in
+      ${governance_root}.
+
+      Steps to fix:
+        cd ${governance_root}
+        git checkout -b universal/{your-change-slug}
+      Then retry your command.
+    exit: 1
+
+  log: "Governance repo on valid branch: ${governance_branch}"
+```
+
 ### 5. Check for Uncommitted Changes
 
 ```yaml

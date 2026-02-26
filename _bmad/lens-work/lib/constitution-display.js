@@ -1,13 +1,25 @@
 /**
- * Constitution Display — S-016
+ * @deprecated S-016 — Constitution Display (DEPRECATED)
  *
- * Formats the resolved constitution hierarchy for display,
- * showing per-level contributions and the merged result.
+ * ⚠️  THIS FILE IS DEPRECATED AND SCHEDULED FOR REMOVAL.
+ *
+ * The display formatting logic previously implemented here has been
+ * converted to a fully LLM-executable BMAD skill:
+ *
+ *   _bmad/lens-work/skills/constitution.md  (Part 6 — Display Formatting)
+ *
+ * The skill's Part 6 defines all display formats:
+ *   - formatConstitution → skill Part 6 layer sections + RESOLVED section
+ *   - getConstitutionSummary → skill Part 6 Status Summary format
+ *
+ * DO NOT add new callers of this module. Migrate existing callers to
+ * use the constitution skill instructions instead.
  *
  * @module lib/constitution-display
  */
 
 'use strict';
+
 
 const constitution = require('./constitution');
 

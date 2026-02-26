@@ -17,11 +17,24 @@
 
 ## Workflow Steps
 
+### Step 0: Verify Governance Repo
+
+Load `module.yaml` and resolve `outputs.governance_repo_root` (default: `TargetProjects/lens/lens-governance`).
+
+Check that the path exists and is a valid git repository. If not:
+```
+❌ Governance repo not cloned.
+
+Run '@lens check-repos' to clone bmad.lens.governance, then retry.
+Expected path: TargetProjects/lens/lens-governance
+```
+Halt.
+
 ### Step 1: Traverse Hierarchy
 
 Read and follow: `steps/traverse-hierarchy.md`
 
-Scan filesystem at `_bmad-output/lens-work/constitutions/` for child constitutions in lower layers. Verify parent-child relationships using `resolve-constitution` workflow.
+Scan filesystem at `{governance_repo_root}/constitutions/` for child constitutions in lower layers. Verify parent-child relationships using `resolve-constitution` workflow.
 
 ### Step 2: Detect Conflicts
 
@@ -36,7 +49,14 @@ For each child constitution, detect 3 conflict types:
 
 Read and follow: `steps/generate-plan.md`
 
-Create a report-only propagation plan listing affected children, detected conflicts, and recommended actions. Store at `_bmad-output/lens-work/constitutions/{layer}/{name}/propagation-plans/{date}-amendment-{amendment_id}.md`.
+Create a report-only propagation plan listing affected children, detected conflicts, and recommended actions.
+
+**Branch strategy (governance data zone):**
+1. In `{governance_repo_root}`, ensure a branch named `universal/amendment-{amendment_id}` exists (create from `main` if not).
+2. Checkout that branch in the governance repo.
+3. Store the plan at `{governance_repo_root}/constitutions/{layer}/{name}/propagation-plans/{date}-amendment-{amendment_id}.md`.
+4. Commit with message: `governance: propagation plan for amendment {amendment_id}`.
+5. Push and open a PR targeting `main` in `bmad.lens.governance`.
 
 ---
 

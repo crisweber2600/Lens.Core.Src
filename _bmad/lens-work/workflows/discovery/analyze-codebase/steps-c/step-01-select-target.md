@@ -70,28 +70,13 @@ Filter: 'stale', 'never', 'adhoc':
 ```
 
 ### 4. Handle Custom Path Input
-If user enters a path not in list:
+If user enters a path not in list, validate in this order:
 
-```python
-def validate_custom_path(path):
-    abs_path = resolve_absolute(path, target_projects_path)
-    
-    if not exists(abs_path):
-        return error("Path not found")
-    
-    if not is_directory(abs_path):
-        return error("Must be a directory")
-    
-    if not has_code_files(abs_path):
-        return error("No analyzable code found")
-    
-    return {
-        "path": abs_path,
-        "type": "custom",
-        "detected_language": detect_language(abs_path),
-        "in_lens": False
-    }
-```
+1. Resolve the path to an absolute path relative to `target_projects_path`
+2. If the resolved path does not exist: respond "Path not found" and re-prompt
+3. If the path exists but is not a directory: respond "Must be a directory" and re-prompt
+4. If the path contains no analyzable code files (no source files by language): respond "No analyzable code found" and re-prompt
+5. If all checks pass: add to selection as `{ path, type: "custom", detected_language: <detected>, in_lens: false }`
 
 ### 5. Support Batch Selection
 Allow multiple targets for batch analysis:

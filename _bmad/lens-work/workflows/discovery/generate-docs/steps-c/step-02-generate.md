@@ -220,14 +220,12 @@ quality_check:
 If any check fails, go back and fix the document before proceeding.
 
 **Merge logic:**
-```python
-def merge_preserving_manual_sections(existing, generated):
-    manual_sections = find_sections_without_generated_marker(existing)
-    merged = generated
-    for section in manual_sections:
-        merged = append_section(merged, section)
-    return merged
-```
+
+When merging existing docs with newly generated output:
+1. Identify all sections in the existing file that do NOT carry a `<!-- generated -->` marker — these are manual sections
+2. Start with the fully generated content as the base
+3. For each manual section found, append it to the merged result after the generated content
+4. The result preserves all generated sections in full, with manual additions appended
 
 ### 8. Track Results
 ```yaml

@@ -53,7 +53,7 @@ Use `#think` before prioritizing stories or allocating sprint capacity.
 
 **Phase completion:**
 - Verify PAT configured: Check `_bmad-output/lens-work/personal/profile.yaml` has `git_credentials` for current git host
-- If PAT missing: Direct user to run `_bmad\lens-work\scripts\store-github-pat.ps1` in separate terminal, then retry
+- If PAT missing: Direct user to run `bmad.lens.release\_bmad\lens-work\scripts\store-github-pat.ps1` in separate terminal, then retry
 - Push artifacts to `{initiative_root}-large-sprintplan`
 - Create PR: `{initiative_root}-large-sprintplan` → `{initiative_root}-large`
 - Update `phase_status.sprintplan: pr_pending` (or `passed_with_warnings`) and `audience_status.medium_to_large: complete`

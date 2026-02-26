@@ -1,19 +1,31 @@
 /**
- * Constitution Stress — S-039
+ * @deprecated S-039 — Constitution Stress (DEPRECATED)
  *
- * Stress-tests constitution resolution, loading, and overlay logic
- * with edge cases:
- * - Deeply nested overrides
- * - Circular references
- * - Very large constitutions
- * - Malformed YAML
- * - Missing required fields
- * - Unicode and special characters
+ * ⚠️  THIS FILE IS DEPRECATED AND SCHEDULED FOR REMOVAL.
+ *
+ * The stress-test and validation edge-case logic previously implemented
+ * here has been converted to documented edge cases in the constitution skill:
+ *
+ *   _bmad/lens-work/skills/constitution.md  (Part 9 — Edge Cases and Validation)
+ *
+ * The skill's Part 9 documents all scenarios previously covered by runtime tests:
+ *   - Missing files at any layer (silently skip)
+ *   - Malformed YAML (treat as empty, log parseError)
+ *   - Empty permitted_tracks array vs null semantics
+ *   - Circular reference detection (cycle detection)
+ *   - Unicode content handling
+ *   - Large constitution handling
+ *
+ * These are now handled as LLM instructions rather than runtime assertions.
+ *
+ * DO NOT add new callers of this module. Migrate existing callers to
+ * use the constitution skill instructions instead.
  *
  * @module lib/constitution-stress
  */
 
 'use strict';
+
 
 const path = require('path');
 const fs = require('fs');

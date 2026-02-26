@@ -6,15 +6,22 @@ trigger: /resolve command
 category: governance
 phase: N/A
 imports: lifecycle.yaml
+skill: constitution
 ---
 
 # Resolve Constitution Workflow — Governance
 
 Walk the LENS inheritance chain and merge constitutional articles parent-first.
 
+> **Implementation note:** All path resolution, file parsing, hierarchy loading,
+> and governance merging is performed by the **constitution skill**
+> (`_bmad/lens-work/skills/constitution.md`). Do NOT call
+> `lib/constitution.js` or any Node.js lib files.
+
 ## Role
 
-You are the **constitution skill**, presenting the constitutional heritage of the current context.
+You are the **constitutional guardian**, presenting the constitutional heritage of
+the current context using the constitution skill.
 
 ---
 
@@ -39,7 +46,7 @@ Determine the current LENS context using this priority:
 
 2. **Branch pattern** (fallback):
    - If current branch matches `{initiative_root}-{audience}-{phase_name}-{workflow}` (named phases):
-   - Parse initiative_root, load initiative by ID, recurse with loaded context
+     parse initiative_root, load initiative by ID, recurse with loaded context
    - Legacy support: also match `{featureBranchRoot}-{audience}-p{N}-{workflow}`
 
 3. **User input** (last resort):
@@ -50,88 +57,69 @@ Determine the current LENS context using this priority:
 
 ## Step 2: Build Inheritance Chain
 
-Build hierarchy parent-first based on context. Uses lifecycle.yaml `lens_hierarchy.levels: [org, domain, service, repo]` and `constitution.resolution_order: [org, domain, service, repo]`.
+**Use constitution skill — Part 3 (Hierarchy Loading):**
 
-```python
-# Load lifecycle contract
-lifecycle = load("lifecycle.yaml")
-resolution_order = lifecycle.constitution.resolution_order  # [org, domain, service, repo]
+Walk layers in order `[org, domain, service, repo]` per lifecycle.yaml
+`lens_hierarchy.levels` and `constitution.resolution_order`.
 
-hierarchy = []
-visited = set()  # Cycle detection
+For each layer, apply skill Part 1 (Path Resolution) to build the path, then:
+- Skip if required context variables are absent
+- Skip silently if file does not exist at that path
+- Parse per skill Part 2 if file exists
+- Detect cycles: skip any path already visited in this chain
 
-# Org is ALWAYS included if it exists (top of chain)
-if org:
-    hierarchy.append({ layer: "org", name: org })
+**Legacy layer name mapping:**
 
-# Domain is ALWAYS included (required for all initiatives)
-hierarchy.append({ layer: "domain", name: domain })
+| Legacy name | Maps to |
+|-------------|---------|
+| `microservice` | `repo` |
+| `feature` | `repo` |
 
-# Service included if context is service or repo
-if layer in ["service", "repo"]:
-    hierarchy.append({ layer: "service", name: service })
-
-# Repo included if context is repo AND field is set
-if layer == "repo" and repo:
-    hierarchy.append({ layer: "repo", name: repo })
-
-# Legacy support: map old layer names to new
-legacy_layer_map = {
-    "microservice": "repo",   # microservice → repo
-    "feature": "repo"         # feature → repo (lowest level)
-}
-if layer in legacy_layer_map:
-    effective_layer = legacy_layer_map[layer]
-    # Build chain using effective_layer instead
-```
+If the context's `layer` field uses a legacy name, map it before building the chain.
 
 ### Track-Aware Resolution
 
-After building the chain, also collect track and gate governance:
+After building the chain, collect governance using constitution skill **Part 4 (Merging)**:
 
-```python
-track = initiative.track  # e.g., "full", "feature", "tech-change"
-permitted_tracks = set()    # Intersection across chain
-required_gates = set()      # Union across chain
-additional_participants = {} # Merge across chain
+- `permitted_tracks` — INTERSECTION across all layers (most restrictive wins)
+- `required_gates` — UNION across all layers (all gates accumulate)
+- `additional_review_participants` — UNION per phase (additive)
 
-for level in hierarchy:
-    constitution = load_constitution(level)
-    if constitution:
-        # Track permissions (intersection — most restrictive wins)
-        if constitution.permitted_tracks:
-            if not permitted_tracks:
-                permitted_tracks = set(constitution.permitted_tracks)
-            else:
-                permitted_tracks = permitted_tracks.intersection(constitution.permitted_tracks)
-
-        # Required gates (union — all additions accumulate)
-        if constitution.required_gates:
-            required_gates = required_gates.union(constitution.required_gates)
-
-        # Review participants (additive merge)
-        if constitution.additional_review_participants:
-            for review_type, participants in constitution.additional_review_participants.items():
-                if review_type not in additional_participants:
-                    additional_participants[review_type] = []
-                additional_participants[review_type].extend(participants)
+Start `resolved` with:
 ```
+permitted_tracks: null    (null = unrestricted)
+required_gates: []
+additional_review_participants: {}
+layers_loaded: []
+```
+
+For each found constitution in the chain, apply the merge rules from skill Part 4.
+
+If no constitutions found at any layer → return empty chain; all gates pass by default.
+
+### Note on Constitution Validation:
+
+> ⚠️ `permitted_tracks: []` (empty array) = NO tracks permitted.
+> `permitted_tracks: null` or absent = no restriction (all tracks permitted).
+> Treat these cases differently per skill Part 4 merge rules.
 
 ---
 
 ## Step 3: Walk Chain and Collect Articles
 
-For each level in the hierarchy:
+**Use constitution skill — Part 1 (Path Resolution) + Part 2 (Parsing):**
 
-1. Build path: `_bmad-output/lens-work/constitutions/{level.layer}/{level.name}/constitution.md`
-2. Guard against circular references:
-   - If `{layer}/{name}` already visited → log warning, skip
+For each level in the hierarchy chain from Step 2:
+
+1. Build path using skill Part 1 rules based on `{level.layer}` and context variables
+2. Guard against circular references (Part 3b — Cycle Detection):
+   - If this path already visited → log warning, skip
 3. If file exists:
-   - Parse YAML frontmatter and markdown content
-   - Extract articles with titles, rules, rationales
+   - Parse per skill Part 2: extract frontmatter, YAML blocks, governance config
+   - Extract articles with titles, rules, rationales from markdown body
    - Check for contradictions with already-collected articles
 4. If file does not exist:
-   - Skip silently (missing layers are not an error)
+   - Skip silently (missing layers are not an error — see skill Part 9 Edge Cases)
 
 **Contradiction Detection:**
 For each new article, compare against all parent articles:

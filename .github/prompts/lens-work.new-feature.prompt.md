@@ -65,7 +65,72 @@ Activate @lens agent and execute /new-feature:
 
 **In-Scope Repos:** Inherited from parent (service or domain)
 
+**Branch Review (Required at Feature Start):**
+After the feature initiative is created, check the current branches in each target repo and ask if any need to change.
+
+Service-level feature (parent is a service):
+```bash
+for target_repo in {target_repos}; do
+  repo_path="TargetProjects/{domain_prefix}/{service_prefix}/${target_repo}"
+  if [ -d "$repo_path" ]; then
+    echo "📦 Repository: $target_repo"
+    echo "   Current branch:"
+    git -C "$repo_path" branch --show-current
+    echo ""
+    echo "   Available branches (remote):"
+    git -C "$repo_path" branch -r
+    echo ""
+  fi
+
+```
+
+Repo-level feature (parent is a domain):
+```bash
+for target_repo in {target_repos}; do
+  repo_path="TargetProjects/{domain_prefix}/${target_repo}"
+  if [ -d "$repo_path" ]; then
+    echo "📦 Repository: $target_repo"
+    echo "   Current branch:"
+    git -C "$repo_path" branch --show-current
+    echo ""
+    echo "   Available branches (remote):"
+    git -C "$repo_path" branch -r
+    echo ""
+  fi
 **Review audience progression:**
+```
+
+**Question:** Do any of these branches need to be changed?
+
+- If **NO**: Continue with the feature workflow.
+- If **YES**: Provide the target repo name and desired branch, then use one of the options below.
+
+Repo-level features should use `TargetProjects/{domain_prefix}/{TARGET_REPO}` in the commands below.
+
+Option A: Switch to a specific remote branch
+```bash
+repo_path="TargetProjects/{domain_prefix}/{service_prefix}/{TARGET_REPO}"
+git -C "$repo_path" checkout -b ${NEW_BRANCH_NAME} origin/${NEW_BRANCH_NAME}
+git -C "$repo_path" branch --show-current
+```
+
+Option B: Switch to the most recently updated remote branch
+```bash
+repo_path="TargetProjects/{domain_prefix}/{service_prefix}/{TARGET_REPO}"
+MOST_RECENT=$(git -C "$repo_path" for-each-ref \
+  --sort=-committerdate \
+  --format='%(refname:short)' \
+  refs/remotes/origin | head -1 | sed 's|origin/||')
+
+echo "📌 Most recent branch: $MOST_RECENT"
+git -C "$repo_path" checkout -b "$MOST_RECENT" "origin/$MOST_RECENT"
+```
+
+Option C: Create a new branch from main
+```bash
+repo_path="TargetProjects/{domain_prefix}/{service_prefix}/{TARGET_REPO}"
+git -C "$repo_path" checkout -b ${NEW_BRANCH_NAME} main
+```
 - p1 (Analysis) → small | p2 (Planning) → medium | p3/p4 (Solutioning/Implementation) → large
 
 Use `#think` before defining feature scope or dependencies.

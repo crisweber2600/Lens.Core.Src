@@ -38,26 +38,14 @@ required_inputs:
     key: analysis_results
 ```
 
-**Validation:**
-```python
-def validate_analysis_input():
-    # Check cache first
-    cache_path = f"_bmad/lens-work/_memory/scout-sidecar/analysis/{target}.yaml"
-    if exists(cache_path):
-        return load_yaml(cache_path)
-    
-    # Check summary report
-    report_path = f"{docs_output}/{domain}/{service}/analysis-summary.md"
-    if exists(report_path):
-        return parse_markdown_frontmatter(report_path)
-    
-    # Check session
-    if session.has("analysis_results"):
-        return session.get("analysis_results")
-    
-    # No input found
-    return error("No analysis data found. Run analyze-codebase first.")
-```
+**Validation — check sources in this priority order:**
+
+1. Check if `_bmad/lens-work/_memory/scout-sidecar/analysis/{target}.yaml` exists — if so, load it as the primary input
+2. Check if `{docs_output}/{domain}/{service}/analysis-summary.md` exists — if so, parse its YAML frontmatter as the input
+3. Check if `analysis_results` was produced earlier in this session — if so, use it
+4. If none found: FAIL — respond: "No analysis data found. Run analyze-codebase first."
+
+Use whichever source is found first (priority: cache → summary report → session).
 
 **Input freshness check:**
 - If analysis is older than 7 days: WARN "Analysis may be stale"

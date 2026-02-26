@@ -446,6 +446,45 @@ Different tracks produce different branch topologies. The full track creates all
 
 ---
 
+## Governance Branch Tier (`universal/*`)
+
+The `universal/*` branch tier is **orthogonal to the initiative hierarchy** — it lives in the
+**`bmad.lens.governance` repo** (local: `TargetProjects/lens/lens-governance`), not in the
+control repo. These branches never appear in the 5-level initiative topology above.
+
+```
+Governance repo: bmad.lens.governance
+  main                              ← canonical governance state
+  └── universal/{slug}              ← proposed governance change (PR target: main)
+      Examples:
+        universal/org-constitution-v1
+        universal/amendment-2026-03-constitution
+        universal/roster-add-jsmith
+        universal/policy-hotfix-branching
+```
+
+**Rules:**
+
+| Rule | Detail |
+|------|--------|
+| Scope | Only applies to `bmad.lens.governance` — never to the control repo or target repos |
+| Merge target | Always `main` in the governance repo |
+| PR required | Yes — governance roles (Tech Lead, Architect) are required reviewers via CODEOWNERS |
+| Initiative branches | MUST NOT contain commits to `TargetProjects/lens/lens-governance/` ever |
+| Agent enforcement | `branch-preflight` blocks governance writes if current governance branch is not `main` or `universal/*` |
+| Audience/phase gates | Not applicable — governance is not audience-gated |
+| Who creates | `amendment-propagation` workflow for constitution changes; `onboarding` workflow for roster |
+
+**Why a separate repo and branch tier?**
+
+When contributors work on an initiative branch (`{initiative_root}-small-techplan`, etc.) in the
+control repo, any governance changes (e.g., amending the org constitution) committed there are
+invisible to all other initiatives.  By routing governance writes to a standalone repo with its
+own `universal/*` → `main` path, governance rules propagate to every downstream control repo clone
+the next time it pulls from `bmad.lens.governance/main`.
+
+---
+
 ## Edge Cases
 
 | Scenario | Behavior |

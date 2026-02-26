@@ -16,7 +16,7 @@
 
 target_projects_path: ../TargetProjects
 
-docs_output_path: Docs
+docs_output_path: docs
 
 repos:
   - name: bmad.lens.src
@@ -25,3 +25,16 @@ repos:
     default_branch: main
     domain: lens
     service: lens-work
+
+  # ── GOVERNANCE REPO ──────────────────────────────────────────────────────────
+  # Universal governance artifacts: constitutions, roster, policies.
+  # Decoupled from the control repo so cross-initiative rules are never captured
+  # on an initiative branch.  All agents MUST clone this before any governance
+  # workflow executes.  Write path: universal/{slug} → main in this repo.
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: bmad.lens.governance
+    remote_url: https://github.com/crisweber2600/bmad.lens.governance
+    local_path: TargetProjects/lens/lens-governance
+    default_branch: main
+    domain: lens
+    role: governance  # Special role — not a target project, never receives initiative branches
