@@ -49,7 +49,7 @@ $GithubDomains = @()
 if (Test-Path $InventoryFile) {
     $InventoryContent = Get-Content $InventoryFile -Raw -ErrorAction SilentlyContinue
     $RegexMatches = [regex]::Matches($InventoryContent, 'github\.[a-zA-Z0-9._-]+')
-    $Detected = $RegexMatches.Value | Sort-Object -Unique
+    $Detected = $RegexMatches | ForEach-Object { $_.Value } | Sort-Object -Unique
     foreach ($d in $Detected) {
         if ($d -notin $GithubDomains) { $GithubDomains += $d }
     }
@@ -114,14 +114,26 @@ foreach ($Domain in $GithubDomains) {
     Write-Host ""
 
     $SecurePat = Read-Host "  Enter PAT for $Domain (press Enter to skip)" -AsSecureString
-    $PatPlain  = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
-                    [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecurePat))
     Write-Host ""
 
-    if ([string]::IsNullOrEmpty($PatPlain)) {
+    if ($SecurePat.Length -eq 0) {
         Write-Host "  ⏭  Skipped" -ForegroundColor Yellow
         $Skipped++
     } else {
+        $Bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecurePat)
+        try {
+            $PatPlain = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($Bstr)
+        } finally {
+            [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($Bstr)
+        }
+
+        if ([string]::IsNullOrWhiteSpace($PatPlain)) {
+            Write-Host "  ⏭  Skipped" -ForegroundColor Yellow
+            $Skipped++
+            Write-Host ""
+            continue
+        }
+
         $Entry = @"
 ${Domain}:
   token: $PatPlain
