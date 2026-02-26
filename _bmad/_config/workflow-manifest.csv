@@ -105,6 +105,7 @@ name,description,module,path
 "sprintplan","Sprint planning phase — sprint-status, story files, dev handoff","lens-work","_bmad/lens-work/workflows/router/sprintplan/workflow.md"
 "story-gen","Story generation phase — create implementation stories from architecture","lens-work","_bmad/lens-work/workflows/router/story-gen/workflow.md"
 "techplan","Architecture and technical design phase","lens-work","_bmad/lens-work/workflows/router/tech-plan/workflow.md"
+"quickdev","Rapid execution — delegates to target-project agents for implementation with parity verification","lens-work","_bmad/lens-work/workflows/router/quickdev/workflow.md"
 "archive","Archive completed initiative, clean state","lens-work","_bmad/lens-work/workflows/utility/archive/workflow.md"
 "batch-process","Process batch question files and run party-mode review","lens-work","_bmad/lens-work/workflows/utility/batch-process/workflow.md"
 "bootstrap","Setup TargetProjects from service map","lens-work","_bmad/lens-work/workflows/utility/bootstrap/workflow.md"

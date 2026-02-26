@@ -379,7 +379,8 @@ phase_display = {
   "techplan":     { name: "TechPlan",     audience: "small",  description: "Architecture & tech decisions" },
   "devproposal":  { name: "DevProposal",  audience: "medium", description: "Epics, stories, readiness" },
   "sprintplan":   { name: "SprintPlan",   audience: "large",  description: "Sprint planning & story selection" },
-  "dev":          { name: "Dev",          audience: "base",   description: "Implementation & code review" }
+  "dev":          { name: "Dev",          audience: "base",   description: "Implementation & code review" },
+  "quickdev":     { name: "QuickDev",    audience: "small",  description: "Rapid parity verification via target-project agents" }
 }
 
 output: |
