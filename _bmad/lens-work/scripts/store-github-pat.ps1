@@ -12,8 +12,8 @@
     .\\_bmad\\lens-work\\scripts\\store-github-pat.ps1
 
 .OUTPUTS
-    _bmad-output/lens-work/personal/github-credentials.yaml
-    (gitignored — never committed)
+    Environment variables: GITHUB_PAT, GH_ENTERPRISE_TOKEN
+    (set in current session + persisted to User scope)
 #>
 
 Set-StrictMode -Version Latest
@@ -23,7 +23,6 @@ $ErrorActionPreference = 'Stop'
 $ScriptDir    = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot  = Resolve-Path (Join-Path $ScriptDir '../../..') | Select-Object -ExpandProperty Path
 $ProfileFile  = Join-Path $ProjectRoot '_bmad-output\lens-work\personal\profile.yaml'
-$LegacyCredFile = Join-Path $ProjectRoot '_bmad-output\lens-work\personal\github-credentials.yaml'
 $InventoryFile= Join-Path $ProjectRoot '_bmad-output\lens-work\repo-inventory.yaml'
 
 # -- Banner ---------------------------------------------------
@@ -99,30 +98,6 @@ if (Test-Path $ProfileFile) {
             }
         }
         if ($CurrentCred) { $ExistingCredentials += $CurrentCred }
-    }
-}
-
-# -- Migrate from legacy github-credentials.yaml if exists ----
-if ((Test-Path $LegacyCredFile) -and $ExistingCredentials.Count -eq 0) {
-    Write-Host "Migrating from legacy github-credentials.yaml..." -ForegroundColor Cyan
-    $LegacyContent = Get-Content $LegacyCredFile -Raw
-    $CurrentDomain = $null
-    foreach ($line in $LegacyContent -split "`n") {
-        if ($line -match '^([a-zA-Z0-9._-]+):\s*$') {
-            $CurrentDomain = $Matches[1]
-        } elseif ($CurrentDomain -and $line -match '^\s+token:\s*(.+)\s*$') {
-            $token = $Matches[1].Trim()
-            $type = if ($CurrentDomain -eq 'github.com') { 'github' } else { 'github_enterprise' }
-            $ExistingCredentials += @{
-                host = $CurrentDomain
-                type = $type
-                pat = $token
-                configured_at = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-            }
-        }
-    }
-    if ($ExistingCredentials.Count -gt 0) {
-        Write-Host "   [OK] Migrated $($ExistingCredentials.Count) credential(s)" -ForegroundColor Green
     }
 }
 

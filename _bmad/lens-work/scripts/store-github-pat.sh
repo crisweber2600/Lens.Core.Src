@@ -13,8 +13,8 @@
 #   bash _bmad/lens-work/scripts/store-github-pat.sh
 #
 # OUTPUT:
-#   _bmad-output/lens-work/personal/github-credentials.yaml
-#   (gitignored — never committed)
+#   Environment variables: GITHUB_PAT, GH_ENTERPRISE_TOKEN
+#   (set in current session; user must persist to shell profile)
 # ============================================================
 
 set -euo pipefail
@@ -22,7 +22,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 PROFILE_FILE="${PROJECT_ROOT}/_bmad-output/lens-work/personal/profile.yaml"
-LEGACY_CRED_FILE="${PROJECT_ROOT}/_bmad-output/lens-work/personal/github-credentials.yaml"
 INVENTORY_FILE="${PROJECT_ROOT}/_bmad-output/lens-work/repo-inventory.yaml"
 
 # -- Colors --------------------------------------------------
@@ -121,30 +120,6 @@ if [[ -f "${PROFILE_FILE}" ]]; then
   # Save last credential if exists
   if [[ -n "$CURRENT_HOST" ]]; then
     EXISTING_CREDENTIALS+=("${CURRENT_HOST}|${CURRENT_TYPE}|${CURRENT_PAT}|${CURRENT_DATE}")
-  fi
-fi
-
-# -- Migrate from legacy github-credentials.yaml if exists ----
-if [[ -f "${LEGACY_CRED_FILE}" && ${#EXISTING_CREDENTIALS[@]} -eq 0 ]]; then
-  echo -e "${CYAN} Migrating from legacy github-credentials.yaml...${RESET}"
-  CURRENT_DOMAIN=""
-  while IFS= read -r line; do
-    if [[ "$line" =~ ^([a-zA-Z0-9._-]+):[[:space:]]*$ ]]; then
-      CURRENT_DOMAIN="${BASH_REMATCH[1]}"
-    elif [[ -n "$CURRENT_DOMAIN" && "$line" =~ ^[[:space:]]+token:[[:space:]]*(.+) ]]; then
-      TOKEN="${BASH_REMATCH[1]}"
-      if [[ "$CURRENT_DOMAIN" == "github.com" ]]; then
-        TYPE="github"
-      else
-        TYPE="github_enterprise"
-      fi
-      TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -Iseconds 2>/dev/null || echo "$(date)")
-      EXISTING_CREDENTIALS+=("${CURRENT_DOMAIN}|${TYPE}|${TOKEN}|${TIMESTAMP}")
-    fi
-  done < "${LEGACY_CRED_FILE}"
-  
-  if [[ ${#EXISTING_CREDENTIALS[@]} -gt 0 ]]; then
-    echo -e "   ${GREEN}[OK] Migrated ${#EXISTING_CREDENTIALS[@]} credential(s)${RESET}"
   fi
 fi
 

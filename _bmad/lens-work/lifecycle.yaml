@@ -390,7 +390,6 @@ data_zones:
     git_ignored: true
     artifacts:
       - personal/profile.yaml
-      - personal/github-credentials.yaml
       - personal/personal-repo-inventory.yaml
     branch_strategy: none   # local only, never pushed
 

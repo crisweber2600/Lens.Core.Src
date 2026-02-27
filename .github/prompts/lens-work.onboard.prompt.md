@@ -89,7 +89,6 @@ Next steps:
 
 **Storage locations (all gitignored):**
 - Profile: `_bmad-output/lens-work/personal/profile.yaml`
-- Credentials: `_bmad-output/lens-work/personal/github-credentials.yaml`
 - Roster: `_bmad-output/lens-work/roster/{name-slug}.yaml`
 - Repo inventory: `_bmad-output/lens-work/repo-inventory.yaml`
 - Personal repo state: `_bmad-output/lens-work/personal/personal-repo-inventory.yaml`

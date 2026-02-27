@@ -109,19 +109,17 @@ bash _bmad/lens-work/scripts/store-github-pat.sh
 The script will:
 1. Auto-detect GitHub domains from `repo-inventory.yaml`
 2. Prompt for PAT per domain (with skip option)
-3. Write to `profile.yaml` in `git_credentials` array format
-4. Migrate from legacy `github-credentials.yaml` if it exists
+3. Set environment variables (GITHUB_PAT / GH_ENTERPRISE_TOKEN)
 
 ### 2. PR Creation Workflow
 
 When a phase completion or promotion workflow runs:
 
-1. **Load profile:** Read `_bmad-output/lens-work/personal/profile.yaml`
+1. **Load PAT:** Check environment variables (`GITHUB_PAT` / `GH_ENTERPRISE_TOKEN` / `GH_TOKEN`)
 2. **Extract remote host:** Parse `git remote get-url origin`
-3. **Find matching credential:** Match `host` field in `git_credentials` array
-4. **Validate PAT exists:** If not found, display error and PAT setup instructions
-5. **Set environment:** Export `GH_TOKEN` (GitHub) or platform-specific auth
-6. **Create PR:** Execute `gh pr create` (GitHub) or platform API call
+3. **Validate PAT exists:** If not found, display error and PAT setup instructions
+4. **Set environment:** Export `GH_TOKEN` (GitHub) or platform-specific auth
+5. **Create PR:** Execute `gh pr create` (GitHub) or platform API call
 
 **Hard gate behavior:**
 - If PAT missing: Workflow blocks and directs user to run `store-github-pat.ps1`
@@ -130,52 +128,10 @@ When a phase completion or promotion workflow runs:
 ### 3. Update Existing PAT
 
 Re-run the PAT storage script. It will:
-- Detect existing credentials
+- Detect existing environment variables
 - Prompt to update each domain
-- Preserve existing entries if skipped
+- Set updated environment variables
 - Update timestamp on modified entries
-
----
-
-## Migration from Legacy Format
-
-**Legacy location:** `_bmad-output/lens-work/personal/github-credentials.yaml`
-
-**Legacy format:**
-```yaml
-github.com:
-  token: ghp_xxx
-  created_at: "2025-02-25T10:30:00Z"
-  type: github.com
-```
-
-**Migration process:**
-
-The PAT storage scripts automatically detect and migrate from the legacy format:
-
-1. Check if `profile.yaml` exists and has `git_credentials`
-2. If empty, look for `github-credentials.yaml`
-3. Parse legacy YAML domain keys
-4. Convert to `git_credentials` array format
-5. Write to `profile.yaml`
-6. Display migration summary
-
-**Manual migration:**
-
-If needed, manually convert using this mapping:
-
-```
-Legacy:                         Profile:
-{domain}:                       git_credentials:
-  token: {pat}       -->          - host: {domain}
-  type: {type}                      type: {normalized_type}
-  created_at: {date}                pat: {pat}
-                                    configured_at: {date}
-```
-
-Type normalization:
-- `github.com` → `github`
-- `github_enterprise` → `github_enterprise` (unchanged)
 
 ---
 
@@ -211,7 +167,6 @@ Type normalization:
 - Never commit `profile.yaml` to version control
 - Never share PATs via email, Slack, or other communication channels
 - Don't use PATs with excessive scopes (e.g., `admin:org`, `delete_repo`)
-- Don't store PATs in environment variables permanently
 
 ### 🔒 Verification
 
@@ -263,14 +218,11 @@ git check-ignore -v _bmad-output/lens-work/personal/profile.yaml
 
 ### Migration from legacy didn't work
 
-**Symptom:** Old `github-credentials.yaml` still present, `profile.yaml` empty
-
-**Cause:** Migration only runs if `profile.yaml` has no existing `git_credentials`
+**Symptom:** Legacy `github-credentials.yaml` still present
 
 **Solution:**
-1. Backup existing `github-credentials.yaml`
-2. Delete `profile.yaml` if it exists but is empty
-3. Re-run `store-github-pat.ps1` — migration will trigger automatically
+1. Delete the legacy `github-credentials.yaml` file
+2. Re-run `store-github-pat.ps1` to set PATs as environment variables
 
 ---
 
