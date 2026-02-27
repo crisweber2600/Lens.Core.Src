@@ -3,7 +3,7 @@ name: 'step-10-art-audio'
 description: 'Define art style and audio direction'
 
 # Path Definitions
-workflow_path: '{project-root}/_bmad/gds/workflows/2-design/gdd'
+workflow_path: 'bmad.lens.release/_bmad/gds/workflows/2-design/gdd'
 
 # File References
 thisStepFile: './step-10-art-audio.md'
@@ -12,8 +12,8 @@ workflowFile: '{workflow_path}/workflow.md'
 outputFile: '{output_folder}/gdd.md'
 
 # Task References
-advancedElicitationTask: '{project-root}/_bmad/core/workflows/advanced-elicitation/workflow.xml'
-partyModeWorkflow: '{project-root}/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.xml'
+partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Step 10: Art & Audio

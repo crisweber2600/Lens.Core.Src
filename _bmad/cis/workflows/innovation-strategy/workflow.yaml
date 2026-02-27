@@ -3,7 +3,7 @@ name: "innovation-strategy"
 description: 'Identify disruption opportunities and architect business model innovation. Use when the user says "lets create an innovation strategy" or "I want to find disruption opportunities"'
 
 # Critical variables load from config_source
-config_source: "{project-root}/_bmad/cis/bmadconfig.yaml"
+config_source: "bmad.lens.release/_bmad/cis/bmadconfig.yaml"
 output_folder: "{config_source}:output_folder"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
@@ -13,7 +13,7 @@ date: system-generated
 # Example: data="{path}/industry-analysis.md" provides market context
 
 # Module path and component files
-installed_path: "{project-root}/_bmad/cis/workflows/innovation-strategy"
+installed_path: "bmad.lens.release/_bmad/cis/workflows/innovation-strategy"
 template: "{installed_path}/template.md"
 instructions: "{installed_path}/instructions.md"
 

@@ -35,7 +35,7 @@ an inline skill — not as a separate workflow or runtime process.
 
 ### Constitution File Locations
 
-Base directory: `{project-root}/_bmad-output/lens-work/constitutions`
+Base directory: `bmad.lens.release/_bmad-output/lens-work/constitutions`
 
 | Layer   | Path Pattern |
 |---------|-------------|

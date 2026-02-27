@@ -232,11 +232,11 @@ Ready to proceed with next steps!
 **Invoke discovery skill in AUTO/YOLO mode (if DEEP selected):**
 
 ```
-Activate discovery skill: {project-root}/_bmad/lens-work/skills/discovery.md
+Activate discovery skill: bmad.lens.release/_bmad/lens-work/skills/discovery.md
 Trigger: AUTO (full auto mode - DS → AC → GD)
 
 The discovery skill will:
-- Load domain map from: {project-root}/_bmad/lens-work/domain-map.yaml
+- Load domain map from: bmad.lens.release/_bmad/lens-work/domain-map.yaml
 - Execute [DS] on every service/microservice
 - Execute [AC] on every analyzed service
 - Execute [GD] on every analyzed codebase
@@ -277,7 +277,7 @@ Initial discovery is complete. Discovery reports available at:
 
 To run the complete pipeline later:
 - Type [DEEP] to trigger the full DS → AC → GD workflow
-- Or navigate to: {project-root}/_bmad/lens-work/skills/discovery.md
+- Or navigate to: bmad.lens.release/_bmad/lens-work/skills/discovery.md
 
 Or continue with @lens for other workflows.
 ```
@@ -310,7 +310,7 @@ This prevents accidental commits of:
 ---
 
 **IF user selected [DEEP]:**
-- Activate discovery skill by loading: {project-root}/_bmad/lens-work/skills/discovery.md
+- Activate discovery skill by loading: bmad.lens.release/_bmad/lens-work/skills/discovery.md
 - The discovery skill will display its menu with DS, AC, GD options
 - User can select [AUTO] to run the full pipeline automatically
 - The discovery skill will return to its menu after each operation completes

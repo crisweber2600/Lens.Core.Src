@@ -8,4 +8,4 @@
 user_name: CrisWeber
 communication_language: English
 document_output_language: English
-output_folder: "{project-root}/_bmad-output"
+output_folder: "bmad.lens.release/_bmad-output"

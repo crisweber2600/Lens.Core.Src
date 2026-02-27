@@ -1211,13 +1211,13 @@ During installation, you'll be prompted for:
 ```yaml
 project_name: my-control-repo
 user_skill_level: intermediate
-planning_artifacts: "{project-root}/_bmad-output/planning-artifacts"
-implementation_artifacts: "{project-root}/_bmad-output/implementation-artifacts"
+planning_artifacts: "bmad.lens.release/_bmad-output/planning-artifacts"
+implementation_artifacts: "bmad.lens.release/_bmad-output/implementation-artifacts"
 project_knowledge: "{project-root}/docs"
 user_name: YourName
 communication_language: English
 document_output_language: English
-output_folder: "{project-root}/_bmad-output"
+output_folder: "bmad.lens.release/_bmad-output"
 ```
 
 **Service Map:** `_bmad/lens-work/service-map.yaml`

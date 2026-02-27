@@ -4,7 +4,7 @@ description: 'Automated test scenario generator. Use when the user says "I want 
 author: "BMad"
 
 # Critical variables from config
-config_source: "{project-root}/_bmad/gds/bmadconfig.yaml"
+config_source: "bmad.lens.release/_bmad/gds/bmadconfig.yaml"
 output_folder: "{config_source}:output_folder"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
@@ -12,7 +12,7 @@ document_output_language: "{config_source}:document_output_language"
 date: system-generated
 
 # Workflow components
-installed_path: "{project-root}/_bmad/gds/workflows/gametest/automate"
+installed_path: "bmad.lens.release/_bmad/gds/workflows/gametest/automate"
 instructions: "{installed_path}/instructions.md"
 validation: "{installed_path}/checklist.md"
 
@@ -46,4 +46,4 @@ execution_hints:
   interactive: false
   autonomous: true
   iterative: true
-
+

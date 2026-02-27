@@ -3,7 +3,7 @@ description: 'User story creation from epics. Use when the user says "lets creat
 author: "BMad"
 
 # Critical variables from config
-config_source: "{project-root}/_bmad/gds/bmadconfig.yaml"
+config_source: "bmad.lens.release/_bmad/gds/bmadconfig.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
 date: system-generated
@@ -13,7 +13,7 @@ output_folder: "{implementation_artifacts}"
 story_dir: "{implementation_artifacts}"
 
 # Workflow components
-installed_path: "{project-root}/_bmad/gds/workflows/4-production/create-story"
+installed_path: "bmad.lens.release/_bmad/gds/workflows/4-production/create-story"
 template: "{installed_path}/template.md"
 instructions: "{installed_path}/instructions.xml"
 validation: "{installed_path}/checklist.md"
@@ -57,4 +57,4 @@ input_file_patterns:
     load_strategy: "SELECTIVE_LOAD" # Only load needed epic
 
 standalone: true
-
+

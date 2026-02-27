@@ -40,7 +40,7 @@
 
 # Exec - workflow
 - trigger: CP or fuzzy match on create-prd
-  exec: '{project-root}/_bmad/bmm/workflows/create-prd/workflow.md'
+  exec: 'bmad.lens.release/_bmad/bmm/workflows/create-prd/workflow.md'
   description: '[CP] Create PRD'
 
 # Exec - unimplemented
@@ -57,8 +57,8 @@ Attach to ANY handler to pass input files.
 
 ```yaml
 - trigger: TS or fuzzy match on team-standup
-  exec: '{project-root}/_bmad/bmm/tasks/team-standup.md'
-  data: '{project-root}/_bmad/_config/agent-manifest.csv'
+  exec: 'bmad.lens.release/_bmad/bmm/tasks/team-standup.md'
+  data: 'bmad.lens.release/_bmad/_config/agent-manifest.csv'
   description: '[TS] Run team standup'
 ```
 
@@ -96,7 +96,7 @@ menu:
 
 ```yaml
 # ✅ CORRECT
-exec: '{project-root}/_bmad/core/workflows/brainstorming/workflow.md'
+exec: 'bmad.lens.release/_bmad/core/workflows/brainstorming/workflow.md'
 
 # ❌ WRONG
 exec: '../../../core/workflows/brainstorming/workflow.md'
@@ -115,8 +115,8 @@ exec: '../../../core/workflows/brainstorming/workflow.md'
 **Expert Agent sidecar path pattern:**
 ```yaml
 critical_actions:
-  - 'Load COMPLETE file {project-root}/_bmad/_memory/{sidecar-folder}/memories.md'
-  - 'ONLY read/write files in {project-root}/_bmad/_memory/{sidecar-folder}/'
+  - 'Load COMPLETE file bmad.lens.release/_bmad/_memory/{sidecar-folder}/memories.md'
+  - 'ONLY read/write files in bmad.lens.release/_bmad/_memory/{sidecar-folder}/'
 ```
 
 ---
@@ -145,8 +145,8 @@ menu:
 
 ```yaml
 critical_actions:
-  - 'Load COMPLETE file {project-root}/_bmad/_memory/journal-keeper-sidecar/memories.md'
-  - 'ONLY read/write files in {project-root}/_bmad/_memory/journal-keeper-sidecar/'
+  - 'Load COMPLETE file bmad.lens.release/_bmad/_memory/journal-keeper-sidecar/memories.md'
+  - 'ONLY read/write files in bmad.lens.release/_bmad/_memory/journal-keeper-sidecar/'
 
 prompts:
   - id: guided-entry
@@ -159,7 +159,7 @@ menu:
     description: '[WE] Write journal entry'
 
   - trigger: SM or fuzzy match on save-memory
-    action: 'Update {project-root}/_bmad/_memory/journal-keeper-sidecar/memories.md'
+    action: 'Update bmad.lens.release/_bmad/_memory/journal-keeper-sidecar/memories.md'
     description: '[SM] Save session'
 ```
 
@@ -168,11 +168,11 @@ menu:
 ```yaml
 menu:
   - trigger: WI or fuzzy match on workflow-init
-    exec: '{project-root}/_bmad/bmm/workflows/workflow-status/workflow.md'
+    exec: 'bmad.lens.release/_bmad/bmm/workflows/workflow-status/workflow.md'
     description: '[WI] Initialize workflow'
 
   - trigger: BS or fuzzy match on brainstorm
-    exec: '{project-root}/_bmad/core/workflows/brainstorming/workflow.md'
+    exec: 'bmad.lens.release/_bmad/core/workflows/brainstorming/workflow.md'
     description: '[BS] Guided brainstorming'
 ```
 
@@ -186,4 +186,4 @@ menu:
 4. **Code uniqueness:** Required within each agent
 5. **Paths:** Always use `{project-root}`, never relative paths
 6. **Handler choice:** `action` for Agents, `exec` for Modules
-7. **Sidecar paths:** `{project-root}/_bmad/_memory/{sidecar-folder}/`
+7. **Sidecar paths:** `bmad.lens.release/_bmad/_memory/{sidecar-folder}/`

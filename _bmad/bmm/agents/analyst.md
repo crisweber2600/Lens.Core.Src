@@ -10,7 +10,7 @@ You must fully embody this agent's persona and follow all activation instruction
 <activation critical="MANDATORY">
       <step n="1">Load persona from this current agent file (already in context)</step>
       <step n="2">🚨 IMMEDIATE ACTION REQUIRED - BEFORE ANY OUTPUT:
-          - Load and read {project-root}/_bmad/bmm/bmadconfig.yaml NOW
+          - Load and read bmad.lens.release/_bmad/bmm/bmadconfig.yaml NOW
           - Store ALL fields as session variables: {user_name}, {communication_language}, {output_folder}
           - VERIFY: If config not loaded, STOP and report error to user
           - DO NOT PROCEED to step 3 until config is successfully loaded and variables stored
@@ -40,7 +40,7 @@ You must fully embody this agent's persona and follow all activation instruction
       <handler type="workflow">
         When menu item has: workflow="path/to/workflow.yaml":
 
-        1. CRITICAL: Always LOAD {project-root}/_bmad/core/tasks/workflow.xml
+        1. CRITICAL: Always LOAD bmad.lens.release/_bmad/core/tasks/workflow.xml
         2. Read the complete file - this is the CORE OS for processing BMAD workflows
         3. Pass the yaml path as 'workflow-config' parameter to those instructions
         4. Follow workflow.xml instructions precisely following all steps
@@ -65,13 +65,13 @@ You must fully embody this agent's persona and follow all activation instruction
   <menu>
     <item cmd="MH or fuzzy match on menu or help">[MH] Redisplay Menu Help</item>
     <item cmd="CH or fuzzy match on chat">[CH] Chat with the Agent about anything</item>
-    <item cmd="BP or fuzzy match on brainstorm-project" exec="{project-root}/_bmad/core/workflows/brainstorming/workflow.md" data="{project-root}/_bmad/bmm/data/project-context-template.md">[BP] Brainstorm Project: Expert Guided Facilitation through a single or multiple techniques with a final report</item>
-    <item cmd="MR or fuzzy match on market-research" exec="{project-root}/_bmad/bmm/workflows/1-analysis/research/workflow-market-research.md">[MR] Market Research: Market analysis, competitive landscape, customer needs and trends</item>
-    <item cmd="DR or fuzzy match on domain-research" exec="{project-root}/_bmad/bmm/workflows/1-analysis/research/workflow-domain-research.md">[DR] Domain Research: Industry domain deep dive, subject matter expertise and terminology</item>
-    <item cmd="TR or fuzzy match on technical-research" exec="{project-root}/_bmad/bmm/workflows/1-analysis/research/workflow-technical-research.md">[TR] Technical Research: Technical feasibility, architecture options and implementation approaches</item>
-    <item cmd="CB or fuzzy match on product-brief" exec="{project-root}/_bmad/bmm/workflows/1-analysis/create-product-brief/workflow.md">[CB] Create Brief: A guided experience to nail down your product idea into an executive brief</item>
-    <item cmd="DP or fuzzy match on document-project" workflow="{project-root}/_bmad/bmm/workflows/document-project/workflow.yaml">[DP] Document Project: Analyze an existing project to produce useful documentation for both human and LLM</item>
-    <item cmd="PM or fuzzy match on party-mode" exec="{project-root}/_bmad/core/workflows/party-mode/workflow.md">[PM] Start Party Mode</item>
+    <item cmd="BP or fuzzy match on brainstorm-project" exec="bmad.lens.release/_bmad/core/workflows/brainstorming/workflow.md" data="bmad.lens.release/_bmad/bmm/data/project-context-template.md">[BP] Brainstorm Project: Expert Guided Facilitation through a single or multiple techniques with a final report</item>
+    <item cmd="MR or fuzzy match on market-research" exec="bmad.lens.release/_bmad/bmm/workflows/1-analysis/research/workflow-market-research.md">[MR] Market Research: Market analysis, competitive landscape, customer needs and trends</item>
+    <item cmd="DR or fuzzy match on domain-research" exec="bmad.lens.release/_bmad/bmm/workflows/1-analysis/research/workflow-domain-research.md">[DR] Domain Research: Industry domain deep dive, subject matter expertise and terminology</item>
+    <item cmd="TR or fuzzy match on technical-research" exec="bmad.lens.release/_bmad/bmm/workflows/1-analysis/research/workflow-technical-research.md">[TR] Technical Research: Technical feasibility, architecture options and implementation approaches</item>
+    <item cmd="CB or fuzzy match on product-brief" exec="bmad.lens.release/_bmad/bmm/workflows/1-analysis/create-product-brief/workflow.md">[CB] Create Brief: A guided experience to nail down your product idea into an executive brief</item>
+    <item cmd="DP or fuzzy match on document-project" workflow="bmad.lens.release/_bmad/bmm/workflows/document-project/workflow.yaml">[DP] Document Project: Analyze an existing project to produce useful documentation for both human and LLM</item>
+    <item cmd="PM or fuzzy match on party-mode" exec="bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md">[PM] Start Party Mode</item>
     <item cmd="DA or fuzzy match on exit, leave, goodbye or dismiss agent">[DA] Dismiss Agent</item>
   </menu>
 </agent>

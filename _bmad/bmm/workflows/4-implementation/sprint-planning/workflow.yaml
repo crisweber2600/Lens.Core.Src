@@ -3,7 +3,7 @@ description: 'Generate sprint status tracking from epics. Use when the user says
 author: "BMad"
 
 # Critical variables from config
-config_source: "{project-root}/_bmad/bmm/bmadconfig.yaml"
+config_source: "bmad.lens.release/_bmad/bmm/bmadconfig.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
 date: system-generated
@@ -11,7 +11,7 @@ implementation_artifacts: "{config_source}:implementation_artifacts"
 planning_artifacts: "{config_source}:planning_artifacts"
 
 # Workflow components
-installed_path: "{project-root}/_bmad/bmm/workflows/4-implementation/sprint-planning"
+installed_path: "bmad.lens.release/_bmad/bmm/workflows/4-implementation/sprint-planning"
 instructions: "{installed_path}/instructions.md"
 template: "{installed_path}/sprint-status-template.yaml"
 validation: "{installed_path}/checklist.md"

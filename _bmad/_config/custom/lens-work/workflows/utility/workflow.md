@@ -172,7 +172,7 @@ else:
   if sync_choice == "1":
     # Invoke sync-and-select-branch workflow
     invoke_workflow:
-      path: "{project-root}/_bmad/lens-work/workflows/utility/sync-and-select-branch/workflow.md"
+      path: "bmad.lens.release/_bmad/lens-work/workflows/utility/sync-and-select-branch/workflow.md"
       params:
         initiative_id: ${initiative.id}
         target_repo: ${initiative.target_repos[0]}  # Primary repo

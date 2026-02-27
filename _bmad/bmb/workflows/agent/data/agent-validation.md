@@ -43,7 +43,7 @@
 
 ### Structure
 - [ ] Single `.agent.yaml` file (no sidecar folder)
-- [ ] No `{project-root}/_bmad/_memory/` paths
+- [ ] No `bmad.lens.release/_bmad/_memory/` paths
 - [ ] Size under ~250 lines (unless justified)
 
 ### critical_actions (OPTIONAL)
@@ -65,16 +65,16 @@
 ### critical_actions (MANDATORY)
 ```yaml
 critical_actions:
-  - 'Load COMPLETE file {project-root}/_bmad/_memory/{sidecar-folder}/memories.md'
-  - 'Load COMPLETE file {project-root}/_bmad/_memory/{sidecar-folder}/instructions.md'
-  - 'ONLY read/write files in {project-root}/_bmad/_memory/{sidecar-folder}/'
+  - 'Load COMPLETE file bmad.lens.release/_bmad/_memory/{sidecar-folder}/memories.md'
+  - 'Load COMPLETE file bmad.lens.release/_bmad/_memory/{sidecar-folder}/instructions.md'
+  - 'ONLY read/write files in bmad.lens.release/_bmad/_memory/{sidecar-folder}/'
 ```
 - [ ] Exists with ≥3 actions
 - [ ] Loads memories, loads instructions, restricts file access
 - [ ] No placeholders, no compiler-injected steps
 
 ### Path Format (CRITICAL)
-- [ ] ALL sidecar paths: `{project-root}/_bmad/_memory/{sidecar-folder}/...`
+- [ ] ALL sidecar paths: `bmad.lens.release/_bmad/_memory/{sidecar-folder}/...`
 - [ ] `{project-root}` is literal (not replaced)
 - [ ] `{sidecar-folder}` = actual folder name
 - [ ] No `./` or `/Users/` paths <!-- validate-file-refs:ignore -->
@@ -106,6 +106,6 @@ critical_actions:
 | Behaviors in `communication_style` | Move to `identity` or `principles` |
 | `trigger: analyze` | `trigger: AN or fuzzy match on analyze` |
 | `description: 'Analyze code'` | `description: '[AC] Analyze code'` |
-| `./sidecar/memories.md` | `{project-root}/_bmad/_memory/sidecar/memories.md` |
+| `./sidecar/memories.md` | `bmad.lens.release/_bmad/_memory/sidecar/memories.md` |
 | Missing `critical_actions` (hasSidecar: true) | Add load memories, load instructions, restrict access |
 | No memory references (hasSidecar: true) | Add to `communication_style`: "Last time you mentioned..." |

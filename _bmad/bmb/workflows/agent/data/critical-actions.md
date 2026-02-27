@@ -19,9 +19,9 @@ Numbered steps executing FIRST on agent activation.
 
 ```yaml
 critical_actions:
-  - 'Load COMPLETE file {project-root}/_bmad/_memory/{sidecar-folder}/memories.md'
-  - 'Load COMPLETE file {project-root}/_bmad/_memory/{sidecar-folder}/instructions.md'
-  - 'ONLY read/write files in {project-root}/_bmad/_memory/{sidecar-folder}/'
+  - 'Load COMPLETE file bmad.lens.release/_bmad/_memory/{sidecar-folder}/memories.md'
+  - 'Load COMPLETE file bmad.lens.release/_bmad/_memory/{sidecar-folder}/instructions.md'
+  - 'ONLY read/write files in bmad.lens.release/_bmad/_memory/{sidecar-folder}/'
 ```
 
 ### hasSidecar: false (OPTIONAL)
@@ -37,9 +37,9 @@ critical_actions:
 
 ```yaml
 critical_actions:
-  - 'Load COMPLETE file {project-root}/_bmad/_memory/{sidecar-folder}/memories.md'
-  - 'Load COMPLETE file {project-root}/_bmad/_memory/{sidecar-folder}/instructions.md'
-  - 'ONLY read/write files in {project-root}/_bmad/_memory/{sidecar-folder}/'
+  - 'Load COMPLETE file bmad.lens.release/_bmad/_memory/{sidecar-folder}/memories.md'
+  - 'Load COMPLETE file bmad.lens.release/_bmad/_memory/{sidecar-folder}/instructions.md'
+  - 'ONLY read/write files in bmad.lens.release/_bmad/_memory/{sidecar-folder}/'
   - 'Search web for biotech headlines, display before menu'
 ```
 
@@ -49,7 +49,7 @@ critical_actions:
 
 | Use | Pattern |
 |-----|---------|
-| Sidecar memory | `{project-root}/_bmad/_memory/{sidecar-folder}/file.md` |
+| Sidecar memory | `bmad.lens.release/_bmad/_memory/{sidecar-folder}/file.md` |
 | Project data | `{project-root}/path/to/file.csv` |
 | Output | `{output_folder}/results/` |
 

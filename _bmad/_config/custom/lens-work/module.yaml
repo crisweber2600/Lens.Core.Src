@@ -80,12 +80,12 @@ install_questions:
 
   lens_data_folder:
     prompt: "Path for lens data storage"
-    default: "{project-root}/_bmad/lens-work"
+    default: "bmad.lens.release/_bmad/lens-work"
     result: "{answer}"
 
   metadata_output_folder:
     prompt: "Path for BMAD metadata storage"
-    default: "{project-root}/_bmad-output"
+    default: "bmad.lens.release/_bmad-output"
     result: "{answer}"
 
   default_git_remote:

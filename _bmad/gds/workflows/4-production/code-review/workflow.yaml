@@ -4,7 +4,7 @@ description: 'Adversarial game dev code review. Use when the user says "lets rev
 author: "BMad"
 
 # Critical variables from config
-config_source: "{project-root}/_bmad/gds/bmadconfig.yaml"
+config_source: "bmad.lens.release/_bmad/gds/bmadconfig.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
 game_dev_experience: "{config_source}:game_dev_experience"
@@ -16,7 +16,7 @@ output_folder: "{implementation_artifacts}"
 sprint_status: "{implementation_artifacts}/sprint-status.yaml"
 
 # Workflow components
-installed_path: "{project-root}/_bmad/gds/workflows/4-production/code-review"
+installed_path: "bmad.lens.release/_bmad/gds/workflows/4-production/code-review"
 instructions: "{installed_path}/instructions.xml"
 validation: "{installed_path}/checklist.md"
 template: false
@@ -61,4 +61,4 @@ input_file_patterns:
     sharded: "{planning_artifacts}/index.md"
     load_strategy: "INDEX_GUIDED"
 
-standalone: true
+standalone: true

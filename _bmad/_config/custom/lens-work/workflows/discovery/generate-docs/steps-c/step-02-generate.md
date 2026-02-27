@@ -15,8 +15,8 @@ Create **six** production-quality documentation artifacts from `analysis_inputs`
 
 **Before generating ANY document:**
 
-1. **Load quality standards** from `{project-root}/_bmad/lens-work/templates/docs/doc-quality-standards.md`
-2. **Load the template** for each document from `{project-root}/_bmad/lens-work/templates/docs/{doc-type}.template.md`
+1. **Load quality standards** from `bmad.lens.release/_bmad/lens-work/templates/docs/doc-quality-standards.md`
+2. **Load the template** for each document from `bmad.lens.release/_bmad/lens-work/templates/docs/{doc-type}.template.md`
 3. **Read actual source files** — you MUST use `read_file` and `grep_search` to extract real code, real entity definitions, real endpoint paths, real configuration
 4. **Never output placeholder variables** — no `{service_name}`, no `{for x in y}`, no invented data
 
@@ -49,7 +49,7 @@ generation_context:
   target: from analysis_inputs.target
   doc_scope: from analysis_inputs.doc_scope
   output_dir: "{docs_output_path}/{domain}/{service}/"
-  template_dir: "{project-root}/_bmad/lens-work/templates/docs/"
+  template_dir: "bmad.lens.release/_bmad/lens-work/templates/docs/"
   
   style_config:
     heading_style: atx

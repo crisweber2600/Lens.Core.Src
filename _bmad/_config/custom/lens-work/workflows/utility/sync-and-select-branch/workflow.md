@@ -28,10 +28,10 @@ force_sync: boolean          # If true, bypass daily limit and always sync (defa
 
 ```bash
 # Load service map
-service_map = load("{project-root}/_bmad/lens-work/service-map.yaml")
+service_map = load("bmad.lens.release/_bmad/lens-work/service-map.yaml")
 
 # Load user profile
-profile_path = "{project-root}/_bmad-output/personal/profile.yaml"
+profile_path = "bmad.lens.release/_bmad-output/personal/profile.yaml"
 profile = load(profile_path)
 
 if profile == null:

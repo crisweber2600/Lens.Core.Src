@@ -4,7 +4,7 @@ description: 'Validate workflow specifications and built workflows'
 
 nextStepFile: './step-06-documentation.md'
 workflowSpecTemplate: '../templates/workflow-spec-template.md'
-workflowValidationWorkflow: '{project-root}/_bmad/bmb/workflows/workflow/steps-v/step-01-validate.md'
+workflowValidationWorkflow: 'bmad.lens.release/_bmad/bmb/workflows/workflow/steps-v/step-01-validate.md'
 validationReportOutput: '{validation_report_output}'
 targetPath: '{validation_target_path}'
 ---

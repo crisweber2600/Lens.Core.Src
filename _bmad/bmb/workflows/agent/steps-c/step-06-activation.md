@@ -14,8 +14,8 @@ withSidecarExample: ../data/reference/with-sidecar/journal-keeper/journal-keeper
 withoutSidecarExample: ../data/reference/without-sidecar/commit-poet.agent.yaml
 
 # Task References
-advancedElicitationTask: '{project-root}/_bmad/core/workflows/advanced-elicitation/workflow.xml'
-partyModeWorkflow: '{project-root}/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.xml'
+partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # STEP GOAL
@@ -167,9 +167,9 @@ Ask user:
 
 **For agents WITH sidecar, critical_actions MUST include:**
 ```
-- "Load COMPLETE file {project-root}/_bmad/_memory/{sidecar-folder}/memories.md"
-- "Load COMPLETE file {project-root}/_bmad/_memory/{sidecar-folder}/instructions.md"
-- "ONLY read/write files in {project-root}/_bmad/_memory/{sidecar-folder}/ - private space"
+- "Load COMPLETE file bmad.lens.release/_bmad/_memory/{sidecar-folder}/memories.md"
+- "Load COMPLETE file bmad.lens.release/_bmad/_memory/{sidecar-folder}/instructions.md"
+- "ONLY read/write files in bmad.lens.release/_bmad/_memory/{sidecar-folder}/ - private space"
 ```
 Plus any additional activation behaviors the agent needs.
 
