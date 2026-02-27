@@ -19,15 +19,18 @@ This is the **first-run workflow** for new team members. It sets up profile, cre
 
 **[2] Create Profile**
 - Read `git config user.name` and `git config user.email`
+- Detect GitHub domains from repo inventory
+- Check if PAT env vars are already set (GITHUB_PAT, GH_ENTERPRISE_TOKEN, GH_TOKEN)
+- If all domains covered: report [OK] status and skip PAT question entirely
 - Present combined prompt asking for:
   - Role (Developer / Tech Lead / Architect / Product Owner / Scrum Master)
   - Domain/team scope (detected from repo inventory, or "all")
-  - PAT setup now? [Y/N]
+  - PAT setup now? [Y/N] — **only shown if env vars are missing**
   - Question mode (Interactive / Batch MD)
   - Work item tracker (Jira / Azure DevOps / None)
 - Write profile to `_bmad-output/lens-work/personal/profile.yaml` (gitignored)
 
-**[3] GitHub PAT Setup (if requested)**
+**[3] GitHub PAT Setup (if needed and requested)**
 
 ⚠️ SECURITY: PATs must NEVER be entered into Copilot chat.
 

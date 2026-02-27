@@ -75,52 +75,13 @@ for repo in inventory.repos.matched:
   if domain not in domains:
     domains.append(domain)
 
-# Single prompt for role, scope, AND PAT setup
-output: |
-  
-  **Profile Setup**
-  
-  What's your role?
-  [1] Developer
-  [2] Tech Lead
-  [3] Architect
-  [4] Product Owner
-  [5] Scrum Master
-  
-  What domain/team do you work on?
-for i, domain in enumerate(domains):
-  output: "[${i+6}] ${domain}"
-output: "[${len(domains)+6}] all (full access to all domains)"
-
-output: |
-  
-  Set up GitHub PAT now?
-  [Y]es - I'll run the secure script in my terminal
-  [N]o  - Skip for now (you can run it anytime later)
-  
-  Enter three values separated by space (role domain pat):
-  Example: "3 ${len(domains)+6} Y" = Architect + all domains + set up PAT
-
-user_input = prompt_user()
-parts = user_input.split()
-role = parts[0]
-scope_choice = parts[1]
-pat_choice = parts[2] if len(parts) > 2 else "N"
-
-if scope_choice == str(len(domains)+6):
-  scope = "all"
-else:
-  scope = domains[int(scope_choice) - 6]
-
-# Detect unique GitHub domains from repo inventory
+# ── Detect GitHub domains from repo inventory ──────────────────────────
 github_domains = set()
 for repo in inventory.repos.matched:
   if repo.remote:
-    # Extract domain from URL (e.g., github.com or github.enterprise.com)
     if "github.com/" in repo.remote:
       github_domains.add("github.com")
     elif "github" in repo.remote:
-      # Extract custom GitHub Enterprise domain
       match = re.match(r"https?://([^/]+)/", repo.remote)
       if match:
         github_domains.add(match.group(1))
@@ -160,14 +121,60 @@ if covered_domains.length > 0:
   for domain in covered_domains:
     output: "  [OK] ${domain}"
 
-if uncovered_domains.length == 0:
+all_pats_covered = (uncovered_domains.length == 0)
+
+if all_pats_covered:
   output: |
     
     All ${len(github_domains)} GitHub domain(s) have PATs configured.
     Skipping PAT setup.
-  pat_choice = "N"   # Nothing to do — skip the setup prompt
+  pat_choice = "N"
 
+# ── Profile prompt ──────────────────────────────────────────────────────
+output: |
+  
+  **Profile Setup**
+  
+  What's your role?
+  [1] Developer
+  [2] Tech Lead
+  [3] Architect
+  [4] Product Owner
+  [5] Scrum Master
+  
+  What domain/team do you work on?
+for i, domain in enumerate(domains):
+  output: "[${i+6}] ${domain}"
+output: "[${len(domains)+6}] all (full access to all domains)"
+
+if not all_pats_covered:
+  output: |
+    
+    Set up GitHub PAT now?
+    [Y]es - I'll run the secure script in my terminal
+    [N]o  - Skip for now (you can run it anytime later)
+    
+    Enter three values separated by space (role domain pat):
+    Example: "3 ${len(domains)+6} Y" = Architect + all domains + set up PAT
 else:
+  output: |
+    
+    Enter two values separated by space (role domain):
+    Example: "3 ${len(domains)+6}" = Architect + all domains
+
+user_input = prompt_user()
+parts = user_input.split()
+role = parts[0]
+scope_choice = parts[1]
+if not all_pats_covered:
+  pat_choice = parts[2] if len(parts) > 2 else "N"
+
+if scope_choice == str(len(domains)+6):
+  scope = "all"
+else:
+  scope = domains[int(scope_choice) - 6]
+
+if not all_pats_covered and uncovered_domains.length > 0:
   output: |
     
     GitHub Personal Access Tokens Setup
@@ -187,7 +194,7 @@ else:
     
     Or run the secure storage script (sets environment variables automatically).
 
-if pat_choice.lower() in ["y", "yes"] and uncovered_domains.length > 0:
+if not all_pats_covered and pat_choice.lower() in ["y", "yes"] and uncovered_domains.length > 0:
   output: |
     
     Perfect! Please copy and run this command in a NEW TERMINAL WINDOW:
@@ -224,7 +231,7 @@ if pat_choice.lower() in ["y", "yes"] and uncovered_domains.length > 0:
   else:
     output: "No PAT env vars detected. You can set them later by running the script."
     output: "(Do NOT attempt to read or search for credential values — security risk.)" 
-elif pat_choice.lower() not in ["y", "yes"] and uncovered_domains.length > 0:
+elif not all_pats_covered and pat_choice.lower() not in ["y", "yes"] and uncovered_domains.length > 0:
   output: |
     
     Skipping PAT setup. You can configure PATs anytime:
