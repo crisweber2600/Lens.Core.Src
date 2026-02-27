@@ -37,6 +37,34 @@ Write-Host "   $CredFile" -ForegroundColor DarkYellow
 Write-Host "   This file is gitignored and never committed."
 Write-Host ""
 
+# ── Check for environment variables ──────────────────────────
+$EnvVarsFound = @()
+if ($env:GITHUB_PAT) { $EnvVarsFound += 'GITHUB_PAT (github.com)' }
+if ($env:GH_ENTERPRISE_TOKEN) { $EnvVarsFound += 'GH_ENTERPRISE_TOKEN (enterprise)' }
+if ($env:GH_TOKEN) { $EnvVarsFound += 'GH_TOKEN (fallback)' }
+
+if ($EnvVarsFound.Count -gt 0) {
+    Write-Host "✅ PAT environment variable(s) detected:" -ForegroundColor Green
+    foreach ($ev in $EnvVarsFound) {
+        Write-Host "   • $ev"
+    }
+    Write-Host ""
+    Write-Host "   The promote-branch script will use these automatically."
+    Write-Host "   Lookup order:" -ForegroundColor Cyan
+    Write-Host "     github.com:  GITHUB_PAT → GH_TOKEN → credentials file"
+    Write-Host "     Enterprise:  GH_ENTERPRISE_TOKEN → GH_TOKEN → credentials file"
+    Write-Host ""
+    $StoreEnvPat = Read-Host "   Do you also want to store PATs in the credentials file? (y/N)"
+    if ($StoreEnvPat -notmatch '^[yY]') {
+        Write-Host ""
+        Write-Host "✅ Using environment variables. No file changes needed." -ForegroundColor Green
+        Write-Host "   promote-branch.ps1 will pick up PATs from the environment."
+        Write-Host ""
+        return
+    }
+    Write-Host ""
+}
+
 # ── Ensure output directory ──────────────────────────────────
 $CredDir = Split-Path -Parent $CredFile
 if (-not (Test-Path $CredDir)) {

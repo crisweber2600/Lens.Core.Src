@@ -78,10 +78,10 @@ Sub-workflows [3] and [4] use YAML-based workflow.yaml files with the workflow e
 - END: PR from `{initiative_root}-large-sprintplan` → `{initiative_root}-large`; remain on phase branch
 
 **Phase completion:**
-- Verify PAT configured: Check `_bmad-output/lens-work/personal/profile.yaml` has `git_credentials` for current git host
-- If PAT missing: Direct user to run `bmad.lens.release\_bmad\lens-work\scripts\store-github-pat.ps1` in separate terminal, then retry
+- Verify PAT configured: Check for `GITHUB_PAT` or `GH_ENTERPRISE_TOKEN` environment variable, or `_bmad-output/lens-work/personal/profile.yaml` has `git_credentials` for current git host
+- If PAT missing: Direct user to set `GITHUB_PAT` env var (or `GH_ENTERPRISE_TOKEN` for enterprise) or run `store-github-pat.ps1`/`store-github-pat.sh` in separate terminal, then retry
 - Push artifacts to `{initiative_root}-large-sprintplan`
-- Create PR: `{initiative_root}-large-sprintplan` → `{initiative_root}-large`
+- Create PR using promote-branch script: `_bmad/lens-work/scripts/promote-branch.sh -s {initiative_root}-large-sprintplan -t {initiative_root}-large` (or `.ps1` on Windows)
 - Update `phase_status.sprintplan: pr_pending` (or `passed_with_warnings`) and `audience_status.medium_to_large: complete`
 - Update `state.yaml`: `current_phase: sprintplan`, `workflow_status: pr_pending`
 - Append events to `event-log.jsonl` (sprintplan-start, sprintplan-checklist, sprintplan-compliance, sprintplan-complete)

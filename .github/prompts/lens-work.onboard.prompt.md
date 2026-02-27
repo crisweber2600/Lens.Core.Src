@@ -31,6 +31,13 @@ This is the **first-run workflow** for new team members. It sets up profile, cre
 
 ⚠️ SECURITY: PATs must NEVER be entered into Copilot chat.
 
+**Option A: Environment variables (recommended for CI/automation)**
+Set environment variables for automatic PAT resolution:
+- `GITHUB_PAT` — PAT for github.com
+- `GH_ENTERPRISE_TOKEN` — PAT for enterprise GitHub instances
+- `GH_TOKEN` — fallback for both (also used by gh CLI)
+
+**Option B: Interactive script (stores PAT in profile.yaml)**
 Present the following command for the user to run in a **separate terminal**:
 
 ```bash

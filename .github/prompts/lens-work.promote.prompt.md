@@ -63,7 +63,9 @@ large   →  base     gate: constitution-gate     (constitution skill validates 
 - BLOCK if `fail_count > 0` (warnings allowed — recorded as `passed_with_warnings`)
 
 **[3] Create Promotion PR**
-- Git-orchestration creates PR: `{initiative_root}-{source_audience}` → `{initiative_root}-{target_audience}`
+- Verify PAT configured: Check for `GITHUB_PAT` or `GH_ENTERPRISE_TOKEN` environment variable, or `_bmad-output/lens-work/personal/profile.yaml` has `git_credentials` for current git host
+- If PAT missing: Direct user to set `GITHUB_PAT` env var (or `GH_ENTERPRISE_TOKEN` for enterprise) or run `store-github-pat.ps1`/`store-github-pat.sh` in separate terminal, then retry
+- Create PR using promote-branch script: `_bmad/lens-work/scripts/promote-branch.sh -s {initiative_root}-{source_audience} -t {initiative_root}-{target_audience}` (or `.ps1` on Windows)
 - Title: `[promotion] {source_audience} → {target_audience}: {initiative.name}`
 - Body includes: phases included, artifacts reviewed, gate status
 

@@ -284,8 +284,35 @@ $prUrl = Get-PrUrl -RemoteInfo $remoteInfo -Source $SourceBranch -Target $Target
 $repoRoot = Get-RepoRoot
 $credFile = Join-Path $repoRoot '_bmad-output\lens-work\personal\github-credentials.yaml'
 $pat = $null
+$patSource = $null
 if ($remoteInfo.Platform -eq 'github') {
-    $pat = Get-GithubPat -Host $remoteInfo.Host -CredFile $credFile
+    # Priority 1: Host-specific environment variables
+    if ($remoteInfo.Host -eq 'github.com') {
+        # github.com: GITHUB_PAT → GH_TOKEN → credentials file
+        if ($env:GITHUB_PAT) {
+            $pat = $env:GITHUB_PAT
+            $patSource = 'GITHUB_PAT environment variable'
+        } elseif ($env:GH_TOKEN) {
+            $pat = $env:GH_TOKEN
+            $patSource = 'GH_TOKEN environment variable'
+        }
+    } else {
+        # Enterprise: GH_ENTERPRISE_TOKEN → GH_TOKEN → credentials file
+        if ($env:GH_ENTERPRISE_TOKEN) {
+            $pat = $env:GH_ENTERPRISE_TOKEN
+            $patSource = 'GH_ENTERPRISE_TOKEN environment variable'
+        } elseif ($env:GH_TOKEN) {
+            $pat = $env:GH_TOKEN
+            $patSource = 'GH_TOKEN environment variable'
+        }
+    }
+    # Priority 2: Credentials file
+    if (-not $pat) {
+        $pat = Get-GithubPat -Host $remoteInfo.Host -CredFile $credFile
+        if ($pat) {
+            $patSource = 'github-credentials.yaml'
+        }
+    }
     if ($pat) {
         $env:GH_TOKEN = $pat
     }
@@ -307,10 +334,15 @@ if ($remoteInfo.Host) {
     Write-Host "  Remote: $($remoteInfo.Host)" -ForegroundColor Cyan
 }
 if ($remoteInfo.Platform -eq 'github') {
+    $envHint = if ($remoteInfo.Host -eq 'github.com') { 'GITHUB_PAT' } else { 'GH_ENTERPRISE_TOKEN' }
     if ($pat) {
-        Write-Host "  PAT:    loaded from github-credentials.yaml" -ForegroundColor DarkGreen
+        Write-Host "  PAT:    loaded from $patSource" -ForegroundColor DarkGreen
     } elseif (Test-Path $credFile) {
         Write-Host "  PAT:    not found for $($remoteInfo.Host)" -ForegroundColor Yellow
+        Write-Host "  Action: URL-only (set $envHint env var or run store-github-pat.ps1)" -ForegroundColor Yellow
+    } else {
+        Write-Host "  PAT:    no credentials found" -ForegroundColor Yellow
+        Write-Host "  Action: URL-only (set $envHint env var or run store-github-pat.ps1)" -ForegroundColor Yellow
     }
 }
 Write-Host "  PR:     $prUrl" -ForegroundColor Yellow
