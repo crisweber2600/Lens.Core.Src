@@ -1,6 +1,6 @@
 # LENS Workbench (lens-work) — Comprehensive Guide
 
-**Version 2.0.0** — Lifecycle Contract with Named Phases
+**Version 4.0.0** — Lifecycle Contract with Named Phases
 
 **Guided lifecycle router with git-orchestrated discipline for BMAD workflows.**
 
@@ -239,23 +239,23 @@ graph LR
     end
     
     subgraph "Gate 1"
-        G1{Adversarial<br/>Review<br/>Party Mode}
+        G1{"Adversarial<br/>Review<br/>Party Mode"}
     end
     
     subgraph "Medium Audience (Lead Review)"
-        DP[DevProposal<br/>John/PM]
+        DP["DevProposal<br/>John/PM"]
     end
     
     subgraph "Gate 2"
-        G2{Stakeholder<br/>Approval}
+        G2{"Stakeholder<br/>Approval"}
     end
     
     subgraph "Large Audience (Stakeholder)"
-        SP[SprintPlan<br/>Bob/SM]
+        SP["SprintPlan<br/>Bob/SM"]
     end
     
     subgraph "Gate 3"
-        G3{Constitution<br/>Gate<br/>@lens}
+        G3{"Constitution<br/>Gate<br/>@lens"}
     end
     
     subgraph "Base (Execution)"
@@ -427,7 +427,7 @@ flowchart TD
     CheckConflict -->|Yes| Error[Error: Duplicate domain]
     CheckConflict -->|No| CreatePrefix[Generate domain_prefix]
     
-    CreatePrefix --> CreateBranch[Create single domain branch:<br/>{domain_prefix}]
+    CreatePrefix --> CreateBranch["Create single domain branch:<br/>domain_prefix"]
     
     CreateBranch --> CreateDomainYAML[Create Domain.yaml with metadata]
     CreateDomainYAML --> ScaffoldFolders[Scaffold: initiatives/, TargetProjects/, Docs/]
@@ -461,7 +461,7 @@ flowchart TD
     
     ValidateName -->|No| AskAgain[Request valid name]
     AskAgain --> ValidateName
-    ValidateName -->|Yes| CreatePrefix[Generate service_prefix:<br/>{domain_prefix}-{service}]
+    ValidateName -->|Yes| CreatePrefix["Generate service_prefix:<br/>domain-service"]
     
     CreatePrefix --> CreateBranch[Create single service branch]
     CreateBranch --> CreateServiceYAML[Create Service.yaml]
@@ -486,7 +486,7 @@ flowchart TD
     Start([User: /preplan]) --> Preflight[Preflight Check:<br/>- Clean working dir<br/>- state.yaml exists<br/>- Valid initiative]
     
     Preflight --> LoadState[Load state.yaml + initiative config]
-    LoadState --> DetermineBranch[Determine phase branch:<br/>{initiative_root}-small-preplan]
+    LoadState --> DetermineBranch["Determine phase branch:<br/>initiative_root-small-preplan"]
     
     DetermineBranch --> BranchExists{Branch<br/>exists?}
     BranchExists -->|No| CreateBranch[Create phase branch]
@@ -609,7 +609,7 @@ flowchart TD
     PromptCommit --> CheckClean
     CheckClean -->|Yes| LoadState[Load state.yaml + initiatives]
     
-    LoadState --> ListInitiatives[List active initiatives:<br/>1. initiative-A (DevProposal)<br/>2. initiative-B (TechPlan)<br/>3. initiative-C (Dev)]
+    LoadState --> ListInitiatives["List active initiatives:<br/>1. initiative-A DevProposal<br/>2. initiative-B TechPlan<br/>3. initiative-C Dev"]
     
     ListInitiatives --> UserSelect{User selects<br/>initiative}
     
@@ -620,7 +620,7 @@ flowchart TD
     CheckoutBranch --> UpdateState[Update state.yaml:<br/>active_initiative = selected]
     
     UpdateState --> LogEvent[Log context_switched event]
-    LogEvent --> Confirm[Confirm to user:<br/>Now on: {initiative} | {phase} | {branch}]
+    LogEvent --> Confirm["Confirm to user:<br/>Now on: initiative | phase | branch"]
     
     Confirm --> End([✓ Context Switched])
     
@@ -747,29 +747,29 @@ graph TB
     SelectTrack -->|Hotfix| TrackHotfix[hotfix track]
     SelectTrack -->|Spike| TrackSpike[spike track]
     
-    TrackFull --> PrePlan[/preplan<br/>PrePlan Phase]
-    PrePlan --> BusinessPlan[/businessplan<br/>BusinessPlan Phase]
+    TrackFull --> PrePlan["/preplan<br/>PrePlan Phase"]
+    PrePlan --> BusinessPlan["/businessplan<br/>BusinessPlan Phase"]
     
     TrackFeature --> BusinessPlan
     
-    BusinessPlan --> TechPlan[/techplan<br/>TechPlan Phase]
+    BusinessPlan --> TechPlan["/techplan<br/>TechPlan Phase"]
     
     TrackTech --> TechPlan
-    TrackSpike --> PrePlan2[/preplan<br/>PrePlan Phase]
+    TrackSpike --> PrePlan2["/preplan<br/>PrePlan Phase"]
     PrePlan2 --> SpikeDone([Spike Complete])
     
-    TechPlan --> Gate1[/promote<br/>Adversarial Review Gate]
-    Gate1 --> DevProposal[/devproposal<br/>DevProposal Phase]
+    TechPlan --> Gate1["/promote<br/>Adversarial Review Gate"]
+    Gate1 --> DevProposal["/devproposal<br/>DevProposal Phase"]
     
     TrackHotfix --> DevProposal
     
-    DevProposal --> Gate2[/promote<br/>Stakeholder Approval Gate]
-    Gate2 --> SprintPlan[/sprintplan<br/>SprintPlan Phase]
+    DevProposal --> Gate2["/promote<br/>Stakeholder Approval Gate"]
+    Gate2 --> SprintPlan["/sprintplan<br/>SprintPlan Phase"]
     
-    SprintPlan --> Gate3[/promote<br/>Constitution Gate]
-    Gate3 --> Dev[/dev<br/>Dev Phase]
+    SprintPlan --> Gate3["/promote<br/>Constitution Gate"]
+    Gate3 --> Dev["/dev<br/>Dev Phase"]
     
-    Dev --> Sprint{Sprint<br/>Complete?}
+    Dev --> Sprint{"Sprint<br/>Complete?"}
     Sprint -->|More work| Dev
     Sprint -->|Done| Archive[Archive Initiative]
     Archive --> Done([✓ Initiative Complete])
@@ -1541,6 +1541,7 @@ From `lifecycle.yaml`:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 4.0.0 | 2026-02-27 | Fixed 6 invalid mermaid diagrams, daily git-pull preflight injection, version bump |
 | 2.0.0 | 2026-02-25 | Complete rewrite with comprehensive workflows, mermaid diagrams, tutorials |
 | 1.0.0 | 2026-02-03 | Initial release |
 
