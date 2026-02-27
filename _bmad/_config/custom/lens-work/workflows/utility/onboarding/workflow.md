@@ -399,7 +399,7 @@ Your GitHub Personal Access Tokens are stored in environment variables.
 |---|---|
 | `GITHUB_PAT` | PAT for github.com |
 | `GH_ENTERPRISE_TOKEN` | PAT for GitHub Enterprise |
-| `GH_TOKEN` | Fallback for either (used by `gh` CLI) |
+| `GH_TOKEN` | Fallback for either (used by GitHub REST API) |
 
 **Security Notes:**
 - NEVER read or print env var values — existence checks only

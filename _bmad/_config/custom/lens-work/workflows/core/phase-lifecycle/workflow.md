@@ -179,16 +179,25 @@ initiative_id: string
    target_branch="${initiative_root}-${audience}"
    pr_title="phase(${phase_name}): Complete ${phase_name} for ${initiative_id} [${audience} audience]"
 
-   if [[ "$remote_url" == *"github.com"* ]]; then
-     org_repo=$(echo "$remote_url" | sed -E 's|https://github\.com/||; s|\.git$||')
-     export GH_TOKEN="${pat}"
+   if [[ "$remote_url" == *"gitlab.com"* ]]; then
+     # GitLab detected — skip to GitLab block below
+     :
+   elif [[ "$remote_url" == *"dev.azure.com"* ]]; then
+     # Azure DevOps detected — skip to ADO block below
+     :
+   elif [[ "$remote_url" == https://* ]]; then
+     # GitHub (github.com or GitHub Enterprise)
+     org_repo=$(echo "$remote_url" | sed -E "s|https://${remote_host}/||; s|\.git$||")
+     owner=$(echo "$org_repo" | cut -d'/' -f1)
 
-     pr_result=$(gh pr create \
-       --repo "${org_repo}" \
-       --base "${target_branch}" \
-       --head "${source_branch}" \
-       --title "${pr_title}" \
-       --body "## Phase Complete: ${phase_name}
+     # Derive API base URL: github.com → api.github.com, GHE → {host}/api/v3
+     if [[ "$remote_host" == "github.com" ]]; then
+       api_base="https://api.github.com"
+     else
+       api_base="https://${remote_host}/api/v3"
+     fi
+
+     pr_body="## Phase Complete: ${phase_name}
 
    **Initiative:** ${initiative_id}
    **Phase:** ${phase_name}
@@ -198,24 +207,37 @@ initiative_id: string
    All workflows in this phase have been completed and merged.
 
    ---
-   *Created automatically by lens-work phase-lifecycle*" 2>&1)
+   *Created automatically by lens-work phase-lifecycle*"
 
-     pr_exit_code=$?
-     if [ $pr_exit_code -ne 0 ]; then
-       if echo "$pr_result" | grep -q "already exists"; then
-         echo "ℹ️ PR already exists for this phase"
-         pr_url=$(gh pr view "${source_branch}" --repo "${org_repo}" --json url -q '.url' 2>/dev/null)
-       else
-         echo "❌ HARD GATE: PR creation failed"
-         echo "├── Error: ${pr_result}"
-         echo "└── Fix the issue and re-run finish-phase"
-         exit 1
-       fi
+     http_code=$(curl -s -o /tmp/pr_response.json -w '%{http_code}' \
+       -X POST "${api_base}/repos/${org_repo}/pulls" \
+       -H "Authorization: token ${pat}" \
+       -H "Content-Type: application/json" \
+       -d "$(jq -n \
+         --arg head "$source_branch" \
+         --arg base "$target_branch" \
+         --arg title "$pr_title" \
+         --arg body "$pr_body" \
+         '{head: $head, base: $base, title: $title, body: $body}')")
+
+     if [ "$http_code" = "201" ]; then
+       pr_url=$(jq -r '.html_url' /tmp/pr_response.json)
+     elif [ "$http_code" = "422" ]; then
+       echo "ℹ️ PR already exists for this phase"
+       pr_url=$(curl -s \
+         "${api_base}/repos/${org_repo}/pulls?state=open&head=${owner}:${source_branch}" \
+         -H "Authorization: token ${pat}" | jq -r '.[0].html_url // empty')
      else
-       pr_url="${pr_result}"
+       echo "❌ HARD GATE: PR creation failed"
+       echo "├── HTTP ${http_code}: $(jq -r '.message // empty' /tmp/pr_response.json)"
+       echo "└── Fix the issue and re-run finish-phase"
+       exit 1
      fi
+     rm -f /tmp/pr_response.json
 
-   elif [[ "$remote_url" == *"gitlab.com"* ]]; then
+   fi
+
+   if [[ "$remote_url" == *"gitlab.com"* ]]; then
      org_repo=$(echo "$remote_url" | sed -E 's|https://gitlab\.com/||; s|\.git$||')
      encoded_repo=$(echo "$org_repo" | sed 's|/|%2F|g')
      pr_result=$(curl -s -X POST \

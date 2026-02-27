@@ -411,12 +411,32 @@ This will:
 ### If User Chooses Retarget
 
 ```bash
+# Derive API base URL from remote host
+remote_url=$(git remote get-url origin)
+remote_host=$(echo "$remote_url" | sed -E 's|https?://([^/]+)/.*|\1|')
+org_repo=$(echo "$remote_url" | sed -E "s|https://${remote_host}/||; s|\.git$||")
+
+if [[ "$remote_host" == "github.com" ]]; then
+  api_base="https://api.github.com"
+else
+  api_base="https://${remote_host}/api/v3"
+fi
+
 # List open PRs for the initiative
-gh pr list --state open --head "${root}*" --json number,title,headRefName,baseRefName
+curl -s "${api_base}/repos/${org_repo}/pulls?state=open" \
+  -H "Authorization: token ${pat}" | \
+  jq '[.[] | select(.head.ref | startswith("'"${root}"'")) | {number, title, headRefName: .head.ref, baseRefName: .base.ref}]'
 
 # For each PR, if head or base matches a renamed branch:
-gh pr edit ${pr_number} --base "${new_base_branch}"
-gh pr comment ${pr_number} --body "Branch renamed as part of lifecycle v2 migration: ${old_name} → ${new_name}"
+curl -s -X PATCH "${api_base}/repos/${org_repo}/pulls/${pr_number}" \
+  -H "Authorization: token ${pat}" \
+  -H "Content-Type: application/json" \
+  -d '{"base": "'"${new_base_branch}"'"}'
+
+curl -s -X POST "${api_base}/repos/${org_repo}/issues/${pr_number}/comments" \
+  -H "Authorization: token ${pat}" \
+  -H "Content-Type: application/json" \
+  -d '{"body": "Branch renamed as part of lifecycle v2 migration: '"${old_name}"' → '"${new_name}"'"}'
 ```
 
 ---

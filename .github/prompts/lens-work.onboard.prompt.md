@@ -38,7 +38,7 @@ This is the **first-run workflow** for new team members. It sets up profile, cre
 Set environment variables for automatic PAT resolution:
 - `GITHUB_PAT` — PAT for github.com
 - `GH_ENTERPRISE_TOKEN` — PAT for enterprise GitHub instances
-- `GH_TOKEN` — fallback for both (also used by gh CLI)
+- `GH_TOKEN` — fallback for both (used by GitHub REST API)
 
 **Option B: Interactive script (stores PAT in profile.yaml)**
 Present the following command for the user to run in a **separate terminal**:

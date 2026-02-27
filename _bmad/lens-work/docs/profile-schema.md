@@ -118,8 +118,8 @@ When a phase completion or promotion workflow runs:
 1. **Load PAT:** Check environment variables (`GITHUB_PAT` / `GH_ENTERPRISE_TOKEN` / `GH_TOKEN`)
 2. **Extract remote host:** Parse `git remote get-url origin`
 3. **Validate PAT exists:** If not found, display error and PAT setup instructions
-4. **Set environment:** Export `GH_TOKEN` (GitHub) or platform-specific auth
-5. **Create PR:** Execute `gh pr create` (GitHub) or platform API call
+4. **Set auth header:** Use PAT in `Authorization: token` header
+5. **Create PR:** Execute platform REST API call (GitHub API / GitLab API / Azure DevOps API)
 
 **Hard gate behavior:**
 - If PAT missing: Workflow blocks and directs user to run `store-github-pat.ps1`
@@ -194,15 +194,15 @@ git check-ignore -v _bmad-output/lens-work/personal/profile.yaml
 3. Verify `profile.yaml` exists: `ls _bmad-output/lens-work/personal/profile.yaml`
 4. Re-run the failed workflow
 
-### GitHub CLI not authenticated
+### GitHub API authentication failed
 
-**Symptom:** `gh pr create` fails with "authentication failed"
+**Symptom:** GitHub REST API call fails with "authentication failed" or HTTP 401
 
 **Cause:** PAT not loaded or expired
 
 **Solution:**
 1. Verify PAT in `profile.yaml` is current (check expiration)
-2. Test manually: `$env:GH_TOKEN="ghp_xxx"; gh auth status` (PowerShell)
+2. Test manually: `curl -s -H "Authorization: token ghp_xxx" https://api.github.com/user` (github.com) or `curl -s -H "Authorization: token ghp_xxx" https://{your-ghe-host}/api/v3/user` (GitHub Enterprise)
 3. Regenerate PAT if expired and update via `store-github-pat.ps1`
 
 ### Profile.yaml missing after setup

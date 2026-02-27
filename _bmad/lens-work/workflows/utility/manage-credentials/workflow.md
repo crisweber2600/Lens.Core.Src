@@ -216,9 +216,10 @@ if action == "5":
     output: "Testing credentials..."
     
     for cred in git_credentials:
-      if cred.type == "github":
-        # Test GitHub PAT
-        result = shell("curl -s -o /dev/null -w '%{http_code}' -H 'Authorization: token ${cred.pat}' https://api.github.com/user")
+      if cred.type == "github" or cred.type == "github_enterprise":
+        # Derive API base URL: github.com → api.github.com, GHE → {host}/api/v3
+        api_base = "https://api.github.com" if cred.host == "github.com" else "https://${cred.host}/api/v3"
+        result = shell("curl -s -o /dev/null -w '%{http_code}' -H 'Authorization: token ${cred.pat}' ${api_base}/user")
         if result == "200":
           output: "  ✅ ${cred.host}: Valid"
         else:
