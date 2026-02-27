@@ -5,6 +5,8 @@ description: Create new service-level initiative with service-only branch and fo
 
 Activate @lens agent and execute /new-service:
 
+**⚠️ PATH CONTEXT:** All `_bmad/` paths in this prompt are relative to the `bmad.lens.release` control repository (where this prompt file lives). Do NOT copy `_bmad/` into or resolve these paths against the user's main project repo. The agent, workflows, and skills all execute from within `bmad.lens.release/`. Only `_bmad-output/` paths are written to the user's working context.
+
 1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/new-service` command to create service initiative
 3. The argument IS the service name (e.g., `/new-service Lens` → service = "Lens")

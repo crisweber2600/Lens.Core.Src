@@ -5,6 +5,8 @@ description: Create new feature-level initiative with full branch topology
 
 Activate @lens agent and execute /new-feature:
 
+**⚠️ PATH CONTEXT:** All `_bmad/` paths in this prompt are relative to the `bmad.lens.release` control repository (where this prompt file lives). Do NOT copy `_bmad/` into or resolve these paths against the user's main project repo. The agent, workflows, and skills all execute from within `bmad.lens.release/`. Only `_bmad-output/` paths are written to the user's working context.
+
 1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/new-feature` command to create feature initiative
 3. The argument IS the feature name (e.g., `/new-feature Rate Limiting` → feature = "Rate Limiting")

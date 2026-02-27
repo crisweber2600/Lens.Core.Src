@@ -6,6 +6,7 @@ description: 'Launch BusinessPlan phase — PRD, UX design, and architecture (Jo
 # lens-work.businessplan (Stub)
 
 > **This is a stub.** Load and execute the full prompt from the bmad.lens.release control repository.
+> All `_bmad/` paths in the full prompt are relative to `bmad.lens.release/` — do NOT copy `_bmad/` into or resolve paths against the user's main project repo.
 
 ```
 Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.businessplan.prompt.md
