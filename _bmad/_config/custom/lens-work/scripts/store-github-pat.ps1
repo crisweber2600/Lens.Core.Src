@@ -169,10 +169,84 @@ ${Domain}:
     Write-Host ""
 }
 
+# -- Store PATs in environment variables -----------------------
+$EnvSet = 0
+
+# Re-parse the credentials file to extract domain→PAT for env var export
+if (Test-Path $CredFile) {
+    $CredContent = Get-Content $CredFile -Raw
+    $CurrentDomain = $null
+    foreach ($line in $CredContent -split "`n") {
+        if ($line -match '^([a-zA-Z0-9._-]+):\s*$') {
+            $CurrentDomain = $Matches[1]
+        } elseif ($CurrentDomain -and $line -match '^\s+token:\s*(.+)\s*$') {
+            $token = $Matches[1].Trim()
+            if ($CurrentDomain -eq 'github.com') {
+                $env:GITHUB_PAT = $token
+                [System.Environment]::SetEnvironmentVariable('GITHUB_PAT', $token, 'User')
+            } else {
+                $env:GH_ENTERPRISE_TOKEN = $token
+                [System.Environment]::SetEnvironmentVariable('GH_ENTERPRISE_TOKEN', $token, 'User')
+            }
+            $EnvSet++
+            $CurrentDomain = $null
+        }
+    }
+}
+
+# -- Verify environment variables ------------------------------
+Write-Host ""
+Write-Host "Verifying environment variables..." -ForegroundColor White
+$VerifyPass = 0
+$VerifyFail = 0
+
+foreach ($Domain in $GithubDomains) {
+    if ($Domain -eq 'github.com') {
+        $SessionVal = $env:GITHUB_PAT
+        $UserVal = [System.Environment]::GetEnvironmentVariable('GITHUB_PAT', 'User')
+        if ($SessionVal -and $UserVal) {
+            Write-Host "  [OK] GITHUB_PAT is set (session + persistent) (github.com)" -ForegroundColor Green
+            $VerifyPass++
+        } elseif ($SessionVal) {
+            Write-Host "  [WARN] GITHUB_PAT set in session but NOT persisted to user env" -ForegroundColor Yellow
+            $VerifyPass++
+        } else {
+            Write-Host "  [FAIL] GITHUB_PAT was NOT set" -ForegroundColor Red
+            $VerifyFail++
+        }
+    } else {
+        $SessionVal = $env:GH_ENTERPRISE_TOKEN
+        $UserVal = [System.Environment]::GetEnvironmentVariable('GH_ENTERPRISE_TOKEN', 'User')
+        if ($SessionVal -and $UserVal) {
+            Write-Host "  [OK] GH_ENTERPRISE_TOKEN is set (session + persistent) ($Domain)" -ForegroundColor Green
+            $VerifyPass++
+        } elseif ($SessionVal) {
+            Write-Host "  [WARN] GH_ENTERPRISE_TOKEN set in session but NOT persisted to user env" -ForegroundColor Yellow
+            $VerifyPass++
+        } else {
+            Write-Host "  [FAIL] GH_ENTERPRISE_TOKEN was NOT set" -ForegroundColor Red
+            $VerifyFail++
+        }
+    }
+}
+Write-Host ""
+
+if ($EnvSet -gt 0) {
+    Write-Host "Environment variables persisted to User scope." -ForegroundColor Cyan
+    Write-Host "  New terminal windows will pick them up automatically." -ForegroundColor DarkGray
+    Write-Host "  Current session also has them available." -ForegroundColor DarkGray
+    Write-Host ""
+}
+
 # -- Summary ---------------------------------------------------
 Write-Host "====================================" -ForegroundColor DarkGray
 Write-Host "Summary" -ForegroundColor White
-Write-Host "  [OK] Stored:  $Stored token(s)" -ForegroundColor Green
+Write-Host "  [OK] Stored:  $Stored token(s) to credentials file" -ForegroundColor Green
+Write-Host "  [OK] Env vars set: $EnvSet (session + User scope)" -ForegroundColor Green
+Write-Host "  [OK] Env vars verified: $VerifyPass" -ForegroundColor Green
+if ($VerifyFail -gt 0) {
+    Write-Host "  [FAIL] Env vars failed: $VerifyFail" -ForegroundColor Red
+}
 Write-Host "  [SKIP]  Skipped: $Skipped domain(s)" -ForegroundColor Yellow
 Write-Host ""
 

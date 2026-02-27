@@ -301,10 +301,76 @@ CRED_ENTRY
   done
 fi
 
+# -- Store PATs in environment variables -----------------------
+ENV_SET=0
+ENV_FAILED=0
+
+for cred in "${ALL_CREDENTIALS[@]}"; do
+  IFS='|' read -r host type pat date <<< "$cred"
+  if [[ "${host}" == "github.com" ]]; then
+    export GITHUB_PAT="${pat}"
+    ENV_VAR_NAME="GITHUB_PAT"
+  else
+    export GH_ENTERPRISE_TOKEN="${pat}"
+    ENV_VAR_NAME="GH_ENTERPRISE_TOKEN"
+  fi
+  ENV_SET=$((ENV_SET + 1))
+done
+
+# -- Verify environment variables ------------------------------
+echo ""
+echo -e "${BOLD}Verifying environment variables...${RESET}"
+VERIFY_PASS=0
+VERIFY_FAIL=0
+
+for cred in "${ALL_CREDENTIALS[@]}"; do
+  IFS='|' read -r host type pat date <<< "$cred"
+  if [[ "${host}" == "github.com" ]]; then
+    if [[ -n "${GITHUB_PAT:-}" ]]; then
+      echo -e "  ${GREEN}[OK]${RESET} GITHUB_PAT is set (github.com)"
+      VERIFY_PASS=$((VERIFY_PASS + 1))
+    else
+      echo -e "  ${RED}[FAIL]${RESET} GITHUB_PAT was NOT set"
+      VERIFY_FAIL=$((VERIFY_FAIL + 1))
+    fi
+  else
+    if [[ -n "${GH_ENTERPRISE_TOKEN:-}" ]]; then
+      echo -e "  ${GREEN}[OK]${RESET} GH_ENTERPRISE_TOKEN is set (${host})"
+      VERIFY_PASS=$((VERIFY_PASS + 1))
+    else
+      echo -e "  ${RED}[FAIL]${RESET} GH_ENTERPRISE_TOKEN was NOT set"
+      VERIFY_FAIL=$((VERIFY_FAIL + 1))
+    fi
+  fi
+done
+echo ""
+
+# -- Persist env vars guidance --------------------------------
+if [[ ${ENV_SET} -gt 0 ]]; then
+  echo -e "${CYAN}${BOLD}Persisting environment variables:${RESET}"
+  echo -e "  Environment variables are set for this terminal session."
+  echo -e "  To make them permanent, add to your shell profile:"
+  echo ""
+  for cred in "${ALL_CREDENTIALS[@]}"; do
+    IFS='|' read -r host type pat date <<< "$cred"
+    if [[ "${host}" == "github.com" ]]; then
+      echo -e "  ${YELLOW}echo 'export GITHUB_PAT=\"<your-pat>\"' >> ~/.bashrc${RESET}"
+    else
+      echo -e "  ${YELLOW}echo 'export GH_ENTERPRISE_TOKEN=\"<your-pat>\"' >> ~/.bashrc${RESET}"
+    fi
+  done
+  echo ""
+fi
+
 # -- Summary ---------------------------------------------------
 echo "===================================="
 echo -e "${BOLD}Summary${RESET}"
-echo "  [OK] Stored:  ${STORED} token(s)"
+echo "  [OK] Stored:  ${STORED} token(s) to profile"
+echo "  [OK] Env vars set: ${ENV_SET}"
+echo "  [OK] Env vars verified: ${VERIFY_PASS}"
+if [[ ${VERIFY_FAIL} -gt 0 ]]; then
+  echo -e "  ${RED}[FAIL] Env vars failed: ${VERIFY_FAIL}${RESET}"
+fi
 echo "  [SKIP]  Skipped: ${SKIPPED} domain(s)"
 echo "  Total credentials: ${#ALL_CREDENTIALS[@]}"
 echo ""

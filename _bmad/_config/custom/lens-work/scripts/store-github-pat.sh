@@ -186,10 +186,78 @@ YAML_ENTRY
   echo ""
 done
 
+# -- Store PATs in environment variables -----------------------
+ENV_SET=0
+ENV_FAILED=0
+
+# Parse credentials file to extract domain→PAT mappings for env var export
+CURRENT_DOMAIN=""
+while IFS= read -r line; do
+  if [[ "$line" =~ ^([a-zA-Z0-9._-]+):[[:space:]]*$ ]]; then
+    CURRENT_DOMAIN="${BASH_REMATCH[1]}"
+  elif [[ -n "$CURRENT_DOMAIN" && "$line" =~ ^[[:space:]]+token:[[:space:]]*(.+) ]]; then
+    TOKEN="${BASH_REMATCH[1]}"
+    if [[ "${CURRENT_DOMAIN}" == "github.com" ]]; then
+      export GITHUB_PAT="${TOKEN}"
+    else
+      export GH_ENTERPRISE_TOKEN="${TOKEN}"
+    fi
+    ENV_SET=$((ENV_SET + 1))
+    CURRENT_DOMAIN=""
+  fi
+done < "${CREDENTIALS_FILE}"
+
+# -- Verify environment variables ------------------------------
+echo ""
+echo -e "${BOLD}Verifying environment variables...${RESET}"
+VERIFY_PASS=0
+VERIFY_FAIL=0
+
+for DOMAIN in "${GITHUB_DOMAINS[@]}"; do
+  if [[ "${DOMAIN}" == "github.com" ]]; then
+    if [[ -n "${GITHUB_PAT:-}" ]]; then
+      echo -e "  ${GREEN}[OK]${RESET} GITHUB_PAT is set (github.com)"
+      VERIFY_PASS=$((VERIFY_PASS + 1))
+    else
+      echo -e "  ${RED}[FAIL]${RESET} GITHUB_PAT was NOT set"
+      VERIFY_FAIL=$((VERIFY_FAIL + 1))
+    fi
+  else
+    if [[ -n "${GH_ENTERPRISE_TOKEN:-}" ]]; then
+      echo -e "  ${GREEN}[OK]${RESET} GH_ENTERPRISE_TOKEN is set (${DOMAIN})"
+      VERIFY_PASS=$((VERIFY_PASS + 1))
+    else
+      echo -e "  ${RED}[FAIL]${RESET} GH_ENTERPRISE_TOKEN was NOT set"
+      VERIFY_FAIL=$((VERIFY_FAIL + 1))
+    fi
+  fi
+done
+echo ""
+
+# -- Persist env vars guidance --------------------------------
+if [[ ${ENV_SET} -gt 0 ]]; then
+  echo -e "${CYAN}${BOLD}Persisting environment variables:${RESET}"
+  echo -e "  Environment variables are set for this terminal session."
+  echo -e "  To make them permanent, add to your shell profile:"
+  echo ""
+  if [[ -n "${GITHUB_PAT:-}" ]]; then
+    echo -e "  ${YELLOW}echo 'export GITHUB_PAT=\"<your-pat>\"' >> ~/.bashrc${RESET}"
+  fi
+  if [[ -n "${GH_ENTERPRISE_TOKEN:-}" ]]; then
+    echo -e "  ${YELLOW}echo 'export GH_ENTERPRISE_TOKEN=\"<your-pat>\"' >> ~/.bashrc${RESET}"
+  fi
+  echo ""
+fi
+
 # -- Summary ---------------------------------------------------
 echo "===================================="
 echo -e "${BOLD}Summary${RESET}"
-echo "  [OK] Stored:  ${STORED} token(s)"
+echo "  [OK] Stored:  ${STORED} token(s) to credentials file"
+echo "  [OK] Env vars set: ${ENV_SET}"
+echo "  [OK] Env vars verified: ${VERIFY_PASS}"
+if [[ ${VERIFY_FAIL} -gt 0 ]]; then
+  echo -e "  ${RED}[FAIL] Env vars failed: ${VERIFY_FAIL}${RESET}"
+fi
 echo "  [SKIP]  Skipped: ${SKIPPED} domain(s)"
 echo ""
 

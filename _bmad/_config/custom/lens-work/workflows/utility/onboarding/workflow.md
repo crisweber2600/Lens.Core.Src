@@ -100,51 +100,114 @@ for repo in inventory.repos.matched:
 
 github_domains = sorted(list(github_domains))
 
-# PAT storage - provide clear instructions for manual execution
-output: |
-  
-  🔐 GitHub Personal Access Tokens Setup
-  
-  ⚠️  SECURITY WARNING:
-  PATs should NEVER be entered into Copilot, Claude, or any LLM chat.
-  
-  Detected ${len(github_domains)} GitHub domain(s) in your repos:
-for domain in github_domains:
-  output: "  • ${domain}"
+# ── PAT detection: existence-only checks ────────────────────────────────
+# SECURITY: Only test whether env vars EXIST.
+# NEVER read, print, or store PAT values — that would expose secrets
+# in the LLM context window.
+#
+# Lookup order (matches promote-branch scripts):
+#   github.com:  GITHUB_PAT -> GH_TOKEN
+#   enterprise:  GH_ENTERPRISE_TOKEN -> GH_TOKEN
 
-if pat_choice.lower() in ["y", "yes"]:
+covered_domains = []
+uncovered_domains = []
+
+for domain in github_domains:
+  if domain == "github.com":
+    if env_exists("GITHUB_PAT") or env_exists("GH_TOKEN"):
+      covered_domains.append(domain)
+      continue
+  else:
+    if env_exists("GH_ENTERPRISE_TOKEN") or env_exists("GH_TOKEN"):
+      covered_domains.append(domain)
+      continue
+  uncovered_domains.append(domain)
+
+# Report what was found
+if covered_domains.length > 0:
+  output: |
+    
+    GitHub PAT Status
+    
+    Already configured (environment variable):
+  for domain in covered_domains:
+    output: "  [OK] ${domain}"
+
+if uncovered_domains.length == 0:
+  output: |
+    
+    All ${len(github_domains)} GitHub domain(s) have PATs configured.
+    Skipping PAT setup.
+  pat_choice = "N"   # Nothing to do — skip the setup prompt
+
+else:
+  output: |
+    
+    GitHub Personal Access Tokens Setup
+    
+    SECURITY WARNING:
+    PATs should NEVER be entered into Copilot, Claude, or any LLM chat.
+    
+    Missing PATs for ${len(uncovered_domains)} domain(s):
+  for domain in uncovered_domains:
+    output: "  [!!] ${domain}"
+
+  output: |
+    
+    You can provide PATs via environment variables:
+      github.com  -> set GITHUB_PAT or GH_TOKEN
+      enterprise  -> set GH_ENTERPRISE_TOKEN or GH_TOKEN
+    
+    Or run the secure storage script (sets environment variables automatically).
+
+if pat_choice.lower() in ["y", "yes"] and uncovered_domains.length > 0:
   output: |
     
     Perfect! Please copy and run this command in a NEW TERMINAL WINDOW:
     
-    📋 Copy this entire command:
+    Copy this entire command:
     
     cd "${PROJECT_ROOT}" && bash _bmad/lens-work/scripts/store-github-pat.sh
     
     On Windows with PowerShell:
     cd "${PROJECT_ROOT}"; .\\_bmad\\lens-work\\scripts\\store-github-pat.ps1
     
-    ⏸️  The script will:
+    The script will:
     - Run outside of LLM context for security
     - Prompt for PAT for each domain
-    - Store securely in gitignored file
-    - Open the credentials file in VS Code when complete
+    - Set environment variables (GITHUB_PAT / GH_ENTERPRISE_TOKEN)
+    - Verify the env vars were stored correctly
     
     **Send "Continue" when ready...**
   
   wait_for_user = prompt_user()
   
-  # Check if credentials were created
-  if file_exists("_bmad-output/lens-work/personal/github-credentials.yaml"):
-    output: "✅ GitHub credentials detected! Continuing with onboarding..."
+  # Check if env vars were set by the script
+  # SECURITY: existence check ONLY — do NOT read or print values
+  env_ok = False
+  for domain in uncovered_domains:
+    if domain == "github.com":
+      if env_exists("GITHUB_PAT") or env_exists("GH_TOKEN"):
+        env_ok = True
+    else:
+      if env_exists("GH_ENTERPRISE_TOKEN") or env_exists("GH_TOKEN"):
+        env_ok = True
+  if env_ok:
+    output: "PAT environment variables detected! Continuing with onboarding..."
   else:
-    output: "⏭️  No credentials found. You can add them later by running the script."
-else:
+    output: "No PAT env vars detected. You can set them later by running the script."
+    output: "(Do NOT attempt to read or search for credential values — security risk.)"
+elif pat_choice.lower() not in ["y", "yes"] and uncovered_domains.length > 0:
   output: |
     
-    ⏭️  Skipping PAT setup. You can run this anytime:
+    Skipping PAT setup. You can configure PATs anytime:
     
-    bash _bmad/lens-work/scripts/store-github-pat.sh
+    Option 1 — environment variables (recommended for CI):
+      export GITHUB_PAT=ghp_...          # github.com
+      export GH_ENTERPRISE_TOKEN=ghp_... # enterprise
+    
+    Option 2 — secure storage script (sets env vars for you):
+      bash _bmad/lens-work/scripts/store-github-pat.sh
     
     (from project root directory)
 
@@ -285,18 +348,7 @@ if missing > 0:
   invoke: discovery.repo-reconcile
 ```
 
-### 6. Run Documentation
-
-```yaml
-output: |
-  📄 Generating initial documentation...
-
-invoke: discovery.repo-document
-params:
-  mode: "full"  # First run = full documentation
-```
-
-### 7. Completion
+### 6. Completion
 
 ```
 🎉 Onboarding Complete!
@@ -307,8 +359,7 @@ Scope: ${profile.scope}
 What's ready:
 ├── ✅ Profile created
 ├── ✅ ${cloned_count} repos cloned
-├── ✅ ${documented_count} repos documented
-└── ✅ Canonical docs in Docs/
+└── ✅ PATs configured
 
 Next steps:
 ├── Run #new-feature "your-feature" to start an initiative
@@ -340,28 +391,23 @@ preferences:
   jira_base_url: https://mycompany.atlassian.net  # REQ-3 (only if tracker is jira)
 ```
 
-### GitHub Credentials (Gitignored)
-Your GitHub Personal Access Tokens are stored securely in `_bmad-output/lens-work/personal/github-credentials.yaml`:
+### GitHub PAT Environment Variables
+Your GitHub Personal Access Tokens are stored in environment variables.
 
-```yaml
-# _bmad-output/lens-work/personal/github-credentials.yaml
-github.com:
-  token: ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  created_at: 2026-02-03T10:00:00Z
-  type: github.com
+**Environment Variables:**
 
-github.foo.com:
-  token: ghp_yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
-  created_at: 2026-02-03T10:00:00Z
-  type: github_enterprise
-```
+| Variable | Purpose |
+|---|---|
+| `GITHUB_PAT` | PAT for github.com |
+| `GH_ENTERPRISE_TOKEN` | PAT for GitHub Enterprise |
+| `GH_TOKEN` | Fallback for either (used by `gh` CLI) |
 
 **Security Notes:**
-- This file is gitignored and never committed
+- NEVER read or print env var values — existence checks only
 - Used for GitHub API access (PRs, issues, CI status)
-- Separate tokens for each GitHub domain (SaaS and Enterprise)
+- Separate env vars for each GitHub domain type (SaaS and Enterprise)
 - Can be regenerated anytime from GitHub settings
-- Optional but recommended for full lens-work features
+- The PAT setup script sets these automatically
 
 **Generate Tokens:**
 - GitHub.com (SaaS): https://github.com/settings/tokens
