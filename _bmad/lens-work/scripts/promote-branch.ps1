@@ -36,8 +36,16 @@ function Invoke-Git {
         [switch]$AllowFailure
     )
 
+    # Temporarily relax ErrorActionPreference so that native command stderr
+    # output (e.g. "Everything up-to-date" from git push) does not throw a
+    # NativeCommandError before we can inspect the exit code ourselves.
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
     $output = & git @Args 2>&1
-    if (-not $AllowFailure -and $LASTEXITCODE -ne 0) {
+    $exitCode = $LASTEXITCODE
+    $ErrorActionPreference = $prev
+
+    if (-not $AllowFailure -and $exitCode -ne 0) {
         throw "git $($Args -join ' ') failed: $output"
     }
     return $output
