@@ -257,11 +257,23 @@ else:
 
 ```yaml
 # REQ-5: Auto-create TargetProjects directory before discovery
-# Reads target_projects_path from service-map.yaml, then ensures it exists.
+# Derives the target-projects parent path from governance-setup.yaml
+# (or falls back to repo-inventory.yaml).
 # Idempotent — no error if directory already exists.
 
-service_map = load_yaml("_bmad/lens-work/service-map.yaml")
-target_path = service_map.target_projects_path
+gov_setup_path = "_bmad-output/lens-work/governance-setup.yaml"
+if file_exists(gov_setup_path):
+  gov_setup = load_yaml(gov_setup_path)
+  # e.g. "TargetProjects/lens/lens-governance" → "TargetProjects/lens"
+  target_path = dirname(gov_setup.repo.local_path)
+else:
+  # Fallback: derive from repo-inventory if available
+  inventory_path = "_bmad-output/lens-work/repo-inventory.yaml"
+  if file_exists(inventory_path):
+    inv = load_yaml(inventory_path)
+    target_path = inv.target_projects_root or "TargetProjects"
+  else:
+    target_path = "TargetProjects"
 
 shell: mkdir -p "${target_path}"
 
