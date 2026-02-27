@@ -43,6 +43,29 @@ echo "   This file is gitignored and never committed."
 echo "   PATs enable automated PR creation in phase workflows."
 echo ""
 
+# ── Check for environment variables ─────────────────────────
+if [[ -n "${GITHUB_PAT:-}" || -n "${GH_TOKEN:-}" ]]; then
+  ENV_VAR_NAME=""
+  if [[ -n "${GITHUB_PAT:-}" ]]; then
+    ENV_VAR_NAME="GITHUB_PAT"
+  else
+    ENV_VAR_NAME="GH_TOKEN"
+  fi
+  echo -e "${GREEN}✅ ${ENV_VAR_NAME} environment variable detected.${RESET}"
+  echo -e "   The promote-branch script will use this automatically."
+  echo ""
+  echo -e "   Do you also want to store it in profile.yaml? ${BOLD}(y/N)${RESET}"
+  read -r STORE_ENV_PAT
+  if [[ ! "$STORE_ENV_PAT" =~ ^[yY] ]]; then
+    echo ""
+    echo -e "${GREEN}${BOLD}✅ Using ${ENV_VAR_NAME} environment variable. No profile changes needed.${RESET}"
+    echo -e "   promote-branch.sh will pick up the PAT from the environment."
+    echo ""
+    exit 0
+  fi
+  echo ""
+fi
+
 # ── Ensure output directory exists ──────────────────────────
 mkdir -p "$(dirname "${PROFILE_FILE}")"
 

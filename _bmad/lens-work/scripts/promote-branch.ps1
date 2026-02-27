@@ -363,10 +363,24 @@ $prUrl = Get-PrUrl -RemoteInfo $remoteInfo -Source $SourceBranch -Target $Target
 
 $profileFile = Get-ProfileFile
 $pat = $null
+$patSource = $null
 $prCreated = $false
 
 if ($remoteInfo.Platform -eq 'github' -and $CreatePR -and -not $UrlOnly) {
-    $pat = Get-ProfilePat -Host $remoteInfo.Host -ProfileFile $profileFile
+    # Priority 1: Environment variables
+    if ($env:GITHUB_PAT) {
+        $pat = $env:GITHUB_PAT
+        $patSource = 'GITHUB_PAT environment variable'
+    } elseif ($env:GH_TOKEN) {
+        $pat = $env:GH_TOKEN
+        $patSource = 'GH_TOKEN environment variable'
+    } else {
+        # Priority 2: Profile file
+        $pat = Get-ProfilePat -Host $remoteInfo.Host -ProfileFile $profileFile
+        if ($pat) {
+            $patSource = 'profile.yaml'
+        }
+    }
     if ($pat) {
         $env:GH_TOKEN = $pat
     }
@@ -407,14 +421,14 @@ if ($remoteInfo.Host) {
 }
 if ($remoteInfo.Platform -eq 'github') {
     if ($pat -and -not $UrlOnly) {
-        Write-Host "  PAT:    loaded from profile.yaml" -ForegroundColor DarkGreen
+        Write-Host "  PAT:    loaded from $patSource" -ForegroundColor DarkGreen
         Write-Host "  Action: Will create PR automatically" -ForegroundColor Green
     } elseif (Test-Path $profileFile) {
         Write-Host "  PAT:    not found for $($remoteInfo.Host)" -ForegroundColor Yellow
-        Write-Host "  Action: URL-only (run store-github-pat.ps1 to enable PR creation)" -ForegroundColor Yellow
+        Write-Host "  Action: URL-only (set GITHUB_PAT env var or run store-github-pat.ps1)" -ForegroundColor Yellow
     } else {
         Write-Host "  PAT:    no profile found" -ForegroundColor Yellow
-        Write-Host "  Action: URL-only (run store-github-pat.ps1 to enable PR creation)" -ForegroundColor Yellow
+        Write-Host "  Action: URL-only (set GITHUB_PAT env var or run store-github-pat.ps1)" -ForegroundColor Yellow
     }
 }
 if (-not $pat -or $UrlOnly) {

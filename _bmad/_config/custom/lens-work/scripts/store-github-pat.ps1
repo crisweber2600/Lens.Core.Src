@@ -37,6 +37,29 @@ Write-Host "   $CredFile" -ForegroundColor DarkYellow
 Write-Host "   This file is gitignored and never committed."
 Write-Host ""
 
+# ── Check for environment variables ──────────────────────────
+$EnvVarName = $null
+if ($env:GITHUB_PAT) {
+    $EnvVarName = 'GITHUB_PAT'
+} elseif ($env:GH_TOKEN) {
+    $EnvVarName = 'GH_TOKEN'
+}
+
+if ($EnvVarName) {
+    Write-Host "✅ $EnvVarName environment variable detected." -ForegroundColor Green
+    Write-Host "   The promote-branch script will use this automatically."
+    Write-Host ""
+    $StoreEnvPat = Read-Host "   Do you also want to store it in the credentials file? (y/N)"
+    if ($StoreEnvPat -notmatch '^[yY]') {
+        Write-Host ""
+        Write-Host "✅ Using $EnvVarName environment variable. No file changes needed." -ForegroundColor Green
+        Write-Host "   promote-branch.ps1 will pick up the PAT from the environment."
+        Write-Host ""
+        return
+    }
+    Write-Host ""
+}
+
 # ── Ensure output directory ──────────────────────────────────
 $CredDir = Split-Path -Parent $CredFile
 if (-not (Test-Path $CredDir)) {

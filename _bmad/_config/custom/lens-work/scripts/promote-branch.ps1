@@ -284,8 +284,22 @@ $prUrl = Get-PrUrl -RemoteInfo $remoteInfo -Source $SourceBranch -Target $Target
 $repoRoot = Get-RepoRoot
 $credFile = Join-Path $repoRoot '_bmad-output\lens-work\personal\github-credentials.yaml'
 $pat = $null
+$patSource = $null
 if ($remoteInfo.Platform -eq 'github') {
-    $pat = Get-GithubPat -Host $remoteInfo.Host -CredFile $credFile
+    # Priority 1: Environment variables
+    if ($env:GITHUB_PAT) {
+        $pat = $env:GITHUB_PAT
+        $patSource = 'GITHUB_PAT environment variable'
+    } elseif ($env:GH_TOKEN) {
+        $pat = $env:GH_TOKEN
+        $patSource = 'GH_TOKEN environment variable'
+    } else {
+        # Priority 2: Credentials file
+        $pat = Get-GithubPat -Host $remoteInfo.Host -CredFile $credFile
+        if ($pat) {
+            $patSource = 'github-credentials.yaml'
+        }
+    }
     if ($pat) {
         $env:GH_TOKEN = $pat
     }
@@ -308,9 +322,13 @@ if ($remoteInfo.Host) {
 }
 if ($remoteInfo.Platform -eq 'github') {
     if ($pat) {
-        Write-Host "  PAT:    loaded from github-credentials.yaml" -ForegroundColor DarkGreen
+        Write-Host "  PAT:    loaded from $patSource" -ForegroundColor DarkGreen
     } elseif (Test-Path $credFile) {
         Write-Host "  PAT:    not found for $($remoteInfo.Host)" -ForegroundColor Yellow
+        Write-Host "  Action: URL-only (set GITHUB_PAT env var or run store-github-pat.ps1)" -ForegroundColor Yellow
+    } else {
+        Write-Host "  PAT:    no credentials found" -ForegroundColor Yellow
+        Write-Host "  Action: URL-only (set GITHUB_PAT env var or run store-github-pat.ps1)" -ForegroundColor Yellow
     }
 }
 Write-Host "  PR:     $prUrl" -ForegroundColor Yellow

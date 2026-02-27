@@ -436,11 +436,23 @@ PR_URL=$(get_pr_url "$remote_host" "$remote_org" "$remote_repo" "$remote_platfor
 # ── Load PAT if GitHub ─────────────────────────────────────────────────────
 
 PAT=""
+PAT_SOURCE=""
 PR_CREATED=false
 
 if [[ "$remote_platform" == "github" && "$CREATE_PR" == true && "$URL_ONLY" != true ]]; then
-  if [[ -f "$PROFILE_FILE" ]]; then
+  # Priority 1: Environment variables
+  if [[ -n "${GITHUB_PAT:-}" ]]; then
+    PAT="$GITHUB_PAT"
+    PAT_SOURCE="GITHUB_PAT environment variable"
+  elif [[ -n "${GH_TOKEN:-}" ]]; then
+    PAT="$GH_TOKEN"
+    PAT_SOURCE="GH_TOKEN environment variable"
+  # Priority 2: Profile file
+  elif [[ -f "$PROFILE_FILE" ]]; then
     PAT=$(get_profile_pat "$remote_host" "$PROFILE_FILE") || true
+    if [[ -n "$PAT" ]]; then
+      PAT_SOURCE="profile.yaml"
+    fi
   fi
 fi
 
@@ -458,14 +470,14 @@ fi
 
 if [[ "$remote_platform" == "github" ]]; then
   if [[ -n "$PAT" && "$CREATE_PR" == true && "$URL_ONLY" != true ]]; then
-    echo -e "  ${GREEN}PAT:${RESET}    loaded from profile.yaml"
+    echo -e "  ${GREEN}PAT:${RESET}    loaded from ${PAT_SOURCE}"
     echo -e "  ${GREEN}Action:${RESET} Will create PR automatically"
   elif [[ -f "$PROFILE_FILE" ]]; then
     echo -e "  ${YELLOW}PAT:${RESET}    not found for $remote_host"
-    echo -e "  ${YELLOW}Action:${RESET} URL-only (run store-github-pat.sh to enable PR creation)"
+    echo -e "  ${YELLOW}Action:${RESET} URL-only (set GITHUB_PAT env var or run store-github-pat.sh)"
   else
     echo -e "  ${YELLOW}PAT:${RESET}    no profile found"
-    echo -e "  ${YELLOW}Action:${RESET} URL-only (run store-github-pat.sh to enable PR creation)"
+    echo -e "  ${YELLOW}Action:${RESET} URL-only (set GITHUB_PAT env var or run store-github-pat.sh)"
   fi
 fi
 
