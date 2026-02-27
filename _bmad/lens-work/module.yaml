@@ -266,8 +266,12 @@ outputs:
   domain_map: "_bmad-output/lens-work/domain-map.yaml"
   personal_profile: "_bmad-output/lens-work/personal/profile.yaml"
 
-  # ── Governance-repo outputs (universal, lives in bmad.lens.governance) ────
-  # MUST clone governance repo before reading/writing any of these paths.
+  # ── Governance-repo outputs (loaded from governance-setup.yaml) ─────────
+  # Control-repo-specific governance config lives in:
+  #   _bmad-output/lens-work/governance-setup.yaml
+  # Copy governance-setup.example.yaml to create it.
+  # Agents resolve paths at runtime from that file; these are defaults.
+  governance_setup: "_bmad-output/lens-work/governance-setup.yaml"
   governance_repo_root: "TargetProjects/lens/lens-governance"
   constitutions_dir: "TargetProjects/lens/lens-governance/constitutions/"
   roster_dir: "TargetProjects/lens/lens-governance/roster/"

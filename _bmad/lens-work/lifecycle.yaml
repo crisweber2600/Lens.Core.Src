@@ -335,11 +335,16 @@ data_zones:
   governance:
     description: >
       Universal artifacts shared across all initiatives and all control repos that
-      clone bmad.lens.release.  Lives in the standalone bmad.lens.governance repo
-      so it has no coupling to any initiative branch.
+      clone bmad.lens.release.  Lives in a standalone governance repo so it has
+      no coupling to any initiative branch.
+    # Governance repo coordinates are loaded at runtime from:
+    #   _bmad-output/lens-work/governance-setup.yaml
+    # See governance-setup.example.yaml for the template.
+    setup_file: "_bmad-output/lens-work/governance-setup.yaml"
+    # Defaults (overridden by setup_file at runtime):
     repo: bmad.lens.governance
     remote_url: https://github.com/crisweber2600/bmad.lens.governance
-    local_path: TargetProjects/lens/lens-governance   # resolved from service-map.yaml
+    local_path: TargetProjects/lens/lens-governance
     artifacts:
       - constitutions/         # 4-level hierarchy: org / domain / service / repo
       - roster/                # Team member records
@@ -355,8 +360,9 @@ data_zones:
     pr_required: true
     codeowners: true
     prerequisite: >
-      @lens MUST verify that TargetProjects/lens/lens-governance is cloned before
-      executing any governance workflow.  If missing, run check-repos first.
+      @lens MUST verify that the governance repo is cloned at the path specified
+      in governance-setup.yaml before executing any governance workflow.
+      If missing, run check-repos first.
 
   initiative:
     description: >
