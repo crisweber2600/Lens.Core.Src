@@ -23,7 +23,6 @@ first_run: true
 I'm LENS, your setup guide. I'll help you:
 1. Create your profile
 2. Set up your TargetProjects
-3. Generate initial documentation
 
 This takes about 3-5 minutes. Let's get started!
 ```
