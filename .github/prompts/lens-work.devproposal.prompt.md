@@ -9,12 +9,13 @@ Activate @lens agent and execute /devproposal:
 2. Execute `/devproposal` command to launch the DevProposal phase
 3. Load lifecycle contract: `_bmad/lens-work/lifecycle.yaml`
 4. Pre-flight: verify clean working directory, load two-file state (state.yaml + initiative config)
-5. Gate check: verify small→medium audience promotion is complete (adversarial review gate passed)
-6. Verify ancestry: `origin/{initiative_root}-small` is ancestor of `origin/{initiative_root}-medium`
-7. Verify required artifacts exist: `{docs_path}/prd.md`, `{docs_path}/architecture.md`
-8. Derive audience from lifecycle contract: `devproposal` → `medium`
-9. Create and checkout phase branch `{initiative_root}-medium-devproposal` from `{initiative_root}-medium` (push immediately)
-10. Activate John (PM) as agent owner for this phase:
+5. Fetch latest remote state: `git fetch origin --prune` (ensures merged PR status and branch refs are current)
+6. Gate check: verify small→medium audience promotion is complete (adversarial review gate passed)
+7. Verify ancestry: `origin/{initiative_root}-small` is ancestor of `origin/{initiative_root}-medium`
+8. Verify required artifacts exist: `{docs_path}/prd.md`, `{docs_path}/architecture.md`
+9. Derive audience from lifecycle contract: `devproposal` → `medium`
+10. Create and checkout phase branch `{initiative_root}-medium-devproposal` from `{initiative_root}-medium` (push immediately)
+11. Activate John (PM) as agent owner for this phase:
     - Load and adopt persona from: `_bmad/bmm/agents/pm.md`
     - Remain as John for all artifact work in this phase
 
