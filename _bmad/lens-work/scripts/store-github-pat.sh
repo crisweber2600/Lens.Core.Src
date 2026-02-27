@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 # ============================================================
 # LENS Workbench — GitHub PAT Storage Script
 # store-github-pat.sh
@@ -25,7 +25,7 @@ PROFILE_FILE="${PROJECT_ROOT}/_bmad-output/lens-work/personal/profile.yaml"
 LEGACY_CRED_FILE="${PROJECT_ROOT}/_bmad-output/lens-work/personal/github-credentials.yaml"
 INVENTORY_FILE="${PROJECT_ROOT}/_bmad-output/lens-work/repo-inventory.yaml"
 
-# ── Colors ──────────────────────────────────────────────────
+# -- Colors --------------------------------------------------
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -34,16 +34,16 @@ BOLD='\033[1m'
 RESET='\033[0m'
 
 echo ""
-echo -e "${BOLD}${CYAN}🔐 LENS Workbench — GitHub PAT Setup${RESET}"
-echo "════════════════════════════════════"
+echo -e "${BOLD}${CYAN} LENS Workbench — GitHub PAT Setup${RESET}"
+echo "===================================="
 echo ""
-echo -e "${YELLOW}⚠️  SECURITY: PATs entered here are stored ONLY in:${RESET}"
+echo -e "${YELLOW}[WARN]  SECURITY: PATs entered here are stored ONLY in:${RESET}"
 echo "   ${PROFILE_FILE}"
 echo "   This file is gitignored and never committed."
 echo "   PATs enable automated PR creation in phase workflows."
 echo ""
 
-# ── Check for environment variables ─────────────────────────
+# -- Check for environment variables -------------------------
 ENV_VARS_FOUND=()
 if [[ -n "${GITHUB_PAT:-}" ]]; then
   ENV_VARS_FOUND+=("GITHUB_PAT (github.com)")
@@ -56,21 +56,21 @@ if [[ -n "${GH_TOKEN:-}" ]]; then
 fi
 
 if [[ ${#ENV_VARS_FOUND[@]} -gt 0 ]]; then
-  echo -e "${GREEN}✅ PAT environment variable(s) detected:${RESET}"
+  echo -e "${GREEN}[OK] PAT environment variable(s) detected:${RESET}"
   for ev in "${ENV_VARS_FOUND[@]}"; do
-    echo -e "   • ${ev}"
+    echo -e "   - ${ev}"
   done
   echo ""
   echo -e "   The promote-branch script will use these automatically."
   echo -e "   ${CYAN}Lookup order:${RESET}"
-  echo -e "     github.com:  GITHUB_PAT → GH_TOKEN → profile.yaml"
-  echo -e "     Enterprise:  GH_ENTERPRISE_TOKEN → GH_TOKEN → profile.yaml"
+  echo -e "     github.com:  GITHUB_PAT -> GH_TOKEN -> profile.yaml"
+  echo -e "     Enterprise:  GH_ENTERPRISE_TOKEN -> GH_TOKEN -> profile.yaml"
   echo ""
   echo -e "   Do you also want to store PATs in profile.yaml? ${BOLD}(y/N)${RESET}"
   read -r STORE_ENV_PAT
   if [[ ! "$STORE_ENV_PAT" =~ ^[yY] ]]; then
     echo ""
-    echo -e "${GREEN}${BOLD}✅ Using environment variables. No profile changes needed.${RESET}"
+    echo -e "${GREEN}${BOLD}[OK] Using environment variables. No profile changes needed.${RESET}"
     echo -e "   promote-branch.sh will pick up PATs from the environment."
     echo ""
     exit 0
@@ -78,10 +78,10 @@ if [[ ${#ENV_VARS_FOUND[@]} -gt 0 ]]; then
   echo ""
 fi
 
-# ── Ensure output directory exists ──────────────────────────
+# -- Ensure output directory exists --------------------------
 mkdir -p "$(dirname "${PROFILE_FILE}")"
 
-# ── Load existing profile or initialize ──────────────────────
+# -- Load existing profile or initialize ----------------------
 EXISTING_CREDENTIALS=()
 if [[ -f "${PROFILE_FILE}" ]]; then
   # Parse existing git_credentials from profile.yaml
@@ -124,9 +124,9 @@ if [[ -f "${PROFILE_FILE}" ]]; then
   fi
 fi
 
-# ── Migrate from legacy github-credentials.yaml if exists ────
+# -- Migrate from legacy github-credentials.yaml if exists ----
 if [[ -f "${LEGACY_CRED_FILE}" && ${#EXISTING_CREDENTIALS[@]} -eq 0 ]]; then
-  echo -e "${CYAN}📦 Migrating from legacy github-credentials.yaml...${RESET}"
+  echo -e "${CYAN} Migrating from legacy github-credentials.yaml...${RESET}"
   CURRENT_DOMAIN=""
   while IFS= read -r line; do
     if [[ "$line" =~ ^([a-zA-Z0-9._-]+):[[:space:]]*$ ]]; then
@@ -144,11 +144,11 @@ if [[ -f "${LEGACY_CRED_FILE}" && ${#EXISTING_CREDENTIALS[@]} -eq 0 ]]; then
   done < "${LEGACY_CRED_FILE}"
   
   if [[ ${#EXISTING_CREDENTIALS[@]} -gt 0 ]]; then
-    echo -e "   ${GREEN}✅ Migrated ${#EXISTING_CREDENTIALS[@]} credential(s)${RESET}"
+    echo -e "   ${GREEN}[OK] Migrated ${#EXISTING_CREDENTIALS[@]} credential(s)${RESET}"
   fi
 fi
 
-# ── Detect GitHub domains ────────────────────────────────────
+# -- Detect GitHub domains ------------------------------------
 GITHUB_DOMAINS=()
 
 # Try to detect from repo inventory
@@ -171,7 +171,7 @@ fi
 
 echo -e "${BOLD}Detected GitHub domain(s):${RESET}"
 for d in "${GITHUB_DOMAINS[@]}"; do
-  echo "  • ${d}"
+  echo "  - ${d}"
 done
 echo ""
 
@@ -183,7 +183,7 @@ if [[ -n "${EXTRA_DOMAIN}" ]]; then
 fi
 echo ""
 
-# ── Prepare credential collection ──────────────────────────────
+# -- Prepare credential collection ------------------------------
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -Iseconds 2>/dev/null || echo "$(date)")
 ALL_CREDENTIALS=()
 UPDATED_HOSTS=()
@@ -191,7 +191,7 @@ STORED=0
 SKIPPED=0
 
 for DOMAIN in "${GITHUB_DOMAINS[@]}"; do
-  echo -e "${BOLD}─── ${DOMAIN} ───────────────────────────────────────${RESET}"
+  echo -e "${BOLD}--- ${DOMAIN} ---------------------------------------${RESET}"
 
   # Check if already configured
   EXISTING=""
@@ -205,7 +205,7 @@ for DOMAIN in "${GITHUB_DOMAINS[@]}"; do
   
   if [[ -n "$EXISTING" ]]; then
     IFS='|' read -r host type pat date <<< "$EXISTING"
-    echo -e "  ${CYAN}ℹ️  Already configured${RESET}"
+    echo -e "  ${CYAN}[INFO]  Already configured${RESET}"
     echo -e "  Update PAT? ${BOLD}(y/N)${RESET}"
     read -r UPDATE
     
@@ -232,7 +232,7 @@ for DOMAIN in "${GITHUB_DOMAINS[@]}"; do
         ALL_CREDENTIALS+=("${DOMAIN}|${DOMAIN_TYPE}|${PAT_VALUE}|${TIMESTAMP}")
         UPDATED_HOSTS+=("${DOMAIN}")
         STORED=$((STORED + 1))
-        echo -e "  ${GREEN}✅ Updated${RESET}"
+        echo -e "  ${GREEN}[OK] Updated${RESET}"
       else
         ALL_CREDENTIALS+=("$EXISTING")
       fi
@@ -260,17 +260,17 @@ for DOMAIN in "${GITHUB_DOMAINS[@]}"; do
   echo ""
 
   if [[ -z "${PAT_VALUE}" ]]; then
-    echo -e "  ${YELLOW}⏭  Skipped${RESET}"
+    echo -e "  ${YELLOW}[SKIP]  Skipped${RESET}"
     SKIPPED=$((SKIPPED + 1))
   else
     # Basic validation — GitHub PATs start with ghp_, github_pat_, or ghs_
     if [[ "${PAT_VALUE}" =~ ^(ghp_|github_pat_|ghs_|glpat-|[a-zA-Z0-9]{40,}) ]]; then
       ALL_CREDENTIALS+=("${DOMAIN}|${DOMAIN_TYPE}|${PAT_VALUE}|${TIMESTAMP}")
       UPDATED_HOSTS+=("${DOMAIN}")
-      echo -e "  ${GREEN}✅ Stored${RESET}"
+      echo -e "  ${GREEN}[OK] Stored${RESET}"
       STORED=$((STORED + 1))
     else
-      echo -e "  ${RED}⚠️  Unexpected PAT format — storing anyway...${RESET}"
+      echo -e "  ${RED}[WARN]  Unexpected PAT format — storing anyway...${RESET}"
       ALL_CREDENTIALS+=("${DOMAIN}|${DOMAIN_TYPE}|${PAT_VALUE}|${TIMESTAMP}")
       UPDATED_HOSTS+=("${DOMAIN}")
       STORED=$((STORED + 1))
@@ -279,7 +279,7 @@ for DOMAIN in "${GITHUB_DOMAINS[@]}"; do
   echo ""
 done
 
-# ── Write profile.yaml ────────────────────────────────────────
+# -- Write profile.yaml ----------------------------------------
 if [[ ${#ALL_CREDENTIALS[@]} -gt 0 ]]; then
   cat > "${PROFILE_FILE}" << PROFILE_HEADER
 # LENS Workbench User Profile
@@ -301,11 +301,11 @@ CRED_ENTRY
   done
 fi
 
-# ── Summary ───────────────────────────────────────────────────
-echo "════════════════════════════════════"
+# -- Summary ---------------------------------------------------
+echo "===================================="
 echo -e "${BOLD}Summary${RESET}"
-echo "  ✅ Stored:  ${STORED} token(s)"
-echo "  ⏭  Skipped: ${SKIPPED} domain(s)"
+echo "  [OK] Stored:  ${STORED} token(s)"
+echo "  [SKIP]  Skipped: ${SKIPPED} domain(s)"
 echo "  Total credentials: ${#ALL_CREDENTIALS[@]}"
 echo ""
 
@@ -314,9 +314,9 @@ if [[ ${#ALL_CREDENTIALS[@]} -gt 0 ]]; then
   echo "  ${PROFILE_FILE}"
   echo ""
   echo -e "These credentials enable automated PR creation in:"
-  echo -e "  • Phase completion workflows (preplan, businessplan, techplan, etc.)"
-  echo -e "  • Audience promotion workflows (small→medium→large)"
-  echo -e "  • Manual promotion via promote-branch.ps1"
+  echo -e "  - Phase completion workflows (preplan, businessplan, techplan, etc.)"
+  echo -e "  - Audience promotion workflows (small->medium->large)"
+  echo -e "  - Manual promotion via promote-branch.ps1"
   echo ""
 
   # Open in VS Code if available
@@ -325,7 +325,7 @@ if [[ ${#ALL_CREDENTIALS[@]} -gt 0 ]]; then
     code "${PROFILE_FILE}"
   fi
 
-  echo -e "${GREEN}${BOLD}✅ PAT setup complete! You can now close this terminal.${RESET}"
+  echo -e "${GREEN}${BOLD}[OK] PAT setup complete! You can now close this terminal.${RESET}"
 else
   echo -e "${YELLOW}No PATs were stored. Run this script again when ready.${RESET}"
 fi

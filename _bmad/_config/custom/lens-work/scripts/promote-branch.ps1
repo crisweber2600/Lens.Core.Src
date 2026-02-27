@@ -1,5 +1,5 @@
-#Requires -Version 5.1
-<#!
+﻿#Requires -Version 5.1
+<#
 .SYNOPSIS
     LENS Workbench — Branch promotion + cleanup helper
 
@@ -149,7 +149,7 @@ function Parse-RemoteUrl {
         $info.Host = $Matches[1]
         $info.Org = $Matches[2]
         $info.Repo = $Matches[3]
-        $info.Platform = ($info.Host -match 'gitlab\.com') ? 'gitlab' : 'github'
+        $info.Platform = if ($info.Host -match 'gitlab\.com') { 'gitlab' } else { 'github' }
         return $info
     }
 
@@ -157,7 +157,7 @@ function Parse-RemoteUrl {
         $info.Host = $Matches[1]
         $info.Org = $Matches[2]
         $info.Repo = $Matches[3]
-        $info.Platform = ($info.Host -match 'gitlab\.com') ? 'gitlab' : 'github'
+        $info.Platform = if ($info.Host -match 'gitlab\.com') { 'gitlab' } else { 'github' }
         return $info
     }
 
@@ -165,7 +165,7 @@ function Parse-RemoteUrl {
         $info.Host = $Matches[1]
         $info.Org = $Matches[2]
         $info.Repo = $Matches[3]
-        $info.Platform = ($info.Host -match 'gitlab\.com') ? 'gitlab' : 'github'
+        $info.Platform = if ($info.Host -match 'gitlab\.com') { 'gitlab' } else { 'github' }
         return $info
     }
 
@@ -288,7 +288,7 @@ $patSource = $null
 if ($remoteInfo.Platform -eq 'github') {
     # Priority 1: Host-specific environment variables
     if ($remoteInfo.Host -eq 'github.com') {
-        # github.com: GITHUB_PAT → GH_TOKEN → credentials file
+        # github.com: GITHUB_PAT -> GH_TOKEN -> credentials file
         if ($env:GITHUB_PAT) {
             $pat = $env:GITHUB_PAT
             $patSource = 'GITHUB_PAT environment variable'
@@ -297,7 +297,7 @@ if ($remoteInfo.Platform -eq 'github') {
             $patSource = 'GH_TOKEN environment variable'
         }
     } else {
-        # Enterprise: GH_ENTERPRISE_TOKEN → GH_TOKEN → credentials file
+        # Enterprise: GH_ENTERPRISE_TOKEN -> GH_TOKEN -> credentials file
         if ($env:GH_ENTERPRISE_TOKEN) {
             $pat = $env:GH_ENTERPRISE_TOKEN
             $patSource = 'GH_ENTERPRISE_TOKEN environment variable'

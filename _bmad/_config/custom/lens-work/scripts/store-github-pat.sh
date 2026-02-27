@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 # ============================================================
 # LENS Workbench — GitHub PAT Storage Script
 # store-github-pat.sh
@@ -24,7 +24,7 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 CREDENTIALS_FILE="${PROJECT_ROOT}/_bmad-output/lens-work/personal/github-credentials.yaml"
 INVENTORY_FILE="${PROJECT_ROOT}/_bmad-output/lens-work/repo-inventory.yaml"
 
-# ── Colors ──────────────────────────────────────────────────
+# -- Colors --------------------------------------------------
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -33,15 +33,15 @@ BOLD='\033[1m'
 RESET='\033[0m'
 
 echo ""
-echo -e "${BOLD}${CYAN}🔐 LENS Workbench — GitHub PAT Setup${RESET}"
-echo "════════════════════════════════════"
+echo -e "${BOLD}${CYAN} LENS Workbench — GitHub PAT Setup${RESET}"
+echo "===================================="
 echo ""
-echo -e "${YELLOW}⚠️  SECURITY: PATs entered here are stored ONLY in:${RESET}"
+echo -e "${YELLOW}[WARN]  SECURITY: PATs entered here are stored ONLY in:${RESET}"
 echo "   ${CREDENTIALS_FILE}"
 echo "   This file is gitignored and never committed."
 echo ""
 
-# ── Check for environment variables ─────────────────────────
+# -- Check for environment variables -------------------------
 ENV_VARS_FOUND=()
 if [[ -n "${GITHUB_PAT:-}" ]]; then
   ENV_VARS_FOUND+=("GITHUB_PAT (github.com)")
@@ -54,21 +54,21 @@ if [[ -n "${GH_TOKEN:-}" ]]; then
 fi
 
 if [[ ${#ENV_VARS_FOUND[@]} -gt 0 ]]; then
-  echo -e "${GREEN}✅ PAT environment variable(s) detected:${RESET}"
+  echo -e "${GREEN}[OK] PAT environment variable(s) detected:${RESET}"
   for ev in "${ENV_VARS_FOUND[@]}"; do
-    echo -e "   • ${ev}"
+    echo -e "   - ${ev}"
   done
   echo ""
   echo -e "   The promote-branch script will use these automatically."
   echo -e "   ${CYAN}Lookup order:${RESET}"
-  echo -e "     github.com:  GITHUB_PAT → GH_TOKEN → credentials file"
-  echo -e "     Enterprise:  GH_ENTERPRISE_TOKEN → GH_TOKEN → credentials file"
+  echo -e "     github.com:  GITHUB_PAT -> GH_TOKEN -> credentials file"
+  echo -e "     Enterprise:  GH_ENTERPRISE_TOKEN -> GH_TOKEN -> credentials file"
   echo ""
   echo -e "   Do you also want to store PATs in the credentials file? ${BOLD}(y/N)${RESET}"
   read -r STORE_ENV_PAT
   if [[ ! "$STORE_ENV_PAT" =~ ^[yY] ]]; then
     echo ""
-    echo -e "${GREEN}${BOLD}✅ Using environment variables. No file changes needed.${RESET}"
+    echo -e "${GREEN}${BOLD}[OK] Using environment variables. No file changes needed.${RESET}"
     echo -e "   promote-branch.sh will pick up PATs from the environment."
     echo ""
     exit 0
@@ -76,10 +76,10 @@ if [[ ${#ENV_VARS_FOUND[@]} -gt 0 ]]; then
   echo ""
 fi
 
-# ── Ensure output directory exists ──────────────────────────
+# -- Ensure output directory exists --------------------------
 mkdir -p "$(dirname "${CREDENTIALS_FILE}")"
 
-# ── Detect GitHub domains ────────────────────────────────────
+# -- Detect GitHub domains ------------------------------------
 GITHUB_DOMAINS=()
 
 # Try to detect from repo inventory
@@ -102,7 +102,7 @@ fi
 
 echo -e "${BOLD}Detected GitHub domain(s):${RESET}"
 for d in "${GITHUB_DOMAINS[@]}"; do
-  echo "  • ${d}"
+  echo "  - ${d}"
 done
 echo ""
 
@@ -114,7 +114,7 @@ if [[ -n "${EXTRA_DOMAIN}" ]]; then
 fi
 echo ""
 
-# ── Initialize credentials file ─────────────────────────────
+# -- Initialize credentials file -----------------------------
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -Iseconds 2>/dev/null || echo "$(date)")
 
 cat > "${CREDENTIALS_FILE}" << YAML_HEADER
@@ -130,7 +130,7 @@ cat > "${CREDENTIALS_FILE}" << YAML_HEADER
 
 YAML_HEADER
 
-# ── Collect PAT per domain ────────────────────────────────────
+# -- Collect PAT per domain ------------------------------------
 STORED=0
 SKIPPED=0
 
@@ -138,12 +138,12 @@ SKIPPED=0
 # when the pre-increment value is 0 (arithmetic returns exit code = old value).
 
 for DOMAIN in "${GITHUB_DOMAINS[@]}"; do
-  echo -e "${BOLD}─── ${DOMAIN} ───────────────────────────────────────${RESET}"
+  echo -e "${BOLD}--- ${DOMAIN} ---------------------------------------${RESET}"
 
   # Classify domain type
   if [[ "${DOMAIN}" == "github.com" ]]; then
     PAT_URL="https://github.com/settings/tokens"
-    DOMAIN_TYPE="github.com"
+    DOMAIN_TYPE="github"
   else
     PAT_URL="https://${DOMAIN}/settings/tokens"
     DOMAIN_TYPE="github_enterprise"
@@ -157,7 +157,7 @@ for DOMAIN in "${GITHUB_DOMAINS[@]}"; do
   echo ""
 
   if [[ -z "${PAT_VALUE}" ]]; then
-    echo -e "  ${YELLOW}⏭  Skipped${RESET}"
+    echo -e "  ${YELLOW}[SKIP]  Skipped${RESET}"
     SKIPPED=$((SKIPPED + 1))
   else
     # Basic validation — GitHub PATs start with ghp_, github_pat_, or ghs_
@@ -169,10 +169,10 @@ ${DOMAIN}:
   type: ${DOMAIN_TYPE}
 
 YAML_ENTRY
-      echo -e "  ${GREEN}✅ Stored${RESET}"
+      echo -e "  ${GREEN}[OK] Stored${RESET}"
       STORED=$((STORED + 1))
     else
-      echo -e "  ${RED}⚠️  Unexpected PAT format — storing anyway...${RESET}"
+      echo -e "  ${RED}[WARN]  Unexpected PAT format — storing anyway...${RESET}"
       cat >> "${CREDENTIALS_FILE}" << YAML_ENTRY
 ${DOMAIN}:
   token: ${PAT_VALUE}
@@ -186,11 +186,11 @@ YAML_ENTRY
   echo ""
 done
 
-# ── Summary ───────────────────────────────────────────────────
-echo "════════════════════════════════════"
+# -- Summary ---------------------------------------------------
+echo "===================================="
 echo -e "${BOLD}Summary${RESET}"
-echo "  ✅ Stored:  ${STORED} token(s)"
-echo "  ⏭  Skipped: ${SKIPPED} domain(s)"
+echo "  [OK] Stored:  ${STORED} token(s)"
+echo "  [SKIP]  Skipped: ${SKIPPED} domain(s)"
 echo ""
 
 if [[ ${STORED} -gt 0 ]]; then
@@ -204,7 +204,7 @@ if [[ ${STORED} -gt 0 ]]; then
     code "${CREDENTIALS_FILE}"
   fi
 
-  echo -e "${GREEN}${BOLD}✅ PAT setup complete! You can now close this terminal.${RESET}"
+  echo -e "${GREEN}${BOLD}[OK] PAT setup complete! You can now close this terminal.${RESET}"
 else
   echo -e "${YELLOW}No PATs were stored. Run this script again when ready.${RESET}"
 fi

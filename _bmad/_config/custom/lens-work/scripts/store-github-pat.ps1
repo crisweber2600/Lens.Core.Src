@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     LENS Workbench — GitHub PAT Storage Script
@@ -19,45 +19,45 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# ── Resolve Paths ────────────────────────────────────────────
+# -- Resolve Paths --------------------------------------------
 $ScriptDir    = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot  = Resolve-Path (Join-Path $ScriptDir '../../..') | Select-Object -ExpandProperty Path
 $CredFile     = Join-Path $ProjectRoot '_bmad-output\lens-work\personal\github-credentials.yaml'
 $InventoryFile= Join-Path $ProjectRoot '_bmad-output\lens-work\repo-inventory.yaml'
 
-# ── Banner ───────────────────────────────────────────────────
+# -- Banner ---------------------------------------------------
 Write-Host ""
-Write-Host "🔐 LENS Workbench — GitHub PAT Setup" -ForegroundColor Cyan
+Write-Host "LENS Workbench -- GitHub PAT Setup" -ForegroundColor Cyan
 Write-Host ""  # blank line after banner
-Write-Host "════════════════════════════════════" -ForegroundColor DarkGray
+Write-Host "====================================" -ForegroundColor DarkGray
 Write-Host ""
-Write-Host "⚠️  SECURITY: " -ForegroundColor Yellow -NoNewline
+Write-Host "[WARN]  SECURITY: " -ForegroundColor Yellow -NoNewline
 Write-Host "PATs entered here are stored ONLY in:"
 Write-Host "   $CredFile" -ForegroundColor DarkYellow
 Write-Host "   This file is gitignored and never committed."
 Write-Host ""
 
-# ── Check for environment variables ──────────────────────────
+# -- Check for environment variables --------------------------
 $EnvVarsFound = @()
 if ($env:GITHUB_PAT) { $EnvVarsFound += 'GITHUB_PAT (github.com)' }
 if ($env:GH_ENTERPRISE_TOKEN) { $EnvVarsFound += 'GH_ENTERPRISE_TOKEN (enterprise)' }
 if ($env:GH_TOKEN) { $EnvVarsFound += 'GH_TOKEN (fallback)' }
 
 if ($EnvVarsFound.Count -gt 0) {
-    Write-Host "✅ PAT environment variable(s) detected:" -ForegroundColor Green
+    Write-Host "[OK] PAT environment variable(s) detected:" -ForegroundColor Green
     foreach ($ev in $EnvVarsFound) {
-        Write-Host "   • $ev"
+        Write-Host "   - $ev"
     }
     Write-Host ""
     Write-Host "   The promote-branch script will use these automatically."
     Write-Host "   Lookup order:" -ForegroundColor Cyan
-    Write-Host "     github.com:  GITHUB_PAT → GH_TOKEN → credentials file"
-    Write-Host "     Enterprise:  GH_ENTERPRISE_TOKEN → GH_TOKEN → credentials file"
+    Write-Host "     github.com:  GITHUB_PAT -> GH_TOKEN -> credentials file"
+    Write-Host "     Enterprise:  GH_ENTERPRISE_TOKEN -> GH_TOKEN -> credentials file"
     Write-Host ""
     $StoreEnvPat = Read-Host "   Do you also want to store PATs in the credentials file? (y/N)"
     if ($StoreEnvPat -notmatch '^[yY]') {
         Write-Host ""
-        Write-Host "✅ Using environment variables. No file changes needed." -ForegroundColor Green
+        Write-Host "[OK] Using environment variables. No file changes needed." -ForegroundColor Green
         Write-Host "   promote-branch.ps1 will pick up PATs from the environment."
         Write-Host ""
         return
@@ -65,19 +65,19 @@ if ($EnvVarsFound.Count -gt 0) {
     Write-Host ""
 }
 
-# ── Ensure output directory ──────────────────────────────────
+# -- Ensure output directory ----------------------------------
 $CredDir = Split-Path -Parent $CredFile
 if (-not (Test-Path $CredDir)) {
     New-Item -ItemType Directory -Path $CredDir -Force | Out-Null
 }
 
-# ── Detect GitHub domains ────────────────────────────────────
+# -- Detect GitHub domains ------------------------------------
 $GithubDomains = @()
 
 if (Test-Path $InventoryFile) {
     $InventoryContent = Get-Content $InventoryFile -Raw -ErrorAction SilentlyContinue
     $RegexMatches = [regex]::Matches($InventoryContent, 'github\.[a-zA-Z0-9._-]+')
-    $Detected = $RegexMatches.Value | Sort-Object -Unique
+    $Detected = $RegexMatches | ForEach-Object { $_.Value } | Sort-Object -Unique
     foreach ($d in $Detected) {
         if ($d -notin $GithubDomains) { $GithubDomains += $d }
     }
@@ -90,7 +90,7 @@ if ('github.com' -notin $GithubDomains) {
 
 Write-Host "Detected GitHub domain(s):" -ForegroundColor White
 foreach ($d in $GithubDomains) {
-    Write-Host "  • $d" -ForegroundColor Cyan
+    Write-Host "  - $d" -ForegroundColor Cyan
 }
 Write-Host ""
 
@@ -101,7 +101,7 @@ if ($ExtraDomain.Trim()) {
 }
 Write-Host ""
 
-# ── Initialize credentials file ─────────────────────────────
+# -- Initialize credentials file -----------------------------
 $Timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 
 $Header = @"
@@ -119,17 +119,17 @@ $Header = @"
 
 Set-Content -Path $CredFile -Value $Header -Encoding UTF8
 
-# ── Collect PAT per domain ────────────────────────────────────
+# -- Collect PAT per domain ------------------------------------
 $Stored  = 0
 $Skipped = 0
 
 foreach ($Domain in $GithubDomains) {
-    Write-Host (("─── {0} " -f $Domain) + ("─" * [Math]::Max(0, 40 - $Domain.Length))) -ForegroundColor DarkGray
+    Write-Host (("--- {0} " -f $Domain) + ("-" * [Math]::Max(0, 40 - $Domain.Length))) -ForegroundColor DarkGray
     Write-Host "  Domain: " -NoNewline; Write-Host $Domain -ForegroundColor Cyan
 
     if ($Domain -eq 'github.com') {
         $PatUrl     = 'https://github.com/settings/tokens'
-        $DomainType = 'github.com'
+        $DomainType = 'github'
     } else {
         $PatUrl     = "https://$Domain/settings/tokens"
         $DomainType = 'github_enterprise'
@@ -142,12 +142,17 @@ foreach ($Domain in $GithubDomains) {
     Write-Host ""
 
     $SecurePat = Read-Host "  Enter PAT for $Domain (press Enter to skip)" -AsSecureString
-    $PatPlain  = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
-                    [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecurePat))
+    $Bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecurePat)
+    $PatPlain = $null
+    try {
+        $PatPlain = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($Bstr)
+    } finally {
+        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($Bstr)
+    }
     Write-Host ""
 
     if ([string]::IsNullOrEmpty($PatPlain)) {
-        Write-Host "  ⏭  Skipped" -ForegroundColor Yellow
+        Write-Host "  [SKIP]  Skipped" -ForegroundColor Yellow
         $Skipped++
     } else {
         $Entry = @"
@@ -158,17 +163,17 @@ ${Domain}:
 
 "@
         Add-Content -Path $CredFile -Value $Entry -Encoding UTF8
-        Write-Host "  ✅ Stored" -ForegroundColor Green
+        Write-Host "  [OK] Stored" -ForegroundColor Green
         $Stored++
     }
     Write-Host ""
 }
 
-# ── Summary ───────────────────────────────────────────────────
-Write-Host "════════════════════════════════════" -ForegroundColor DarkGray
+# -- Summary ---------------------------------------------------
+Write-Host "====================================" -ForegroundColor DarkGray
 Write-Host "Summary" -ForegroundColor White
-Write-Host "  ✅ Stored:  $Stored token(s)" -ForegroundColor Green
-Write-Host "  ⏭  Skipped: $Skipped domain(s)" -ForegroundColor Yellow
+Write-Host "  [OK] Stored:  $Stored token(s)" -ForegroundColor Green
+Write-Host "  [SKIP]  Skipped: $Skipped domain(s)" -ForegroundColor Yellow
 Write-Host ""
 
 if ($Stored -gt 0) {
@@ -184,7 +189,7 @@ if ($Stored -gt 0) {
     }
 
     Write-Host ""
-    Write-Host "✅ PAT setup complete! You can now close this terminal." -ForegroundColor Green
+    Write-Host "[OK] PAT setup complete! You can now close this terminal." -ForegroundColor Green
 } else {
     Write-Host "No PATs were stored. Run this script again when ready." -ForegroundColor Yellow
 }
