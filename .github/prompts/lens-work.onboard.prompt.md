@@ -10,12 +10,12 @@ Activate @lens agent and execute /onboard (discovery skill):
 3. Load `_bmad/lens-work/workflows/utility/onboarding/workflow.md`
 4. Load repo inventory from `_bmad-output/lens-work/repo-inventory.yaml` (if exists)
 
-This is the **first-run workflow** for new team members. It sets up profile, credentials, and clones/documents target repos.
+This is the **first-run workflow** for new team members. It sets up profile, credentials, and clones target repos.
 
 **Execution sequence:**
 
 **[1] Welcome**
-- @lens/discovery greets the user and explains the 3-step process: profile → credentials → repos
+- @lens/discovery greets the user and explains the process: profile → credentials → repos
 
 **[2] Create Profile**
 - Read `git config user.name` and `git config user.email`
@@ -66,12 +66,7 @@ cd "{PROJECT_ROOT}"; .\bmad.lens.release\_bmad\lens-work\scripts\store-github-pa
 - Identify which repos are already cloned vs missing
 - Clone missing repos into `TargetProjects/` using configured remote URLs
 
-**[5] Documentation Generation**
-- Run `@lens/discovery repo-document` in full mode on all repos
-- Write canonical docs to `Docs/{domain}/{service}/{repo}/`
-- Update `_bmad-output/lens-work/repo-inventory.yaml`
-
-**[6] Completion**
+**[5] Completion**
 ```
 🎉 Onboarding Complete!
 
@@ -81,13 +76,12 @@ Scope:   {scope}
 What's ready:
 ├── ✅ Profile created
 ├── ✅ {cloned_count} repos cloned
-├── ✅ {documented_count} repos documented
-└── ✅ Canonical docs generated
+└── ✅ PATs configured
 
 Next steps:
-├── Run /start for orientation
-├── Run /new-initiative to begin your first feature
-└── Run /help for the full command reference
+├── Run #new-feature "your-feature" to start an initiative
+├── Run @lens ST to see status anytime
+└── Run @lens H for help
 ```
 
 **Storage locations (all gitignored):**
@@ -99,6 +93,6 @@ Next steps:
 **Re-run behavior:** If profile already exists, present a menu:
 - [1] Update profile settings
 - [2] Re-run credential setup
-- [3] Re-sync and re-document repos
+- [3] Re-sync repos
 - [4] Full re-onboard (reset all)
 ```
