@@ -440,15 +440,28 @@ PAT_SOURCE=""
 PR_CREATED=false
 
 if [[ "$remote_platform" == "github" && "$CREATE_PR" == true && "$URL_ONLY" != true ]]; then
-  # Priority 1: Environment variables
-  if [[ -n "${GITHUB_PAT:-}" ]]; then
-    PAT="$GITHUB_PAT"
-    PAT_SOURCE="GITHUB_PAT environment variable"
-  elif [[ -n "${GH_TOKEN:-}" ]]; then
-    PAT="$GH_TOKEN"
-    PAT_SOURCE="GH_TOKEN environment variable"
+  # Priority 1: Host-specific environment variables
+  if [[ "$remote_host" == "github.com" ]]; then
+    # github.com: GITHUB_PAT → GH_TOKEN → profile.yaml
+    if [[ -n "${GITHUB_PAT:-}" ]]; then
+      PAT="$GITHUB_PAT"
+      PAT_SOURCE="GITHUB_PAT environment variable"
+    elif [[ -n "${GH_TOKEN:-}" ]]; then
+      PAT="$GH_TOKEN"
+      PAT_SOURCE="GH_TOKEN environment variable"
+    fi
+  else
+    # Enterprise: GH_ENTERPRISE_TOKEN → GH_TOKEN → profile.yaml
+    if [[ -n "${GH_ENTERPRISE_TOKEN:-}" ]]; then
+      PAT="$GH_ENTERPRISE_TOKEN"
+      PAT_SOURCE="GH_ENTERPRISE_TOKEN environment variable"
+    elif [[ -n "${GH_TOKEN:-}" ]]; then
+      PAT="$GH_TOKEN"
+      PAT_SOURCE="GH_TOKEN environment variable"
+    fi
+  fi
   # Priority 2: Profile file
-  elif [[ -f "$PROFILE_FILE" ]]; then
+  if [[ -z "$PAT" && -f "$PROFILE_FILE" ]]; then
     PAT=$(get_profile_pat "$remote_host" "$PROFILE_FILE") || true
     if [[ -n "$PAT" ]]; then
       PAT_SOURCE="profile.yaml"
@@ -469,15 +482,19 @@ if [[ -n "$remote_host" ]]; then
 fi
 
 if [[ "$remote_platform" == "github" ]]; then
+  ENV_HINT="GITHUB_PAT"
+  if [[ "$remote_host" != "github.com" ]]; then
+    ENV_HINT="GH_ENTERPRISE_TOKEN"
+  fi
   if [[ -n "$PAT" && "$CREATE_PR" == true && "$URL_ONLY" != true ]]; then
     echo -e "  ${GREEN}PAT:${RESET}    loaded from ${PAT_SOURCE}"
     echo -e "  ${GREEN}Action:${RESET} Will create PR automatically"
   elif [[ -f "$PROFILE_FILE" ]]; then
     echo -e "  ${YELLOW}PAT:${RESET}    not found for $remote_host"
-    echo -e "  ${YELLOW}Action:${RESET} URL-only (set GITHUB_PAT env var or run store-github-pat.sh)"
+    echo -e "  ${YELLOW}Action:${RESET} URL-only (set ${ENV_HINT} env var or run store-github-pat.sh)"
   else
     echo -e "  ${YELLOW}PAT:${RESET}    no profile found"
-    echo -e "  ${YELLOW}Action:${RESET} URL-only (set GITHUB_PAT env var or run store-github-pat.sh)"
+    echo -e "  ${YELLOW}Action:${RESET} URL-only (set ${ENV_HINT} env var or run store-github-pat.sh)"
   fi
 fi
 

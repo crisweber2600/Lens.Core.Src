@@ -40,22 +40,27 @@ Write-Host "   PATs enable automated PR creation in phase workflows."
 Write-Host ""
 
 # ── Check for environment variables ──────────────────────────
-$EnvVarName = $null
-if ($env:GITHUB_PAT) {
-    $EnvVarName = 'GITHUB_PAT'
-} elseif ($env:GH_TOKEN) {
-    $EnvVarName = 'GH_TOKEN'
-}
+$EnvVarsFound = @()
+if ($env:GITHUB_PAT) { $EnvVarsFound += 'GITHUB_PAT (github.com)' }
+if ($env:GH_ENTERPRISE_TOKEN) { $EnvVarsFound += 'GH_ENTERPRISE_TOKEN (enterprise)' }
+if ($env:GH_TOKEN) { $EnvVarsFound += 'GH_TOKEN (fallback)' }
 
-if ($EnvVarName) {
-    Write-Host "✅ $EnvVarName environment variable detected." -ForegroundColor Green
-    Write-Host "   The promote-branch script will use this automatically."
+if ($EnvVarsFound.Count -gt 0) {
+    Write-Host "✅ PAT environment variable(s) detected:" -ForegroundColor Green
+    foreach ($ev in $EnvVarsFound) {
+        Write-Host "   • $ev"
+    }
     Write-Host ""
-    $StoreEnvPat = Read-Host "   Do you also want to store it in profile.yaml? (y/N)"
+    Write-Host "   The promote-branch script will use these automatically."
+    Write-Host "   Lookup order:" -ForegroundColor Cyan
+    Write-Host "     github.com:  GITHUB_PAT → GH_TOKEN → profile.yaml"
+    Write-Host "     Enterprise:  GH_ENTERPRISE_TOKEN → GH_TOKEN → profile.yaml"
+    Write-Host ""
+    $StoreEnvPat = Read-Host "   Do you also want to store PATs in profile.yaml? (y/N)"
     if ($StoreEnvPat -notmatch '^[yY]') {
         Write-Host ""
-        Write-Host "✅ Using $EnvVarName environment variable. No profile changes needed." -ForegroundColor Green
-        Write-Host "   promote-branch.ps1 will pick up the PAT from the environment."
+        Write-Host "✅ Using environment variables. No profile changes needed." -ForegroundColor Green
+        Write-Host "   promote-branch.ps1 will pick up PATs from the environment."
         Write-Host ""
         return
     }
