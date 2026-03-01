@@ -16,85 +16,54 @@ This is the **first-run workflow** for new team members. It sets up profile, cre
 
 **Execution sequence:**
 
-**[1] Welcome**
-- @lens/discovery greets the user and explains the process: profile → credentials → repos
+**[1] Pre-flight + Profile Setup**
+Read git config (name/email) and detect GitHub domains from repo inventory.
 
-**[2] Create Profile**
-- Read `git config user.name` and `git config user.email`
-- Detect GitHub domains from repo inventory
-- Check if PAT env vars are already set (GITHUB_PAT, GH_ENTERPRISE_TOKEN, GH_TOKEN)
-- If all domains covered: report [OK] status and skip PAT question entirely
-- Present combined prompt asking for:
-  - Role (Developer / Tech Lead / Architect / Product Owner / Scrum Master)
-  - Domain/team scope (detected from repo inventory, or "all")
-  - PAT setup now? [Y/N] — **only shown if env vars are missing**
-  - Question mode (Interactive / Batch MD)
-  - Work item tracker (Jira / Azure DevOps / None)
-- Write profile to `_bmad-output/lens-work/personal/profile.yaml` (gitignored)
+Check PAT env vars status (GITHUB_PAT, GH_ENTERPRISE_TOKEN, GH_TOKEN):
+- If all domains covered: skip to [2]
+- If missing: include in single combined prompt below
 
-**[3] GitHub PAT Setup (if needed and requested)**
+**Single Onboarding Prompt:**
+```
+Hello {git_user_name}
 
-⚠️ SECURITY: PATs must NEVER be entered into Copilot chat.
-
-**Option A: Environment variables (recommended for CI/automation)**
-Set environment variables for automatic PAT resolution:
-- `GITHUB_PAT` — PAT for github.com
-- `GH_ENTERPRISE_TOKEN` — PAT for enterprise GitHub instances
-- `GH_TOKEN` — fallback for both (used by GitHub REST API)
-
-**Option B: Interactive script (stores PAT in profile.yaml)**
-Present the following command for the user to run in a **separate terminal**:
-
-```bash
-# macOS / Linux / Git Bash
-cd "{PROJECT_ROOT}" && bash bmad.lens.release/_bmad/lens-work/scripts/store-github-pat.sh
-
-# Windows PowerShell
-cd "{PROJECT_ROOT}"; .\bmad.lens.release\_bmad\lens-work\scripts\store-github-pat.ps1
+Set up your profile to enable initiative tracking:
+ 1. Role: [Developer | Tech Lead | Architect | Product Owner | Scrum Master]
+ 2. Scope: {detected_domains} or [all]
+ 3. Question mode: [Interactive | Batch]
+ 4. Work items: [Jira | Azure DevOps | None]
+{conditional_if_missing_pats}
+ 5. GitHub PATs: [Already set in ENV | Run setup script now]
 ```
 
-- Wait for user to confirm ("Continue" / "Done")
-- Check if `_bmad-output/lens-work/personal/profile.yaml` was created with `git_credentials` array
-- Credentials stored per GitHub domain (github.com, enterprise domains detected from repo inventory)
-- **These credentials enable automated PR creation** in:
-  - Phase completion workflows (preplan, businessplan, techplan, devproposal, sprintplan)
-  - Audience promotion workflows (small→medium→large)
-  - Manual promotion via `promote-branch.ps1` script
-- If PATs not configured, workflows will generate PR URLs only (manual creation required)
+- Write profile + PAT config to `_bmad-output/lens-work/personal/profile.yaml` (gitignored)
 
-**[4] Repo Discovery & Reconciliation**
+**If PAT setup selected:** Present single terminal command (detect OS automatically):
+```bash
+# Auto-detected for your platform:
+cd "{PROJECT_ROOT}" && bash bmad.lens.release/_bmad/lens-work/scripts/store-github-pat.sh  # Unix/Mac
+# OR
+cd "{PROJECT_ROOT}"; .\bmad.lens.release\_bmad\lens-work\scripts\store-github-pat.ps1  # Windows
+```
+Wait for confirmation, then verify `git_credentials` added to profile.
+
+⚠️ SECURITY: Never paste PAT into chat — use separate terminal only.
+
+**[2] Repo Discovery & Cloning**
 - Load service map: `_bmad/lens-work/service-map.yaml`
-- Scan configured target repos in service map
-- Identify which repos are already cloned vs missing
-- Clone missing repos into `TargetProjects/` using configured remote URLs
+- Scan configured target repos and clone missing ones into `TargetProjects/`
+- Report cloned count
 
-**[5] Completion**
+**[3] Completion**
 ```
 🎉 Onboarding Complete!
 
-Profile: {name} ({role})
-Scope:   {scope}
+Profile: {name} ({role}, {scope})
+Ready: {cloned_count} repos cloned
 
-What's ready:
-├── ✅ Profile created
-├── ✅ {cloned_count} repos cloned
-└── ✅ PATs configured
-
-Next steps:
-├── Run #new-feature "your-feature" to start an initiative
-├── Run @lens ST to see status anytime
-└── Run @lens H for help
+Next: Run #new-feature "your-feature" to start, or @lens H for help
 ```
 
-**Storage locations (all gitignored):**
-- Profile: `_bmad-output/lens-work/personal/profile.yaml`
-- Roster: `_bmad-output/lens-work/roster/{name-slug}.yaml`
-- Repo inventory: `_bmad-output/lens-work/repo-inventory.yaml`
-- Personal repo state: `_bmad-output/lens-work/personal/personal-repo-inventory.yaml`
-
-**Re-run behavior:** If profile already exists, present a menu:
-- [1] Update profile settings
-- [2] Re-run credential setup
-- [3] Re-sync repos
-- [4] Full re-onboard (reset all)
+**Re-run Behavior:**
+If profile exists: ask user whether to [Update settings | Reset & re-onboard]
 ```

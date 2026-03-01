@@ -454,12 +454,11 @@ control repo. These branches never appear in the 5-level initiative topology abo
 
 ```
 Governance repo: bmad.lens.governance
-  main                              ← canonical governance state
-  └── universal/{slug}              ← proposed governance change (PR target: main)
+  {default-branch}                     ← canonical governance state
+  └── universal/{slug}              ← proposed governance change (PR target: default branch)
       Examples:
         universal/org-constitution-v1
         universal/amendment-2026-03-constitution
-        universal/roster-add-jsmith
         universal/policy-hotfix-branching
 ```
 
@@ -468,20 +467,30 @@ Governance repo: bmad.lens.governance
 | Rule | Detail |
 |------|--------|
 | Scope | Only applies to `bmad.lens.governance` — never to the control repo or target repos |
-| Merge target | Always `main` in the governance repo |
-| PR required | Yes — governance roles (Tech Lead, Architect) are required reviewers via CODEOWNERS |
+| Merge target | Always the default branch (typically `main`) in the governance repo |
+| PR required | **Yes for constitution changes only** — all other files (roster, policies) may be committed directly to the default branch |
 | Initiative branches | MUST NOT contain commits to `TargetProjects/lens/lens-governance/` ever |
-| Agent enforcement | `branch-preflight` blocks governance writes if current governance branch is not `main` or `universal/*` |
+| Agent enforcement | `branch-preflight` blocks constitution writes if current branch is not `universal/*`; allows direct default-branch commits for roster and policies |
 | Audience/phase gates | Not applicable — governance is not audience-gated |
-| Who creates | `amendment-propagation` workflow for constitution changes; `onboarding` workflow for roster |
+| Who creates | `amendment-propagation` workflow for constitution changes; `onboarding` workflow for roster; other workflows for policies |
+
+**Direct Commit to Default Branch (No PR Required):**
+- Roster updates (`.yaml` files under `roster/`)
+- Policy updates and revisions (`.yaml`/`.md` files under `policies/`)
+- Configuration and metadata changes
+
+**Pull Request Required (Via `universal/*` Branch):**
+- Constitution changes (`.md` files under `constitutions/`)
+- Governance rule amendments
+- Org-level policy frameworks
 
 **Why a separate repo and branch tier?**
 
 When contributors work on an initiative branch (`{initiative_root}-small-techplan`, etc.) in the
 control repo, any governance changes (e.g., amending the org constitution) committed there are
 invisible to all other initiatives.  By routing governance writes to a standalone repo with its
-own `universal/*` → `main` path, governance rules propagate to every downstream control repo clone
-the next time it pulls from `bmad.lens.governance/main`.
+own `universal/*` → default branch path, governance rules propagate to every downstream control repo clone
+the next time it pulls from `bmad.lens.governance/default-branch`.
 
 ---
 

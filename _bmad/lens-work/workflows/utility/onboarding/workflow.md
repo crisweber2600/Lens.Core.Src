@@ -322,8 +322,8 @@ if not dir_exists(governance_root) or not is_git_repo(governance_root):
     Running check-repos to clone it before saving roster entry...
   run_workflow("check-repos", repo="bmad.lens.governance")
 
-# Create roster entry in the GOVERNANCE REPO (committed, universal across all initiatives)
-# Branch: universal/onboard-{sanitize(name)} in the governance repo
+# Create roster entry in the GOVERNANCE REPO (committed directly to default branch, no PR required)
+# Per governance rules: roster updates bypass PR and commit directly to the default branch
 roster_entry = {
   name: name,
   email: email,
@@ -336,7 +336,20 @@ roster_entry = {
     last_active: now()
   }
 }
-save(roster_entry, "${governance_root}/roster/${sanitize(name)}.yaml")
+roster_path = "${governance_root}/roster/${sanitize(name)}.yaml"
+save(roster_entry, roster_path)
+
+# Commit directly to default branch (no PR for roster updates)
+# Resolve the default branch dynamically from the governance repo
+shell: |
+  cd "${governance_root}"
+  default_branch=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+  git config user.name "${name}"
+  git config user.email "${email}"
+  git add roster/${sanitize(name)}.yaml
+  git commit -m "onboard: add ${name} to roster"
+  git push origin HEAD:${default_branch}
+output: "✅ Roster entry committed to governance repo"
 ```
 
 ### 3. Determine Bootstrap Scope
