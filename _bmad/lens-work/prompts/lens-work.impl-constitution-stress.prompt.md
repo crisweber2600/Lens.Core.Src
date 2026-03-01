@@ -7,7 +7,7 @@ description: Test constitution merge with complex hierarchies
 
 This is a stub prompt. The actual implementation reads from:
 ```
-bmad.lens.release/.github/prompts/S-039-constitution-stress.md
+bmad.lens.release/.github/prompts/lens-work.dev.prompt.md
 ```
 
 **Load from release repository when integrating full implementations.**

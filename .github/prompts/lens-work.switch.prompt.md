@@ -110,15 +110,24 @@ git branch -r --format='%(refname:short)' | grep "^origin/{featureBranchRoot}" |
 - Service: check if `{domain_prefix}-{service_prefix}` exists in remote
 - Feature: query remote for all branches matching `{featureBranchRoot}*`
 
-**Branch Selection Logic (Phase-First Strategy):**
+**Branch Selection Logic (Progress-First Strategy):**
 
 Given a feature initiative, current audience, and target phase/audience:
+
+**Phase Progress Ordering (later = further along):**
+- `preplan` (p1)
+- `businessplan` (p2)
+- `techplan` (p3)
+- `devproposal` (p4)
+- `sprintplan` (p5)
+
+When choosing a default phase (no explicit phase requested), pick the branch that is furthest along in the phase order and has a commit at its head. If multiple branches exist for the same phase, prefer current audience; otherwise choose the branch with the most recent head commit.
 
 1. **If switching to a phase** (e.g., `/switch preplan`):
    - Query remote: `git branch -r | grep "{featureBranchRoot}-.*-{phaseName}"`
    - **Priority 1:** Check if `{featureBranchRoot}-{currentAudience}-{phaseName}` exists → use it
    - **Priority 2:** Check if any `{featureBranchRoot}-{audience}-{phaseName}` exists (prefer existing audience) → use it
-   - **Priority 3:** Fallback to `{featureBranchRoot}-{audience}` (latest or first available)
+    - **Priority 3:** Fallback to `{featureBranchRoot}-{audience}` (prefer current audience, then latest commit)
    - **Priority 4:** Fallback to `{featureBranchRoot}` (base branch)
 
 2. **If switching to an audience** (e.g., `/switch medium`):
@@ -129,10 +138,34 @@ Given a feature initiative, current audience, and target phase/audience:
 
 3. **If switching initiative:**
    - Query remote: `git branch -r | grep "{newFeatureBranchRoot}"`
-   - **Priority 1:** Check if `{newFeatureBranchRoot}-small-preplan` exists → use it (start from small preplan)
-   - **Priority 2:** Check if any phase branch exists → use it
-   - **Priority 3:** Check if audience branch exists → use it
-   - **Priority 4:** Use `{newFeatureBranchRoot}` (base branch)
+   - **Priority 1:** Check all phase branches and select the branch furthest along in process (`sprintplan` → `devproposal` → `techplan` → `businessplan` → `preplan`) using head-commit recency as tie-breaker
+   - **Priority 2:** Check if audience branch exists → use branch with most recent head commit (prefer current audience when equal)
+   - **Priority 3:** Use `{newFeatureBranchRoot}` (base branch)
+
+**Default Phase Resolution (when no explicit phase is requested):**
+```bash
+# Gather candidate phase branches for an initiative
+git branch -r --format='%(refname:short)' \
+  | grep "^origin/{featureBranchRoot}-" \
+  | grep -E -- '-(preplan|businessplan|techplan|devproposal|sprintplan)$'
+
+# Rank phase by process order first, then by commit recency
+# (highest rank wins; ties broken by most recent committerdate)
+phase_rank() {
+  case "$1" in
+    preplan) echo 1 ;;
+    businessplan) echo 2 ;;
+    techplan) echo 3 ;;
+    devproposal) echo 4 ;;
+    sprintplan) echo 5 ;;
+    *) echo 0 ;;
+  esac
+}
+
+# Example selection expression (conceptual):
+# score = phase_rank(phase)*10000000000 + unix_commit_time
+# target_branch = max(score)
+```
 
 **Git Operations:**
 
@@ -141,8 +174,10 @@ Given a feature initiative, current audience, and target phase/audience:
 git fetch origin
 
 # Determine target branch using Branch Selection Logic above
-# Example: switching to phase 'preplan' from 'small' audience
-target_branch="{featureBranchRoot}-small-preplan"
+# Example: switching initiative with no explicit phase
+# target_branch should be resolved to the most advanced available phase branch
+# (using phase progress + commit recency), then audience branch, then base branch.
+target_branch="{resolved_target_branch}"
 
 # Check if branch exists in remote
 if git branch -r | grep -q "origin/${target_branch}"; then
@@ -227,7 +262,7 @@ Next steps:
 
 **Switch back to previous:** `/switch -` uses git's `git checkout -` to return to previous branch
 
-**Switch with phase context:** If user says `/switch preplan` while on `lens-feature-x-medium`, switch to `lens-feature-x-small-preplan` (phases default to small audience)
+**Switch with phase context:** If user says `/switch preplan` while on `lens-feature-x-medium`, first try `lens-feature-x-medium-preplan`, then other available `*-preplan` branches by latest commit, then fallback to audience/base.
 
 **Switch with audience context:** If user says `/switch medium` while on `lens-feature-x-small-preplan`, switch to `lens-feature-x-medium-preplan` (preserve phase)
 

@@ -9,9 +9,9 @@ description: 'Launch Technical Planning phase (Architecture/Tech Decisions/API C
 > All `_bmad/` paths in the full prompt are relative to `bmad.lens.release/` — do NOT copy `_bmad/` into or resolve paths against the user's main project repo.
 
 ```
-Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.tech-plan.prompt.md
+Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.techplan.prompt.md
 ```
 
-Source: [lens-work.tech-plan.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/4.0.0/.github/prompts/lens-work.tech-plan.prompt.md)
+Source: [lens-work.techplan.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/4.0.0/.github/prompts/lens-work.techplan.prompt.md)
 
 ````

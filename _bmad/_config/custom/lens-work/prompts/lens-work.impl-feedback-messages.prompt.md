@@ -7,7 +7,7 @@ description: Format actionable error messages when gates block
 
 This is a stub prompt. The actual implementation reads from:
 ```
-bmad.lens.release/.github/prompts/S-028-feedback-messages.md
+bmad.lens.release/.github/prompts/lens-work.dev.prompt.md
 ```
 
 **Load from release repository when integrating full implementations.**

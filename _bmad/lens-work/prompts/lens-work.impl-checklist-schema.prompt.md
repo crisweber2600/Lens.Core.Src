@@ -7,7 +7,7 @@ description: Track gate readiness through progressive checklists
 
 This is a stub prompt. The actual implementation reads from:
 ```
-bmad.lens.release/.github/prompts/S-021-checklist-schema.md
+bmad.lens.release/.github/prompts/lens-work.dev.prompt.md
 ```
 
 **Load from release repository when integrating full implementations.**

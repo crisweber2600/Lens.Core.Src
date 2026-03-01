@@ -7,7 +7,7 @@ description: Display or manage constitution rules
 
 This is a stub prompt. The actual implementation reads from:
 ```
-bmad.lens.release/.github/prompts/lens-work.constitution.md
+bmad.lens.release/.github/prompts/lens-work.constitution.prompt.md
 ```
 
 **Load from release repository when integrating full implementations.**

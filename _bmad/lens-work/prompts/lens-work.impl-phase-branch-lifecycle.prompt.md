@@ -7,7 +7,7 @@ description: Create, manage, and retire phase-specific branches
 
 This is a stub prompt. The actual implementation reads from:
 ```
-bmad.lens.release/.github/prompts/S-009-phase-branch-lifecycle.md
+bmad.lens.release/.github/prompts/lens-work.dev.prompt.md
 ```
 
 **Load from release repository when integrating full implementations.**
