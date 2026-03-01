@@ -50,6 +50,11 @@ menu:
         label: "Show current status"
         subPrompt: "./.github/prompts/lens-work.status.prompt.md"
         args: []
+      
+      - trigger: "next"
+        label: "Execute next action"
+        subPrompt: "./.github/prompts/lens-work.next.prompt.md"
+        args: []
 
   - groupName: "Phase Commands"
     commands:
@@ -142,6 +147,13 @@ subPrompts:
     file: "./.github/prompts/lens-work.status.prompt.md"
     deprecated: false
     readFrom: "bmad.lens.release/.github/prompts/lens-work.status.md"
+
+  - id: "next"
+    title: "Implement /next command (auto-execute next action)"
+    description: "Determine and execute the next required action based on current state"
+    file: "./.github/prompts/lens-work.next.prompt.md"
+    deprecated: false
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.next.md"
 
   # PHASE COMMANDS
   - id: "preplan"

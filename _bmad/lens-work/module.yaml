@@ -153,6 +153,7 @@ workflow_categories:
     workflows:
       - status
       - resume
+      - next
       - sync
       - fix-state
       - override
@@ -214,6 +215,7 @@ prompts:
     # State & Recovery (@lens/state-management)
     - lens-work.status.prompt.md
     - lens-work.resume.prompt.md
+    - lens-work.next.prompt.md
     - lens-work.sync.prompt.md
     - lens-work.fix.prompt.md
     - lens-work.override.prompt.md

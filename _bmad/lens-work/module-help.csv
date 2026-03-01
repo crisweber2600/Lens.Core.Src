@@ -3,6 +3,7 @@ lens-work,anytime,New Domain,ND,,workflows/router/init-initiative/workflow.md,le
 lens-work,anytime,New Service,NS,,workflows/router/init-initiative/workflow.md,lens-work-new-service,false,@lens,,"Create service-level initiative with organizational branch",,initiative config,
 lens-work,anytime,New Feature,NF,,workflows/router/init-initiative/workflow.md,lens-work-new-feature,false,@lens,,"Create feature-level initiative with full branch topology",,initiative config,
 lens-work,anytime,Status,ST,,workflows/utility/status/workflow.md,lens-work-status,false,@lens,,"Display current state including initiative phase audience and gate progression",,status display,
+lens-work,anytime,Next,NX,,workflows/utility/next/workflow.md,lens-work-next,false,@lens,,"Execute the next required action without prompting for status first",,next action execution,
 lens-work,anytime,Switch Context,SW,,workflows/utility/switch/workflow.md,lens-work-switch,false,@lens,,"Switch active initiative lens or phase",,context switch,
 lens-work,anytime,Sync State,SY,,workflows/utility/sync/workflow.md,lens-work-sync,false,@lens,,"Validate and repair state consistency between state.yaml and initiative config",,sync report,
 lens-work,anytime,Fix State,FX,,workflows/utility/fix-state/workflow.md,lens-work-fix,false,@lens,,"Rebuild state from event-log.jsonl when state.yaml is corrupted",,state rebuild,

@@ -28,7 +28,7 @@ large   →  base     gate: constitution-gate     (constitution skill validates 
 - 📋 Back-and-forth dialogue is REQUIRED — you are a facilitator, not a generator
 
 **[0] Pre-Flight**
-- Git-orchestration: verify clean git state
+- Git-orchestration: fetch latest remote refs (`git fetch --all --prune`), then verify clean git state
 - Load `state.yaml` + active initiative config
 - Derive `source_audience` from current state
 - Derive `target_audience` from lifecycle promotion chain
