@@ -47,9 +47,26 @@ workflow: "{initiative_root}-{audience}-{phase_name}-{workflow}"
 
 1. Clean working directory before any branch operation
 2. Targeted commits (only files relevant to current workflow)
-3. Push branches at workflow end, not mid-workflow
-4. Never force-push without explicit user confirmation
-5. Use `{default_git_remote}` from config for all remote operations
+3. **Auto-push: EVERY commit MUST be immediately followed by `git push`** (bmadconfig.yaml: git_discipline.auto_push)
+4. Push branches at workflow end, not mid-workflow (use auto-push after each commit instead)
+5. Never force-push without explicit user confirmation
+6. Use `{default_git_remote}` from config for all remote operations
+
+### Auto-Push Convention (Hard Enforcement)
+
+**Rule:** Every `git commit` command in any workflow step MUST be immediately followed by a `git push` command.
+
+**Pattern:**
+```bash
+git commit -m "workflow(action): description"
+git push origin "${branch_name}"
+```
+
+**Rationale:** Lens-work coordinates distributed teams. Local-only commits break collaboration, prevent PR creation, and violate gate check assumptions.
+
+**Exceptions:** Only transient branches used within a single step and immediately discarded (must be documented inline).
+
+**Validation:** Any workflow file containing `git commit` must have a matching `git push` in the same step or bash block.
 
 ## Error Handling
 

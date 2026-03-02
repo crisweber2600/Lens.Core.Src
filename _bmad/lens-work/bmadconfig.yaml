@@ -106,3 +106,25 @@ conventions:
         Initiative branches in the control repo MUST NEVER contain commits to
         TargetProjects/lens/lens-governance/.  The governance repo is a separate
         git working tree with its own commit history.
+
+  git_discipline:
+    auto_push:
+      enforcement: hard
+      rule: >
+        EVERY git commit in ANY lens-work workflow, skill, or agent MUST be
+        immediately followed by a git push command in the same step.
+        This ensures that all workflow progress is immediately visible on the
+        remote and prevents loss of work due to local-only commits.
+      rationale: >
+        Lens-work coordinates distributed teams and cross-repo workflows.
+        Commits that remain local break collaboration, prevent PR creation,
+        and violate the "always synced" assumption that gate checks depend on.
+      pattern: |
+        git commit -m "workflow(action): description"
+        git push origin "${branch_name}"
+      exceptions:
+        - Transient branches used within a single workflow step that will be
+          discarded without merge (must be documented inline).
+      validation: >
+        Any workflow file containing 'git commit' must have a matching 'git push'
+        within the same numbered step or bash code block.
