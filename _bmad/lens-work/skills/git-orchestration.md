@@ -12,11 +12,12 @@ Manages all git branch operations for the lens-work lifecycle. Handles branch cr
 
 ## Responsibilities
 
-1. **Branch creation** — Create initiative root, audience, and phase branches
-2. **Branch validation** — Verify topology matches expected patterns
-3. **Targeted commits** — Commit only relevant files per workflow
-4. **Push management** — Push branches at workflow boundaries
-5. **PR preparation** — Set up pull request metadata
+1. **Repository cloning** — Clone repos and auto-checkout to last-committed branch
+2. **Branch creation** — Create initiative root, audience, and phase branches
+3. **Branch validation** — Verify topology matches expected patterns
+4. **Targeted commits** — Commit only relevant files per workflow
+5. **Push management** — Push branches at workflow boundaries
+6. **PR preparation** — Set up pull request metadata
 
 ## Branch Patterns (v2 — Lifecycle Contract)
 
@@ -36,12 +37,53 @@ workflow: "{initiative_root}-{audience}-{phase_name}-{workflow}"
 
 ## Trigger Conditions
 
+- Repository cloning — clone with auto-checkout to last-committed branch (repos, governance, control)
 - Initiative creation (`/new-*`) — create root + audience branches (track-aware)
 - Phase start — create named phase branch from audience
 - Workflow start — create workflow branch from phase
 - Workflow end — commit, push
 - Phase end — PR into audience branch, delete phase branch
 - Audience promotion — PR from one audience to next (with gate validation)
+
+## Clone Pattern (Hard Enforcement)
+
+**Rule:** Every repository clone MUST be immediately followed by a branch checkout that switches to the default/last-committed branch.
+
+**Standard Pattern:**
+```bash
+git clone {remote_url} {local_path}
+cd {local_path}
+git checkout $(git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4)
+```
+
+**Rationale:**
+- After `git clone`, the working directory is in detached HEAD state (pointing to the commit but not a branch)
+- Without checking out a branch, the repo is not in a trackable state and git operations may fail
+- The last-committed branch is the remote default branch (determined via `symbolic-ref`) and represents the current development state
+- Users expect to be on the main/current development branch immediately after cloning
+
+**Fallback (if symbolic-ref fails):**
+```bash
+# Try expected_branch from config (e.g., "main")
+git checkout {expected_branch} || git checkout -b {expected_branch} origin/{expected_branch}
+
+# If that fails, checkout first available branch
+git checkout $(git branch -r | grep -v HEAD | head -1 | cut -d'/' -f2)
+```
+
+**Post-Clone Verification:**
+```bash
+# Verify we're on a branch (not in detached HEAD state)
+if git -C {local_path} symbolic-ref HEAD > /dev/null 2>&1; then
+  BRANCH=$(git -C {local_path} symbolic-ref --short HEAD)
+  echo "✅ Checked out to branch: $BRANCH"
+else
+  echo "❌ Still in detached HEAD state after clone. Check remote HEAD references."
+  exit 1
+fi
+```
+
+**Validation:** Any workflow file containing `git clone` must have a matching `git checkout` or branch verification in the same step or bash block.
 
 ## Git Discipline Rules
 
@@ -72,6 +114,10 @@ git push origin "${branch_name}"
 
 | Error | Recovery |
 |-------|----------|
+| Clone fails (auth, network) | Check credentials, SSH keys, network connectivity; suggest manual clone with `git clone` |
+| Detached HEAD after clone | Run `git checkout` to the default branch (derived from symbolic-ref or expected_branch) |
+| symbolic-ref lookup fails | Fall back to expected_branch from config (usually "main") |
+| Branch checkout fails | Fall back to first available remote branch; if no branches exist, report corrupted remote |
 | Branch exists | Check if it's the expected branch, use it or error |
 | Dirty working directory | Prompt user to commit or stash |
 | Push rejected | Suggest pull + merge or /sync |

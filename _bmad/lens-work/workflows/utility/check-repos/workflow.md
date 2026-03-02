@@ -278,19 +278,32 @@ if error_count + warning_count > 0:
 ```
 
 ```yaml
-# Fix suggestion lookup
+# Fix suggestion lookup (per git-orchestration skill)
 fix_suggestions:
   missing:
-    command: "git clone ${repo.expected_remote} ${repo.expected_path}"
-    explanation: "Clone the repository to the expected TargetProjects path."
+    command: >
+      git clone ${repo.expected_remote} ${repo.expected_path} &&
+      cd ${repo.expected_path} &&
+      git checkout $(git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4) || git checkout ${repo.expected_branch}
+    explanation: "Clone the repository and auto-checkout to default/last-committed branch per git-orchestration skill (auto_checkout_on_clone convention)."
   
   not-git:
-    command: "rm -rf ${repo.expected_path} && git clone ${repo.expected_remote} ${repo.expected_path}"
-    explanation: "Remove corrupted directory and re-clone."
+    command: >
+      rm -rf ${repo.expected_path} &&
+      git clone ${repo.expected_remote} ${repo.expected_path} &&
+      cd ${repo.expected_path} &&
+      git checkout $(git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4) || git checkout ${repo.expected_branch}
+    explanation: "Remove corrupted directory, re-clone, and auto-checkout to correct branch per git-orchestration skill."
+  
+  detached-head:
+    command: >
+      cd ${repo.expected_path} &&
+      git checkout $(git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4) || git checkout ${repo.expected_branch}
+    explanation: "Auto-checkout to default/last-committed branch from detached HEAD state per git-orchestration skill (auto_checkout_on_clone convention)."
   
   remote-mismatch:
     command: "git -C ${repo.expected_path} remote set-url origin ${repo.expected_remote}"
-    explanation: "Update the remote URL to match service map."
+    explanation: "Update the remote URL to match configured remote."
   
   uncommitted:
     command: "git -C ${repo.expected_path} stash  # or: git -C ${repo.expected_path} add -A && git -C ${repo.expected_path} commit -m 'WIP'"
@@ -311,7 +324,8 @@ fix_suggestions:
 | Git not installed | Error with install instructions |
 | Network unreachable | Skip remote sync checks, report partial results |
 | Permission denied on repo | Report and skip, suggest checking SSH keys |
-| Repo in detached HEAD | Report as warning, suggest checkout of default branch |
+| Repo in detached HEAD | Use auto-checkout to default branch per git-orchestration skill (auto_checkout_on_clone) |
+| Clone fails | Verify auth (SSH keys), network connectivity, and repo URL |
 
 ---
 

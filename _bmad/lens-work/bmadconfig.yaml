@@ -147,3 +147,37 @@ conventions:
       validation: >
         Any workflow file containing 'git commit' must have a matching 'git push'
         within the same numbered step or bash code block.
+
+    auto_checkout_on_clone:
+      enforcement: hard
+      rule: >
+        EVERY git clone in ANY lens-work workflow MUST be immediately followed
+        by a git checkout command that switches to the default/last-committed
+        branch. This ensures that cloned repositories are in a trackable state
+        and users are on the current development branch immediately.
+      rationale: >
+        After git clone, the working directory is in detached HEAD state.
+        Without explicit branch checkout, the repo is not in a trackable state,
+        git operations may fail, and the repository state is ambiguous.
+        Auto-checkout to the default branch (symbolic-ref) ensures immediate
+        usability and consistency across all cloned repositories.
+      pattern: |
+        git clone {remote_url} {local_path}
+        cd {local_path}
+        git checkout $(git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4)
+      fallbacks:
+        - Try expected_branch from config (e.g., "main", "develop")
+        - Try first available remote branch
+        - Report error if no branches exist
+      verification: |
+        if git -C {local_path} symbolic-ref HEAD > /dev/null 2>&1; then
+          BRANCH=$(git -C {local_path} symbolic-ref --short HEAD)
+          echo "✅ Checked out to branch: $BRANCH"
+        else
+          echo "❌ Still in detached HEAD state"
+          exit 1
+        fi
+      validation: >
+        Any workflow file containing 'git clone' must have a matching 'git checkout'
+        within the same numbered step or bash code block. Post-clone state must be
+        verified to not be in detached HEAD.
