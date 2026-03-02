@@ -826,7 +826,7 @@ domain_prefix: "${domain_prefix}"
 layer: domain
 question_mode: ${question_mode}
 created_at: "${ISO_TIMESTAMP}"
-created_by: "${git_user}"
+created_by: "${profile.name}"  # From profile.yaml (loaded in Step 0c)
 target_repos:
 ${for repo in target_repos}
   - ${repo}
@@ -888,7 +888,7 @@ service_prefix: "${service_prefix}"
 layer: service
 question_mode: ${question_mode}
 created_at: "${ISO_TIMESTAMP}"
-created_by: "${git_user}"
+created_by: "${profile.name}"  # From profile.yaml (loaded in Step 0c)
 target_repos:
 ${for repo in target_repos}
   - ${repo}

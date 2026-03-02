@@ -194,10 +194,13 @@ If no contradictions (or Org level):
 Generate constitution document using template structure with YAML frontmatter:
 
 ```yaml
+# Load user profile for identity
+profile = load("_bmad-output/lens-work/personal/profile.yaml")
+
 ---
 layer: {layer_type}
 name: {constitution_name}
-created_by: {user_name}
+created_by: profile.name  # From profile.yaml
 ratification_date: {today_date}
 last_amended: null
 amendment_count: 0
@@ -222,12 +225,15 @@ If ratified:
 2. Write `constitution.md`
 3. Log event via state-management:
    ```yaml
+   # Load user profile for identity
+   profile = load("_bmad-output/lens-work/personal/profile.yaml")
+   
    type: constitution-created
    timestamp: {now}
    layer: {layer_type}
    name: {constitution_name}
    articles_count: {count}
-   ratified_by: {user_name}
+   ratified_by: profile.name  # From profile.yaml
    git_commit_sha: {sha}
    initiative_id: {active_initiative_id or null}
    ```

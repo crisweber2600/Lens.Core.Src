@@ -218,7 +218,13 @@ Use YAML frontmatter when appropriate, for example:
 ---
 title: Document Title
 description: Brief description
-author: Author name
+author: {profile.name}  # MUST come from _bmad-output/lens-work/personal/profile.yaml
 date: YYYY-MM-DD
 ---
+```
+
+**CRITICAL:** Author information MUST always come from `profile.yaml`. Load the profile first:
+```yaml
+profile = load("_bmad-output/lens-work/personal/profile.yaml")
+author: profile.name
 ```

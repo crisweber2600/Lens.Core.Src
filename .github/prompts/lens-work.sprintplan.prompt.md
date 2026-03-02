@@ -47,22 +47,9 @@ Sub-workflows [3] and [4] use YAML-based workflow.yaml files with the workflow e
 - Save outputs after completing EACH engine step (never batch)
 - STOP and wait for user at decision points
 
-**Workflow sequence (present single batch prompt BEFORE loading any workflows):**
+**Workflow sequence (execute all workflows in order):**
 
-```
-🏃 SprintPlan Phase Setup
-
-All workflows are required. Confirm execution:
-
-[1] Re-run Readiness Checklist [Required]
-[2] Constitutional Compliance Check [Required]  
-[3] Sprint Planning [Required]
-[4] Dev Story Creation [Required]
-
-Enter: "all" to proceed with all workflows
-```
-
-After receiving confirmation, execute workflows in sequence:
+Execute workflows in sequence:
 - [1] Re-run Readiness Checklist — Continue as Bob (Scrum Master)
   → Read fully and follow `_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md`
 - [2] Constitutional Compliance Check — Continue as Bob (Scrum Master)

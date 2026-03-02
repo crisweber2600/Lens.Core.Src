@@ -12,7 +12,7 @@ Activate @lens agent and execute /techplan:
 3. Load lifecycle contract: `_bmad/lens-work/lifecycle.yaml`
 4. Pre-flight: verify clean working directory, load two-file state (state.yaml + initiative config)
 5. Gate check: verify `businessplan` phase PR is merged into `{initiative_root}-small` before proceeding
-6. Verify required artifacts exist: `{docs_path}/prd.md`, `{docs_path}/architecture.md`
+6. Verify required artifacts exist: `{docs_path}/prd.md`
 7. Derive audience from lifecycle contract: `techplan` → `small`
 8. Create and checkout phase branch `{initiative_root}-small-techplan` from `{initiative_root}-small` (push immediately)
 9. Activate Winston (Architect) as agent owner for this phase:
@@ -30,7 +30,6 @@ Use `#think` before making architectural decisions or selecting technology stack
 **Prerequisites:**
 - `/businessplan` complete: `{initiative_root}-small-businessplan` PR merged into `{initiative_root}-small`
 - `prd.md` exists at `{docs_path}/prd.md`
-- `architecture.md` exists at `{docs_path}/architecture.md`
 - `state.yaml` exists with `active_initiative` set
 
 **⚠️ CRITICAL — Interactive Workflow Rules:**
@@ -49,7 +48,7 @@ Each sub-workflow below uses sequential step-file architecture.
 
 All workflows are required. Confirm execution:
 
-[1] Architecture Refinement [Required]
+[1] Architecture Creation [Required]
 [2] Tech Decisions [Required]
 [3] Implementation Readiness Check [Required]
 
@@ -57,9 +56,9 @@ Enter: "all" to proceed with all workflows
 ```
 
 After receiving confirmation, execute workflows in sequence:
-- [1] Architecture Refinement — Continue as Winston (Architect)
+- [1] Architecture Creation — Continue as Winston (Architect)
   → Read fully and follow `_bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md`
-  → Context: pass existing `{docs_path}/architecture.md` as baseline for refinement, not fresh creation
+  → Create complete technical architecture document from PRD and UX design
 - [2] Tech Decisions — Continue as Winston (Architect)
   → Document key technical decisions, rationale, and trade-offs
   → Inline workflow — present decisions one at a time, wait for user review/approval of each
@@ -78,7 +77,7 @@ Each workflow uses step-file architecture — halt at each step within the workf
 **Context injection:**
 - Loads `{docs_path}/prd.md` from businessplan phase
 - Loads `{docs_path}/product-brief.md` from preplan phase
-- Loads `{docs_path}/architecture.md` as baseline from businessplan
+- Loads `{docs_path}/ux-design.md` from businessplan phase (if exists)
 - Loads repo README/architecture docs from `{repo_docs_path}/` if available
 - Constitutional context resolved by constitution skill before artifact generation
 
@@ -98,7 +97,7 @@ Each workflow uses step-file architecture — halt at each step within the workf
 - Remain on phase branch (REQ-7: never auto-merge)
 
 **Output artifacts** (written to `{docs_path}/`):
-- `architecture.md` (updated with full technical design)
+- `architecture.md` (required — complete technical design)
 - `tech-decisions.md` (required)
 
 **After TechPlan:** Run small → medium audience promotion (adversarial review gate) before `/devproposal`

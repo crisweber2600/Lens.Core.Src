@@ -738,7 +738,7 @@ service_prefix: ${service_prefix}
 question_mode: ${question_mode}
 jira_ticket: ${jira_ticket || ""}          # REQ-1, REQ-3: Jira ticket ID (feature-layer, tracker=jira)
 created_at: "${ISO_TIMESTAMP}"
-created_by: ${git_user}
+created_by: ${profile.name}  # From profile.yaml (loaded in Step 0c)
 target_repos:
 ${for repo in target_repos}
   - ${repo}
@@ -820,7 +820,7 @@ domain_prefix: "${domain_prefix}"
 layer: domain
 question_mode: ${question_mode}
 created_at: "${ISO_TIMESTAMP}"
-created_by: "${git_user}"
+created_by: "${profile.name}"  # From profile.yaml (loaded in Step 0c)
 target_repos:
 ${for repo in target_repos}
   - ${repo}
@@ -882,7 +882,7 @@ service_prefix: "${service_prefix}"
 layer: service
 question_mode: ${question_mode}
 created_at: "${ISO_TIMESTAMP}"
-created_by: "${git_user}"
+created_by: "${profile.name}"  # From profile.yaml (loaded in Step 0c)
 target_repos:
 ${for repo in target_repos}
   - ${repo}

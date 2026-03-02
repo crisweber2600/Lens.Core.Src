@@ -49,9 +49,8 @@ Which workflows would you like to run?
 [1] PRD Creation (required) [Required]
 [2] PRD Validation (required) [Required]
 [3] UX Design - Is UI involved in this feature? [Y/N]
-[4] Architecture (required) [Required]
 
-Enter as: "Y | Y | Y | Y" or "required-only" (skips UX) or "all"
+Enter as: "Y | Y | Y" or "required-only" (skips UX) or "all"
 ```
 
 After receiving user input, execute workflows in sequence:
@@ -61,8 +60,6 @@ After receiving user input, execute workflows in sequence:
   → Read fully and follow `_bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-validate-prd.md`
 - [3] UX Design (if Y) — Switch to Sally (UX Designer) persona: `_bmad/bmm/agents/ux-designer.md`
   → Read fully and follow `_bmad/bmm/workflows/2-plan-workflows/create-ux-design/workflow.md`
-- [4] Architecture — Switch to Winston (Architect) persona: `_bmad/bmm/agents/architect.md`
-  → Read fully and follow `_bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md`
 
 Each workflow uses step-file architecture — halt at each step within the workflow, wait for user input.
 
@@ -95,8 +92,7 @@ Each workflow uses step-file architecture — halt at each step within the workf
 
 **Output artifacts** (written to `{docs_path}/`):
 - `prd.md` (required)
-- `ux-design.md` (required)
-- `architecture.md` (required)
+- `ux-design.md` (if UX workflow was run)
 
 **Next phase:** `/techplan` — runs after businessplan PR is merged into `{initiative_root}-small`
 ```

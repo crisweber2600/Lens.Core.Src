@@ -72,11 +72,14 @@ output: |
 
 ```yaml
 if confirmed:
+  # Load user profile for identity
+  profile = load("_bmad-output/lens-work/personal/profile.yaml")
+  
   # Update gate status
   selected_gate.status = "overridden"
   selected_gate.override_reason = reason
   selected_gate.override_at = now()
-  selected_gate.override_by = config.user_name
+  selected_gate.override_by = profile.name  # From profile.yaml
   
   save(state, "_bmad-output/lens-work/state.yaml")
   
@@ -86,7 +89,7 @@ if confirmed:
     event: "override",
     gate: selected_gate.name,
     reason: reason,
-    user: config.user_name
+    user: profile.name  # From profile.yaml
   })
 ```
 
@@ -98,7 +101,7 @@ if confirmed:
 Gate: ${selected_gate.name}
 Status: overridden
 Reason: ${reason}
-By: ${config.user_name}
+By: ${profile.name}  # From profile.yaml
 At: ${now()}
 
 This override is logged and will appear in all status reports.

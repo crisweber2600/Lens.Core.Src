@@ -30,6 +30,45 @@ This guide is written for:
 
 ---
 
+## User Information Sourcing
+
+**CRITICAL RULE: All user information MUST come from `profile.yaml`**
+
+Whenever user identity, name, email, or any personal information is needed in workflows, documents, or artifacts:
+
+1. **Source of truth:** `_bmad-output/lens-work/personal/profile.yaml`
+2. **Load profile first:** Always load profile.yaml before using user information
+3. **Never use:** `config.user_name` from `bmadconfig.yaml` (deprecated for user identity)
+4. **Profile fields:**
+   - `profile.name` - User's full name
+   - `profile.email` - User's email address
+   - `profile.role` - User's role (product-manager, developer, architect, etc.)
+   - `profile.scope` - User's scope (team, organization, enterprise)
+   - `profile.preferences` - User preferences (communication_style, auto_fetch, etc.)
+
+**Examples of correct usage:**
+```yaml
+# Load profile
+profile = load("_bmad-output/lens-work/personal/profile.yaml")
+
+# Use profile fields
+created_by: profile.name
+author: profile.name
+overridden_by: profile.name
+ratified_by: profile.name
+```
+
+**Document frontmatter:**
+```yaml
+---
+title: Document Title
+author: {profile.name}  # From profile.yaml
+date: {today}
+---
+```
+
+---
+
 ## Repository Architecture
 
 A BMAD control repo orchestrates planning, discovery, and lifecycle management for multiple target projects using the BMAD Method v6 framework. The control repo dogfoods its own tooling through the lens-work module.
