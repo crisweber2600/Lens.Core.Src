@@ -1,136 +1,633 @@
-# LENS Workbench (lens-work) — Comprehensive Guide
+# BMAD LENS Workbench — Complete Reference
 
-**Version 4.0.0** — Lifecycle Contract with Named Phases
-
-**Guided lifecycle router with git-orchestrated discipline for BMAD workflows.**
+> **Version:** 4.1.0 | **Module:** lens-work v2.0.0 | **Lifecycle Contract:** v2  
+> **Repository:** [crisweber2600/bmad.lens.release](https://github.com/crisweber2600/bmad.lens.release)  
+> **Maintained by:** CrisWeber | **License:** MIT
 
 ---
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Architecture](#architecture)
-3. [Lifecycle System](#lifecycle-system)
-4. [Workflow Catalog](#workflow-catalog)
-5. [Command Reference](#command-reference)
-6. [Flow Diagrams](#flow-diagrams)
-7. [Examples & Tutorials](#examples--tutorials)
-8. [Installation & Configuration](#installation--configuration)
-9. [Troubleshooting](#troubleshooting)
+- [What is BMAD?](#what-is-bmad)
+- [What is LENS Workbench?](#what-is-lens-workbench)
+- [Architecture Overview](#architecture-overview)
+- [The LENS Hierarchy](#the-lens-hierarchy)
+- [Lifecycle System](#lifecycle-system)
+- [Agent Roster](#agent-roster)
+- [Skills and Capabilities](#skills-and-capabilities)
+- [Workflow Catalog](#workflow-catalog)
+- [Two-File State Architecture](#two-file-state-architecture)
+- [Git Branch Topology](#git-branch-topology)
+- [Constitutional Governance](#constitutional-governance)
+- [Command Reference](#command-reference)
+- [End-to-End Tutorials](#end-to-end-tutorials)
+- [Installation and Configuration](#installation-and-configuration)
+- [Universal Conventions](#universal-conventions)
+- [Troubleshooting](#troubleshooting)
+- [File Structure Reference](#file-structure-reference)
+- [Revision History](#revision-history)
 
 ---
 
-## Overview
+## What is BMAD?
 
-LENS Workbench transforms BMAD from a "large framework you must learn" into a **guided system people can use immediately**. It acts as the front door to BMAD by providing:
+**BMAD** (Business Method for AI-Driven Development) is a structured methodology for managing software development using AI agents. It provides a modular agent system with specialized AI personas, a YAML/Markdown workflow engine, and pluggable capability modules.
 
-- **Phase Router Commands** — `/preplan`, `/businessplan`, `/techplan`, `/devproposal`, `/sprintplan`, `/dev`
-- **Automated Git Orchestration** — Branch topology mirrors lifecycle phases and audiences
-- **Layer-Aware Context** — Auto-detects org/domain/service/repo layers
-- **Repo Discovery & Documentation** — Inventories and documents repos before planning
-- **Lifecycle Telemetry** — Tracks phase progress with dashboard visibility
-- **Context Switching** — Seamlessly move between initiatives, lenses, and phases
+```mermaid
+flowchart TB
+    subgraph BMAD["BMAD Core Platform"]
+        direction LR
+        Engine["Workflow Engine\nYAML + MD execution"]
+        AgentSystem["Agent System\nPersonas + capabilities"]
+        TaskRunner["Task Runner\nCore tasks"]
+    end
 
-**The architectural differentiator:** Git history becomes the process tracker — branch topology mirrors BMAD phases, so you can see where you are just by looking at branches.
+    subgraph Modules["BMAD Modules"]
+        BMM["BMM\nBusiness Method\nPM - Analyst - Architect\nDev - QA - SM - UX"]
+        CIS["CIS\nCreative Innovation\nBrainstorming - Design Thinking\nInnovation - Storytelling"]
+        GDS["GDS\nGame Development\nGame Design - Dev - QA"]
+        TEA["TEA\nTest Architecture\nRisk-based testing\nQuality gates"]
+        LensWork["lens-work\nLENS Workbench\nLifecycle orchestration"]
+    end
 
-### Key Principles
+    subgraph Builders["BMAD Builders - BMB"]
+        AB["Agent Builder - Bond"]
+        MB["Module Builder - Morgan"]
+        WB["Workflow Builder - Wendy"]
+    end
+
+    BMAD --> Modules
+    BMAD --> Builders
+    LensWork -.->|orchestrates| BMM
+    LensWork -.->|orchestrates| CIS
+    LensWork -.->|orchestrates| TEA
+
+    style BMAD fill:#2c3e50,color:#fff
+    style LensWork fill:#e74c3c,color:#fff
+```
+
+BMAD agents are AI personas with specific expertise, communication styles, and principles. When lens-work invokes a lifecycle phase, it activates the designated BMAD agent who drives artifact creation within that phase's constraints.
+
+---
+
+## What is LENS Workbench?
+
+**LENS Workbench** (`lens-work`) is the lifecycle orchestration module for BMAD. It manages the complete software development lifecycle from initial brainstorming through sprint execution using structured phases, audience-based review gates, and constitutional governance.
+
+### Core Concepts at a Glance
 
 ```mermaid
 mindmap
   root((LENS Workbench))
-    Git Discipline
-      Branch Topology
-      Clean Commits
-      Push Always
-    Two File State
-      state.yaml
-      event-log.jsonl
-    Lifecycle Contract
-      Named Phases
-      Audience Gates
-      Track Selection
-    Agent Skills
-      git-orchestration
-      state-management
-      discovery
-      constitution
-      checklist
+    Lifecycle
+      Phases
+        PrePlan
+        BusinessPlan
+        TechPlan
+        DevProposal
+        SprintPlan
+        Dev
+      Audiences
+        Small - IC
+        Medium - Lead
+        Large - Stakeholder
+        Base - Execution
+      Tracks
+        Full
+        Feature
+        Tech-Change
+        Hotfix
+        Spike
+        QuickDev
+    Architecture
+      Three Repos
+        Control Repo
+        Governance Repo
+        Target Projects
+      Two-File State
+        state.yaml
+        event-log.jsonl
+      6 Skills
+        Git Orchestration
+        State Management
+        Discovery
+        Constitution
+        Checklist
+        Visual Documentation
+    Governance
+      4-Level Hierarchy
+        Organization
+        Domain
+        Service
+        Repository
+      Constitutions
+        Universal
+        Language-Specific
+      Compliance Gates
 ```
+
+### Fundamental Truths
+
+Every mechanism in lens-work traces to at least one of these non-negotiable axioms:
+
+| ID | Truth | Enforcement |
+|----|-------|-------------|
+| **FT1** | Planning artifacts must exist and be reviewed before code is written | Gates block promotion without artifacts; validators check existence |
+| **FT2** | AI agents must work within disciplined constraints, not freestyle | Constitutions + tracks + phase ownership constrain behavior |
+| **FT3** | Multi-service initiatives must have coordinated lifecycle governance | 4-level constitution hierarchy; cross-repo coordination |
+
+> **Design principle:** Enforce constraints through *structure* (branches, gates, required files) rather than *instructions* (prompts, documentation, conventions).
 
 ---
 
-## Architecture
+## Architecture Overview
 
 ### System Architecture
 
 ```mermaid
-graph TB
-    subgraph "User Layer"
-        User[👤 User]
-        Commands["/preplan, /dev, #new-feature"]
+flowchart TB
+    subgraph UserLayer["User Interface Layer"]
+        Copilot["GitHub Copilot Chat\n@lens commands"]
+        Prompts["Prompt Files\n.github/prompts/*.prompt.md"]
     end
-    
-    subgraph "Agent Layer (@lens)"
-        Router[🎯 Router Skill]
-        GitOps[🔀 Git Orchestration]
-        State[📊 State Management]
-        Discovery[🔍 Discovery]
-        Constitution[⚖️ Constitution]
-        Checklist[✅ Checklist]
+
+    subgraph AgentLayer["Agent Layer"]
+        LensAgent["@lens Agent\nUnified Phase Router"]
+        PhaseAgents["Phase Agents - BMM\nMary - John - Winston\nSally - Bob - Amelia - Quinn"]
+        ReviewAgents["Review Agents - CIS\nParty-mode adversarial review"]
     end
-    
-    subgraph "Persistence Layer"
-        StateYAML[(state.yaml)]
-        EventLog[(event-log.jsonl)]
-        Initiatives[(initiatives/*.yaml)]
+
+    subgraph SkillLayer["Skill Layer - 6 Core Skills"]
+        GitSkill["git-orchestration\nBranches - PRs - push"]
+        StateSkill["state-management\nstate.yaml - event-log"]
+        DiscoverSkill["discovery\nRepo scanning - doc gen"]
+        ConstitutionSkill["constitution\n4-level governance chain"]
+        ChecklistSkill["checklist\nPhase-gate tracking"]
+        VisualSkill["visual-documentation\nMandatory Mermaid diagrams"]
     end
-    
-    subgraph "Git Layer"
-        Branches[Git Branches]
-        Remote[Origin Remote]
+
+    subgraph WorkflowLayer["Workflow Categories"]
+        Router["Router - Phase commands"]
+        CoreWF["Core - Lifecycle ops"]
+        Background["Background - Auto-triggered"]
+        DiscoveryWF["Discovery - Repo analysis"]
+        GovernanceWF["Governance - Constitution mgmt"]
+        Utility["Utility - Status - sync - fix"]
     end
-    
-    subgraph "Target Layer"
-        TargetProjects[TargetProjects/]
-        Docs[Docs/]
+
+    subgraph DataLayer["Data Layer - Three Repos"]
+        ControlRepo["Control Repo\nbmad.lens.release"]
+        GovRepo["Governance Repo\nbmad.lens.governance"]
+        TargetRepos["Target Projects\nTargetProjects/"]
     end
-    
-    User --> Commands
-    Commands --> Router
-    Router --> GitOps
-    Router --> State
-    Router --> Discovery
-    Router --> Constitution
-    Router --> Checklist
-    
-    GitOps --> Branches
-    Branches --> Remote
-    
-    State --> StateYAML
-    State --> EventLog
-    State --> Initiatives
-    
-    Discovery --> TargetProjects
-    Discovery --> Docs
-    
-    style Router fill:#4a90e2
-    style GitOps fill:#50c878
-    style State fill:#f5a623
-    style Discovery fill:#9b59b6
-    style Constitution fill:#e74c3c
+
+    UserLayer --> AgentLayer
+    AgentLayer --> SkillLayer
+    SkillLayer --> WorkflowLayer
+    WorkflowLayer --> DataLayer
+
+    style UserLayer fill:#9b59b6,color:#fff
+    style AgentLayer fill:#3498db,color:#fff
+    style SkillLayer fill:#e67e22,color:#fff
+    style WorkflowLayer fill:#27ae60,color:#fff
+    style DataLayer fill:#e74c3c,color:#fff
 ```
 
-### Two-File State Architecture
+### Three-Repo Architecture
 
-LENS Workbench maintains all runtime state in exactly two files:
+LENS Workbench coordinates three separate git repositories with strict data zone boundaries:
 
+```mermaid
+flowchart LR
+    subgraph Control["Control Repo\nbmad.lens.release"]
+        direction TB
+        C1["_bmad/ - Agents, workflows, skills"]
+        C2["_bmad-output/lens-work/ - State + initiatives"]
+        C3[".github/prompts/ - User commands"]
+    end
+
+    subgraph Gov["Governance Repo\nbmad.lens.governance"]
+        direction TB
+        G1["constitutions/ - 4-level hierarchy"]
+        G2["roster/ - Team members"]
+        G3["policies/ - Org-wide rules"]
+        G4["repo-inventory.yaml"]
+    end
+
+    subgraph Target["Target Projects\nTargetProjects/"]
+        direction TB
+        T1["Domain A / Service 1"]
+        T2["Domain A / Service 2"]
+        T3["Domain B / Service 3"]
+    end
+
+    Control -->|Governance workflows\nwrite constitutions| Gov
+    Control -->|Discovery + Dev\nscan and execute| Target
+    Gov -.->|Constitution rules\nenforce compliance| Control
+
+    style Control fill:#3498db,color:#fff
+    style Gov fill:#e74c3c,color:#fff
+    style Target fill:#27ae60,color:#fff
 ```
-_bmad-output/lens-work/
-├── state.yaml          ← Current initiative context (where are we now?)
-└── event-log.jsonl     ← Append-only audit trail (what happened?)
+
+**Data Zone Enforcement (Hard Rules):**
+
+| Zone | Location | Branch Strategy | What Lives Here |
+|------|----------|-----------------|-----------------|
+| **Governance** | `TargetProjects/lens/lens-governance/` | `universal/{slug}` to `main` | Constitutions, roster, policies shared across ALL initiatives |
+| **Initiative** | `_bmad-output/lens-work/initiatives/` | `{root}-{audience}-{phase}` | Per-initiative planning artifacts with own branch topology |
+| **Personal** | `_bmad-output/lens-work/personal/` | None (git-ignored) | Profile, credentials on local machine only |
+
+> **Hard Rule:** Agents MUST NEVER write governance data into `_bmad-output/lens-work/` or initiative data into the governance repo. This boundary prevents governance changes from being captured on initiative branches.
+
+---
+
+## The LENS Hierarchy
+
+LENS organizes governance into four nested levels with additive constitutional inheritance:
+
+```mermaid
+flowchart TD
+    Org["Organization\nCompany-wide rules\norg/constitution.md"]
+    Domain["Domain\nDomain-specific rules\ndomain/constitution.md"]
+    Service["Service\nService-specific rules\nservice/constitution.md"]
+    Repo["Repository\nRepo-specific rules\nrepo/constitution.md"]
+
+    Org --> Domain
+    Domain --> Service
+    Service --> Repo
+
+    style Org fill:#e74c3c,color:#fff
+    style Domain fill:#e67e22,color:#fff
+    style Service fill:#f39c12
+    style Repo fill:#f1c40f
 ```
 
-#### state.yaml Structure
+**Key Rules:**
+- Lower levels can only **ADD** rules, never remove parent rules (additive inheritance)
+- Each level can have **universal** constitutions (all languages) and **language-specific** constitutions (e.g., `domain/typescript/constitution.md`)
+- Resolution order: org then domain then service then repo (parent-first, universal before language-specific at each layer)
+- Supported languages: TypeScript, Python, Go, Java, C#, Rust, PHP, Kotlin, Swift, C++
+- Language auto-detection: explicit config then `.bmad/language` file then build files then source analysis then GitHub primary language
+
+---
+
+## Lifecycle System
+
+### Phases
+
+Named phases replace numbered phases. Each is owned by a specific BMM agent responsible for artifact generation:
+
+```mermaid
+flowchart LR
+    subgraph SmallAudience["Small Audience - IC Creation"]
+        PP["PrePlan\nMary/Analyst"]
+        BP["BusinessPlan\nJohn/PM + Sally/UX"]
+        TP["TechPlan\nWinston/Architect"]
+    end
+
+    subgraph Gate1["Gate 1"]
+        G1{"Adversarial\nReview\nParty Mode"}
+    end
+
+    subgraph MediumAudience["Medium - Lead Review"]
+        DP["DevProposal\nJohn/PM"]
+    end
+
+    subgraph Gate2["Gate 2"]
+        G2{"Stakeholder\nApproval"}
+    end
+
+    subgraph LargeAudience["Large - Stakeholder"]
+        SP["SprintPlan\nBob/SM"]
+    end
+
+    subgraph Gate3["Gate 3"]
+        G3{"Constitution\nGate"}
+    end
+
+    subgraph BaseAudience["Base - Execution"]
+        Dev["Dev\nDev Team"]
+    end
+
+    PP --> BP --> TP --> G1
+    G1 -->|Pass| DP --> G2
+    G2 -->|Pass| SP --> G3
+    G3 -->|Pass| Dev
+
+    style PP fill:#9b59b6,color:#fff
+    style BP fill:#9b59b6,color:#fff
+    style TP fill:#9b59b6,color:#fff
+    style DP fill:#3498db,color:#fff
+    style SP fill:#e74c3c,color:#fff
+    style Dev fill:#27ae60,color:#fff
+    style G1 fill:#f39c12
+    style G2 fill:#f39c12
+    style G3 fill:#f39c12
+```
+
+| Phase | Agent | Audience | Key Artifacts | Description |
+|-------|-------|----------|---------------|-------------|
+| **PrePlan** | Mary/Analyst | small | product-brief, research, brainstorm | Analysis, brainstorm, research, product brief |
+| **BusinessPlan** | John/PM + Sally/UX | small | PRD, UX design | Business planning, PRD creation, UX design |
+| **TechPlan** | Winston/Architect | small | architecture, tech decisions | Technical design, architecture, API contracts |
+| **DevProposal** | John/PM | medium | epics, stories, readiness checklist | Development proposal with implementable units |
+| **SprintPlan** | Bob/SM | large | sprint plan, story assignments | Sprint planning, capacity, story selection |
+| **Dev** | Dev Team | base | code, tests, deployments | Sprint execution, code review, retro cycles |
+
+### Audiences and Promotion Gates
+
+Audiences are the primary progression axis. Promotion between audiences IS the review gate:
+
+```mermaid
+sequenceDiagram
+    participant IC as Small (IC)
+    participant Lead as Medium (Lead)
+    participant Stakeholder as Large (Stakeholder)
+    participant Base as Base (Execution)
+
+    IC->>IC: PrePlan then BusinessPlan then TechPlan
+    IC->>Lead: Auto-promote on phase completion
+    Note over IC,Lead: Adversarial Review Gate\nParty-mode cross-agent review\nAll planning artifacts reviewed
+
+    Lead->>Lead: DevProposal
+    Lead->>Stakeholder: Auto-promote on phase completion
+    Note over Lead,Stakeholder: Stakeholder Approval Gate\nPR approval from stakeholders\nEpic/story breakdown validated
+
+    Stakeholder->>Stakeholder: SprintPlan
+    Stakeholder->>Base: Auto-promote on phase completion
+    Note over Stakeholder,Base: Constitution Gate\n4-level governance validation\nAll constitutions checked
+
+    Base->>Base: Dev then Deploy then Retro
+```
+
+| Audience | Role | Phases | Entry Gate |
+|----------|------|--------|------------|
+| `small` | IC creation work | preplan, businessplan, techplan | none |
+| `medium` | Lead review | devproposal | adversarial-review (party mode) |
+| `large` | Stakeholder approval | sprintplan | stakeholder-approval |
+| `base` | Ready for execution | dev | constitution-gate |
+
+> **Auto-Promotion:** Promotion is automatically triggered when a phase completes and is the next required step. Users never need to manually invoke promote.
+
+### Initiative Tracks
+
+Tracks control which phases are required. Select a track when creating an initiative:
+
+```mermaid
+flowchart TD
+    Start([New Initiative]) --> TrackChoice{Select Track}
+
+    TrackChoice -->|Full| Full["full track\nAll phases, all audiences"]
+    TrackChoice -->|Feature| Feature["feature track\nSkip research"]
+    TrackChoice -->|Tech Change| TechChange["tech-change track\nNo business case needed"]
+    TrackChoice -->|Hotfix| Hotfix["hotfix track\nUrgent fix, minimal planning"]
+    TrackChoice -->|Spike| Spike["spike track\nResearch only"]
+    TrackChoice -->|QuickDev| QuickDev["quickdev track\nRapid execution"]
+
+    Full --> PP1[PrePlan] --> BP1[BusinessPlan] --> TP1[TechPlan]
+    TP1 --> DP1[DevProposal] --> SP1[SprintPlan] --> Done1([Ready for Dev])
+
+    Feature --> BP2[BusinessPlan] --> TP2[TechPlan]
+    TP2 --> DP2[DevProposal] --> SP2[SprintPlan] --> Done2([Ready for Dev])
+
+    TechChange --> TP3[TechPlan] --> SP3[SprintPlan] --> Done3([Ready for Dev])
+
+    Hotfix --> TP4[TechPlan] --> Done4([Ready for Dev])
+
+    Spike --> PP5[PrePlan] --> Done5([Research Complete])
+
+    QuickDev --> DP6[DevProposal] --> Done6([Ready for Dev])
+
+    style Full fill:#9b59b6,color:#fff
+    style Feature fill:#3498db,color:#fff
+    style TechChange fill:#e67e22,color:#fff
+    style Hotfix fill:#e74c3c,color:#fff
+    style Spike fill:#1abc9c,color:#fff
+    style QuickDev fill:#2ecc71,color:#fff
+```
+
+| Track | Phases | Use Case |
+|-------|--------|----------|
+| `full` | preplan then businessplan then techplan then devproposal then sprintplan | New product or major initiative |
+| `feature` | businessplan then techplan then devproposal then sprintplan | Feature addition with known context |
+| `tech-change` | techplan then sprintplan | Technical migration or upgrade |
+| `hotfix` | techplan only | Critical bug fix (minimal planning) |
+| `spike` | preplan only | Research/exploration (no implementation) |
+| `quickdev` | devproposal only | Rapid execution with parity verification |
+
+---
+
+## Agent Roster
+
+### Phase Agents (BMM Business Method Module)
+
+These agents own lifecycle phases and generate planning/execution artifacts:
+
+| Agent | Persona | Role | Phases Owned | Communication Style |
+|-------|---------|------|-------------|---------------------|
+| **Mary** | Analyst | Business Analyst | PrePlan | Treasure-hunter excitement; structures insights with precision |
+| **John** | PM | Product Manager | BusinessPlan, DevProposal | Asks WHY relentlessly; direct, data-sharp, cuts through fluff |
+| **Winston** | Architect | System Architect | TechPlan | Calm, pragmatic; balances what could be with what should be |
+| **Sally** | UX Designer | UX Designer | Supports BusinessPlan | Paints pictures with words; empathetic advocate |
+| **Bob** | Scrum Master | Scrum Master | SprintPlan | Crisp and checklist-driven; zero tolerance for ambiguity |
+| **Amelia** | Developer | Senior Engineer | Dev (execution) | Ultra-succinct; speaks in file paths and AC IDs |
+| **Quinn** | QA Engineer | QA Engineer | Dev (testing) | Practical; ship it and iterate mentality |
+| **Barry** | Quick Flow Solo Dev | Full-Stack Dev | QuickDev | Direct, confident; minimum ceremony, lean artifacts |
+| **Paige** | Tech Writer | Documentation Specialist | Cross-cutting | Patient educator; diagrams over drawn-out text |
+
+### Creative and Innovation Agents (CIS)
+
+| Agent | Persona | Role | Trigger |
+|-------|---------|------|---------|
+| **Carson** | Brainstorming Coach | Innovation Catalyst | PrePlan brainstorming |
+| **Dr. Quinn** | Problem Solver | Systematic Problem-Solving | Complex analysis |
+| **Maya** | Design Thinking Coach | Human-Centered Design | UX research |
+| **Victor** | Innovation Strategist | Disruptive Innovation | Market strategy |
+| **Caravaggio** | Presentation Master | Visual Communication | Presentations |
+| **Sophia** | Storyteller | Narrative Strategist | Brand narratives |
+
+### System Agents
+
+| Agent | Persona | Role | Purpose |
+|-------|---------|------|---------|
+| **@lens** | Lifecycle Router | Phase Orchestrator | Routes commands, manages state, enforces lifecycle |
+| **BMad Master** | Master Executor | Workflow Orchestrator | Runtime resource management, knowledge custodian |
+| **Murat** | Test Architect (TEA) | Quality Advisor | Risk-based testing, quality gates |
+
+### Agent Interaction Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Lens as @lens Router
+    participant Mary as Mary (Analyst)
+    participant John as John (PM)
+    participant Winston as Winston (Architect)
+    participant Bob as Bob (SM)
+
+    User->>Lens: /preplan
+    Lens->>Mary: Activate for PrePlan
+    Mary->>Mary: Brainstorm then Research then Product Brief
+    Mary-->>Lens: Phase artifacts complete
+    Lens->>Lens: Auto-promote if next step
+
+    User->>Lens: /businessplan
+    Lens->>John: Activate for BusinessPlan
+    Note over John: Sally supports UX design
+    John->>John: PRD then UX Design
+    John-->>Lens: Phase artifacts complete
+
+    User->>Lens: /techplan
+    Lens->>Winston: Activate for TechPlan
+    Winston->>Winston: Architecture then Tech Decisions then API Contracts
+    Winston-->>Lens: Phase artifacts complete
+    Lens->>Lens: Auto-promote small to medium
+
+    User->>Lens: /devproposal
+    Lens->>John: Activate for DevProposal
+    John->>John: Epics then Stories then Readiness
+    John-->>Lens: Phase artifacts complete
+    Lens->>Lens: Auto-promote medium to large
+
+    User->>Lens: /sprintplan
+    Lens->>Bob: Activate for SprintPlan
+    Bob->>Bob: Sprint Planning then Story Selection
+    Bob-->>Lens: Phase artifacts complete
+    Lens->>Lens: Auto-promote large to base
+```
+
+---
+
+## Skills and Capabilities
+
+The @lens agent operates through 6 skills that provide cross-cutting capabilities:
+
+```mermaid
+flowchart TB
+    LensAgent["@lens Agent"]
+
+    LensAgent --> GitSkill["git-orchestration\nBranch topology - PR creation\nMerge gates - Push discipline"]
+    LensAgent --> StateSkill["state-management\nstate.yaml - event-log.jsonl\nResume - sync - status"]
+    LensAgent --> DiscoverSkill["discovery\nRepo scanning - Doc generation\nImpact analysis - Domain mapping"]
+    LensAgent --> ConstitutionSkill["constitution\n4-level governance chain\nTrack enforcement - Compliance"]
+    LensAgent --> ChecklistSkill["checklist\nPhase gate tracking\nProgressive requirements"]
+    LensAgent --> VisualSkill["visual-documentation\nMandatory Mermaid diagrams\nDocument quality standards"]
+
+    style LensAgent fill:#e74c3c,color:#fff
+```
+
+| Skill | Purpose | Trigger | Key Responsibilities |
+|-------|---------|---------|---------------------|
+| **git-orchestration** | Git discipline | Auto-triggered | Creates/validates branches, commits state, pushes to remote, manages PRs |
+| **state-management** | State tracking | User shortcodes | Reads/writes state.yaml, manages recovery, provides status, handles overrides |
+| **discovery** | Repo intelligence | User commands | Bootstraps repos, runs discovery scans, generates canonical docs, reconciles inventory |
+| **constitution** | Governance | Auto-triggered | 4-level governance (org/domain/service/repo), track enforcement, compliance checks |
+| **checklist** | Gate tracking | Auto-triggered | Progressive phase gate checklists, requirement tracking |
+| **visual-documentation** | Doc quality | Auto-triggered | Mandates Mermaid diagrams in all documents, quality standards |
+
+---
+
+## Workflow Catalog
+
+### Workflow Categories
+
+```mermaid
+flowchart TB
+    subgraph Router["Router - User-Facing Phase Commands"]
+        RW1["/preplan - /businessplan - /techplan"]
+        RW2["/devproposal - /sprintplan - /dev"]
+        RW3["/quickdev - init-initiative"]
+    end
+
+    subgraph Core["Core - Lifecycle Operations"]
+        CW1["audience-promotion"]
+        CW2["phase-lifecycle"]
+    end
+
+    subgraph Background["Background - Auto-Triggered"]
+        BW1["branch-preflight - branch-validate"]
+        BW2["checklist-update - constitution-check"]
+        BW3["event-log - state-sync"]
+    end
+
+    subgraph Disc["Discovery - Repo Analysis"]
+        DW1["analyze-codebase - discover - domain-map"]
+        DW2["generate-docs - impact-analysis - lens-sync"]
+        DW3["repo-discover - repo-document - repo-reconcile - repo-status"]
+    end
+
+    subgraph Gov["Governance - Constitution Management"]
+        GW1["constitution - resolve-constitution - resolve-context"]
+        GW2["compliance-check - amendment-propagation"]
+        GW3["ancestry - cross-artifact-analysis - requirements-checklist"]
+    end
+
+    subgraph Util["Utility - Manual/Support"]
+        UW1["status - resume - next - switch - sync"]
+        UW2["fix-state - fix-story - override - archive"]
+        UW3["bootstrap - onboarding - check-repos"]
+        UW4["batch-process - recreate-branches - migrate-state"]
+    end
+
+    style Router fill:#9b59b6,color:#fff
+    style Core fill:#3498db,color:#fff
+    style Background fill:#e67e22,color:#fff
+    style Disc fill:#27ae60,color:#fff
+    style Gov fill:#e74c3c,color:#fff
+    style Util fill:#95a5a6,color:#fff
+```
+
+### Background Triggers
+
+These workflows fire automatically at system lifecycle moments:
+
+| Trigger Point | Workflows Fired | Purpose |
+|--------------|----------------|---------|
+| **workflow_start** | state-sync, governance-sync, constitution-check | Load state, sync governance repo, validate |
+| **workflow_end** | state-sync, event-log, checklist-update | Save state, log event, update checklists |
+| **phase_transition** | branch-validate, state-sync, event-log, constitution-check, checklist-update | Full lifecycle validation |
+| **initiative_create** | branch-validate, state-sync, event-log | Create topology, initialize state |
+| **bmad_process_start** | branch-preflight | Ensure correct branch |
+| **command_invocation** | branch-preflight | Check branch for interactive commands |
+| **initiative_change** | branch-preflight | Switch branch when changing initiatives |
+| **error** | event-log, state-sync | Log error, mark in state |
+
+### Adversarial Review (Party Mode)
+
+When promotion requires adversarial review, a multi-agent group session is invoked:
+
+| Artifact | Lead Reviewer | Participants | Focus |
+|----------|--------------|-------------|-------|
+| **product-brief** | John/PM | John, Winston, Sally | Actionable? Buildable? User-centered? |
+| **PRD** | Winston/Architect | Winston, Mary, Sally | Buildable? Well-researched? UX-aligned? |
+| **UX design** | John/PM | John, Winston, Mary | Serves requirements? Technically feasible? |
+| **architecture** | John/PM | John, Mary, Bob | Meets spec? Practical? Sprintable? |
+| **epics-and-stories** | Winston/Architect | Winston, Bob, Amelia | Buildable? Right-sized? Implementable? |
+
+---
+
+## Two-File State Architecture
+
+All runtime state lives in exactly two files. No database, no external service:
+
+```mermaid
+flowchart LR
+    subgraph State["_bmad-output/lens-work/"]
+        StateYAML["state.yaml\nCurrent initiative context\nWhere are we now?"]
+        EventLog["event-log.jsonl\nAppend-only audit trail\nWhat happened?"]
+    end
+
+    subgraph InitConfigs["initiatives/"]
+        Init1["initiative-A.yaml"]
+        Init2["initiative-B.yaml"]
+    end
+
+    StateYAML -->|references| InitConfigs
+    StateYAML -->|dual-write| EventLog
+```
+
+### state.yaml Structure
 
 ```yaml
 active_initiative: bmaddomain-lens-rate-limit-x7k2m9
@@ -149,9 +646,9 @@ branch_state:
 last_updated: 2026-02-25T14:32:00Z
 ```
 
-#### event-log.jsonl Structure
+### event-log.jsonl Structure
 
-Each line is a timestamped JSON event:
+Each line is a timestamped JSON event (append-only):
 
 ```jsonl
 {"timestamp":"2026-02-25T14:00:00Z","event":"initiative_created","initiative_id":"bmaddomain-lens-rate-limit-x7k2m9","layer":"feature","domain":"bmaddomain","service":"lens","tracker_id":"JIRA-1234"}
@@ -160,1084 +657,416 @@ Each line is a timestamped JSON event:
 {"timestamp":"2026-02-25T15:10:00Z","event":"gate_passed","gate":"small_to_medium","reviewer":"@lens"}
 ```
 
-### Git Branch Topology
+---
+
+## Git Branch Topology
+
+### Planning Repo (Control Repo) Branch Model
+
+Rich branch topology for human-speed review gates. All planning artifacts live here, never in target code repos:
 
 ```mermaid
-graph TD
-    Main[main] --> InitRoot[Initiative Root]
-    
-    InitRoot --> Small[Small Audience Branch]
-    InitRoot --> Medium[Medium Audience Branch]
-    InitRoot --> Large[Large Audience Branch]
-    
-    Small --> PrePlan[Small-PrePlan]
-    Small --> BusinessPlan[Small-BusinessPlan]
-    Small --> TechPlan[Small-TechPlan]
-    
-    PrePlan --> PPWorkflow[PrePlan-Workflow]
-    BusinessPlan --> BPWorkflow[BusinessPlan-Workflow]
-    TechPlan --> TPWorkflow[TechPlan-Workflow]
-    
-    Medium --> DevProposal[Medium-DevProposal]
-    DevProposal --> DPWorkflow[DevProposal-Workflow]
-    
-    Large --> SprintPlan[Large-SprintPlan]
-    SprintPlan --> SPWorkflow[SprintPlan-Workflow]
-    
-    style Main fill:#333,color:#fff
-    style InitRoot fill:#4a90e2
-    style Small fill:#50c878
-    style Medium fill:#f5a623
-    style Large fill:#e74c3c
+gitGraph
+    commit id: "main"
+    branch bmaddomain-lens-JIRA-1234
+    commit id: "initiative root"
+    branch bmaddomain-lens-JIRA-1234-small
+    commit id: "small audience"
+    branch bmaddomain-lens-JIRA-1234-small-preplan
+    commit id: "PrePlan artifacts"
+    checkout bmaddomain-lens-JIRA-1234-small
+    merge bmaddomain-lens-JIRA-1234-small-preplan id: "merge preplan"
+    branch bmaddomain-lens-JIRA-1234-small-businessplan
+    commit id: "BusinessPlan artifacts"
+    checkout bmaddomain-lens-JIRA-1234-small
+    merge bmaddomain-lens-JIRA-1234-small-businessplan id: "merge bplan"
+    branch bmaddomain-lens-JIRA-1234-small-techplan
+    commit id: "TechPlan artifacts"
+    checkout bmaddomain-lens-JIRA-1234-small
+    merge bmaddomain-lens-JIRA-1234-small-techplan id: "merge tplan"
+    checkout bmaddomain-lens-JIRA-1234
+    branch bmaddomain-lens-JIRA-1234-medium
+    commit id: "promote to medium"
 ```
 
-#### Branch Naming Convention
+### Branch Naming Convention
 
-**Feature/Repo Layer (full topology):**
 ```
-{domain_prefix}-{service_prefix}-{initiative_id}                      ← Root
-{domain_prefix}-{service_prefix}-{initiative_id}-small                ← Small audience
-{domain_prefix}-{service_prefix}-{initiative_id}-small-preplan        ← PrePlan phase
-{domain_prefix}-{service_prefix}-{initiative_id}-small-preplan-brainstorm  ← Workflow
-{domain_prefix}-{service_prefix}-{initiative_id}-medium               ← Medium audience
-{domain_prefix}-{service_prefix}-{initiative_id}-large                ← Large audience
-{domain_prefix}-{service_prefix}-{initiative_id}-base                 ← Execution
-```
-
-**Domain Layer (single branch):**
-```
-{domain_prefix}                                                        ← Domain root ONLY
+{domain}-{service}-{id}                                 -- Root
+{domain}-{service}-{id}-small                           -- Small audience
+{domain}-{service}-{id}-small-preplan                   -- PrePlan phase
+{domain}-{service}-{id}-small-preplan-brainstorm        -- Workflow
+{domain}-{service}-{id}-medium                          -- Medium audience
+{domain}-{service}-{id}-large                           -- Large audience
+{domain}-{service}-{id}-base                            -- Execution
 ```
 
-**Service Layer (single branch):**
-```
-{domain_prefix}-{service_prefix}                                       ← Service root ONLY
+### Merge Chain
+
+```mermaid
+flowchart TD
+    Phase["Phase Branch\nroot-audience-phase"] -->|phase-completion| Audience["Audience Branch\nroot-audience"]
+    Audience -->|audience-promotion\nadversarial-review| NextAudience["Next Audience Branch\nroot-next-audience"]
+
+    subgraph PlanningRepo["Planning Repo Merge Chain"]
+        direction LR
+        SmallPhase["small-phase"] -->|merge| Small["small"]
+        Small -->|Gate 1| Medium["medium"]
+        Medium -->|Gate 2| Large["large"]
+        Large -->|Gate 3| Base["base"]
+    end
+
+    subgraph TargetRepo["Target Project Merge Chain - GitFlow"]
+        direction LR
+        Story["feature/story-id"] -->|code review| Epic["feature/epic-id"]
+        Epic -->|feature complete| Develop["develop"]
+        Develop -->|release cut| Release["release/version"]
+        Release -->|production gate| Main["main"]
+    end
 ```
 
-### Skill Responsibility Matrix
+### Merge Gate Isomorphism
 
-| Skill | Role | Trigger | Responsibility |
-|-------|------|---------|----------------|
-| **@lens** (router) | Phase Router | User commands | Routes phase commands, manages tracks, context switches, audience promotions |
-| **git-orchestration** | Git Conductor | Auto-triggered | Creates/validates branches, commits state, pushes to remote — never invoked directly by users |
-| **state-management** | State Manager | User shortcodes | Reads/writes `state.yaml`, manages recovery, provides status, handles overrides and archival |
-| **discovery** | Discovery Lead | User commands | Bootstraps repos, runs discovery scans, generates canonical docs, reconciles repo inventory |
-| **constitution** | Constitutional Guardian | Auto-triggered | 4-level governance (org/domain/service/repo), track enforcement, compliance checks |
-| **checklist** | Checklist Manager | Auto-triggered | Progressive phase gate checklists, requirement tracking |
+Planning audience levels mirror code merge gates:
+
+| Planning Gate | Target Project Gate |
+|--------------|-------------------|
+| phase merges to audience | story merges to epic |
+| small promotes to medium | epic merges to develop |
+| medium promotes to large | develop merges to release |
+| large promotes to base | release merges to main |
 
 ---
 
-## Lifecycle System
+## Constitutional Governance
 
-### Phase & Audience Model
-
-```mermaid
-graph LR
-    subgraph "Small Audience (IC Creation)"
-        PP[PrePlan<br/>Mary/Analyst] --> BP[BusinessPlan<br/>John/PM + Sally/UX]
-        BP --> TP[TechPlan<br/>Winston/Architect]
-    end
-    
-    subgraph "Gate 1"
-        G1{"Adversarial<br/>Review<br/>Party Mode"}
-    end
-    
-    subgraph "Medium Audience (Lead Review)"
-        DP["DevProposal<br/>John/PM"]
-    end
-    
-    subgraph "Gate 2"
-        G2{"Stakeholder<br/>Approval"}
-    end
-    
-    subgraph "Large Audience (Stakeholder)"
-        SP["SprintPlan<br/>Bob/SM"]
-    end
-    
-    subgraph "Gate 3"
-        G3{"Constitution<br/>Gate<br/>@lens"}
-    end
-    
-    subgraph "Base (Execution)"
-        Dev[Dev<br/>Dev Team]
-    end
-    
-    TP --> G1
-    G1 -->|Pass| DP
-    DP --> G2
-    G2 -->|Pass| SP
-    SP --> G3
-    G3 -->|Pass| Dev
-    
-    style PP fill:#9b59b6
-    style BP fill:#9b59b6
-    style TP fill:#9b59b6
-    style DP fill:#3498db
-    style SP fill:#e74c3c
-    style Dev fill:#27ae60
-    style G1 fill:#f39c12
-    style G2 fill:#f39c12
-    style G3 fill:#f39c12
-```
-
-### Named Phases
-
-| Phase | Agent | Audience | Key Artifacts | Description |
-|-------|-------|----------|---------------|-------------|
-| **PrePlan** | Mary/Analyst | small | brainstorm-notes, product-brief, research | Analysis — brainstorm, research, product brief, project documentation |
-| **BusinessPlan** | John/PM + Sally/UX | small | PRD, UX design | Business planning — PRD creation/validation, UX design |
-| **TechPlan** | Winston/Architect | small | Architecture, tech decisions, API contracts | Technical design — architecture document, technical decisions |
-| **DevProposal** | John/PM | medium | Epics, stories, readiness checklist | Development proposal — break down into implementable units |
-| **SprintPlan** | Bob/SM | large | Sprint plan, story assignments | Sprint planning — team capacity, story selection, commitment |
-| **Dev** | Dev Team | base | Code, tests, deployments | Sprint execution, code review, retro cycles |
-
-### Initiative Tracks
-
-Tracks control which phases are required (defined in `lifecycle.yaml`):
-
-```mermaid
-graph TD
-    Start[New Initiative] --> TrackChoice{Select Track}
-    
-    TrackChoice -->|Full| Full[Full Track]
-    TrackChoice -->|Feature| Feature[Feature Track]
-    TrackChoice -->|Tech Change| TechChange[Tech Change Track]
-    TrackChoice -->|Hotfix| Hotfix[Hotfix Track]
-    TrackChoice -->|Spike| Spike[Spike Track]
-    
-    Full --> PP[PrePlan]
-    PP --> BP[BusinessPlan]
-    BP --> TP[TechPlan]
-    TP --> DP[DevProposal]
-    DP --> SP[SprintPlan]
-    SP --> Done1[✓ Ready for Dev]
-    
-    Feature --> BP2[BusinessPlan]
-    BP2 --> DP2[DevProposal]
-    DP2 --> Done2[✓ Ready for Dev]
-    
-    TechChange --> TP2[TechPlan]
-    TP2 --> DP3[DevProposal]
-    DP3 --> Done3[✓ Ready for Dev]
-    
-    Hotfix --> DP4[DevProposal]
-    DP4 --> Done4[✓ Ready for Dev]
-    
-    Spike --> PP2[PrePlan]
-    PP2 --> Done5[✓ Research Complete]
-    
-    style Full fill:#9b59b6
-    style Feature fill:#3498db
-    style TechChange fill:#e67e22
-    style Hotfix fill:#e74c3c
-    style Spike fill:#1abc9c
-```
-
-**Track Details:**
-
-| Track | Phases | Use Case | Typical Duration |
-|-------|--------|----------|------------------|
-| `full` | preplan → businessplan → techplan → devproposal → sprintplan | New product/major initiative | 4-8 weeks |
-| `feature` | businessplan → devproposal | Feature addition | 1-3 weeks |
-| `tech-change` | techplan → devproposal | Technical migration/upgrade | 2-4 weeks |
-| `hotfix` | devproposal only | Critical bug fix | 1-3 days |
-| `spike` | preplan only | Research/exploration | 1-2 weeks |
-
-### Audience Promotion Gates
-
-```mermaid
-sequenceDiagram
-    participant IC as IC (Small)
-    participant Lead as Lead (Medium)
-    participant Stakeholder as Stakeholder (Large)
-    participant Base as Base (Execution)
-    
-    IC->>IC: PrePlan → BusinessPlan → TechPlan
-    IC->>Lead: /promote<br/>[Adversarial Review Gate]
-    Note over IC,Lead: Party-mode cross-agent review<br/>All 3 planning artifacts reviewed
-    
-    Lead->>Lead: DevProposal
-    Lead->>Stakeholder: /promote<br/>[Stakeholder Approval Gate]
-    Note over Lead,Stakeholder: PR approval from stakeholders<br/>Epic/story breakdown validated
-    
-    Stakeholder->>Stakeholder: SprintPlan
-    Stakeholder->>Base: /promote<br/>[Constitution Gate]
-    Note over Stakeholder,Base: Constitution compliance check<br/>4-level governance validation
-    
-    Base->>Base: Dev → Deploy → Retro
-```
-
----
-
-## Workflow Catalog
-
-### Initiative Creation Workflows
-
-#### New Feature Flow
+### 4-Level Constitution Hierarchy
 
 ```mermaid
 flowchart TD
-    Start([User: #new-feature Rate Limiting]) --> CheckTracker{Company uses<br/>tracker?}
-    
-    CheckTracker -->|Yes| AskTracker[Ask for tracker ID]
-    CheckTracker -->|No| GenRandom[Generate random suffix]
-    
-    AskTracker --> ValidateTracker{Valid tracker<br/>format?}
-    ValidateTracker -->|No| AskTracker
-    ValidateTracker -->|Yes| UseTracker[Use tracker ID in initiative_id]
-    
-    GenRandom --> InitID[initiative_id = domain-service-random]
-    UseTracker --> InitID2[initiative_id = domain-service-JIRA-1234]
-    
-    InitID --> DetectLayer[Detect Layer]
-    InitID2 --> DetectLayer
-    
-    DetectLayer --> LoadParent{Has parent<br/>domain/service?}
-    
-    LoadParent -->|Yes| InheritContext[Inherit domain/service context]
-    LoadParent -->|No| CreateStandalone[Create standalone]
-    
-    InheritContext --> SelectTrack[Select Track: full/feature/tech-change/hotfix/spike]
-    CreateStandalone --> SelectTrack
-    
-    SelectTrack --> CreateBranches[Create Branch Topology]
-    
-    CreateBranches --> WriteState[Write state.yaml + initiative YAML]
-    WriteState --> LogEvent[Append event to event-log.jsonl]
-    LogEvent --> CommitPush[Git commit + push]
-    CommitPush --> End([✓ Initiative Created])
-    
-    style Start fill:#9b59b6
-    style End fill:#27ae60
-    style CheckTracker fill:#f39c12
-    style ValidateTracker fill:#f39c12
-    style LoadParent fill:#f39c12
+    Org["Org Constitution\nCompany-wide rules\ne.g. all services need auth"]
+    OrgLang["Org / TypeScript\nTS-specific org rules"]
+    Domain["Domain Constitution\nDomain rules\ne.g. payments use ACID txns"]
+    DomainLang["Domain / Python\nPython-specific domain rules"]
+    Service["Service Constitution\nService rules\ne.g. rate limit all endpoints"]
+    Repo["Repo Constitution\nRepo rules\ne.g. use Prisma ORM"]
+
+    Org --> OrgLang
+    Org --> Domain
+    OrgLang -.-> Domain
+    Domain --> DomainLang
+    Domain --> Service
+    DomainLang -.-> Service
+    Service --> Repo
+
+    Repo --> Enforcement["Constitution Enforcement Engine"]
+    Enforcement --> Check{"All levels\npass?"}
+    Check -->|Yes| Allow["Compliant"]
+    Check -->|No| Block["Violation - halt"]
+
+    style Org fill:#e74c3c,color:#fff
+    style Domain fill:#e67e22,color:#fff
+    style Service fill:#f39c12
+    style Repo fill:#f1c40f
+    style Allow fill:#27ae60,color:#fff
+    style Block fill:#c0392b,color:#fff
 ```
 
-#### New Domain Flow
+**Constitution Load Order:**
+1. org-universal then org-{language}
+2. domain-universal then domain-{language}
+3. service-universal then service-{language}
+4. repo-universal then repo-{language}
 
-```mermaid
-flowchart TD
-    Start([User: #new-domain Payment Platform]) --> ValidateName{Valid<br/>domain name?}
-    
-    ValidateName -->|No| AskAgain[Request valid name]
-    AskAgain --> ValidateName
-    ValidateName -->|Yes| CheckConflict{Domain<br/>already exists?}
-    
-    CheckConflict -->|Yes| Error[Error: Duplicate domain]
-    CheckConflict -->|No| CreatePrefix[Generate domain_prefix]
-    
-    CreatePrefix --> CreateBranch["Create single domain branch:<br/>domain_prefix"]
-    
-    CreateBranch --> CreateDomainYAML[Create Domain.yaml with metadata]
-    CreateDomainYAML --> ScaffoldFolders[Scaffold: initiatives/, TargetProjects/, Docs/]
-    
-    ScaffoldFolders --> WriteState[Update state.yaml]
-    WriteState --> LogEvent[Log domain_created event]
-    LogEvent --> CommitPush[Git commit + push]
-    CommitPush --> End([✓ Domain Created])
-    
-    style Start fill:#9b59b6
-    style End fill:#27ae60
-    style Error fill:#e74c3c
-```
+**Key Rules:** Language-specific constitutions are additive and cannot weaken parent rules. Lower levels inherit all parent requirements.
 
-#### New Service Flow
+### Constitution Capabilities
 
-```mermaid
-flowchart TD
-    Start([User: #new-service Auth Service]) --> LoadDomain{Active domain<br/>in state?}
-    
-    LoadDomain -->|Yes| UseDomain[Use active domain]
-    LoadDomain -->|No| AutoDetect{Domain branches<br/>exist?}
-    
-    AutoDetect -->|One| UseDetected[Use detected domain]
-    AutoDetect -->|Multiple| AskUser[Ask user to select domain]
-    AutoDetect -->|None| Error[Error: No domain exists]
-    
-    UseDomain --> ValidateName{Valid<br/>service name?}
-    UseDetected --> ValidateName
-    AskUser --> ValidateName
-    
-    ValidateName -->|No| AskAgain[Request valid name]
-    AskAgain --> ValidateName
-    ValidateName -->|Yes| CreatePrefix["Generate service_prefix:<br/>domain-service"]
-    
-    CreatePrefix --> CreateBranch[Create single service branch]
-    CreateBranch --> CreateServiceYAML[Create Service.yaml]
-    CreateServiceYAML --> ScaffoldFolders[Scaffold: initiatives/, TargetProjects/, Docs/]
-    
-    ScaffoldFolders --> WriteState[Update state.yaml]
-    WriteState --> LogEvent[Log service_created event]
-    LogEvent --> CommitPush[Git commit + push]
-    CommitPush --> End([✓ Service Created])
-    
-    style Start fill:#9b59b6
-    style End fill:#27ae60
-    style Error fill:#e74c3c
-```
-
-### Phase Routing Workflows
-
-#### PrePlan Phase Flow
-
-```mermaid
-flowchart TD
-    Start([User: /preplan]) --> Preflight[Preflight Check:<br/>- Clean working dir<br/>- state.yaml exists<br/>- Valid initiative]
-    
-    Preflight --> LoadState[Load state.yaml + initiative config]
-    LoadState --> DetermineBranch["Determine phase branch:<br/>initiative_root-small-preplan"]
-    
-    DetermineBranch --> BranchExists{Branch<br/>exists?}
-    BranchExists -->|No| CreateBranch[Create phase branch]
-    BranchExists -->|Yes| CheckoutBranch[Checkout phase branch]
-    CreateBranch --> CheckoutBranch
-    
-    CheckoutBranch --> PromptUser[Invoke Mary/Analyst]
-    
-    PromptUser --> Brainstorm[Workflow 1: Brainstorm]
-    Brainstorm --> Research[Workflow 2: Research]
-    Research --> ProductBrief[Workflow 3: Product Brief]
-    
-    ProductBrief --> GenerateArtifacts[Generate artifacts in<br/>_bmad-output/planning-artifacts/]
-    
-    GenerateArtifacts --> UpdateState[Update state.yaml:<br/>phase=preplan, workflow=complete]
-    UpdateState --> LogEvent[Log phase_completed event]
-    LogEvent --> CommitPush[Git commit + push]
-    
-    CommitPush --> CreatePR{Create PR?}
-    CreatePR -->|Yes| OpenPR[Create PR:<br/>small-preplan → small]
-    CreatePR -->|No| End
-    OpenPR --> End([✓ PrePlan Complete])
-    
-    style Start fill:#9b59b6
-    style End fill:#27ae60
-    style Brainstorm fill:#3498db
-    style Research fill:#3498db
-    style ProductBrief fill:#3498db
-```
-
-#### Dev Phase Flow (Sprint Execution)
-
-```mermaid
-flowchart TD
-    Start([User: /dev]) --> Preflight[Preflight:<br/>- Constitution gate passed<br/>- Sprint plan exists<br/>- On base branch]
-    
-    Preflight --> LoadSprint[Load sprint plan + stories]
-    LoadSprint --> SelectStory{Select next story}
-    
-    SelectStory --> StoryWork[Work on story:<br/>- Code implementation<br/>- Tests<br/>- Documentation]
-    
-    StoryWork --> LocalTest[Run tests locally]
-    LocalTest --> TestPass{Tests pass?}
-    
-    TestPass -->|No| FixCode[Fix code]
-    FixCode --> LocalTest
-    TestPass -->|Yes| CommitCode[Commit + push]
-    
-    CommitCode --> CreatePR[Create PR for review]
-    CreatePR --> CodeReview{Code review<br/>approved?}
-    
-    CodeReview -->|Changes requested| AddressComments[Address comments]
-    AddressComments --> CommitCode
-    CodeReview -->|Approved| MergePR[Merge PR]
-    
-    MergePR --> UpdateState[Update state.yaml:<br/>story=complete]
-    UpdateState --> LogEvent[Log story_completed event]
-    
-    LogEvent --> MoreStories{More stories<br/>in sprint?}
-    MoreStories -->|Yes| SelectStory
-    MoreStories -->|No| SprintRetro[Sprint Retro]
-    
-    SprintRetro --> End([✓ Sprint Complete])
-    
-    style Start fill:#9b59b6
-    style End fill:#27ae60
-    style StoryWork fill:#3498db
-    style CodeReview fill:#f39c12
-```
-
-### Discovery Workflows
-
-#### Repo Discovery Flow
-
-```mermaid
-flowchart TD
-    Start([User: @lens discover]) --> Preflight[Preflight:<br/>- service-map.yaml exists<br/>- TargetProjects/ accessible]
-    
-    Preflight --> LoadServiceMap[Load service-map.yaml]
-    LoadServiceMap --> SelectRepos{Select repos<br/>to scan}
-    
-    SelectRepos --> ScanRepo[For each repo:]
-    
-    ScanRepo --> CloneCheck{Repo<br/>cloned?}
-    CloneCheck -->|No| CloneRepo[Clone to TargetProjects/]
-    CloneCheck -->|Yes| PullLatest[Pull latest changes]
-    
-    CloneRepo --> ExtractContext[Extract Context:<br/>- Tech stack<br/>- Dependencies<br/>- Architecture patterns<br/>- File structure]
-    PullLatest --> ExtractContext
-    
-    ExtractContext --> AnalyzeCode[Analyze Codebase:<br/>- Entry points<br/>- API surface<br/>- Database schemas<br/>- Config files]
-    
-    AnalyzeCode --> GenerateDocs[Generate Docs:<br/>- project-context.md<br/>- current-state.tech-spec.md]
-    
-    GenerateDocs --> UpdateInventory[Update repo-inventory.yaml]
-    UpdateInventory --> LogEvent[Log discovery_completed event]
-    
-    LogEvent --> MoreRepos{More repos?}
-    MoreRepos -->|Yes| ScanRepo
-    MoreRepos -->|No| GenerateReport[Generate discovery report]
-    
-    GenerateReport --> End([✓ Discovery Complete])
-    
-    style Start fill:#9b59b6
-    style End fill:#27ae60
-    style ExtractContext fill:#3498db
-    style AnalyzeCode fill:#3498db
-    style GenerateDocs fill:#3498db
-```
-
-### Utility Workflows
-
-#### Context Switch Flow
-
-```mermaid
-flowchart TD
-    Start([User: /switch OR @lens /switch]) --> CheckClean{Working dir<br/>clean?}
-    
-    CheckClean -->|No| PromptCommit[Prompt: Commit or stash changes]
-    PromptCommit --> CheckClean
-    CheckClean -->|Yes| LoadState[Load state.yaml + initiatives]
-    
-    LoadState --> ListInitiatives["List active initiatives:<br/>1. initiative-A DevProposal<br/>2. initiative-B TechPlan<br/>3. initiative-C Dev"]
-    
-    ListInitiatives --> UserSelect{User selects<br/>initiative}
-    
-    UserSelect --> LoadInitiative[Load selected initiative config]
-    LoadInitiative --> DetermineBranch[Determine current phase branch]
-    
-    DetermineBranch --> CheckoutBranch[Checkout phase branch]
-    CheckoutBranch --> UpdateState[Update state.yaml:<br/>active_initiative = selected]
-    
-    UpdateState --> LogEvent[Log context_switched event]
-    LogEvent --> Confirm["Confirm to user:<br/>Now on: initiative | phase | branch"]
-    
-    Confirm --> End([✓ Context Switched])
-    
-    style Start fill:#9b59b6
-    style End fill:#27ae60
-    style UserSelect fill:#f39c12
-```
-
-#### State Sync Flow
-
-```mermaid
-flowchart TD
-    Start([User: @lens SY]) --> LoadState[Load state.yaml]
-    LoadState --> GetGitState[Get actual git state:<br/>- Current branch<br/>- Remote tracking<br/>- Uncommitted changes]
-    
-    GetGitState --> Compare{State matches<br/>git reality?}
-    
-    Compare -->|Yes| ReportOK[Report: State is consistent]
-    Compare -->|No| DetectDivergence[Detect divergence type]
-    
-    DetectDivergence --> BranchMismatch{Branch<br/>mismatch?}
-    BranchMismatch -->|Yes| UpdateBranch[Update state.yaml branch info]
-    
-    DetectDivergence --> UncommittedChanges{Uncommitted<br/>changes?}
-    UncommittedChanges -->|Yes| WarnUser[Warn: Uncommitted changes detected]
-    
-    DetectDivergence --> RemoteAhead{Remote<br/>ahead?}
-    RemoteAhead -->|Yes| PullChanges[Pull from remote]
-    
-    UpdateBranch --> WriteState[Write corrected state.yaml]
-    WarnUser --> WriteState
-    PullChanges --> WriteState
-    
-    WriteState --> LogEvent[Log state_synced event]
-    LogEvent --> ReportFixed[Report: State synchronized]
-    
-    ReportOK --> End([✓ Sync Complete])
-    ReportFixed --> End
-    
-    style Start fill:#9b59b6
-    style End fill:#27ae60
-    style Compare fill:#f39c12
-```
+Constitutions can control:
+- **permitted_tracks** which tracks are allowed for initiatives in this scope
+- **required_gates** additional gates beyond defaults
+- **additional_review_participants** extra reviewers added to adversarial review
+- **required_artifacts** extra artifacts that must exist
+- **enforce_stories** story-level enforcement rules
 
 ---
 
 ## Command Reference
 
-### Phase Router Commands (@lens)
+### Phase Router Commands
 
-| Command | Phase | Audience | Agent | Description | Aliases |
-|---------|-------|----------|-------|-------------|---------|
-| `/preplan` | PrePlan | small | Mary/Analyst | Brainstorm, research, product brief | `/pre-plan` |
-| `/businessplan` | BusinessPlan | small | John/PM + Sally/UX | PRD, UX design | `/spec` |
-| `/techplan` | TechPlan | small | Winston/Architect | Architecture, tech decisions, API contracts | `/tech-plan` |
-| `/promote` | — | — | @lens | Audience promotion gate | — |
-| `/devproposal` | DevProposal | medium | John/PM | Epics, stories, readiness checklist | `/plan` |
-| `/sprintplan` | SprintPlan | large | Bob/SM | Sprint planning, story selection | `/review` |
-| `/dev` | Dev | base | Dev Team | Sprint execution, code review, retro | — |
+| Command | Phase | Agent | Description |
+|---------|-------|-------|-------------|
+| `/preplan` | PrePlan | Mary/Analyst | Brainstorm, research, product brief |
+| `/businessplan` | BusinessPlan | John/PM + Sally/UX | PRD, UX design |
+| `/techplan` | TechPlan | Winston/Architect | Architecture, tech decisions |
+| `/devproposal` | DevProposal | John/PM | Epics, stories, readiness |
+| `/sprintplan` | SprintPlan | Bob/SM | Sprint planning, story selection |
+| `/dev` | Dev | Dev Team | Sprint execution, code review |
 
-### Context Commands (@lens)
+> **Auto-Promotion:** When a phase completes and promotion is the next step, it triggers automatically. No manual `/promote` needed.
 
-| Command | Description | Output Example |
-|---------|-------------|----------------|
-| `/switch` | Switch context — initiative, lens, phase, or size | Interactive selection menu |
-| `/context` | Display current context | `rate-limit-x7k2m9 \| DevProposal \| medium \| track:feature` |
-| `/constitution` | Display operating rules and compliance constraints | 4-level constitution hierarchy display |
-| `/lens` | Show or change the current lens focus | Current lens + available lenses |
-
-### Initiative Commands (@lens)
+### Initiative Commands
 
 | Command | Layer | Description | Example |
 |---------|-------|-------------|---------|
-| `/new-domain` | Domain | Create domain-level initiative | `/new-domain Payment Platform` |
-| `/new-service` | Service | Create service-level initiative | `/new-service Auth Service` |
-| `/new-feature` | Feature | Create feature-level initiative | `/new-feature Rate Limiting` |
-| `#fix-story` | Any | Correction loop — fix failed story | `#fix-story story-123` |
+| `/new-domain` | Domain | Create domain-level structure | `/new-domain Payment Platform` |
+| `/new-service` | Service | Create service within domain | `/new-service Auth Service` |
+| `/new-feature` | Feature | Create feature initiative | `/new-feature Rate Limiting` |
+| `#fix-story` | Any | Correction loop for failed story | `#fix-story story-123` |
 
-### State & Recovery Commands (@lens)
+### Context Commands
 
-| Shortcode | Skill | Description | Use When |
-|-----------|-------|-------------|----------|
-| `?` | state-management | Quick status — one-line summary | Quick context check |
-| `ST` | state-management | Full status — detailed initiative/phase/gate/branch info | Detailed inspection needed |
-| `RS` | state-management | Resume — pick up where you left off | Interrupted workflow |
-| `SY` | state-management | Sync — reconcile state with git | State/git mismatch suspected |
-| `FX` | state-management | Fix state — repair corrupted state | State file corruption |
-| `OR` | state-management | Override — manually set state values | Advanced manual intervention |
-| `AR` | state-management | Archive — archive completed initiatives | Initiative complete/abandoned |
+| Command | Description |
+|---------|-------------|
+| `/switch` | Switch context - initiative, lens, phase, or size |
+| `/context` | Display current context (initiative, phase, audience, track) |
+| `/constitution` | Display operating rules and compliance constraints |
+| `/lens` | Show or change the current lens focus |
 
-### Discovery Commands (@lens)
+### State and Recovery Commands
 
-| Command | Description | Outputs | When to Use |
-|---------|-------------|---------|-------------|
-| `onboard` | First-time setup — create profile, bootstrap repos | profile.yaml, service-map.yaml | Initial BMAD setup |
-| `bootstrap` | Re-run bootstrap for new/changed repos | Bootstrap report | New repos added |
-| `discover` | Deep scan repos for tech stack, structure, patterns | repo-inventory.yaml | Before planning work |
-| `document` | Generate canonical docs from discovery | Docs/{domain}/{service}/ | After discovery scan |
-| `reconcile` | Reconcile repo inventory with service-map | Updated service-map.yaml | After adding/removing repos |
-| `repo-status` | Check health/status of all managed repos | Status report | Routine health check |
+| Shortcode | Description | Use When |
+|-----------|-------------|----------|
+| `?` | Quick status, one-line summary | Quick context check |
+| `ST` | Full status, detailed initiative/phase/gate/branch info | Detailed inspection |
+| `RS` | Resume, pick up where you left off | Interrupted workflow |
+| `NX` / `next` | Compute and execute next required action | Unsure what to do next |
+| `SY` | Sync, reconcile state with git reality | State/git mismatch |
+| `FX` | Fix state, repair corrupted state | State file corruption |
+| `OR` | Override, manually set state values | Advanced manual intervention |
+| `AR` | Archive, store completed initiatives | Initiative complete |
 
----
+### Discovery Commands
 
-## Flow Diagrams
+| Command | Description | Outputs |
+|---------|-------------|---------|
+| `onboard` | First-time setup, create profile, bootstrap repos | profile.yaml, service-map.yaml |
+| `bootstrap` | Re-run bootstrap for new/changed repos | Bootstrap report |
+| `discover` | Deep scan repos for tech stack, structure, patterns | repo-inventory.yaml |
+| `document` | Generate canonical docs from discovery | Docs/{domain}/{service}/ |
+| `reconcile` | Reconcile repo inventory with service-map | Updated service-map.yaml |
+| `repo-status` | Check health/status of all managed repos | Status report |
+| `domain-map` | Map domain structure and relationships | domain-map.yaml |
+| `impact-analysis` | Analyze impact of proposed changes | Impact report |
 
-### Complete Initiative Lifecycle
+### Governance Commands
 
-```mermaid
-graph TB
-    Start([Create Initiative]) --> SelectLayer{Select Layer}
-    
-    SelectLayer -->|Domain| DomainInit[#new-domain<br/>Single branch only]
-    SelectLayer -->|Service| ServiceInit[#new-service<br/>Single branch only]
-    SelectLayer -->|Feature| FeatureInit[#new-feature<br/>Full topology]
-    
-    DomainInit --> DomainDone([Domain Created<br/>No phases])
-    ServiceInit --> ServiceDone([Service Created<br/>No phases])
-    
-    FeatureInit --> SelectTrack{Select Track}
-    
-    SelectTrack -->|Full| TrackFull[full track]
-    SelectTrack -->|Feature| TrackFeature[feature track]
-    SelectTrack -->|Tech Change| TrackTech[tech-change track]
-    SelectTrack -->|Hotfix| TrackHotfix[hotfix track]
-    SelectTrack -->|Spike| TrackSpike[spike track]
-    
-    TrackFull --> PrePlan["/preplan<br/>PrePlan Phase"]
-    PrePlan --> BusinessPlan["/businessplan<br/>BusinessPlan Phase"]
-    
-    TrackFeature --> BusinessPlan
-    
-    BusinessPlan --> TechPlan["/techplan<br/>TechPlan Phase"]
-    
-    TrackTech --> TechPlan
-    TrackSpike --> PrePlan2["/preplan<br/>PrePlan Phase"]
-    PrePlan2 --> SpikeDone([Spike Complete])
-    
-    TechPlan --> Gate1["/promote<br/>Adversarial Review Gate"]
-    Gate1 --> DevProposal["/devproposal<br/>DevProposal Phase"]
-    
-    TrackHotfix --> DevProposal
-    
-    DevProposal --> Gate2["/promote<br/>Stakeholder Approval Gate"]
-    Gate2 --> SprintPlan["/sprintplan<br/>SprintPlan Phase"]
-    
-    SprintPlan --> Gate3["/promote<br/>Constitution Gate"]
-    Gate3 --> Dev["/dev<br/>Dev Phase"]
-    
-    Dev --> Sprint{"Sprint<br/>Complete?"}
-    Sprint -->|More work| Dev
-    Sprint -->|Done| Archive[Archive Initiative]
-    Archive --> Done([✓ Initiative Complete])
-    
-    style Start fill:#9b59b6
-    style DomainDone fill:#27ae60
-    style ServiceDone fill:#27ae60
-    style SpikeDone fill:#27ae60
-    style Done fill:#27ae60
-    style Gate1 fill:#f39c12
-    style Gate2 fill:#f39c12
-    style Gate3 fill:#f39c12
-```
+| Command | Description |
+|---------|-------------|
+| `/constitution` | View/edit constitution hierarchy |
+| `/compliance` | Run compliance check against constitutions |
+| `/ancestry` | View constitution inheritance chain |
+| `/scribe` | Draft amendments to constitutions |
 
-### Git Discipline Workflow
+### Utility Commands
 
-Every workflow that mutates state follows this pattern:
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Workflow
-    participant Git
-    participant State
-    participant Remote
-    
-    User->>Workflow: Invoke command
-    Workflow->>Git: Check working dir clean
-    Git-->>Workflow: ✓ Clean
-    
-    Workflow->>State: Load state.yaml
-    State-->>Workflow: Current context
-    
-    Workflow->>Git: Determine correct branch
-    Workflow->>Git: Checkout branch
-    Workflow->>Remote: Pull latest
-    
-    Note over Workflow: <br/>User performs work<br/>(planning, coding, etc.)<br/>
-    
-    Workflow->>State: Update state.yaml
-    Workflow->>State: Append event-log.jsonl
-    
-    Workflow->>Git: Stage changes
-    Workflow->>Git: Commit with context
-    Note over Git: Commit message includes:<br/>initiative, phase, workflow
-    
-    Workflow->>Remote: Push to origin
-    Remote-->>Workflow: ✓ Pushed
-    
-    Workflow->>User: ✓ Complete
-```
-
-### Constitution Hierarchy
-
-```mermaid
-graph TD
-    Org[Org Constitution<br/>Company-wide rules] --> Domain[Domain Constitution<br/>Domain-specific rules]
-    Domain --> Service[Service Constitution<br/>Service-specific rules]
-    Service --> Repo[Repo Constitution<br/>Repo-specific rules]
-    
-    Repo --> Enforcement[Constitution Skill<br/>Enforcement Engine]
-    
-    Enforcement --> Check1{Check 1:<br/>Org rules}
-    Enforcement --> Check2{Check 2:<br/>Domain rules}
-    Enforcement --> Check3{Check 3:<br/>Service rules}
-    Enforcement --> Check4{Check 4:<br/>Repo rules}
-    
-    Check1 -->|Pass| Check2
-    Check1 -->|Fail| Block1[❌ Org violation]
-    
-    Check2 -->|Pass| Check3
-    Check2 -->|Fail| Block2[❌ Domain violation]
-    
-    Check3 -->|Pass| Check4
-    Check3 -->|Fail| Block3[❌ Service violation]
-    
-    Check4 -->|Pass| Allow[✓ Constitution compliant]
-    Check4 -->|Fail| Block4[❌ Repo violation]
-    
-    style Org fill:#e74c3c
-    style Domain fill:#e67e22
-    style Service fill:#f39c12
-    style Repo fill:#f1c40f
-    style Allow fill:#27ae60
-    style Block1 fill:#c0392b
-    style Block2 fill:#c0392b
-    style Block3 fill:#c0392b
-    style Block4 fill:#c0392b
-```
+| Command | Description |
+|---------|-------------|
+| `check-repos` | Clone missing repos, verify all repos accessible |
+| `recreate-branches` | Rebuild branch topology for an initiative |
+| `help` | Full command reference with context-aware suggestions |
 
 ---
 
-## Examples & Tutorials
+## End-to-End Tutorials
 
-### Tutorial 1: Creating Your First Feature
+### Tutorial 1: Your First Feature - Complete Walkthrough
 
-**Scenario:** You're adding a rate limiting feature to the lens-work service.
+**Scenario:** Adding rate limiting to the lens-work service. Track: `feature`.
 
-#### Step 1: Create the initiative
+```mermaid
+flowchart LR
+    Create["1. Create\nInitiative"] --> BP["2. BusinessPlan\nPRD + UX"]
+    BP --> TP["3. TechPlan\nArchitecture"]
+    TP --> Promote1["Auto-Promote\nsmall to medium"]
+    Promote1 --> DP["4. DevProposal\nEpics + Stories"]
+    DP --> Promote2["Auto-Promote\nmedium to large"]
+    Promote2 --> SP["5. SprintPlan\nSprint Setup"]
+    SP --> Promote3["Auto-Promote\nlarge to base"]
+    Promote3 --> Dev["6. Dev\nImplementation"]
+    Dev --> Archive["7. Archive"]
 
-```bash
-# Invoke in Copilot Chat or terminal
+    style Create fill:#9b59b6,color:#fff
+    style BP fill:#9b59b6,color:#fff
+    style TP fill:#9b59b6,color:#fff
+    style DP fill:#3498db,color:#fff
+    style SP fill:#e74c3c,color:#fff
+    style Dev fill:#27ae60,color:#fff
+```
+
+#### Step 1: Create the Initiative
+
+```
 @lens /new-feature Rate Limiting
 ```
 
-**What happens:**
-1. @lens prompts for tracker ID (if company uses Jira/ADO): `JIRA-1234`
-2. Auto-detects layer = feature, domain = bmaddomain, service = lens
+What happens:
+1. @lens prompts for tracker ID (if Jira/ADO configured): `JIRA-1234`
+2. Auto-detects layer=feature, domain=bmaddomain, service=lens
 3. Generates `initiative_id` = `bmaddomain-lens-JIRA-1234`
-4. Prompts for track selection → Choose `feature`
-5. Creates branch topology:
-   - `bmaddomain-lens-JIRA-1234` (root)
-   - `bmaddomain-lens-JIRA-1234-small` (small audience)
-   - `bmaddomain-lens-JIRA-1234-medium` (medium audience)
-   - `bmaddomain-lens-JIRA-1234-large` (large audience)
-   - `bmaddomain-lens-JIRA-1234-base` (execution)
-6. Writes `state.yaml` and `initiatives/bmaddomain-lens-JIRA-1234.yaml`
-7. Logs `initiative_created` event
-8. Commits + pushes
+4. Prompts for track selection, choose `feature`
+5. Creates 5-branch topology (root, small, medium, large, base)
+6. Writes `state.yaml` + `initiatives/bmaddomain-lens-JIRA-1234.yaml`
+7. Logs `initiative_created` event, commits + pushes
 
-**Output:**
+Output:
 ```
-✓ Initiative created: bmaddomain-lens-JIRA-1234
+Initiative created: bmaddomain-lens-JIRA-1234
   Layer: feature | Domain: bmaddomain | Service: lens
-  Track: feature (businessplan → devproposal)
-  Tracker: JIRA-1234
+  Track: feature (businessplan then devproposal)
   Branches created: 5
   Current branch: bmaddomain-lens-JIRA-1234-small
 ```
 
-#### Step 2: Start planning (BusinessPlan phase)
+#### Step 2: BusinessPlan Phase
 
-```bash
+```
 @lens /businessplan
 ```
 
-**What happens:**
-1. Preflight check: clean working dir, valid initiative, state exists
-2. Creates phase branch: `bmaddomain-lens-JIRA-1234-small-businessplan`
-3. Checks out phase branch
-4. Invokes John/PM + Sally/UX
-5. Guided through:
-   - PRD creation (problem statement, user stories, acceptance criteria)
-   - UX design (mockups, user flows, interaction patterns)
-6. Generates artifacts in `_bmad-output/planning-artifacts/JIRA-1234/`
-7. Updates `state.yaml`: `current_phase=businessplan, current_workflow=complete`
-8. Logs `phase_completed` event
-9. Commits + pushes
-10. Optionally creates PR: `businessplan → small`
+What happens:
+1. Creates phase branch: `bmaddomain-lens-JIRA-1234-small-businessplan`
+2. Activates John/PM + Sally/UX
+3. Guided through PRD creation (problem statement, user stories, acceptance criteria)
+4. Generates artifacts with mandatory Mermaid diagrams (user journey, feature map)
+5. Updates state, logs event, commits + pushes
+6. Creates PR: `businessplan` merges to `small`
 
-**Output:**
+#### Step 3: TechPlan Phase
+
 ```
-✓ BusinessPlan phase complete
-  Artifacts generated:
-    - PRD.md
-    - UX-design.md
-  PR created: #42 (bmaddomain-lens-JIRA-1234-small-businessplan → small)
-```
-
-#### Step 3: Technical planning (TechPlan phase)
-
-```bash
 @lens /techplan
 ```
 
-**What happens:**
+What happens:
 1. Creates phase branch: `bmaddomain-lens-JIRA-1234-small-techplan`
-2. Invokes Winston/Architect
-3. Guided through:
-   - Architecture design
-   - Technical decisions (patterns, libraries, approaches)
-   - API contracts
-4. Generates artifacts
-5. Updates state + logs event
-6. Commits + pushes
+2. Activates Winston/Architect
+3. Creates architecture document with system architecture diagram, deployment flow, and data flow diagrams
+4. Updates state, logs event, commits + pushes
 
-#### Step 4: Promote to medium audience
+#### Step 4: Auto-Promotion to Medium
 
-```bash
-@lens /promote
+When TechPlan completes, promotion fires automatically:
+1. Adversarial Review Gate triggered (party mode)
+2. Cross-agent review of product-brief, PRD, UX, architecture
+3. If passed: `gate_status.small_to_medium = passed`
+4. Branches to `bmaddomain-lens-JIRA-1234-medium`
+
+#### Step 5: DevProposal Phase
+
 ```
-
-**What happens:**
-1. Detects current audience = small, target = medium
-2. Triggers Gate 1: Adversarial Review (party mode)
-3. Cross-agent review of PRD, UX, Architecture
-4. If passed: updates `state.yaml`: `current_audience=medium, gate_status.small_to_medium=passed`
-5. Checks out `bmaddomain-lens-JIRA-1234-medium` branch
-6. Logs `audience_promoted` event
-
-**Output:**
-```
-✓ Adversarial Review Gate passed
-  Promoted: small → medium
-  Current branch: bmaddomain-lens-JIRA-1234-medium
-  Next phase: /devproposal
-```
-
-#### Step 5: Development proposal
-
-```bash
 @lens /devproposal
 ```
 
-**What happens:**
+What happens:
 1. Creates phase branch: `bmaddomain-lens-JIRA-1234-medium-devproposal`
-2. Invokes John/PM
-3. Guided through:
-   - Epic breakdown
-   - Story creation
-   - Readiness checklist
-4. Generates epics/stories in `_bmad-output/planning-artifacts/JIRA-1234/epics/`
-5. Updates state + logs event
-6. Commits + pushes
+2. Activates John/PM
+3. Epic breakdown, story creation, readiness checklist
+4. Documents include epic dependency graph and feature timeline diagrams
+5. Auto-promotes to large audience when complete
 
-#### Step 6: Promote to large audience
+#### Step 6: SprintPlan to Dev to Archive
 
-```bash
-@lens /promote
 ```
-
-Gate 2: Stakeholder Approval
-
-#### Step 7: Sprint planning
-
-```bash
-@lens /sprintplan
+@lens /sprintplan     # Bob/SM: capacity, story selection
+@lens /dev            # Dev team: implementation loop
+@lens AR              # Archive completed initiative
 ```
-
-**What happens:**
-1. Creates phase branch: `bmaddomain-lens-JIRA-1234-large-sprintplan`
-2. Invokes Bob/SM
-3. Guided through:
-   - Team capacity assessment
-   - Story selection
-   - Sprint commitment
-4. Generates sprint plan
-5. Updates state + logs event
-
-#### Step 8: Promote to base (constitution gate)
-
-```bash
-@lens /promote
-```
-
-Gate 3: Constitution Gate (4-level compliance check)
-
-#### Step 9: Sprint execution
-
-```bash
-@lens /dev
-```
-
-**What happens:**
-1. Checks out `bmaddomain-lens-JIRA-1234-base` branch
-2. Invokes Dev Team
-3. Sprint execution loop:
-   - Select story
-   - Implement code
-   - Write tests
-   - Create PR
-   - Code review
-   - Merge
-   - Repeat
-4. Updates state for each story completion
-
-#### Step 10: Archive completed initiative
-
-```bash
-@lens AR
-```
-
-**Output:**
-```
-✓ Initiative archived: bmaddomain-lens-JIRA-1234
-  Status: complete
-  Duration: 3 weeks
-  Stories completed: 12
-  PRs merged: 15
-```
-
----
 
 ### Tutorial 2: Setting Up a New Domain
 
-**Scenario:** Your org is starting a new Payment Platform domain.
-
-```bash
+```
 # Step 1: Create domain
 @lens /new-domain Payment Platform
+# Creates single branch: paymentplatform
 
-# Output:
-# ✓ Domain created: paymentplatform
-#   Branch: paymentplatform (single branch only)
-#   Domain.yaml created
-#   Folders: initiatives/, TargetProjects/, Docs/
-
-# Step 2: Create a service within the domain
+# Step 2: Create service within domain
 @lens /new-service Transaction Service
+# Creates: paymentplatform-transaction
 
-# @lens auto-detects parent domain from state
-# Output:
-# ✓ Service created: paymentplatform-transaction
-#   Branch: paymentplatform-transaction (single branch only)
-#   Service.yaml created
-#   Folders: initiatives/, TargetProjects/, Docs/
-
-# Step 3: Create a feature within the service
+# Step 3: Create feature within service
 @lens /new-feature Idempotency Keys
-
-# Output:
-# ✓ Feature created: paymentplatform-transaction-idempotency-x9k3p2
-#   Full branch topology created (5 branches)
-#   Track: feature
-#   Ready for /businessplan
+# Creates 5-branch topology, ready for planning
 ```
 
----
+### Tutorial 3: Recovery from Interruption
 
-### Tutorial 3: Recovering from Interruption
-
-**Scenario:** You were working on a feature but got interrupted mid-workflow.
-
-```bash
-# Quick check: where was I?
+```
+# Where was I?
 @lens ?
-# Output: paymentplatform-transaction-idempotency-x9k3p2 | BusinessPlan | small | workflow:prd | step:3/5
+# Output: paymentplatform-transaction-idempotency-x9k3p2 | BusinessPlan | small | step 3/5
 
 # Full status
 @lens ST
-# Output:
-# Initiative: paymentplatform-transaction-idempotency-x9k3p2
-# Layer: feature | Track: feature
-# Current Phase: BusinessPlan
-# Current Audience: small
-# Current Workflow: prd
-# Workflow Step: 3/5 (User stories)
-# Branch: paymentplatform-transaction-idempotency-x9k3p2-small-businessplan
-# Gate Status:
-#   - small_to_medium: pending
-#   - medium_to_large: pending
-#   - large_to_base: pending
-# Last Event: workflow_step_completed (2026-02-25T14:32:00Z)
+# Output: Detailed initiative/phase/gate/branch info
 
-# Resume workflow
+# Resume
 @lens RS
-# Output:
-# ✓ Resuming BusinessPlan phase, workflow: prd, step: 3/5
-#   Continuing: User stories (acceptance criteria)
-```
+# Resuming BusinessPlan, workflow: prd, step: 3/5
 
----
+# What is next?
+@lens next
+# Computes and auto-executes next required action
+```
 
 ### Tutorial 4: Switching Between Initiatives
 
-**Scenario:** You're working on multiple features and need to switch context.
-
-```bash
-# Current initiative
-@lens ?
-# Output: rate-limit-x7k2m9 | DevProposal | medium
-
-# Switch to another initiative
+```
 @lens /switch
-
-# Output (interactive):
-# Active Initiatives:
+# Interactive selection:
 #   1. rate-limit-x7k2m9 (DevProposal - medium)
 #   2. idempotency-x9k3p2 (BusinessPlan - small)
 #   3. auth-refactor-b3j1 (TechPlan - small)
 # Select: 2
-
-# @lens switches context
-✓ Context switched to: idempotency-x9k3p2
-  Phase: BusinessPlan | Audience: small
-  Branch: paymentplatform-transaction-idempotency-x9k3p2-small-businessplan
-
-# Verify
-@lens /context
-# Output: idempotency-x9k3p2 | BusinessPlan | small | track:feature
+# Context switched, branch checked out, state updated
 ```
 
 ---
 
-## Installation & Configuration
+## Installation and Configuration
 
-### Installation
+### Prerequisites
+
+- **Git** version 2.30+
+- **GitHub Copilot** with Chat enabled
+- **GitHub CLI** (`gh`) for PR creation and repo management
+- **Node.js** version 18+ (for BMAD installer)
+
+### Quick Start
 
 ```bash
-# From BMAD control repo root
-bmad install lens-work
+# 1. Clone the control repo
+git clone https://github.com/crisweber2600/bmad.lens.release
+cd bmad.lens.release
+
+# 2. First-time onboarding
+@lens onboard
+
+# 3. Discover existing repos
+@lens discover
+@lens document
+
+# 4. Create your first initiative
+@lens /new-feature My First Feature
 ```
-
-**OR** manual installation:
-
-```bash
-# Clone lens-work module
-git clone https://github.com/crisweber2600/bmad.lens.release _bmad/lens-work
-
-# Run installer
-node _bmad/lens-work/_module-installer/installer.js
-```
-
-### Configuration
-
-During installation, you'll be prompted for:
-
-| Setting | Description | Default | Example |
-|---------|-------------|---------|---------|
-| `target_projects_path` | Path to TargetProjects folder | `../TargetProjects` | `../repos` |
-| `docs_output_path` | Path for canonical docs | `Docs` | `documentation` |
-| `enable_telemetry` | Enable dashboards | `true` | `true` |
-| `default_git_remote` | Git remote type | `github` | `github` / `gitlab` / `azdo` |
-| `tracker_type` | Work item tracker | `none` | `jira` / `azdo` / `csv` |
-| `tracker_url` | Tracker base URL | `` | `https://mycompany.atlassian.net` |
-
-### Post-Installation
-
-1. **Onboard:** Run onboarding to create profile and bootstrap repos
-   ```bash
-   @lens onboard
-   ```
-
-2. **Discovery:** Scan existing repos
-   ```bash
-   @lens discover
-   @lens document
-   ```
-
-3. **Create First Initiative:**
-   ```bash
-   @lens /new-feature My First Feature
-   ```
 
 ### Configuration Files
 
-**Module Configuration:** `_bmad/lens-work/bmadconfig.yaml`
+| File | Purpose | Location |
+|------|---------|----------|
+| `bmadconfig.yaml` | Module configuration, conventions | `_bmad/lens-work/bmadconfig.yaml` |
+| `lifecycle.yaml` | Lifecycle contract (phases, audiences, tracks) | `_bmad/lens-work/lifecycle.yaml` |
+| `module.yaml` | Module definition (outputs, templates, prompts) | `_bmad/lens-work/module.yaml` |
+| `governance-setup.yaml` | Governance repo coordinates | `_bmad-output/lens-work/governance-setup.yaml` |
+| `state.yaml` | Active initiative state | `_bmad-output/lens-work/state.yaml` |
+| `event-log.jsonl` | Audit trail | `_bmad-output/lens-work/event-log.jsonl` |
+| `profile.yaml` | User profile and preferences | `_bmad-output/lens-work/personal/profile.yaml` |
+
+### User Profile
 
 ```yaml
-project_name: my-control-repo
-user_skill_level: intermediate
-planning_artifacts: "bmad.lens.release/_bmad-output/planning-artifacts"
-implementation_artifacts: "bmad.lens.release/_bmad-output/implementation-artifacts"
-project_knowledge: "{project-root}/docs"
-user_name: YourName
-communication_language: English
-document_output_language: English
-output_folder: "bmad.lens.release/_bmad-output"
-```
-
-**Service Map:** `_bmad/lens-work/service-map.yaml`
-
-```yaml
-target_projects_path: ../TargetProjects
-docs_output_path: Docs
-
-repos:
-  - name: my-service
-    remote_url: https://github.com/myorg/my-service
-    local_path: TargetProjects/my-domain/my-service
-    default_branch: main
-    domain: my-domain
-    service: my-domain
-```
-
-**User Profile:** `_bmad-output/lens-work/personal/profile.yaml`
-
-```yaml
+# _bmad-output/lens-work/personal/profile.yaml
 name: YourName
 email: you@example.com
 role: Developer
@@ -1254,286 +1083,241 @@ preferences:
 
 ---
 
+## Universal Conventions
+
+These conventions apply to EVERY agent, workflow, and step in lens-work (defined in `bmadconfig.yaml`):
+
+### LLM-First Implementation Model
+
+All logic in workflows, agents, and skills MUST be LLM-executable (plain language instructions, YAML schemas, decision tables, numbered steps). Runtime code execution (Node.js, Python, bash scripts) is PROHIBITED inside workflow/skill/agent markdown files.
+
+**Exceptions:**
+- `yaml` blocks allowed for data schemas and config examples
+- `bash` blocks allowed ONLY for git commands inside git-orchestration skill
+- Code blocks showing target codebase patterns to search for are allowed
+
+### Git Discipline
+
+Every commit must be immediately followed by a push:
+```bash
+git commit -m "workflow(action): description"
+git push origin "${branch_name}"
+```
+
+Every clone must be immediately followed by a branch checkout:
+```bash
+git clone {remote_url} {local_path}
+cd {local_path}
+git checkout $(git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4)
+```
+
+### Visual-First Documentation
+
+**HARD REQUIREMENT:** Every document written by lens-work MUST include at least one Mermaid diagram.
+
+| Document | Required Diagrams |
+|----------|------------------|
+| product-brief.md | Problem-solution flow, stakeholder map |
+| prd.md | User journey flow, feature relationship diagram |
+| architecture.md | System architecture, component interaction, deployment flow |
+| epics.md | Epic dependency graph, feature timeline |
+| stories.md | Story dependency graph, acceptance criteria workflow |
+| techplan.md | Technical architecture, deployment flow, data flow diagram |
+| constitution.md | Constitution hierarchy, compliance flow |
+| discovery docs | Code structure, API flow, data model (ER diagram) |
+
+**Rules:**
+- Primary diagram must appear in first 20% of document
+- Diagrams should have 5-15 nodes for readability
+- Text before and after diagram explaining content
+- Documents without diagrams are INCOMPLETE and must be regenerated
+
+### Skill Primacy
+
+When a skill covers a domain (e.g., constitution, git-orchestration), ALL workflows in that domain MUST delegate to the skill. Duplicate logic inline in workflow steps is a defect.
+
+### Data Zone Enforcement
+
+Governance artifacts (constitutions, roster, policies, repo-inventory) MUST only be written to the governance repo (`TargetProjects/lens/lens-governance`). Initiative artifacts MUST only be written to `_bmad-output/lens-work/initiatives/`. No cross-zone writes.
+
+---
+
 ## Troubleshooting
 
 ### Common Issues
 
-#### Issue 1: "Uncommitted changes detected"
-
-**Problem:** Workflow refuses to run due to uncommitted changes.
-
-**Solution:**
+**Uncommitted changes detected**
 ```bash
-# Check git status
-git status
-
-# Commit changes
-git add .
-git commit -m "WIP: current work"
-
-# Or stash
-git stash
-
-# Then retry workflow
-@lens /businessplan
+git status           # Check what changed
+git add . && git commit -m "WIP: current work"
+@lens /businessplan  # Retry
 ```
 
----
-
-#### Issue 2: State file corruption
-
-**Problem:** `state.yaml` shows incorrect phase or branch.
-
-**Solution:**
-```bash
-# Sync state with git
-@lens SY
-
-# If sync fails, fix state manually
-@lens FX
-
-# Verify
-@lens ST
+**State file corruption**
+```
+@lens SY    # Sync state with git reality
+@lens FX    # Fix corrupted state manually
+@lens ST    # Verify
 ```
 
----
-
-#### Issue 3: Branch not created
-
-**Problem:** Phase command fails because phase branch doesn't exist.
-
-**Solution:**
-```bash
-# Check current branch
-git branch
-
-# Manually create phase branch (if needed)
-initiative_root="bmaddomain-lens-rate-limit-x7k2m9"
-phase="businessplan"
-audience="small"
-git checkout -b "${initiative_root}-${audience}-${phase}"
-git push -u origin "${initiative_root}-${audience}-${phase}"
-
-# Update state
-@lens OR
-# Set: current_branch = {new branch name}
+**Phase branch does not exist**
+```
+git branch                    # Check current branches
+@lens recreate-branches       # Rebuild topology
 ```
 
----
-
-#### Issue 4: Gate fails unexpectedly
-
-**Problem:** Promotion gate fails without clear reason.
-
-**Solution:**
-```bash
-# Check constitution compliance
-@lens /constitution
-
-# Review gate requirements
-@lens ST
-
-# Check event log for gate failure reason
-cat _bmad-output/lens-work/event-log.jsonl | grep gate_failed | tail -1
-
-# If gate is incorrectly failed, manually override (use caution)
-@lens OR
-# Set: gate_status.small_to_medium = passed
+**Gate fails unexpectedly**
+```
+@lens /constitution  # Check compliance
+@lens ST             # Review gate requirements
+# Check event log for failure reason:
+tail -5 _bmad-output/lens-work/event-log.jsonl
 ```
 
----
-
-#### Issue 5: Wrong initiative context
-
-**Problem:** Working on wrong initiative after context switch.
-
-**Solution:**
-```bash
-# Check current context
-@lens ?
-
-# Switch to correct initiative
-@lens /switch
-# Select correct initiative from menu
-
-# Verify
-@lens /context
+**Wrong initiative context**
+```
+@lens ?         # Check current context
+@lens /switch   # Switch to correct initiative
+@lens /context  # Verify
 ```
 
----
-
-#### Issue 6: Discovery fails to clone repo
-
-**Problem:** Discovery workflow fails when cloning a repo.
-
-**Solution:**
-```bash
-# Check service-map.yaml for correct remote URL
-cat _bmad/lens-work/service-map.yaml
-
-# Verify git credentials
-git config --list | grep credential
-
-# Manually clone to diagnose
-git clone <remote_url> TargetProjects/<path>
-
-# Update service-map.yaml if URL is wrong
-# Then re-run discovery
-@lens discover
+**Discovery fails to clone repo**
+```
+@lens check-repos  # Clone missing repos, verify connectivity
 ```
 
-#### Issue 7: Clone checks out main but I need a different branch
-
-**Problem:** After cloning a repo, it's on `main` but you need to be on `develop` or another branch.
-
-**Solution:**
-
+**Clone checks out wrong branch**
 ```bash
-# List available remote branches
 cd TargetProjects/<path>
-git branch -r
-
-# Option A: Switch to a specific branch
-git checkout -b develop origin/develop
-
-# Option B: Switch to the most recently updated branch
-MOST_RECENT=$(git for-each-ref --sort=-committerdate --format='%(refname:short)' refs/remotes/origin | head -1 | sed 's|origin/||')
-git checkout -b "$MOST_RECENT" "origin/$MOST_RECENT"
-echo "Checked out: $MOST_RECENT"
-
-# Option C: Use a more readable version (with date display)
-git for-each-ref --sort=-committerdate --format='%(committerdate:short) %(refname:short)' refs/remotes/origin
-# Then manually checkout: git checkout -b <branch-name> origin/<branch-name>
+git branch -r                    # List remote branches
+git checkout develop             # Switch to desired branch
 ```
-
----
-
-### Debug Mode
-
-Enable verbose logging for troubleshooting:
-
-```bash
-# Set environment variable
-export BMAD_DEBUG=true
-
-# Run workflow with debug output
-@lens /businessplan
-
-# Check logs
-cat _bmad-output/lens-work/debug.log
-```
-
----
 
 ### Getting Help
 
-1. **Command Help:**
-   ```bash
-   @lens help
-   @lens help /businessplan
-   ```
-
-2. **Status Check:**
-   ```bash
-   @lens ST
-   ```
-
-3. **Event Log Analysis:**
-   ```bash
-   # View last 10 events
-   tail -10 _bmad-output/lens-work/event-log.jsonl | jq .
-   
-   # Search for specific events
-   grep "initiative_created" _bmad-output/lens-work/event-log.jsonl
-   ```
-
-4. **Community Support:**
-   - GitHub Issues: https://github.com/crisweber2600/bmad.lens.release/issues
-   - Documentation: https://docs.bmad-method.org/
+```
+@lens help                    # Full command reference
+@lens help /businessplan      # Phase-specific help
+@lens ST                      # Detailed status
+```
 
 ---
 
 ## File Structure Reference
 
 ```
-lens-work/
-├── bmadconfig.yaml                      # Module configuration
-├── lifecycle.yaml                       # Lifecycle contract (phases, audiences, tracks)
-├── service-map.yaml                     # Target repo mapping
-├── README.md                            # Quick reference
-├── README-COMPREHENSIVE.md              # This file
-│
-├── skills/                              # @lens agent skill definitions
-│   ├── checklist.md                     # Progressive phase gate checklists
-│   ├── constitution.md                  # Inline governance checks
-│   ├── discovery.md                     # Repo scanning & doc generation
-│   ├── git-orchestration.md             # Branch operations & git discipline
-│   └── state-management.md             # Two-file state system management
-│
-├── workflows/
-│   ├── router/                          # Phase router commands (user-facing)
-│   ├── core/                            # Auto-triggered lifecycle operations
-│   ├── discovery/                       # Repo discovery & documentation
-│   ├── governance/                      # Constitution & compliance
-│   ├── utility/                         # Manual/support workflows
-│   ├── background/                      # Background processes
-│   └── includes/                        # Shared reference files
-│
-├── prompts/                             # Copilot Chat prompt stubs
-├── lib/                                 # JavaScript implementation modules
-├── scripts/                             # Validation & utility scripts
-├── tests/                               # Test specifications
-├── docs/                                # Extended documentation
-│
-└── _bmad-output/
-    └── lens-work/
-        ├── state.yaml                   # Current state (active initiative, phase, audience)
-        ├── event-log.jsonl              # Append-only event audit trail
-        ├── repo-inventory.yaml          # Discovered repo metadata
-        ├── initiatives/                 # Per-initiative configs
-        ├── dashboards/                  # Telemetry data
-        └── personal/
-            └── profile.yaml             # User profile & preferences
+bmad.lens.release/
+  README.md                                       # This file
+  .github/
+    prompts/                                      # User-facing Copilot Chat prompts
+      lens-work.start.prompt.md
+      lens-work.preplan.prompt.md
+      lens-work.businessplan.prompt.md
+      lens-work.techplan.prompt.md
+      lens-work.devproposal.prompt.md
+      lens-work.sprintplan.prompt.md
+      lens-work.dev.prompt.md
+      lens-work.switch.prompt.md
+      lens-work.status.prompt.md
+      ... (40+ prompt files)
+  _bmad/
+    _config/
+      agent-manifest.csv                          # All registered agents
+      workflow-manifest.csv                       # All registered workflows
+      custom/lens-work/                           # Custom overrides
+    _memory/
+      tech-writer-sidecar/                        # Documentation standards
+    bmm/                                          # Business Method Module
+      agents/                                     # Mary, John, Winston, Sally, Bob, etc.
+    cis/                                          # Creative Innovation Suite
+      agents/                                     # Carson, Maya, Victor, etc.
+    gds/                                          # Game Development Suite
+      agents/                                     # Game-specific agents
+    tea/                                          # Test Architecture
+      agents/                                     # Murat/TEA
+    bmb/                                          # BMAD Builders
+      agents/                                     # Bond, Morgan, Wendy
+    core/                                         # BMAD Core
+      agents/                                     # BMad Master
+    lens-work/                                    # LENS Workbench Module
+      bmadconfig.yaml                             # Module config + conventions
+      lifecycle.yaml                              # Lifecycle contract v2
+      module.yaml                                 # Module definition
+      skills/
+        git-orchestration.md                      # Branch + PR + push
+        state-management.md                       # state.yaml + event-log
+        discovery.md                              # Repo scanning + docs
+        constitution.md                           # 4-level governance
+        checklist.md                              # Phase-gate tracking
+        visual-documentation.md                   # Mermaid diagram standards
+      workflows/
+        router/                                   # Phase commands (user-facing)
+          pre-plan/
+          spec/ (businessplan)
+          tech-plan/
+          plan/ (devproposal)
+          sprintplan/
+          dev/
+          quickdev/
+          init-initiative/
+        core/                                     # Lifecycle operations
+          audience-promotion/
+          phase-lifecycle/
+        background/                               # Auto-triggered
+          branch-preflight/
+          branch-validate/
+          checklist-update/
+          constitution-check/
+          event-log/
+          state-sync/
+        discovery/                                # Repo analysis
+          analyze-codebase/
+          discover/
+          domain-map/
+          generate-docs/
+          impact-analysis/
+          lens-sync/
+          repo-discover/
+          repo-document/
+          repo-reconcile/
+          repo-status/
+        governance/                               # Constitution mgmt
+          amendment-propagation/
+          ancestry/
+          compliance-check/
+          constitution/
+          cross-artifact-analysis/
+          requirements-checklist/
+          resolve-constitution/
+          resolve-context/
+        utility/                                  # Manual/support
+          status/ - resume/ - next/
+          switch/ - sync/ - fix-state/
+          override/ - archive/
+          bootstrap/ - onboarding/
+          check-repos/
+          ... (20+ utility workflows)
+      prompts/                                    # Prompt stubs
+      templates/                                  # Document templates
+      scripts/                                    # Validation scripts
+      tests/                                      # Test specifications
+      docs/                                       # Extended documentation
+  _bmad-output/
+    lens-work/
+      state.yaml                                  # Active initiative state
+      event-log.jsonl                             # Audit trail
+      governance-setup.yaml                       # Governance repo config
+      repo-inventory.yaml                         # Discovered repos
+      initiatives/                                # Per-initiative configs
+      personal/
+        profile.yaml                              # User profile (git-ignored)
+  TargetProjects/
+    lens/
+      lens-governance/                            # Governance repo clone
+      lens-work/                                  # Target project clone
+  docs/
+    lens/                                         # Reference documentation
 ```
-
----
-
-## Appendix: Lifecycle Contract Reference
-
-From `lifecycle.yaml`:
-
-### Fundamental Truths
-
-1. **FT1:** Planning artifacts must exist and be reviewed before code is written
-2. **FT2:** AI agents must work within disciplined constraints, not freestyle
-3. **FT3:** Multi-service initiatives must have coordinated lifecycle governance
-
-### Audiences
-
-| Audience | Role | Phases | Entry Gate |
-|----------|------|--------|------------|
-| `small` | IC creation work | preplan, businessplan, techplan | — |
-| `medium` | Lead review | devproposal | adversarial-review (party mode) |
-| `large` | Stakeholder approval | sprintplan | stakeholder-approval |
-| `base` | Ready for execution | dev | constitution-gate |
-
-### Tracks
-
-| Track | Phases | Use Case | Typical Duration |
-|-------|--------|----------|------------------|
-| `full` | preplan → businessplan → techplan → devproposal → sprintplan | New product/major initiative | 4-8 weeks |
-| `feature` | businessplan → devproposal | Feature addition | 1-3 weeks |
-| `tech-change` | techplan → devproposal | Technical migration/upgrade | 2-4 weeks |
-| `hotfix` | devproposal only | Critical bug fix | 1-3 days |
-| `spike` | preplan only | Research/exploration | 1-2 weeks |
-
-### Gates
-
-| Gate | From Audience | To Audience | Mechanism | Required For |
-|------|---------------|-------------|-----------|--------------|
-| `adversarial-review` | small | medium | Party-mode cross-agent review | All tracks except spike |
-| `stakeholder-approval` | medium | large | PR approval from stakeholders | All tracks except spike/hotfix |
-| `constitution-gate` | large | base | Constitution compliance check (4-level) | All tracks |
 
 ---
 
@@ -1541,14 +1325,13 @@ From `lifecycle.yaml`:
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 4.0.0 | 2026-02-27 | Fixed 6 invalid mermaid diagrams, daily git-pull preflight injection, version bump |
+| 4.1.0 | 2026-03-01 | Comprehensive README rewrite with full end-to-end documentation; visual-first documentation convention with mandatory Mermaid diagrams; auto-promotion behavior |
+| 4.0.0 | 2026-02-27 | Fixed 6 invalid mermaid diagrams, daily git-pull preflight injection |
 | 2.0.0 | 2026-02-25 | Complete rewrite with comprehensive workflows, mermaid diagrams, tutorials |
 | 1.0.0 | 2026-02-03 | Initial release |
 
 ---
 
-**lens-work** — *Guided lifecycle orchestration for BMAD*
+**LENS Workbench** Guided lifecycle orchestration for BMAD
 
-**Maintained by:** CrisWeber  
-**License:** MIT  
-**Repository:** https://github.com/crisweber2600/bmad.lens.release
+**Maintained by:** CrisWeber | **License:** MIT | **Repository:** https://github.com/crisweber2600/bmad.lens.release
