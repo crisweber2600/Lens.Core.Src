@@ -893,5 +893,162 @@ IF version_change is PATCH:
 
 ---
 
+## Part 16 — Auto-Resolve Gate Blocks
+
+When a constitutional gate blocks in enforced mode, the workflow MUST NOT halt and wait
+for manual intervention. Instead, it automatically creates a fix branch, resolves the
+violations, opens a PR back to the original branch, and instructs the developer to rerun
+`/dev` after merging the PR.
+
+### 16a. Trigger
+
+Auto-resolve activates whenever:
+- Step 2a: Dev story compliance gate fails in enforced mode
+- Step 2b: Pre-implementation article gates fail in enforced mode
+- Step 5: Post-review constitutional re-validation fails in enforced mode
+- Any checklist quality gate fails and the user does not override
+
+### 16b. Auto-Resolve Sequence
+
+```
+1. DETECT — Gate failure detected with article_gate_results or fail_count > 0
+
+2. BRANCH — Create a fix branch from the current branch:
+   fix_branch = "fix/constitution-${gate_id}-${initiative_id}"
+   source_branch = current git branch (e.g., "{initiative_root}-dev")
+
+   git checkout -b ${fix_branch}
+
+3. RESOLVE — For each failed gate, auto-remediate the artifact:
+   FOR each gate in failed_gates:
+     FOR each failed_item in gate.failed_items:
+       Apply resolution to the artifact:
+       - If violation is "missing test references" → add test file stubs/references
+       - If violation is "missing acceptance criteria" → add placeholder criteria
+       - If violation is "architecture constraint violated" → restructure to comply
+       - If violation is "checklist incomplete" → complete checklist items or mark N/A with reason
+       - If violation requires content generation → generate compliant content
+       - If violation cannot be auto-resolved → add a TODO comment with
+         the violation detail and mark as "requires-manual-review"
+
+   Commit changes:
+   git commit -m "fix(constitution): auto-resolve ${failed_count} gate violation(s)
+
+   Articles: ${list of failed article IDs and titles}
+   Initiative: ${initiative_id}
+   Source: ${source_branch}"
+
+   git push origin ${fix_branch}
+
+4. PR — Open a pull request from fix branch to source branch:
+   PR title: "fix(constitution): resolve ${failed_count} gate violation(s) — ${initiative_id}"
+   PR body:
+     ## Constitutional Gate Auto-Resolution
+
+     This PR was automatically created by the lens-work constitution
+     enforcement system to resolve gate violations that blocked the
+     `/dev` workflow.
+
+     ### Violations Resolved
+
+     | # | Article | Gate | Violation | Resolution |
+     |---|---------|------|-----------|------------|
+     ${for each resolved violation}
+     | ${n} | ${article_id}: ${title} | ${gate_name} | ${violation} | ${resolution_applied} |
+     ${endfor}
+
+     ### Items Requiring Manual Review
+
+     ${if any requires-manual-review items}
+     The following violations could not be fully auto-resolved:
+     ${list items with TODO markers}
+     ${else}
+     All violations were auto-resolved. Review and merge when ready.
+     ${endif}
+
+     ### Next Steps
+
+     1. Review the changes in this PR
+     2. Merge the PR into `${source_branch}`
+     3. Re-run `/dev` to continue implementation
+
+   Use promote-branch script or gh CLI:
+   invoke: git-orchestration.create-pr
+   params:
+     source: ${fix_branch}
+     target: ${source_branch}
+     title: "fix(constitution): resolve ${failed_count} gate violation(s)"
+     body: ${pr_body}
+
+5. NOTIFY — Output to the developer:
+   output: |
+     ═══ Constitutional Gate Auto-Resolution ═══
+
+     ${failed_count} gate violation(s) detected and auto-resolved.
+
+     📌 Fix Branch: ${fix_branch}
+     📋 PR Created: ${pr_url}
+     🎯 Target: ${source_branch}
+
+     ${if any requires-manual-review}
+     ⚠️ ${manual_count} item(s) require manual review in the PR.
+     ${endif}
+
+     ── What to do ──
+
+     1. Review the PR: ${pr_url}
+     2. Merge when satisfied
+     3. Re-run /dev to continue
+
+     The /dev workflow will re-validate gates on next run.
+
+6. LOG — Append event to event log:
+   {
+     "ts": "{ISO_TIMESTAMP}",
+     "event": "constitution-auto-resolve",
+     "id": "{initiative_id}",
+     "fix_branch": "{fix_branch}",
+     "pr_url": "{pr_url}",
+     "failed_gates": [{gate_id, article_id, title}],
+     "resolved_count": {auto_resolved_count},
+     "manual_count": {requires_manual_count},
+     "source_branch": "{source_branch}"
+   }
+
+7. HALT — Stop the /dev workflow (do NOT continue to implementation).
+   The developer merges the PR and re-runs /dev, which will
+   re-evaluate all gates with the fixed artifacts.
+```
+
+### 16c. Resolution Strategies
+
+The auto-resolver uses article-aware resolution strategies:
+
+| Article Pattern | Detection | Auto-Resolution |
+|----------------|-----------|-----------------|
+| TDD / test-first | Rule text contains "test", "TDD", "test-first" | Add test file stubs matching story acceptance criteria. Add `- [ ] Tests written before implementation` to story. |
+| Simplicity / project limits | Rule text contains "simplicity", "project", "limit" | Restructure artifact to consolidate components. Add justification if over limit. |
+| Library-first | Rule text contains "library", "standalone", "reusable" | Add library extraction plan to story. Reference library-first pattern. |
+| Observability / logging | Rule text contains "observability", "logging", "telemetry" | Add observability requirements to acceptance criteria. |
+| Coverage / quality | Rule text contains "coverage", "quality", "threshold" | Add coverage targets to story. Reference quality gate thresholds. |
+| Generic / unknown | No pattern match | Add TODO comment with full violation text. Mark as requires-manual-review. |
+
+### 16d. Idempotency
+
+If a fix branch already exists for the same gate + initiative:
+- Check if the existing PR is still open
+- If open: update the PR with new violation details, do NOT create a duplicate
+- If merged: create a new fix branch with incremented suffix (`fix/constitution-tdd-BMAD42-2`)
+- If closed without merge: reopen or create new branch
+
+### 16e. Integration with Complexity Tracking
+
+Auto-resolved violations are NOT recorded in complexity tracking (Part 13) because
+they are actually resolved, not overridden. Only violations marked as
+`requires-manual-review` are recorded as pending complexity entries.
+
+---
+
 _Skill spec extended for language-specific constitutions on 2026-03-01_
 _Skill spec extended for spec-kit alignment (Parts 7b, 12–15) on 2026-03-02_
+_Skill spec extended for auto-resolve gate blocks (Part 16) on 2026-03-02_

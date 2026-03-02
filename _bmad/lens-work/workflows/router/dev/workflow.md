@@ -273,16 +273,17 @@ if dev_story_compliance.article_gate_results.failed_gates > 0:
   display: dev_story_compliance.article_gate_results  # Uses Part 7b display format
 
   if enforcement_mode == "enforced":
-    error: |
-      Dev story failed constitutional compliance gate.
-      Failed gates: ${dev_story_compliance.article_gate_results.failed_gates}
-      ${for gate in dev_story_compliance.article_gate_results.gates where gate.status == "fail"}
-        ✗ Article ${gate.article_id}: ${gate.title} (${gate.source_layer})
-          ${for item in gate.failed_items}
-            → ${item.violation}
-          ${endfor}
-      ${endfor}
-      Resolve violations in /review before implementation.
+    # Auto-resolve: create fix branch, resolve violations, open PR (Part 16)
+    invoke: constitution.auto-resolve-gate-block
+    params:
+      failed_gates: ${dev_story_compliance.article_gate_results}
+      artifact_path: ${dev_story_path}
+      artifact_type: "Story/Epic"
+      initiative_id: ${initiative.id}
+      source_branch: current_branch()
+      gate_stage: "dev-story-compliance"
+    # Workflow halts here — developer merges PR and re-runs /dev
+    halt: true
   else:
     # Advisory mode — log warnings, invoke complexity tracking
     warning: |
@@ -295,10 +296,15 @@ if dev_story_compliance.article_gate_results.failed_gates > 0:
 
 # Backward-compatible aggregate check
 if dev_story_compliance.fail_count > 0 and enforcement_mode == "enforced":
-  error: |
-    Dev story failed constitutional compliance gate.
-    FAIL count: ${dev_story_compliance.fail_count}
-    Resolve story/compliance issues in /review before implementation.
+  invoke: constitution.auto-resolve-gate-block
+  params:
+    fail_count: ${dev_story_compliance.fail_count}
+    artifact_path: ${dev_story_path}
+    artifact_type: "Story/Epic"
+    initiative_id: ${initiative.id}
+    source_branch: current_branch()
+    gate_stage: "dev-story-compliance-legacy"
+  halt: true
 ```
 
 ### 2b. Pre-Implementation Gates (Required)
@@ -332,9 +338,17 @@ output: |
 # Gate decision based on enforcement mode
 if article_gates.failed_gates > 0:
   if enforcement_mode == "enforced":
-    error: |
-      ❌ Pre-implementation gates BLOCKED.
-      ${article_gates.failed_gates} gate(s) failed. Resolve violations before implementation.
+    # Auto-resolve: create fix branch, resolve violations, open PR (Part 16)
+    invoke: constitution.auto-resolve-gate-block
+    params:
+      failed_gates: ${article_gates}
+      artifact_path: ${dev_story_path}
+      artifact_type: "Story/Epic"
+      initiative_id: ${initiative.id}
+      source_branch: current_branch()
+      gate_stage: "pre-implementation-gates"
+    # Workflow halts here — developer merges PR and re-runs /dev
+    halt: true
   else:
     # Advisory mode — record overrides in complexity tracking
     output: |
@@ -516,9 +530,17 @@ if code_review_compliance.article_gate_results:
         ${endfor}
       ${endfor}
     if enforcement_mode == "enforced":
-      error: |
-        Code review failed ${review_gates.failed_gates} article gate(s).
-        Resolve violations and re-run @lens done.
+      # Auto-resolve: create fix branch, resolve violations, open PR (Part 16)
+      invoke: constitution.auto-resolve-gate-block
+      params:
+        failed_gates: ${review_gates}
+        artifact_path: ${code_review_path}
+        artifact_type: "Code file"
+        initiative_id: ${initiative.id}
+        source_branch: current_branch()
+        gate_stage: "post-review-revalidation"
+      # Workflow halts — developer merges PR and re-runs @lens done
+      halt: true
     else:
       warning: |
         ⚠️ ${review_gates.failed_gates} article gate warning(s) on code review.
@@ -527,10 +549,15 @@ if code_review_compliance.article_gate_results:
 complexity_tracking = load_if_exists("${bmad_docs}/complexity-tracking.md")
 
 if code_review_compliance.fail_count > 0 and enforcement_mode == "enforced":
-  error: |
-    Code review compliance gate failed.
-    FAIL count: ${code_review_compliance.fail_count}
-    Resolve violations and re-run @lens done.
+  invoke: constitution.auto-resolve-gate-block
+  params:
+    fail_count: ${code_review_compliance.fail_count}
+    artifact_path: ${code_review_path}
+    artifact_type: "Code file"
+    initiative_id: ${initiative.id}
+    source_branch: current_branch()
+    gate_stage: "post-review-compliance-legacy"
+  halt: true
 
 # RESOLVED: core.party-mode → Read fully and follow:
 #   _bmad/core/workflows/party-mode/workflow.md
@@ -743,13 +770,13 @@ Throughout `/dev`, the user may work in TargetProjects for actual coding, but al
 | Dirty working directory | Prompt to stash or commit changes first |
 | Target repo checkout failed | Check target_repos config, retry |
 | Branch creation failed | Check remote connectivity, retry with backoff |
-| Dev story compliance gate failed | Resolve constitution FAILs in /review before coding |
-| Article-specific gate blocked | Resolve per-article violations or provide justification (advisory) |
-| Pre-implementation gate blocked | Address article gate failures; complexity track overrides |
+| Dev story compliance gate failed | Auto-resolve: fix branch + PR created; merge and rerun /dev |
+| Article-specific gate blocked | Auto-resolve: fix branch + PR created; merge and rerun /dev |
+| Pre-implementation gate blocked | Auto-resolve: fix branch + PR created; merge and rerun /dev |
 | Checklist quality gate failed | Complete checklist items or override with justification |
 | Code review failed | Allow retry or manual review |
-| Code review compliance gate failed | Resolve constitutional violations and re-run code review |
-| Post-review re-validation failed | Constitution amended mid-sprint; re-check violations |
+| Code review compliance gate failed | Auto-resolve: fix branch + PR created; merge and rerun @lens done |
+| Post-review re-validation failed | Auto-resolve: fix branch + PR created; merge and rerun @lens done |
 | Party mode teardown failed | Address party-mode findings and re-run code review |
 | Epic adversarial review failed | Resolve implementation-readiness findings for the epic and re-run code review |
 | Epic party mode teardown failed | Address epic party-mode findings and re-run code review |

@@ -164,6 +164,27 @@ conventions:
       they become implementation defects. Adopted from spec-kit's /speckit.analyze command.
     skill_reference: constitution skill Part 14 (Cross-Artifact Consistency Analysis)
 
+  auto_resolve_gate_blocks:
+    enforcement: hard
+    rule: >
+      When a constitutional gate blocks in enforced mode, the workflow MUST NOT halt and
+      wait for manual intervention. Instead, it automatically: (1) creates a fix branch
+      from the current branch, (2) auto-resolves the violations in that branch,
+      (3) opens a PR back to the original branch, and (4) instructs the developer to
+      merge the PR and re-run /dev or @lens done to continue.
+    rationale: >
+      Blocked gates that require manual intervention break developer flow and create
+      context-switching overhead. Auto-resolution keeps the developer in the workflow
+      loop — they review a PR (familiar pattern) and re-run the workflow. The fix
+      branch preserves the original branch state and uses standard PR review as the
+      human verification checkpoint.
+    skill_reference: constitution skill Part 16 (Auto-Resolve Gate Blocks)
+    branch_pattern: "fix/constitution-{gate_id}-{initiative_id}"
+    pr_convention: >
+      PR title: fix(constitution): resolve N gate violation(s) — {initiative_id}
+      PR body includes: violations table, resolution applied, manual-review items,
+      next steps (merge + rerun /dev)
+
   data_zone_enforcement:
     # Hard rules that apply to every agent, workflow, and step in lens-work.
     # These rules solve the branching-policy problem: governance changes made inside
