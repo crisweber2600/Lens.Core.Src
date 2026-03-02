@@ -124,6 +124,18 @@ menu:
         subPrompt: "./.github/prompts/lens-work.constitution.prompt.md"
         args: ["action"]
 
+  - groupName: "Utility"
+    commands:
+      - trigger: "adjust"
+        label: "Lightweight post-dev tweak (abbreviated review)"
+        subPrompt: "./.github/prompts/lens-work.adjust.prompt.md"
+        args: ["initiative_id"]
+
+      - trigger: "fix-story"
+        label: "Quick correction loop (Quick-Spec → Review → Quick-Dev)"
+        subPrompt: "./.github/prompts/lens-work.fix-story.prompt.md"
+        args: ["initiative_id"]
+
 # SubPrompt Registry (each references external prompt file)
 subPrompts:
   # CORE COMMANDS
@@ -220,6 +232,21 @@ subPrompts:
     file: "./.github/prompts/lens-work.constitution.prompt.md"
     deprecated: false
     readFrom: "bmad.lens.release/.github/prompts/lens-work.constitution.md"
+
+  # UTILITY COMMANDS
+  - id: "adjust"
+    title: "Lightweight post-dev adjustment"
+    description: "Make small tweaks after dev without full ceremony (abbreviated review, advisory constitution)"
+    file: "./.github/prompts/lens-work.adjust.prompt.md"
+    deprecated: false
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.adjust.md"
+
+  - id: "fix-story"
+    title: "Quick correction loop"
+    description: "Fix a story that failed review or has defects (Quick-Spec, Review, Quick-Dev)"
+    file: "./.github/prompts/lens-work.fix-story.prompt.md"
+    deprecated: false
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.fix-story.md"
 
   # FOUNDATION STORIES (Implementation Tasks)
   - id: "impl-safety-audit"

@@ -820,6 +820,7 @@ type,name,module,path,hash
 "md","workflow","lens-work","lens-work/workflows/utility/bootstrap/workflow.md","e91ddb32432b0897d6051d2c421c2ed13da0898d344b18afc9b4da8e133b3fba"
 "md","workflow","lens-work","lens-work/workflows/utility/check-repos/workflow.md","787f955cdf2064c7fd3b40883903051befd8da1794ce0e2a0cfc937838a4cec5"
 "md","workflow","lens-work","lens-work/workflows/utility/fix-state/workflow.md","7c831aea78a34783077d45ec711088e9ab04d96ab4255668595ee49df98ba437"
+"md","workflow","lens-work","lens-work/workflows/utility/adjust/workflow.md","new"
 "md","workflow","lens-work","lens-work/workflows/utility/fix-story/workflow.md","ac51b2d8787a03834ab1aa04142226c3212266d04b81795df5393975c7bc2e25"
 "md","workflow","lens-work","lens-work/workflows/utility/manage-credentials/workflow.md","d3db5940367028e27189509d8c2818153173c10283e409bef0ab277f97240c6d"
 "md","workflow","lens-work","lens-work/workflows/utility/migrate-lifecycle/workflow.md","996fde71843aeba6074cbb79db2b2ab1af8cc0136cc18afd715fcb4464900ff4"
