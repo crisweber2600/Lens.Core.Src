@@ -37,17 +37,17 @@
 flowchart TB
     subgraph BMAD["BMAD Core Platform"]
         direction LR
-        Engine["Workflow Engine\nYAML + MD execution"]
-        AgentSystem["Agent System\nPersonas + capabilities"]
-        TaskRunner["Task Runner\nCore tasks"]
+        Engine["Workflow Engine<br/>YAML + MD execution"]
+        AgentSystem["Agent System<br/>Personas + capabilities"]
+        TaskRunner["Task Runner<br/>Core tasks"]
     end
 
     subgraph Modules["BMAD Modules"]
-        BMM["BMM\nBusiness Method\nPM - Analyst - Architect\nDev - QA - SM - UX"]
-        CIS["CIS\nCreative Innovation\nBrainstorming - Design Thinking\nInnovation - Storytelling"]
-        GDS["GDS\nGame Development\nGame Design - Dev - QA"]
-        TEA["TEA\nTest Architecture\nRisk-based testing\nQuality gates"]
-        LensWork["lens-work\nLENS Workbench\nLifecycle orchestration"]
+        BMM["BMM<br/>Business Method<br/>PM - Analyst - Architect<br/>Dev - QA - SM - UX"]
+        CIS["CIS<br/>Creative Innovation<br/>Brainstorming - Design Thinking<br/>Innovation - Storytelling"]
+        GDS["GDS<br/>Game Development<br/>Game Design - Dev - QA"]
+        TEA["TEA<br/>Test Architecture<br/>Risk-based testing<br/>Quality gates"]
+        LensWork["lens-work<br/>LENS Workbench<br/>Lifecycle orchestration"]
     end
 
     subgraph Builders["BMAD Builders - BMB"]
@@ -147,23 +147,23 @@ Every mechanism in lens-work traces to at least one of these non-negotiable axio
 ```mermaid
 flowchart TB
     subgraph UserLayer["User Interface Layer"]
-        Copilot["GitHub Copilot Chat\n@lens commands"]
-        Prompts["Prompt Files\n.github/prompts/*.prompt.md"]
+        Copilot["GitHub Copilot Chat<br/>@lens commands"]
+        Prompts["Prompt Files<br/>.github/prompts/*.prompt.md"]
     end
 
     subgraph AgentLayer["Agent Layer"]
-        LensAgent["@lens Agent\nUnified Phase Router"]
-        PhaseAgents["Phase Agents - BMM\nMary - John - Winston\nSally - Bob - Amelia - Quinn"]
-        ReviewAgents["Review Agents - CIS\nParty-mode adversarial review"]
+        LensAgent["@lens Agent<br/>Unified Phase Router"]
+        PhaseAgents["Phase Agents - BMM<br/>Mary - John - Winston<br/>Sally - Bob - Amelia - Quinn"]
+        ReviewAgents["Review Agents - CIS<br/>Party-mode adversarial review"]
     end
 
     subgraph SkillLayer["Skill Layer - 6 Core Skills"]
-        GitSkill["git-orchestration\nBranches - PRs - push"]
-        StateSkill["state-management\nstate.yaml - event-log"]
-        DiscoverSkill["discovery\nRepo scanning - doc gen"]
-        ConstitutionSkill["constitution\n4-level governance chain"]
-        ChecklistSkill["checklist\nPhase-gate tracking"]
-        VisualSkill["visual-documentation\nMandatory Mermaid diagrams"]
+        GitSkill["git-orchestration<br/>Branches - PRs - push"]
+        StateSkill["state-management<br/>state.yaml - event-log"]
+        DiscoverSkill["discovery<br/>Repo scanning - doc gen"]
+        ConstitutionSkill["constitution<br/>4-level governance chain"]
+        ChecklistSkill["checklist<br/>Phase-gate tracking"]
+        VisualSkill["visual-documentation<br/>Mandatory Mermaid diagrams"]
     end
 
     subgraph WorkflowLayer["Workflow Categories"]
@@ -176,9 +176,9 @@ flowchart TB
     end
 
     subgraph DataLayer["Data Layer - Three Repos"]
-        ControlRepo["Control Repo\nbmad.lens.release"]
-        GovRepo["Governance Repo\nbmad.lens.governance"]
-        TargetRepos["Target Projects\nTargetProjects/"]
+        ControlRepo["Control Repo<br/>bmad.lens.release"]
+        GovRepo["Governance Repo<br/>bmad.lens.governance"]
+        TargetRepos["Target Projects<br/>TargetProjects/"]
     end
 
     UserLayer --> AgentLayer
@@ -199,14 +199,14 @@ LENS Workbench coordinates three separate git repositories with strict data zone
 
 ```mermaid
 flowchart LR
-    subgraph Control["Control Repo\nbmad.lens.release"]
+    subgraph Control["Control Repo<br/>bmad.lens.release"]
         direction TB
         C1["_bmad/ - Agents, workflows, skills"]
         C2["_bmad-output/lens-work/ - State + initiatives"]
         C3[".github/prompts/ - User commands"]
     end
 
-    subgraph Gov["Governance Repo\nbmad.lens.governance"]
+    subgraph Gov["Governance Repo<br/>bmad.lens.governance"]
         direction TB
         G1["constitutions/ - 4-level hierarchy"]
         G2["roster/ - Team members"]
@@ -214,16 +214,16 @@ flowchart LR
         G4["repo-inventory.yaml"]
     end
 
-    subgraph Target["Target Projects\nTargetProjects/"]
+    subgraph Target["Target Projects<br/>TargetProjects/"]
         direction TB
         T1["Domain A / Service 1"]
         T2["Domain A / Service 2"]
         T3["Domain B / Service 3"]
     end
 
-    Control -->|Governance workflows\nwrite constitutions| Gov
-    Control -->|Discovery + Dev\nscan and execute| Target
-    Gov -.->|Constitution rules\nenforce compliance| Control
+    Control -->|Governance workflows<br/>write constitutions| Gov
+    Control -->|Discovery + Dev<br/>scan and execute| Target
+    Gov -.->|Constitution rules<br/>enforce compliance| Control
 
     style Control fill:#3498db,color:#fff
     style Gov fill:#e74c3c,color:#fff
@@ -248,10 +248,10 @@ LENS organizes governance into four nested levels with additive constitutional i
 
 ```mermaid
 flowchart TD
-    Org["Organization\nCompany-wide rules\norg/constitution.md"]
-    Domain["Domain\nDomain-specific rules\ndomain/constitution.md"]
-    Service["Service\nService-specific rules\nservice/constitution.md"]
-    Repo["Repository\nRepo-specific rules\nrepo/constitution.md"]
+    Org["Organization<br/>Company-wide rules<br/>org/constitution.md"]
+    Domain["Domain<br/>Domain-specific rules<br/>domain/constitution.md"]
+    Service["Service<br/>Service-specific rules<br/>service/constitution.md"]
+    Repo["Repository<br/>Repo-specific rules<br/>repo/constitution.md"]
 
     Org --> Domain
     Domain --> Service
@@ -281,33 +281,33 @@ Named phases replace numbered phases. Each is owned by a specific BMM agent resp
 ```mermaid
 flowchart LR
     subgraph SmallAudience["Small Audience - IC Creation"]
-        PP["PrePlan\nMary/Analyst"]
-        BP["BusinessPlan\nJohn/PM + Sally/UX"]
-        TP["TechPlan\nWinston/Architect"]
+        PP["PrePlan<br/>Mary/Analyst"]
+        BP["BusinessPlan<br/>John/PM + Sally/UX"]
+        TP["TechPlan<br/>Winston/Architect"]
     end
 
     subgraph Gate1["Gate 1"]
-        G1{"Adversarial\nReview\nParty Mode"}
+        G1{"Adversarial<br/>Review<br/>Party Mode"}
     end
 
     subgraph MediumAudience["Medium - Lead Review"]
-        DP["DevProposal\nJohn/PM"]
+        DP["DevProposal<br/>John/PM"]
     end
 
     subgraph Gate2["Gate 2"]
-        G2{"Stakeholder\nApproval"}
+        G2{"Stakeholder<br/>Approval"}
     end
 
     subgraph LargeAudience["Large - Stakeholder"]
-        SP["SprintPlan\nBob/SM"]
+        SP["SprintPlan<br/>Bob/SM"]
     end
 
     subgraph Gate3["Gate 3"]
-        G3{"Constitution\nGate"}
+        G3{"Constitution<br/>Gate"}
     end
 
     subgraph BaseAudience["Base - Execution"]
-        Dev["Dev\nDev Team"]
+        Dev["Dev<br/>Dev Team"]
     end
 
     PP --> BP --> TP --> G1
@@ -348,15 +348,15 @@ sequenceDiagram
 
     IC->>IC: PrePlan then BusinessPlan then TechPlan
     IC->>Lead: Auto-promote on phase completion
-    Note over IC,Lead: Adversarial Review Gate\nParty-mode cross-agent review\nAll planning artifacts reviewed
+    Note over IC,Lead: Adversarial Review Gate<br/>Party-mode cross-agent review<br/>All planning artifacts reviewed
 
     Lead->>Lead: DevProposal
     Lead->>Stakeholder: Auto-promote on phase completion
-    Note over Lead,Stakeholder: Stakeholder Approval Gate\nPR approval from stakeholders\nEpic/story breakdown validated
+    Note over Lead,Stakeholder: Stakeholder Approval Gate<br/>PR approval from stakeholders<br/>Epic/story breakdown validated
 
     Stakeholder->>Stakeholder: SprintPlan
     Stakeholder->>Base: Auto-promote on phase completion
-    Note over Stakeholder,Base: Constitution Gate\n4-level governance validation\nAll constitutions checked
+    Note over Stakeholder,Base: Constitution Gate<br/>4-level governance validation<br/>All constitutions checked
 
     Base->>Base: Dev then Deploy then Retro
 ```
@@ -378,12 +378,12 @@ Tracks control which phases are required. Select a track when creating an initia
 flowchart TD
     Start([New Initiative]) --> TrackChoice{Select Track}
 
-    TrackChoice -->|Full| Full["full track\nAll phases, all audiences"]
-    TrackChoice -->|Feature| Feature["feature track\nSkip research"]
-    TrackChoice -->|Tech Change| TechChange["tech-change track\nNo business case needed"]
-    TrackChoice -->|Hotfix| Hotfix["hotfix track\nUrgent fix, minimal planning"]
-    TrackChoice -->|Spike| Spike["spike track\nResearch only"]
-    TrackChoice -->|QuickDev| QuickDev["quickdev track\nRapid execution"]
+    TrackChoice -->|Full| Full["full track<br/>All phases, all audiences"]
+    TrackChoice -->|Feature| Feature["feature track<br/>Skip research"]
+    TrackChoice -->|Tech Change| TechChange["tech-change track<br/>No business case needed"]
+    TrackChoice -->|Hotfix| Hotfix["hotfix track<br/>Urgent fix, minimal planning"]
+    TrackChoice -->|Spike| Spike["spike track<br/>Research only"]
+    TrackChoice -->|QuickDev| QuickDev["quickdev track<br/>Rapid execution"]
 
     Full --> PP1[PrePlan] --> BP1[BusinessPlan] --> TP1[TechPlan]
     TP1 --> DP1[DevProposal] --> SP1[SprintPlan] --> Done1([Ready for Dev])
@@ -507,12 +507,12 @@ The @lens agent operates through 6 skills that provide cross-cutting capabilitie
 flowchart TB
     LensAgent["@lens Agent"]
 
-    LensAgent --> GitSkill["git-orchestration\nBranch topology - PR creation\nMerge gates - Push discipline"]
-    LensAgent --> StateSkill["state-management\nstate.yaml - event-log.jsonl\nResume - sync - status"]
-    LensAgent --> DiscoverSkill["discovery\nRepo scanning - Doc generation\nImpact analysis - Domain mapping"]
-    LensAgent --> ConstitutionSkill["constitution\n4-level governance chain\nTrack enforcement - Compliance"]
-    LensAgent --> ChecklistSkill["checklist\nPhase gate tracking\nProgressive requirements"]
-    LensAgent --> VisualSkill["visual-documentation\nMandatory Mermaid diagrams\nDocument quality standards"]
+    LensAgent --> GitSkill["git-orchestration<br/>Branch topology - PR creation<br/>Merge gates - Push discipline"]
+    LensAgent --> StateSkill["state-management<br/>state.yaml - event-log.jsonl<br/>Resume - sync - status"]
+    LensAgent --> DiscoverSkill["discovery<br/>Repo scanning - Doc generation<br/>Impact analysis - Domain mapping"]
+    LensAgent --> ConstitutionSkill["constitution<br/>4-level governance chain<br/>Track enforcement - Compliance"]
+    LensAgent --> ChecklistSkill["checklist<br/>Phase gate tracking<br/>Progressive requirements"]
+    LensAgent --> VisualSkill["visual-documentation<br/>Mandatory Mermaid diagrams<br/>Document quality standards"]
 
     style LensAgent fill:#e74c3c,color:#fff
 ```
@@ -614,8 +614,8 @@ All runtime state lives in exactly two files. No database, no external service:
 ```mermaid
 flowchart LR
     subgraph State["_bmad-output/lens-work/"]
-        StateYAML["state.yaml\nCurrent initiative context\nWhere are we now?"]
-        EventLog["event-log.jsonl\nAppend-only audit trail\nWhat happened?"]
+        StateYAML["state.yaml<br/>Current initiative context<br/>Where are we now?"]
+        EventLog["event-log.jsonl<br/>Append-only audit trail<br/>What happened?"]
     end
 
     subgraph InitConfigs["initiatives/"]
@@ -705,8 +705,8 @@ gitGraph
 
 ```mermaid
 flowchart TD
-    Phase["Phase Branch\nroot-audience-phase"] -->|phase-completion| Audience["Audience Branch\nroot-audience"]
-    Audience -->|audience-promotion\nadversarial-review| NextAudience["Next Audience Branch\nroot-next-audience"]
+    Phase["Phase Branch<br/>root-audience-phase"] -->|phase-completion| Audience["Audience Branch<br/>root-audience"]
+    Audience -->|audience-promotion<br/>adversarial-review| NextAudience["Next Audience Branch<br/>root-next-audience"]
 
     subgraph PlanningRepo["Planning Repo Merge Chain"]
         direction LR
@@ -744,12 +744,12 @@ Planning audience levels mirror code merge gates:
 
 ```mermaid
 flowchart TD
-    Org["Org Constitution\nCompany-wide rules\ne.g. all services need auth"]
-    OrgLang["Org / TypeScript\nTS-specific org rules"]
-    Domain["Domain Constitution\nDomain rules\ne.g. payments use ACID txns"]
-    DomainLang["Domain / Python\nPython-specific domain rules"]
-    Service["Service Constitution\nService rules\ne.g. rate limit all endpoints"]
-    Repo["Repo Constitution\nRepo rules\ne.g. use Prisma ORM"]
+    Org["Org Constitution<br/>Company-wide rules<br/>e.g. all services need auth"]
+    OrgLang["Org / TypeScript<br/>TS-specific org rules"]
+    Domain["Domain Constitution<br/>Domain rules<br/>e.g. payments use ACID txns"]
+    DomainLang["Domain / Python<br/>Python-specific domain rules"]
+    Service["Service Constitution<br/>Service rules<br/>e.g. rate limit all endpoints"]
+    Repo["Repo Constitution<br/>Repo rules<br/>e.g. use Prisma ORM"]
 
     Org --> OrgLang
     Org --> Domain
@@ -760,7 +760,7 @@ flowchart TD
     Service --> Repo
 
     Repo --> Enforcement["Constitution Enforcement Engine"]
-    Enforcement --> Check{"All levels\npass?"}
+    Enforcement --> Check{"All levels<br/>pass?"}
     Check -->|Yes| Allow["Compliant"]
     Check -->|No| Block["Violation - halt"]
 
@@ -877,14 +877,14 @@ Constitutions can control:
 
 ```mermaid
 flowchart LR
-    Create["1. Create\nInitiative"] --> BP["2. BusinessPlan\nPRD + UX"]
-    BP --> TP["3. TechPlan\nArchitecture"]
-    TP --> Promote1["Auto-Promote\nsmall to medium"]
-    Promote1 --> DP["4. DevProposal\nEpics + Stories"]
-    DP --> Promote2["Auto-Promote\nmedium to large"]
-    Promote2 --> SP["5. SprintPlan\nSprint Setup"]
-    SP --> Promote3["Auto-Promote\nlarge to base"]
-    Promote3 --> Dev["6. Dev\nImplementation"]
+    Create["1. Create<br/>Initiative"] --> BP["2. BusinessPlan<br/>PRD + UX"]
+    BP --> TP["3. TechPlan<br/>Architecture"]
+    TP --> Promote1["Auto-Promote<br/>small to medium"]
+    Promote1 --> DP["4. DevProposal<br/>Epics + Stories"]
+    DP --> Promote2["Auto-Promote<br/>medium to large"]
+    Promote2 --> SP["5. SprintPlan<br/>Sprint Setup"]
+    SP --> Promote3["Auto-Promote<br/>large to base"]
+    Promote3 --> Dev["6. Dev<br/>Implementation"]
     Dev --> Archive["7. Archive"]
 
     style Create fill:#9b59b6,color:#fff
