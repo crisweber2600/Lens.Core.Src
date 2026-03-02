@@ -13,8 +13,9 @@
 #   bash bmad.lens.release/_bmad/lens-work/scripts/store-github-pat.sh
 #
 # OUTPUT:
-#   Environment variables only: GITHUB_PAT, GH_ENTERPRISE_TOKEN
-#   No files are written. User must persist to shell profile manually.
+#   Environment variables set for current session: GITHUB_PAT, GH_ENTERPRISE_TOKEN
+#   Exports are written to shell profile (~/.bashrc, ~/.bash_profile, or ~/.zshrc)
+#   for persistence across sessions.
 # ============================================================
 
 set -euo pipefail
@@ -33,8 +34,8 @@ echo ""
 echo -e "${BOLD}${CYAN} LENS Workbench — GitHub PAT Setup${RESET}"
 echo "===================================="
 echo ""
-echo -e "${YELLOW}[SECURITY]${RESET} PATs are set as environment variables only."
-echo "  No files are written. To persist, add exports to your shell profile."
+echo -e "${YELLOW}[SECURITY]${RESET} PATs are set as environment variables for this session."
+echo "  Exports will be written to your shell profile for persistence."
 echo ""
 
 # -- Check for already-set environment variables -------------
@@ -147,17 +148,40 @@ for DOMAIN in "${GITHUB_DOMAINS[@]}"; do
 done
 echo ""
 
-# -- Persistence guidance -----------------------------------
+# -- Persistence: write to shell profile -------------------
 if [[ ${STORED} -gt 0 ]]; then
-  echo -e "${CYAN}${BOLD}To persist across sessions, add to your shell profile (~/.bashrc or ~/.zshrc):${RESET}"
-  for DOMAIN in "${GITHUB_DOMAINS[@]}"; do
-    if [[ "${DOMAIN}" == "github.com" ]]; then
-      echo -e "  ${YELLOW}export GITHUB_PAT=\"<your-pat>\"${RESET}"
-    else
-      echo -e "  ${YELLOW}export GH_ENTERPRISE_TOKEN=\"<your-pat>\"${RESET}"
-    fi
-  done
-  echo ""
+  # Detect shell profile file
+  if [[ -n "${ZSH_VERSION:-}" ]] || [[ "$(basename "${SHELL:-}" 2>/dev/null)" == "zsh" ]]; then
+    PROFILE_FILE="${HOME}/.zshrc"
+  elif [[ -f "${HOME}/.bashrc" ]]; then
+    PROFILE_FILE="${HOME}/.bashrc"
+  elif [[ -f "${HOME}/.bash_profile" ]]; then
+    PROFILE_FILE="${HOME}/.bash_profile"
+  else
+    PROFILE_FILE="${HOME}/.bashrc"
+  fi
+
+  echo -e "${BOLD}Writing exports to ${PROFILE_FILE}...${RESET}"
+
+  # Remove any previous LENS-managed PAT lines to avoid duplicates
+  if [[ -f "${PROFILE_FILE}" ]]; then
+    sed -i '/# LENS Workbench PAT/d;/export GITHUB_PAT=/d;/export GH_ENTERPRISE_TOKEN=/d' "${PROFILE_FILE}" 2>/dev/null || true
+  fi
+
+  # Append fresh exports
+  {
+    echo "# LENS Workbench PAT — managed by store-github-pat.sh ($(date '+%Y-%m-%d'))"
+    for DOMAIN in "${GITHUB_DOMAINS[@]}"; do
+      if [[ "${DOMAIN}" == "github.com" ]] && [[ -n "${GITHUB_PAT:-}" ]]; then
+        echo "export GITHUB_PAT=\"${GITHUB_PAT}\""
+      elif [[ "${DOMAIN}" != "github.com" ]] && [[ -n "${GH_ENTERPRISE_TOKEN:-}" ]]; then
+        echo "export GH_ENTERPRISE_TOKEN=\"${GH_ENTERPRISE_TOKEN}\""
+      fi
+    done
+  } >> "${PROFILE_FILE}"
+
+  echo -e "  ${GREEN}[OK]${RESET} Exports written to ${PROFILE_FILE}"
+  echo -e "  ${CYAN}Run: source ${PROFILE_FILE}${RESET}  (or open a new terminal)\n"
 fi
 
 # -- Summary ------------------------------------------------
