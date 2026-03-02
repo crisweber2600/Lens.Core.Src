@@ -359,7 +359,7 @@ analysis_results:
     - "Dynamic routes not fully detected"
 ```
 
-### 10. Store Analysis in Scout Sidecar
+### 10. Store Analysis in Discovery Sidecar
 **File:** `_memory/scout-sidecar/analysis/{target_name}.yaml`
 ```yaml
 target: string

@@ -1,8 +1,8 @@
 ---
 name: fix-state
 description: Reconstruct state from event log or git scan
-agent: tracey
-trigger: "@tracey FIX"
+agent: "@lens/state-management"
+trigger: "@lens FIX"
 category: utility
 ---
 
@@ -121,5 +121,5 @@ ${endif}
 
 State saved to: _bmad-output/lens-work/state.yaml
 
-Verify with: @tracey ST
+Verify with: @lens ST
 ```

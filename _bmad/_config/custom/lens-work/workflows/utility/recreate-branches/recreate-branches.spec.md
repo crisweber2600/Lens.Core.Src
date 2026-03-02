@@ -1,7 +1,7 @@
 # Workflow Specification: recreate-branches
 
 **Module:** lens-work  
-**Agent:** Casey  
+**Skill:** @lens/git-orchestration  
 **Status:** Implemented
 
 ---
@@ -17,7 +17,7 @@ Recreate missing initiative branches from persisted state for recovery scenarios
 ```yaml
 name: recreate-branches
 description: Recreate missing initiative branches from persisted state
-agent: casey
+agent: "@lens/git-orchestration"
 category: utility
 ```
 
@@ -30,4 +30,4 @@ category: utility
 - Recreate branches using canonical pattern:
   - `{featureBranchRoot}-{audience}-p{phase_number}`
 - Never use legacy archive branch patterns.
-- Log recovery operations via Tracey.
+- Log recovery operations via state-management skill.

@@ -1,27 +1,15 @@
-```prompt
+````prompt
 ---
-description: Bypass merge validation with logged reason (requires justification)
+description: 'Manual state override (advanced)'
 ---
 
-Activate Tracey agent and execute OVERRIDE:
+# lens-work.override (Stub)
 
-1. Load agent: `_bmad/lens-work/agents/tracey.agent.yaml`
-2. Execute `OVERRIDE` command to bypass merge gate
-3. Require reason (min 10 chars)
-4. Log to event-log.jsonl
-
-Use `#think` before approving override—this bypasses safety checks.
-
-**Use When:**
-- Merge gate blocked incorrectly
-- Emergency bypass needed
-- Known issue with validation
-
-**Requirements:**
-- Reason must be ≥ 10 characters
-- Logged with timestamp to event log
-- Visible in status reports
-
-**Warning:** Overrides bypass merge discipline. Use sparingly.
+> **This is a stub.** Load and execute the full prompt from the bmad.lens.release control repository.
 
 ```
+Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.override.prompt.md
+```
+
+Source: [lens-work.override.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.override.prompt.md)
+````

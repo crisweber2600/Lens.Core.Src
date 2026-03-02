@@ -1,35 +1,13 @@
-```prompt
 ---
-description: Display current initiative state, blocks, topology, and next steps
+name: status-command
+description: Show current initiative status (3-line + verbose)
 ---
 
-Activate Tracey agent and execute ST (status):
+# Stub: /status Command
 
-1. Load agent: `_bmad/lens-work/agents/tracey.agent.yaml`
-2. Execute `ST` command to display current state
-3. Show initiative position, merge gates, and recommendations
-
-**Output Format:**
+This is a stub prompt. The actual implementation reads from:
 ```
-📍 lens-work Status Report
-═══════════════════════════════════════════════════
-Initiative: {id}
-Layer: {layer} | Target: {target_repo}
-
-Current Position
-├── Phase: {phase} ({phase_name})
-├── Workflow: {workflow}
-└── Branch: {active_branch}
-
-Merge Gates
-├── ✅ completed
-├── 🔄 in_progress
-└── ⏳ pending
-
-Next Steps
-├── {recommendation_1}
-└── {recommendation_2}
-═══════════════════════════════════════════════════
+bmad.lens.release/.github/prompts/lens-work.status.prompt.md
 ```
 
-```
+**Load from release repository when integrating full implementations.**

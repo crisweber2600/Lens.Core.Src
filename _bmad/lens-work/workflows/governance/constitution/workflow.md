@@ -1,28 +1,37 @@
 ---
 name: constitution
 description: View, create, or amend constitution files at any LENS layer
-agent: scribe
+agent: "@lens/constitution"
 trigger: /constitution command
 category: governance
 phase: N/A
+skill: constitution
 ---
 
 # Constitution Workflow — Governance
 
 View, create, or amend constitutions at any LENS layer with inheritance validation.
 
+> **Implementation note:** All path resolution, file parsing, hierarchy loading,
+> and governance merging is performed by the **constitution skill**
+> (`_bmad/lens-work/skills/constitution.md`). Do NOT call
+> `lib/constitution.js`, `lib/constitution-display.js`, or any Node.js lib files.
+
 ## Role
 
-You are **Scribe (Cornelius)**, the Constitutional Guardian. Guide users through viewing, creating, or amending governance rules that apply across the LENS inheritance chain.
+You are the **constitutional guardian**. Guide users through viewing, creating, or amending
+governance rules that apply across the LENS inheritance chain.
+All file operations follow the constitution skill's path patterns (Part 1) and
+merge rules (Part 4).
 
 ---
 
 ## Step 0: Git Discipline — Verify Clean State
 
-Invoke Casey to verify clean git state in the control repo before any governance operations.
+Invoke git-orchestration skill to verify clean git state in the control repo before any governance operations.
 
 ```
-casey.verify-clean-state
+git-orchestration.verify-clean-state
 ```
 
 If state is not clean, inform user and halt.
@@ -46,9 +55,38 @@ Select a mode:
 ```
 
 Route based on selection:
-- **View** → Step 2V
-- **Create** → Step 2C
-- **Amend** → Step 2A
+- **View** → Step 1.5 (Language Selection) → Step 2V
+- **Create** → Step 1.5 (Language Selection) → Step 2C
+- **Amend** → Step 1.5 (Language Selection) → Step 2A
+
+---
+
+## Step 1.5: Language Selection (Optional)
+
+Present language selection prompt:
+
+```
+🧬 Programming Language Context (optional)
+
+Load language-specific constitutions for a particular language?
+
+1. Universal only — Apply org/domain/service/repo constitutions (all languages)
+2. TypeScript — Apply universal + TypeScript-specific rules (ts/js projects)
+3. Python — Apply universal + Python-specific rules (py projects)
+4. Go — Apply universal + Go-specific rules (go projects)
+5. Java — Apply universal + Java-specific rules (java projects)
+6. C# — Apply universal + C#-specific rules (csharp projects)
+7. Other — Enter custom language identifier
+
+[Enter 1-7 or press Enter for universal only]
+```
+
+Store selected language as `{language_context}`. If "Other" selected, prompt:
+```
+Enter language identifier (e.g., rust, php, kotlin):
+```
+
+**Note:** Language-specific constitutions apply ONLY to target repositories matching that language. See constitution skill Part 10 for scope rules.
 
 ---
 
@@ -60,30 +98,35 @@ Route based on selection:
    - Load active initiative from `_bmad-output/lens-work/initiatives/{active_id}.yaml`
    - Extract `domain`, `service`, `layer`, `name`
    - If no active initiative: prompt user for layer and name
+   - Use `{language_context}` from Step 1.5 (may be empty)
 
-2. Build inheritance chain (parent-first): Domain → Service → Microservice → Feature
+2. Build inheritance chain using **constitution skill Part 3 (Hierarchy Loading)**:
+   - Walk `[org, domain, service, repo]` parent-first
+   - At each layer, load universal constitution first, then language-specific (if `{language_context}` provided)
+   - Apply skill Part 1 (Path Resolution) for each layer's path
+   - Chain order: `[org-universal, org-{language}, domain-universal, domain-{language}, ...]`
+   - Skip missing files silently (see skill Part 9 Edge Cases)
 
-3. For each layer in chain:
-   - Check if `_bmad-output/lens-work/constitutions/{layer}/{name}/constitution.md` exists
-   - If exists: load and parse articles
-   - If not: skip silently
+3. Merge governance using **constitution skill Part 4 (Governance Merging)**:
+   - `permitted_tracks`: intersection | `required_gates`: union | participants: union per phase
+   - Language-specific rules are additive (children can only add, never remove)
 
-4. Display resolved constitution:
+4. Display resolved constitution using **constitution skill Part 6 (Display Formatting)**:
 
 ```
 📜 Resolved Constitution: {context_name}
 
-Context: {layer} at {name}
+Context: {layer} at {name} {if language_context}[Language: {language_context}]{endif}
 
-Inheritance Chain:
+Inheritance Chain ({chain_count} files):
 {for each found constitution:}
-  {n}. {layer}: {name} ({article_count} articles)
+  {n}. {layer}{if language} ({language}){endif}: {name} ({article_count} articles)
      Ratified: {date} | Last amended: {amended_date}
 
 Total Governance: {total_articles} articles from {chain_count} constitution(s)
 
 {for each layer with articles:}
-## {Layer} Articles
+## {Layer}{if language} [{language}]{endif} Articles
 
 {for each article:}
 ### Article {id}: {title}
@@ -108,48 +151,92 @@ Would you like to create one? [Y/N]
 ```
 📜 Creating a new constitution.
 
-What layer is this constitution for?
+What layer is this constitution for? (per lifecycle.yaml lens_hierarchy)
 
-1. Domain     — Enterprise-wide rules (applies to everything)
-2. Service    — Service boundary rules (applies to service + children)
-3. Microservice — API/component rules (applies to microservice + features)
-4. Feature    — Feature-specific rules (narrowest scope)
+1. Org        — Organization-wide rules (applies to all domains, services, repos)
+2. Domain     — Domain-wide rules (applies to all services and repos in domain)
+3. Service    — Service boundary rules (applies to service + repos)
+4. Repo       — Repository-specific rules (narrowest scope)
 
 [Enter 1-4 or layer name]
 ```
 
 Set `{layer_type}` based on selection.
 
-### Step 3C: Name the Constitution
+### Step 3C: Named or Language-Specific
+
+After selecting the layer, ask whether this constitution applies universally or to a specific language:
+
+```
+Is this constitution universal or language-specific?
+
+1. [U] Universal — Applies to all languages/repos at this layer
+2. [L] Language-Specific — Applies only to repos using a specific language
+
+[Enter U/L, default is U]
+```
+
+Set `{constitution_scope}` to either "universal" or "language-specific".
+
+If language-specific selected:
+```
+Which programming language?
+
+1. TypeScript    4. Java
+2. Python        5. C#
+3. Go            6. Other
+
+[Enter 1-6 or press Enter to select from active context]
+```
+
+Store as `{constitution_language}`.
+
+### Step 4C: Name the Constitution
 
 ```
 What name for this constitution?
 
 Examples:
+- "acme-corp" (Org)
 - "bmad" (Domain)
 - "lens" (Service)
-- "auth" (Microservice)
-- "governance-migration" (Feature)
+- "bmad-lens-api" (Repo)
 ```
 
 Store as `{constitution_name}`.
 
-Validate uniqueness: check that `_bmad-output/lens-work/constitutions/{layer_type}/{constitution_name}/constitution.md` does not already exist.
+Validate uniqueness:
+- Universal: check that `_bmad-output/lens-work/constitutions/{layer_type}/{constitution_name}/constitution.md` does not exist
+- Language-specific: check that `_bmad-output/lens-work/constitutions/{layer_type}/{constitution_name}/{language}/constitution.md` does not exist
 
-### Step 4C: Load Template
+### Step 5C: Load Template
 
-Load template from `_bmad/lens-work/templates/constitutions/{layer_type}-constitution.md`.
+Load template from `_bmad/lens-work/templates/constitutions/{constitution_scope}-{layer_type}-constitution.md`.
+
+If language-specific template doesn't exist, use base template and append language-specific boilerplate section:
+
+```
+## Language-Specific Governance
+
+This constitution applies ONLY to {language} projects within this layer.
+
+When loaded into a compliance workflow:
+1. Target repo language is detected via .gitattributes, package.json, pyproject.toml, etc.
+2. This constitution is applied ONLY if target repo language matches {language}
+3. If target repo is a different language, these rules do not apply
+4. Universal constitutions at this layer still apply regardless of language
+```
 
 Display template structure and guide user through filling sections.
 
-### Step 5C: Gather Preamble
+### Step 6C: Gather Preamble
 
 ```
 Preamble — What is the purpose of this constitution?
-What should it ensure across all governed work? (2-4 sentences)
+What should it ensure across all governed {if language}{ language} {endif}work? (2-4 sentences)
 ```
 
-### Step 6C: Gather Articles
+### Step 7C: Gather Articles
 
 Loop until user signals done:
 
@@ -165,28 +252,38 @@ Article {n}:
 
 Minimum 1 article required. Recommend at least 3 for meaningful governance.
 
-### Step 7C: Validate Inheritance
+### Step 8C: Validate Inheritance
 
-If layer is NOT Domain:
-1. Walk up inheritance chain to find parent constitutions
-2. Load parent articles
+If layer is NOT Org:
+1. Walk up inheritance chain to find parent constitutions (per lifecycle.yaml resolution_order)
+2. Load parent articles (both universal and {if language}language-specific{endif} if applicable)
 3. Check new articles for contradictions with parent rules
 4. If contradictions found: present resolution options (modify, narrow scope, escalate, withdraw)
+5. Validate additive inheritance: children can only ADD rules, never remove or weaken parent rules
 
-If no contradictions (or Domain level):
+If no contradictions (or Org level):
 ```
 ✅ Inheritance Validation Passed
 ```
 
-### Step 8C: Preview and Ratify
+### Step 9C: Preview and Ratify
 
-Generate constitution document using template structure with YAML frontmatter:
+Generate constitution document using template structure with YAML frontmatter and language metadata:
 
 ```yaml
 ---
 layer: {layer_type}
 name: {constitution_name}
-created_by: {user_name}
+scope: {constitution_scope}
+{if language}language: {language}{endif}
+inherits_from: {parent_layer} (if not Org)
+---
+```
+
+Display preview for approval.
+layer: {layer_type}
+name: {constitution_name}
+created_by: profile.name  # From profile.yaml
 ratification_date: {today_date}
 last_amended: null
 amendment_count: 0
@@ -209,18 +306,21 @@ Ratify? [Y/N/Edit]
 If ratified:
 1. Create directory: `_bmad-output/lens-work/constitutions/{layer_type}/{constitution_name}/`
 2. Write `constitution.md`
-3. Log event through Tracey:
+3. Log event via state-management:
    ```yaml
+   # Load user profile for identity
+   profile = load("_bmad-output/lens-work/personal/profile.yaml")
+   
    type: constitution-created
    timestamp: {now}
    layer: {layer_type}
    name: {constitution_name}
    articles_count: {count}
-   ratified_by: {user_name}
+   ratified_by: profile.name  # From profile.yaml
    git_commit_sha: {sha}
    initiative_id: {active_initiative_id or null}
    ```
-4. Casey commits with message: `governance: create {layer_type} constitution — {constitution_name}`
+4. git-orchestration commits with message: `governance: create {layer_type} constitution — {constitution_name}`
 
 ```
 ✅ Constitution Ratified
@@ -235,6 +335,27 @@ Path: _bmad-output/lens-work/constitutions/{layer_type}/{constitution_name}/cons
 ---
 
 ## AMEND PATH
+
+### Step 2A: Locate Constitution File
+
+```
+Which constitution do you want to amend?
+
+Existing constitutions found:
+
+{for each found constitution:}
+  {n}. {layer}: {name} {if language}({language}){endif}
+     Path: {path}
+     Articles: {article_count}
+
+[Enter constitution number]
+```
+
+Load selected constitution from disk.
+
+### Step 3A: Show Current Content
+
+Display current constitution with line numbers on each article.
 
 ### Step 2A: Load Existing Constitution
 
@@ -302,7 +423,7 @@ Ratify amendment? [Y/N/Edit]
 If ratified:
 1. Update constitution file (apply changes, update version, update last_amended date)
 2. Append amendment record to Amendment History section
-3. Log event through Tracey:
+3. Log event via state-management:
    ```yaml
    type: constitution-amended
    timestamp: {now}
@@ -314,7 +435,7 @@ If ratified:
    git_commit_sha: {sha}
    initiative_id: {active_initiative_id or null}
    ```
-4. Casey commits with message: `governance: amend {layer_type} constitution — {constitution_name}`
+4. git-orchestration commits with message: `governance: amend {layer_type} constitution — {constitution_name}`
 
 ```
 ✅ Amendment Ratified
@@ -336,5 +457,5 @@ What's next?
 - View resolved constitution → /resolve
 - Check compliance → /compliance
 - Show ancestry → /ancestry
-- Return to Compass → exit
+- Return to @lens → exit
 ```

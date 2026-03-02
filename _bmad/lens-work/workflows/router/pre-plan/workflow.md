@@ -1,27 +1,33 @@
 ---
-name: pre-plan
-description: Launch Analysis phase (brainstorm/research/product brief)
-agent: compass
-trigger: /pre-plan command
+name: preplan
+description: Launch PrePlan phase (brainstorm/research/product brief)
+agent: "@lens"
+trigger: /preplan command
+aliases: [/pre-plan]
 category: router
-phase: 1
-phase_name: Analysis
+phase_name: preplan
+display_name: PrePlan
+agent_owner: mary
+agent_role: Analyst
+imports: lifecycle.yaml
 ---
 
-# /pre-plan — Analysis Phase Router
+# /preplan — PrePlan Phase Router
 
-**Purpose:** Guide users through the Analysis phase, invoking brainstorming, research, and product brief workflows.
+**Purpose:** Guide users through the PrePlan phase, invoking brainstorming, research, and product brief workflows.
+
+**Lifecycle:** `preplan` phase, audience `small`, owned by Mary (Analyst).
 
 ---
 
 ## Role Authorization
 
-**Authorized:** PO, Architect, Tech Lead
+**Authorized:** PO, Architect, Tech Lead (phase owner: Mary/Analyst)
 
 ```yaml
 # Advisory check (logged, not blocking)
 if user_role not in ["PO", "Architect", "Tech Lead"]:
-  log_warning("Role ${user_role} typically doesn't initiate /pre-plan")
+  log_warning("Role ${user_role} typically doesn't initiate /preplan")
 ```
 
 ---
@@ -58,24 +64,38 @@ Full documentation: [User Interaction Keywords](../../docs/user-interaction-keyw
 
 ## Execution Sequence
 
-### 0. Git Discipline — Verify Clean State
+### 0. Pre-Flight [REQ-9]
 
 ```yaml
+# PRE-FLIGHT (mandatory, never skip) [REQ-9]
+# 1. Verify working directory is clean
+# 2. Load two-file state (state.yaml + initiative config)
+# 3. Check previous phase status (if applicable — preplan is first phase, no predecessor)
+# 4. Determine correct phase branch: {initiative_root}-{audience}-{phase_name}
+# 5. Create phase branch if it doesn't exist
+# 6. Checkout phase branch
+# 7. Confirm to user: "Now on branch: {branch_name}"
+# GATE: All steps must pass before proceeding to artifact work
+
 # Verify working directory is clean
-invoke: casey.verify-clean-state
+invoke: git-orchestration.verify-clean-state
 
 # Load two-file state
 state = load("_bmad-output/lens-work/state.yaml")
 initiative = load("_bmad-output/lens-work/initiatives/${state.active_initiative}.yaml")
 
-# Derive audience for P1 from review_audience_map
-audience = initiative.review_audience_map.p1    # "small"
-featureBranchRoot = initiative.featureBranchRoot
+# Load lifecycle contract for phase → audience mapping
+lifecycle = load("lifecycle.yaml")
+
+# Derive audience from lifecycle contract (preplan → small)
+current_phase = "preplan"
+audience = lifecycle.phases[current_phase].audience    # "small"
+initiative_root = initiative.initiative_root
 domain_prefix = initiative.domain_prefix
 
 # Compute branch names for this phase
-audience_branch = initiative.branches.audiences[audience]    # {featureBranchRoot}-small
-phase_branch = "${featureBranchRoot}-${audience}-p1"          # {featureBranchRoot}-small-p1
+audience_branch = "${initiative_root}-${audience}"              # {initiative_root}-small
+phase_branch = "${initiative_root}-${audience}-${current_phase}" # {initiative_root}-small-preplan
 
 # === Path Resolver (S01-S06: Context Enhancement) ===
 docs_path = initiative.docs.path    # e.g., "docs/BMAD/LENS/BMAD.Lens/context-enhancement-9bfe4e"
@@ -86,14 +106,14 @@ if docs_path == null or docs_path == "":
   docs_path = "_bmad-output/planning-artifacts/"
   repo_docs_path = null
   warning: "⚠️ DEPRECATED: Initiative missing docs.path configuration."
-  warning: "  → Run: /compass migrate <initiative-id> to add docs.path"
+  warning: "  → Run: /lens migrate <initiative-id> to add docs.path"
   warning: "  → This fallback will be removed in a future version."
 
 output_path = docs_path
 ensure_directory(output_path)
 
 # === Context Loader (S08: Context Enhancement) ===
-# Pre-plan has no prior artifacts to load — this is the first phase
+# PrePlan has no prior artifacts to load — this is the first phase
 # repo_docs_path provides optional context from target repo
 if repo_docs_path != null:
   repo_readme = load_if_exists("${repo_docs_path}/README.md")
@@ -102,17 +122,35 @@ if repo_docs_path != null:
 else:
   repo_context = null
 
-# Validate we're on the correct branch (or can switch)
-# Phase branch: {featureBranchRoot}-{audience}-p1
-expected_branch = phase_branch
-current_branch = casey.get-current-branch()
+# Step 5: Create phase branch if it doesn't exist [REQ-9]
+if not branch_exists(phase_branch):
+  invoke: git-orchestration.start-phase
+  params:
+    phase_name: "preplan"
+    display_name: "PrePlan"
+    initiative_id: ${initiative.id}
+    audience: ${audience}
+    initiative_root: ${initiative_root}
+    parent_branch: ${audience_branch}
+  # git-orchestration creates: ${phase_branch} from ${audience_branch}
+  # git-orchestration pushes: git push -u origin ${phase_branch}
+  if start_phase.exit_code != 0:
+    FAIL("❌ Pre-flight failed: Could not create branch ${phase_branch}")
 
-if current_branch != expected_branch:
-  if branch_exists(expected_branch):
-    invoke: casey.checkout-branch
-    params:
-      branch: ${expected_branch}
-  # else: branch will be created in Step 2
+# Step 6: Checkout phase branch
+invoke: git-orchestration.checkout-branch
+params:
+  branch: ${phase_branch}
+invoke: git-orchestration.pull-latest
+
+# Step 7: Confirm to user
+output: |
+  📋 Pre-flight complete [REQ-9]
+  ├── Initiative: ${initiative.name} (${initiative.id})
+  ├── Phase: PrePlan (preplan)
+  ├── Audience: small
+  ├── Branch: ${phase_branch}
+  └── Working directory: clean ✅
 ```
 
 ### 1. Validate State & Constitution
@@ -129,15 +167,15 @@ for field in required_fields:
     error: "Initiative missing required field: ${field}. Re-run #new-* to fix."
 
 # Phase check
-if initiative.current_phase not in [null, "p1"]:
-  warning: "Current phase is ${initiative.current_phase}. /pre-plan is for Phase 1."
+if initiative.current_phase not in [null, "preplan"]:
+  warning: "Current phase is ${initiative.current_phase}. /preplan is for the PrePlan phase."
 ```
 
 ### 1a. Constitutional Context Injection (Required)
 
 ```yaml
 # Resolve constitutional governance for the active initiative context
-constitutional_context = invoke("scribe.resolve-context")
+constitutional_context = invoke("constitution.resolve-context")
 
 # Parse errors are hard failures because governance cannot be evaluated
 if constitutional_context.status == "parse_error":
@@ -161,7 +199,7 @@ for repo in initiative.target_repos:
   if repo not in inventory.repos:
     warning: |
       ⚠️ Discovery not run for repo: ${repo}
-      Run @scout discover for better analysis context.
+      Run @lens discover for better analysis context.
       Proceeding without discovery data.
 ```
 
@@ -172,8 +210,8 @@ for repo in initiative.target_repos:
 # Mode: ADVISORY (log warnings, do not block)
 invoke: lens-work.compliance-check
 params:
-  phase: "p1"
-  phase_name: "Analysis"
+  phase: "preplan"
+  phase_name: "PrePlan"
   initiative_id: ${initiative.id}
   target_repos: ${initiative.target_repos}
   mode: "ADVISORY"
@@ -182,27 +220,12 @@ params:
 # Warnings are surfaced to user but do not block workflow progression
 ```
 
-### 2. Start Phase — Create and Push P1 Branch
+### 2. Branch Verification (consolidated into Pre-Flight)
 
 ```yaml
-# Create {smallGroupBranchRoot}-p1 from {smallGroupBranchRoot} if it doesn't exist
-# Phase branches are created by phase routers, NOT at init.
-if not branch_exists(phase_branch):
-  invoke: casey.start-phase
-  params:
-    phase_number: 1
-    phase_name: "Analysis"
-    initiative_id: ${initiative.id}
-    audience: ${audience}
-    featureBranchRoot: ${featureBranchRoot}
-    parent_branch: ${audience_branch}    # Branch from audience group
-  # Casey creates: ${phase_branch} from ${audience_branch}
-  # Casey pushes immediately: git push -u origin ${phase_branch}
-
-  # Checkout the new phase branch
-  invoke: casey.checkout-branch
-  params:
-    branch: ${phase_branch}
+# Branch creation and checkout handled in Step 0 Pre-Flight [REQ-9]
+# Phase branch ${phase_branch} is already checked out at this point.
+assert: current_branch == phase_branch
 ```
 
 ### 2a. Batch Mode (Single-File Questions)
@@ -211,17 +234,17 @@ if not branch_exists(phase_branch):
 if initiative.question_mode == "batch":
   invoke: lens-work.batch-process
   params:
-    phase_number: "1"
-    phase_name: "Analysis"
-    template_path: "templates/phase-1-analysis-questions.template.md"
-    output_filename: "phase-1-analysis-questions.md"
+    phase_name: "preplan"
+    display_name: "PrePlan"
+    template_path: "templates/preplan-questions.template.md"
+    output_filename: "preplan-questions.md"
   exit: 0
 ```
 
 ### 3. Offer Workflow Options
 
 ```
-🧭 /pre-plan — Analysis Phase
+🧭 /preplan — PrePlan Phase
 
 You're starting the Analysis phase. Available workflows:
 
@@ -236,130 +259,184 @@ Select workflow(s) to run: [1] [2] [3] [A]ll [S]kip to Product Brief
 
 ### 4. Execute Selected Workflows
 
+**⚠️ CRITICAL — Interactive Workflow Rules:**
+Each sub-workflow uses sequential step-file architecture.
+- 🛑 **NEVER** auto-complete or batch-generate content without user input
+- ⏸️ **ALWAYS** STOP and wait for user input/confirmation at each step
+- 🚫 **NEVER** load the next step file until user explicitly confirms (Continue / C)
+- 📋 Back-and-forth dialogue is REQUIRED — you are a facilitator, not a generator
+- 💾 Save/update frontmatter after completing each step before loading the next
+- 🎯 Read the ENTIRE step file before taking any action within it
+
+**Agent:** Adopt Mary (Analyst) persona — load `_bmad/bmm/agents/analyst.md`
+
 #### If Brainstorming selected:
 ```yaml
-invoke: casey.start-workflow
+invoke: git-orchestration.start-workflow
 params:
   workflow_name: brainstorm
 
-invoke: cis.brainstorming  # CIS module workflow
+# RESOLVED: cis.brainstorming → Read fully and follow this workflow file:
+#   _bmad/core/workflows/brainstorming/workflow.md
+# Uses step-file architecture with steps/ folder — load step-01-session-setup.md first
+# STOP and wait for user at each step — do NOT auto-generate brainstorm content
+read_and_follow: "_bmad/core/workflows/brainstorming/workflow.md"
 params:
   context: "${initiative.name} at ${initiative.layer} layer"
   constitutional_context: ${constitutional_context}
 
-invoke: casey.finish-workflow
+invoke: git-orchestration.finish-workflow
 ```
 
 #### If Research selected:
 ```yaml
-invoke: casey.start-workflow
+invoke: git-orchestration.start-workflow
 params:
   workflow_name: research
 
-invoke: cis.research  # CIS module workflow
+# RESOLVED: cis.research → Ask user for research type, then follow the correct workflow:
+#   Market:    _bmad/bmm/workflows/1-analysis/research/workflow-market-research.md
+#   Domain:    _bmad/bmm/workflows/1-analysis/research/workflow-domain-research.md
+#   Technical: _bmad/bmm/workflows/1-analysis/research/workflow-technical-research.md
+# Each uses step-file architecture — load steps one at a time, wait for user at each step
+prompt_user: "Which type of research? [M]arket / [D]omain / [T]echnical"
+if research_type == "market":
+  read_and_follow: "_bmad/bmm/workflows/1-analysis/research/workflow-market-research.md"
+elif research_type == "domain":
+  read_and_follow: "_bmad/bmm/workflows/1-analysis/research/workflow-domain-research.md"
+elif research_type == "technical":
+  read_and_follow: "_bmad/bmm/workflows/1-analysis/research/workflow-technical-research.md"
 params:
   constitutional_context: ${constitutional_context}
 
-invoke: casey.finish-workflow
+invoke: git-orchestration.finish-workflow
 ```
 
 #### Product Brief (always):
 ```yaml
-invoke: casey.start-workflow
+invoke: git-orchestration.start-workflow
 params:
   workflow_name: product-brief
 
-invoke: bmm.product-brief  # BMM module workflow
+# RESOLVED: bmm.product-brief → Read fully and follow this workflow file:
+#   _bmad/bmm/workflows/1-analysis/create-product-brief/workflow.md
+# Uses JIT step-file architecture:
+#   1. Load step-01-init.md first
+#   2. Only load next step when directed by the current step
+#   3. NEVER load multiple step files simultaneously
+#   4. ALWAYS halt at menus and wait for user input
+#   5. Output goes to: ${docs_path}/product-brief.md
+# Agent persona: Mary (Analyst) — _bmad/bmm/agents/analyst.md
+read_and_follow: "_bmad/bmm/workflows/1-analysis/create-product-brief/workflow.md"
 params:
-  output_path: "_bmad-output/planning-artifacts/"
+  output_path: "${docs_path}/"
   constitutional_context: ${constitutional_context}
+  context:
+    brainstorm_notes: "${docs_path}/brainstorm-notes.md"   # if exists from step [1]
+    research_summary: "${docs_path}/research-summary.md"   # if exists from step [2]
+    repo_readme: "${repo_context.readme}"
+    repo_contributing: "${repo_context.contributing}"
 
-invoke: casey.finish-workflow
+invoke: git-orchestration.finish-workflow
 ```
 
-### 5. Phase Completion — PR, Delete, Checkout
+### 5. Phase Completion — Push Only
 
 ```yaml
-if all_workflows_complete("p1"):
+# REQ-7: Never auto-merge. PR created in S1.2.
+if all_workflows_complete("preplan"):
   # Push final state to phase branch
-  invoke: casey.commit-and-push
+  invoke: git-orchestration.commit-and-push
   params:
     branch: ${phase_branch}
-    message: "finish-phase(p1): Analysis complete — ${initiative.id}"
+    message: "[${initiative.id}] PrePlan complete"
+  # Phase branch remains alive — PR handles merge to audience branch
 
-  # Create PR: {smallGroupBranchRoot}-p1 → {smallGroupBranchRoot}
-  invoke: casey.create-pr
+  # REQ-8: Create PR for phase merge
+  invoke: git-orchestration.create-pr
   params:
-    source: ${phase_branch}               # {featureBranchRoot}-small-p1
-    target: ${audience_branch}             # {featureBranchRoot}-small
-    title: "P1 Analysis: ${initiative.name}"
-    body: "Phase 1 (Analysis) complete. Review audience: small."
-  capture: pr_result
+    head: ${phase_branch}
+    base: ${audience_branch}
+    title: "[preplan] PrePlan: ${initiative.name}"
+    body: "PrePlan phase complete for ${initiative.id}.\n\nArtifacts: product-brief.md"
+  capture: pr_result  # { url, number } or fallback message
 
-  # Delete phase branch locally (PR keeps remote alive)
-  invoke: casey.delete-local-branch
+  # REQ-7/REQ-8: Phase enters pr_pending after PR creation
+  invoke: state-management.update-initiative
   params:
-    branch: ${phase_branch}
-
-  # Checkout the audience group branch
-  invoke: casey.checkout-branch
-  params:
-    branch: ${audience_branch}
+    initiative_id: ${initiative.id}
+    updates:
+      phase_status:
+        preplan:
+          status: "pr_pending"
+          pr_url: "${pr_result.url}"
+          pr_number: ${pr_result.number}
+  # If manual fallback (no PAT), still set pr_pending with null PR info
+  if pr_result.fallback:
+    invoke: state-management.update-initiative
+    params:
+      initiative_id: ${initiative.id}
+      updates:
+        phase_status:
+          preplan:
+            status: "pr_pending"
+            pr_url: null
+            pr_number: null
 
   output: |
-    ✅ /pre-plan complete
-    ├── Phase 1 (Analysis) finished
+    ✅ /preplan complete
+    ├── Phase: PrePlan (preplan) finished
+    ├── Audience: small
     ├── Artifacts: product-brief.md
-    ├── PR created: ${pr_result.url}
-    │   └── ${phase_branch} → ${audience_branch}
-    ├── Phase branch deleted locally
-    ├── Now on: ${audience_branch}
-    └── Next: Run /spec to continue to Planning phase
+    ├── Branch pushed: ${phase_branch}
+    ├── PR: ${pr_result}
+    ├── Status: pr_pending (awaiting merge)
+    ├── Remaining on: ${phase_branch}
+    └── Next: Run /businessplan to continue to BusinessPlan phase
 ```
 
 ### 6. Update State Files
 
 ```yaml
 # Update initiative file: _bmad-output/lens-work/initiatives/${initiative.id}.yaml
-invoke: tracey.update-initiative
+invoke: state-management.update-initiative
 params:
   initiative_id: ${initiative.id}
   updates:
-    current_phase: "p1"
-    current_phase_name: "Analysis"
-    phases:
-      p1:
+    current_phase: "preplan"
+    phase_status:
+      preplan:
         status: "in_progress"
         started_at: "${ISO_TIMESTAMP}"
 
 # Update state.yaml
-invoke: tracey.update-state
+invoke: state-management.update-state
 params:
   updates:
-    current_phase: "p1"
-    current_phase_name: "Analysis"
-    active_branch: "${audience_branch}"
+    current_phase: "preplan"
+    workflow_status: "pr_pending"
+    active_branch: "${phase_branch}"
 ```
 
 ### 7. Commit State Changes
 
 ```yaml
-# Casey commits all state and artifact changes
-invoke: casey.commit-and-push
+# git-orchestration commits all state and artifact changes
+invoke: git-orchestration.commit-and-push
 params:
   paths:
     - "_bmad-output/lens-work/state.yaml"
     - "_bmad-output/lens-work/initiatives/${initiative.id}.yaml"
     - "_bmad-output/lens-work/event-log.jsonl"
     - "${docs_path}/"
-  message: "[lens-work] /pre-plan: Phase 1 Analysis — ${initiative.id}"
-  branch: "${audience_branch}"
+  message: "[lens-work] /preplan: PrePlan — ${initiative.id}"
+  branch: "${phase_branch}"
 ```
 
 ### 8. Log Event
 
 ```json
-{"ts":"${ISO_TIMESTAMP}","event":"pre-plan","id":"${initiative.id}","phase":"p1","workflow":"pre-plan","status":"complete"}
+{"ts":"${ISO_TIMESTAMP}","event":"preplan","id":"${initiative.id}","phase":"preplan","audience":"small","workflow":"preplan","status":"complete"}
 ```
 
 ### 9. Offer Next Step
@@ -367,9 +444,9 @@ params:
 ```
 Ready to continue?
 
-**[C]** Continue to /spec (Planning phase)
-**[P]** Pause here (resume later with @compass /spec)
-**[S]** Show status (@tracey ST)
+**[C]** Continue to /businessplan (BusinessPlan phase)
+**[P]** Pause here (resume later with @lens /businessplan)
+**[S]** Show status (@lens ST)
 ```
 
 ---
@@ -403,11 +480,10 @@ Ready to continue?
 ## Post-Conditions
 
 - [ ] Working directory clean (all changes committed)
-- [ ] PR created from `{featureBranchRoot}-small-p1` → `{featureBranchRoot}-small`
-- [ ] Phase branch `{featureBranchRoot}-small-p1` deleted locally
-- [ ] Checked out to audience branch: `{featureBranchRoot}-small`
-- [ ] state.yaml updated with phase p1
-- [ ] initiatives/{id}.yaml updated with p1 status
+- [ ] Phase branch `{initiative_root}-small-preplan` pushed to origin (REQ-7: no auto-merge)
+- [ ] Remaining on phase branch: `{initiative_root}-small-preplan`
+- [ ] state.yaml updated with phase preplan
+- [ ] initiatives/{id}.yaml phase_status.preplan updated
 - [ ] event-log.jsonl entry appended
 - [ ] Planning artifacts written to `${docs_path}/` (at minimum product-brief.md)
 - [ ] All changes pushed to origin

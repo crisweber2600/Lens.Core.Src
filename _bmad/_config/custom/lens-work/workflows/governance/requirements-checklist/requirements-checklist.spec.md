@@ -1,7 +1,7 @@
 # Workflow Specification: requirements-checklist
 
 **Module:** lens-work  
-**Agent:** Scribe  
+**Skill:** @lens/constitution  
 **Status:** Implemented
 
 ---
@@ -17,7 +17,7 @@ Generate quality checklists for planning artifacts across 5 dimensions (Complete
 ```yaml
 name: requirements-checklist
 description: Generate quality checklists for planning artifacts with constitutional governance awareness
-agent: scribe
+agent: "@lens/constitution"
 category: governance
 ```
 
@@ -39,7 +39,7 @@ category: governance
 - Generate constitutional governance items when `constitutional_context` is available.
 - Store checklists at `_bmad-output/lens-work/constitutions/{layer}/{name}/checklists/{domain}.md`.
 - Fall back to root domain constitution when no leaf-specific constitution exists.
-- Emit `checklist-evaluated` event through Tracey with pass/fail counts.
+- Emit `checklist-evaluated` event via state-management skill with pass/fail counts.
 - Handle null/missing `constitutional_context` gracefully (skip constitutional items).
 - Each dimension generates at least 3 context-specific items derived from the artifact content.
 - Items are artifact-type-aware (PRD items differ from architecture items differ from story items).

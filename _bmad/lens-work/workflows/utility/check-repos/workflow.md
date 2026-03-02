@@ -1,7 +1,7 @@
 ---
 name: check-repos
 description: "Validate repository health and sync status"
-agent: scout
+agent: "@lens/discovery"
 trigger: "Manual or via onboarding"
 category: utility
 ---
@@ -25,7 +25,13 @@ repo_name: string | null   # Optional — if omitted, check all repos from servi
 ### Step 1: Load Configuration
 
 ```yaml
-# Load service map for expected repos
+# ── Governance repo (always loaded from governance-setup.yaml) ───────────
+gov_setup_path = "_bmad-output/lens-work/governance-setup.yaml"
+gov_setup = null
+if file_exists(gov_setup_path):
+  gov_setup = load(gov_setup_path)
+
+# ── Service map (optional — may not exist for template repos) ────────────
 service_map_paths:
   - "_bmad/lens-work/service-map.yaml"
   - "_lens/domain-map.yaml"
@@ -37,19 +43,19 @@ for path in service_map_paths:
     service_map = load(path)
     break
 
-if service_map == null:
+# At least one source must exist
+if service_map == null and gov_setup == null:
   output: |
-    ❌ No service map found.
+    ❌ No repo configuration found.
     
-    Expected at one of:
-    - _bmad/lens-work/service-map.yaml
-    - _lens/domain-map.yaml
-    - lens/domain-map.yaml
+    Provide at least one of:
+    - _bmad-output/lens-work/governance-setup.yaml  (governance repo)
+    - _bmad/lens-work/service-map.yaml              (full service map)
     
-    Run bootstrap first to create a service map.
+    Run bootstrap or copy governance-setup.example.yaml first.
   exit: 1
 
-# Load repo inventory if available (supplements service map)
+# Load repo inventory if available (supplements other sources)
 inventory = null
 inventory_path = "_bmad-output/lens-work/repo-inventory.yaml"
 if file_exists(inventory_path):
@@ -58,14 +64,55 @@ if file_exists(inventory_path):
 # Build consolidated repo list
 repos_to_check = []
 
-for repo in service_map.repos:
+# 1. Add governance repo from governance-setup.yaml (authoritative source)
+if gov_setup != null:
   repos_to_check.append({
-    name: repo.name,
-    expected_path: repo.local_path or "TargetProjects/${repo.name}",
-    expected_remote: repo.remote_url or null,
-    expected_branch: repo.default_branch or "main",
-    source: "service-map"
+    name: gov_setup.repo.name,
+    expected_path: gov_setup.repo.local_path,
+    expected_remote: gov_setup.repo.remote_url,
+    expected_branch: gov_setup.repo.default_branch or "main",
+    role: "governance",
+    source: "governance-setup",
+    critical: true,
+    missing_message: |
+      ❌ Governance repo '${gov_setup.repo.name}' is not cloned at ${gov_setup.repo.local_path}.
+      
+      This repo holds universal artifacts (constitutions, roster, policies) that
+      are shared across all initiatives.  Without it, governance workflows will fail.
+      
+      Clone it now:
+        git clone ${gov_setup.repo.remote_url} ${gov_setup.repo.local_path}
+      then retry.
   })
+
+# 2. Add repos from service map (if present), skipping governance if already added
+if service_map != null:
+  for repo in service_map.repos:
+    # Skip governance repo if already loaded from governance-setup.yaml
+    if gov_setup != null and repo.name == gov_setup.repo.name:
+      continue
+    repos_to_check.append({
+      name: repo.name,
+      expected_path: repo.local_path or "TargetProjects/${repo.name}",
+      expected_remote: repo.remote_url or null,
+      expected_branch: repo.default_branch or "main",
+      role: repo.role or "target",
+      source: "service-map"
+    })
+
+# 3. Flag any remaining governance-role repos from service map
+for repo in repos_to_check:
+  if repo.role == "governance" and not repo.get("critical"):
+    repo.critical = true
+    repo.missing_message = |
+      ❌ Governance repo '${repo.name}' is not cloned at ${repo.expected_path}.
+      
+      This repo holds universal artifacts (constitutions, roster, policies) that
+      are shared across all initiatives.  Without it, governance workflows will fail.
+      
+      Clone it now:
+        git clone ${repo.expected_remote} ${repo.expected_path}
+      then retry.
 
 # Add any inventory-only repos not already in list
 if inventory != null:
@@ -227,23 +274,36 @@ if error_count + warning_count > 0:
   output: |
     ═══════════════════════════════════════════════════
     
-    Run fixes manually or use '@scout reconcile' to auto-fix missing repos.
+    Run fixes manually or use '@lens reconcile' to auto-fix missing repos.
 ```
 
 ```yaml
-# Fix suggestion lookup
+# Fix suggestion lookup (per git-orchestration skill)
 fix_suggestions:
   missing:
-    command: "git clone ${repo.expected_remote} ${repo.expected_path}"
-    explanation: "Clone the repository to the expected TargetProjects path."
+    command: >
+      git clone ${repo.expected_remote} ${repo.expected_path} &&
+      cd ${repo.expected_path} &&
+      git checkout $(git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4) || git checkout ${repo.expected_branch}
+    explanation: "Clone the repository and auto-checkout to default/last-committed branch per git-orchestration skill (auto_checkout_on_clone convention)."
   
   not-git:
-    command: "rm -rf ${repo.expected_path} && git clone ${repo.expected_remote} ${repo.expected_path}"
-    explanation: "Remove corrupted directory and re-clone."
+    command: >
+      rm -rf ${repo.expected_path} &&
+      git clone ${repo.expected_remote} ${repo.expected_path} &&
+      cd ${repo.expected_path} &&
+      git checkout $(git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4) || git checkout ${repo.expected_branch}
+    explanation: "Remove corrupted directory, re-clone, and auto-checkout to correct branch per git-orchestration skill."
+  
+  detached-head:
+    command: >
+      cd ${repo.expected_path} &&
+      git checkout $(git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4) || git checkout ${repo.expected_branch}
+    explanation: "Auto-checkout to default/last-committed branch from detached HEAD state per git-orchestration skill (auto_checkout_on_clone convention)."
   
   remote-mismatch:
     command: "git -C ${repo.expected_path} remote set-url origin ${repo.expected_remote}"
-    explanation: "Update the remote URL to match service map."
+    explanation: "Update the remote URL to match configured remote."
   
   uncommitted:
     command: "git -C ${repo.expected_path} stash  # or: git -C ${repo.expected_path} add -A && git -C ${repo.expected_path} commit -m 'WIP'"
@@ -264,7 +324,8 @@ fix_suggestions:
 | Git not installed | Error with install instructions |
 | Network unreachable | Skip remote sync checks, report partial results |
 | Permission denied on repo | Report and skip, suggest checking SSH keys |
-| Repo in detached HEAD | Report as warning, suggest checkout of default branch |
+| Repo in detached HEAD | Use auto-checkout to default branch per git-orchestration skill (auto_checkout_on_clone) |
+| Clone fails | Verify auth (SSH keys), network connectivity, and repo URL |
 
 ---
 

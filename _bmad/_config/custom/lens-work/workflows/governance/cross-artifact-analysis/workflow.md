@@ -1,7 +1,7 @@
 ---
 name: cross-artifact-analysis
 description: Validates semantic coherence and traceability across planning artifacts
-agent: scribe
+agent: "@lens/constitution"
 trigger: /analyze or AZ menu option
 category: governance
 ---
@@ -187,14 +187,14 @@ For each finding:
 [2] View all findings by severity
 [3] View findings by artifact
 [4] Export report to file
-[5] Return to Scribe main menu
+[5] Return to constitution skill main menu
 ```
 
 **Auto-export:** Save report to `_bmad-output/planning-artifacts/cross-artifact-report-{initiative-id}.md`
 
 ---
 
-## Tracey Integration
+## State-Management Integration
 
 **Event:** `cross-artifact-analyzed`
 
@@ -227,4 +227,4 @@ See custom layer spec (S6.5) for configuration options.
 - ✅ Traceability chains validated (forward + backward)
 - ✅ Semantic coherence checked
 - ✅ Findings presented with actionable remediation
-- ✅ Report exported and Tracey event logged
+- ✅ Report exported and state-management event logged

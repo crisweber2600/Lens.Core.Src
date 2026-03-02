@@ -1,23 +1,15 @@
-```prompt
+````prompt
 ---
-description: Rehydrate from state.yaml and restore lens-work context
+description: 'Resume a workflow after interruption'
 ---
 
-Activate Tracey agent and execute RS (resume/restore):
+# lens-work.resume (Stub)
 
-1. Load agent: `_bmad/lens-work/agents/tracey.agent.yaml`
-2. Execute `RS` command to load from state.yaml
-3. Validate state matches git reality
-4. Explain context and suggest next action
-
-**Use When:**
-- Starting new chat session
-- Returning after interruption
-- State needs rehydration
-
-**Validates:**
-- state.yaml exists and is readable
-- Active branch matches state
-- Merge gates are accurate
+> **This is a stub.** Load and execute the full prompt from the bmad.lens.release control repository.
 
 ```
+Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.resume.prompt.md
+```
+
+Source: [lens-work.resume.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.resume.prompt.md)
+````

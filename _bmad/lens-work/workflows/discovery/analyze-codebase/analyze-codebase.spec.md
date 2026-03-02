@@ -25,7 +25,7 @@
 name: analyze-codebase
 description: Deep technical analysis without full discovery
 web_bundle: true
-installed_path: '{project-root}/_bmad/lens-work/workflows/analyze-codebase'
+installed_path: 'bmad.lens.release/_bmad/lens-work/workflows/analyze-codebase'
 ---
 ```
 
@@ -75,11 +75,11 @@ installed_path: '{project-root}/_bmad/lens-work/workflows/analyze-codebase'
 
 ## Agent Integration
 
-### Primary Agent
+### Primary Skill
 
-Scout
+@lens/discovery
 
-### Other Agents
+### Other Skills
 
 Bridge (target alignment)
 

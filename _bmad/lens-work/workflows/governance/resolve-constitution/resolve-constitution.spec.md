@@ -1,7 +1,7 @@
 # Workflow Specification: resolve-constitution
 
 **Module:** lens-work  
-**Agent:** Scribe  
+**Skill:** @lens/constitution  
 **Status:** Implemented
 
 ---
@@ -17,7 +17,7 @@ Resolve constitutional inheritance parent-first and return accumulated rules for
 ```yaml
 name: resolve-constitution
 description: Resolve accumulated constitutional rules from inheritance hierarchy
-agent: scribe
+agent: "@lens/constitution"
 category: governance
 ```
 
@@ -25,7 +25,15 @@ category: governance
 
 ## Required Behaviors
 
-- Resolve order: Domain -> Service -> Microservice -> Feature.
-- Skip missing layers gracefully.
+- Resolve order: `[org, domain, service, repo]` per constitution skill Part 3 (Hierarchy Loading).
+- Skip missing layers gracefully (skill Part 9 Edge Cases).
 - Detect contradictions and surface conflict details.
-- Emit `constitution-resolved` via Tracey with layers walked and article totals.
+- Emit `constitution-resolved` via state-management skill with layers walked and article totals.
+- **All path resolution, parsing, and merging delegated to constitution skill — NO runtime JS lib calls.**
+
+## Implementation
+
+All loading, parsing, merging, and display logic is fully defined in:
+`_bmad/lens-work/skills/constitution.md` (Parts 1–9)
+
+Do NOT call or reference `lib/constitution.js`, `lib/constitution-display.js`, or `lib/constitution-stress.js`.

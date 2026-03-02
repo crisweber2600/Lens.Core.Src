@@ -12,7 +12,7 @@
 
 - **Category:** Governance
 - **Scope:** Constitutional amendment impact analysis
-- **Invocation:** Via Scribe `/propagate` command or post-amendment trigger
+- **Invocation:** Via constitution skill `/propagate` command or post-amendment trigger
 - **Artifacts Produced:** Propagation plan markdown file
 
 ---
@@ -36,8 +36,8 @@
 2. Verify parent-child relationships via `resolve-constitution`
 3. Detect 3 conflict types: removal, redefinition, contradiction
 4. Generate propagation plan at `constitutions/{layer}/{name}/propagation-plans/{date}-amendment-{id}.md`
-5. Emit `amendment-propagated` Tracey event
-6. Request Casey commit with governance prefix
+5. Emit `amendment-propagated` event via state-management skill
+6. Request git-orchestration skill commit with governance prefix
 
 ### Must Not Do
 

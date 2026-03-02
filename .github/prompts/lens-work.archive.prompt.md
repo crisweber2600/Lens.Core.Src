@@ -1,24 +1,15 @@
-```prompt
+````prompt
 ---
-description: Archive completed initiative and clean up state
+description: 'Archive completed or abandoned initiatives'
 ---
 
-Activate Tracey agent and execute ARCHIVE:
+# lens-work.archive (Stub)
 
-1. Load agent: `_bmad/lens-work/agents/tracey.agent.yaml`
-2. Execute `ARCHIVE` command to complete initiative
-3. Move state to archive, clean active state
-4. Log completion to event log
-
-**Prerequisites:**
-- All phases complete
-- Final PBR merged to base
-- Implementation merged to target repo
-
-**Actions:**
-- Archive state.yaml to `_bmad-output/lens-work/archive/{id}/`
-- Archive event-log.jsonl
-- Clear active state
-- Print completion summary
+> **This is a stub.** Load and execute the full prompt from the bmad.lens.release control repository.
 
 ```
+Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.archive.prompt.md
+```
+
+Source: [lens-work.archive.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.archive.prompt.md)
+````

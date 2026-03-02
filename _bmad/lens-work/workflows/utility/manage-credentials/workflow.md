@@ -1,8 +1,8 @@
 ---
 name: manage-credentials
 description: Add, update, remove, or view git host credentials (PATs) in user profile
-agent: scout
-trigger: '@compass /credentials or @scout credentials'
+agent: "@lens/discovery"
+trigger: '@lens /credentials or @lens credentials'
 category: utility
 ---
 
@@ -29,7 +29,7 @@ profile_path = "_bmad-output/personal/profile.yaml"
 
 if not file_exists(profile_path):
   output: |
-    ⚠️ No profile found. Run @scout onboard first to create your profile.
+    ⚠️ No profile found. Run @lens onboard first to create your profile.
   exit: 1
 
 profile = load(profile_path)
@@ -216,9 +216,10 @@ if action == "5":
     output: "Testing credentials..."
     
     for cred in git_credentials:
-      if cred.type == "github":
-        # Test GitHub PAT
-        result = shell("curl -s -o /dev/null -w '%{http_code}' -H 'Authorization: token ${cred.pat}' https://api.github.com/user")
+      if cred.type == "github" or cred.type == "github_enterprise":
+        # Derive API base URL: github.com → api.github.com, GHE → {host}/api/v3
+        api_base = "https://api.github.com" if cred.host == "github.com" else "https://${cred.host}/api/v3"
+        result = shell("curl -s -o /dev/null -w '%{http_code}' -H 'Authorization: token ${cred.pat}' ${api_base}/user")
         if result == "200":
           output: "  ✅ ${cred.host}: Valid"
         else:
@@ -256,7 +257,7 @@ if action == "5":
 
 | Error | Recovery |
 |-------|----------|
-| Profile not found | Direct to @scout onboard |
+| Profile not found | Direct to @lens onboard |
 | Invalid PAT format | Warn but accept (validation happens at test) |
 | Test fails | Report HTTP code, suggest regenerating PAT |
 | Network unreachable | Skip test, warn user |

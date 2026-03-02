@@ -1,8 +1,8 @@
 ---
 name: status
 description: Display current state, blocks, topology, next steps
-agent: tracey
-trigger: "@tracey ST"
+agent: "@lens/state-management"
+trigger: "@lens ST"
 category: utility
 ---
 
@@ -36,13 +36,13 @@ if state.active_initiative != null:
   initiative = load("_bmad-output/lens-work/initiatives/${state.active_initiative}.yaml")
   if initiative == null:
     error: "Initiative config not found: initiatives/${state.active_initiative}.yaml"
-    hint: "Run @tracey migrate to convert legacy state, or check initiatives/ directory."
+    hint: "Run @lens migrate to convert legacy state, or check initiatives/ directory."
     exit: 1
 else if state.initiative != null:
   # LEGACY single-file format — use inline initiative data
   initiative = state.initiative
   legacy_warning: true
-  hint: "Run @tracey migrate to upgrade to two-file state architecture."
+  hint: "Run @lens migrate to upgrade to two-file state architecture."
 else:
   output: |
     📍 lens-work Status
@@ -73,7 +73,7 @@ uncommitted=$(git status --porcelain | wc -l)
 📍 lens-work Status Report
 ═══════════════════════════════════════════════════
 ${if legacy_warning}
-⚠️  Legacy state format detected. Run @tracey migrate to upgrade.
+⚠️  Legacy state format detected. Run @lens migrate to upgrade.
 ${endif}
 
 Initiative: ${initiative.id}

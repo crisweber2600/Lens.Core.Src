@@ -25,7 +25,7 @@
 name: generate-docs
 description: Generate BMAD-ready documentation from analysis
 web_bundle: true
-installed_path: '{project-root}/_bmad/lens-work/workflows/generate-docs'
+installed_path: 'bmad.lens.release/_bmad/lens-work/workflows/generate-docs'
 ---
 ```
 
@@ -97,11 +97,11 @@ installed_path: '{project-root}/_bmad/lens-work/workflows/generate-docs'
 
 ## Agent Integration
 
-### Primary Agent
+### Primary Skill
 
-Scout
+@lens/discovery
 
-### Other Agents
+### Other Skills
 
 Link (propagation)
 

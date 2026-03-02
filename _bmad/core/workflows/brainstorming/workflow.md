@@ -1,6 +1,6 @@
 ---
 name: brainstorming
-description: Facilitate interactive brainstorming sessions using diverse creative techniques and ideation methods
+description: 'Facilitate interactive brainstorming sessions using diverse creative techniques and ideation methods. Use when the user says "help me brainstorm" or "help me ideate".'
 context_file: '' # Optional context file path for project-specific guidance
 ---
 
@@ -34,7 +34,7 @@ This uses **micro-file architecture** for disciplined execution:
 
 ### Configuration Loading
 
-Load config from `{project-root}/_bmad/core/config.yaml` and resolve:
+Load config from `bmad.lens.release/_bmad/core/bmadconfig.yaml` and resolve:
 
 - `project_name`, `output_folder`, `user_name`
 - `communication_language`, `document_output_language`, `user_skill_level`
@@ -42,17 +42,17 @@ Load config from `{project-root}/_bmad/core/config.yaml` and resolve:
 
 ### Paths
 
-- `installed_path` = `{project-root}/_bmad/core/workflows/brainstorming`
+- `installed_path` = `bmad.lens.release/_bmad/core/workflows/brainstorming`
 - `template_path` = `{installed_path}/template.md`
 - `brain_techniques_path` = `{installed_path}/brain-methods.csv`
-- `default_output_file` = `{output_folder}/analysis/brainstorming-session-{{date}}.md`
+- `default_output_file` = `{output_folder}/brainstorming/brainstorming-session-{{date}}.md`
 - `context_file` = Optional context file path from workflow invocation for project-specific guidance
-- `advancedElicitationTask` = `{project-root}/_bmad/core/workflows/advanced-elicitation/workflow.xml`
+- `advancedElicitationTask` = `bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.xml`
 
 ---
 
 ## EXECUTION
 
-Load and execute `steps/step-01-session-setup.md` to begin the workflow.
+Read fully and follow: `steps/step-01-session-setup.md` to begin the workflow.
 
 **Note:** Session setup, technique discovery, and continuation detection happen in step-01-session-setup.md.

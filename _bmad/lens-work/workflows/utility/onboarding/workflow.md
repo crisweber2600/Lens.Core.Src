@@ -1,8 +1,8 @@
 ---
 name: onboarding
 description: Create profile + run bootstrap
-agent: scout
-trigger: '@scout onboard or @lens-work onboard'
+agent: "@lens/discovery"
+trigger: '@lens onboard or @lens-work onboard'
 category: utility
 first_run: true
 ---
@@ -13,6 +13,34 @@ first_run: true
 
 ---
 
+## Security Guardrails — MANDATORY
+
+These rules are **non-negotiable**. Violating any of them leaks secrets or
+personal data into the LLM context window.
+
+### NEVER DO
+
+| Prohibited action | Why | What to do instead |
+|---|---|---|
+| `Get-Content` / `cat` / `read_file` on any file under `personal/` | Exposes PATs, profile PII | Use `Test-Path` / `file_exists()` to check existence only |
+| `Select-String` / `grep` for `token`, `pat`, `ghp_` in any file | Exposes secrets | Just check env var existence |
+| `Get-Content` / `cat` / `read_file` on PAT storage scripts | Pulls script source into context needlessly | The scripts are self-documenting; tell the user to run them |
+| Direct `git clone` of target repos | May fail without auth; exposes enterprise URLs | Always delegate to `discovery.repo-reconcile` (Step 5) |
+| Reading env var **values** (e.g. `$env:GITHUB_PAT`, `echo $GH_TOKEN`) | Prints the token | Use `env_exists()` or `Test-Path Env:\GITHUB_PAT` (boolean only) |
+| Printing or logging any credential value | Puts secrets in chat | Report only "configured" / "not configured" |
+
+### ALWAYS DO
+
+- Use **existence checks only**: `file_exists()`, `Test-Path`, `dir_exists()`
+- Use **`env_exists()`** (not `env()`) for environment variable detection
+- Delegate repo cloning to `discovery.repo-reconcile` — never run `git clone` directly
+- When verifying the PAT script ran, check only: `env_exists("GITHUB_PAT")` or `env_exists("GH_ENTERPRISE_TOKEN")`
+- If a step needs file contents (e.g. repo-inventory.yaml), it is explicitly
+  marked with `load_yaml()` in the pseudocode. If a file is NOT loaded in
+  the pseudocode, do NOT read it.
+
+---
+
 ## Execution Sequence
 
 ### 1. Welcome
@@ -20,10 +48,9 @@ first_run: true
 ```
 🔭 Welcome to LENS Workbench!
 
-I'm Scout, your setup guide. I'll help you:
+I'm LENS, your setup guide. I'll help you:
 1. Create your profile
 2. Set up your TargetProjects
-3. Generate initial documentation
 
 This takes about 3-5 minutes. Let's get started!
 ```
@@ -48,7 +75,62 @@ for repo in inventory.repos.matched:
   if domain not in domains:
     domains.append(domain)
 
-# Single prompt for role, scope, AND PAT setup
+# ── Detect GitHub domains from repo inventory ──────────────────────────
+github_domains = set()
+for repo in inventory.repos.matched:
+  if repo.remote:
+    if "github.com/" in repo.remote:
+      github_domains.add("github.com")
+    elif "github" in repo.remote:
+      match = re.match(r"https?://([^/]+)/", repo.remote)
+      if match:
+        github_domains.add(match.group(1))
+
+github_domains = sorted(list(github_domains))
+
+# ── PAT detection: existence-only checks ────────────────────────────────
+# SECURITY: Only test whether env vars EXIST.
+# NEVER read, print, or store PAT values — that would expose secrets
+# in the LLM context window.
+#
+# Lookup order (matches promote-branch scripts):
+#   github.com:  GITHUB_PAT -> GH_TOKEN
+#   enterprise:  GH_ENTERPRISE_TOKEN -> GH_TOKEN
+
+covered_domains = []
+uncovered_domains = []
+
+for domain in github_domains:
+  if domain == "github.com":
+    if env_exists("GITHUB_PAT") or env_exists("GH_TOKEN"):
+      covered_domains.append(domain)
+      continue
+  else:
+    if env_exists("GH_ENTERPRISE_TOKEN") or env_exists("GH_TOKEN"):
+      covered_domains.append(domain)
+      continue
+  uncovered_domains.append(domain)
+
+# Report what was found
+if covered_domains.length > 0:
+  output: |
+    
+    GitHub PAT Status
+    
+    Already configured (environment variable):
+  for domain in covered_domains:
+    output: "  [OK] ${domain}"
+
+all_pats_covered = (uncovered_domains.length == 0)
+
+if all_pats_covered:
+  output: |
+    
+    All ${len(github_domains)} GitHub domain(s) have PATs configured.
+    Skipping PAT setup.
+  pat_choice = "N"
+
+# ── Profile prompt ──────────────────────────────────────────────────────
 output: |
   
   **Profile Setup**
@@ -65,88 +147,144 @@ for i, domain in enumerate(domains):
   output: "[${i+6}] ${domain}"
 output: "[${len(domains)+6}] all (full access to all domains)"
 
-output: |
-  
-  Set up GitHub PAT now?
-  [Y]es - I'll run the secure script in my terminal
-  [N]o  - Skip for now (you can run it anytime later)
-  
-  Enter three values separated by space (role domain pat):
-  Example: "3 ${len(domains)+6} Y" = Architect + all domains + set up PAT
+if not all_pats_covered:
+  output: |
+    
+    Set up GitHub PAT now?
+    [Y]es - I'll run the secure script in my terminal
+    [N]o  - Skip for now (you can run it anytime later)
+    
+    Enter three values separated by space (role domain pat):
+    Example: "3 ${len(domains)+6} Y" = Architect + all domains + set up PAT
+else:
+  output: |
+    
+    Enter two values separated by space (role domain):
+    Example: "3 ${len(domains)+6}" = Architect + all domains
 
 user_input = prompt_user()
 parts = user_input.split()
 role = parts[0]
 scope_choice = parts[1]
-pat_choice = parts[2] if len(parts) > 2 else "N"
+if not all_pats_covered:
+  pat_choice = parts[2] if len(parts) > 2 else "N"
 
 if scope_choice == str(len(domains)+6):
   scope = "all"
 else:
   scope = domains[int(scope_choice) - 6]
 
-# Detect unique GitHub domains from repo inventory
-github_domains = set()
-for repo in inventory.repos.matched:
-  if repo.remote:
-    # Extract domain from URL (e.g., github.com or github.enterprise.com)
-    if "github.com/" in repo.remote:
-      github_domains.add("github.com")
-    elif "github" in repo.remote:
-      # Extract custom GitHub Enterprise domain
-      match = re.match(r"https?://([^/]+)/", repo.remote)
-      if match:
-        github_domains.add(match.group(1))
+if not all_pats_covered and uncovered_domains.length > 0:
+  output: |
+    
+    GitHub Personal Access Tokens Setup
+    
+    SECURITY WARNING:
+    PATs should NEVER be entered into Copilot, Claude, or any LLM chat.
+    
+    Missing PATs for ${len(uncovered_domains)} domain(s):
+  for domain in uncovered_domains:
+    output: "  [!!] ${domain}"
 
-github_domains = sorted(list(github_domains))
+  output: |
+    
+    You can provide PATs via environment variables:
+      github.com  -> set GITHUB_PAT or GH_TOKEN
+      enterprise  -> set GH_ENTERPRISE_TOKEN or GH_TOKEN
+    
+    Or run the secure storage script (sets environment variables automatically).
 
-# PAT storage - provide clear instructions for manual execution
-output: |
-  
-  🔐 GitHub Personal Access Tokens Setup
-  
-  ⚠️  SECURITY WARNING:
-  PATs should NEVER be entered into Copilot, Claude, or any LLM chat.
-  
-  Detected ${len(github_domains)} GitHub domain(s) in your repos:
-for domain in github_domains:
-  output: "  • ${domain}"
-
-if pat_choice.lower() in ["y", "yes"]:
+if not all_pats_covered and pat_choice.lower() in ["y", "yes"] and uncovered_domains.length > 0:
   output: |
     
     Perfect! Please copy and run this command in a NEW TERMINAL WINDOW:
     
-    📋 Copy this entire command:
+    Copy this entire command:
     
     cd "${PROJECT_ROOT}" && bash _bmad/lens-work/scripts/store-github-pat.sh
     
     On Windows with PowerShell:
     cd "${PROJECT_ROOT}"; .\\_bmad\\lens-work\\scripts\\store-github-pat.ps1
     
-    ⏸️  The script will:
+    The script will:
     - Run outside of LLM context for security
     - Prompt for PAT for each domain
-    - Store securely in gitignored file
-    - Open the credentials file in VS Code when complete
+    - Set environment variables (GITHUB_PAT / GH_ENTERPRISE_TOKEN)
+    - Verify the env vars were stored correctly
     
     **Send "Continue" when ready...**
   
   wait_for_user = prompt_user()
   
-  # Check if credentials were created
-  if file_exists("_bmad-output/lens-work/personal/github-credentials.yaml"):
-    output: "✅ GitHub credentials detected! Continuing with onboarding..."
+  # Check if env vars were set by the script
+  # SECURITY: existence check ONLY — do NOT read or print values
+  env_ok = False
+  for domain in uncovered_domains:
+    if domain == "github.com":
+      if env_exists("GITHUB_PAT") or env_exists("GH_TOKEN"):
+        env_ok = True
+    else:
+      if env_exists("GH_ENTERPRISE_TOKEN") or env_exists("GH_TOKEN"):
+        env_ok = True
+  if env_ok:
+    output: "PAT environment variables detected! Continuing with onboarding..."
   else:
-    output: "⏭️  No credentials found. You can add them later by running the script."
-else:
+    output: "No PAT env vars detected. You can set them later by running the script."
+    output: "(Do NOT attempt to read or search for credential values — security risk.)" 
+elif not all_pats_covered and pat_choice.lower() not in ["y", "yes"] and uncovered_domains.length > 0:
   output: |
     
-    ⏭️  Skipping PAT setup. You can run this anytime:
+    Skipping PAT setup. You can configure PATs anytime:
     
-    bash _bmad/lens-work/scripts/store-github-pat.sh
+    Option 1 — environment variables (recommended for CI):
+      export GITHUB_PAT=ghp_...          # github.com
+      export GH_ENTERPRISE_TOKEN=ghp_... # enterprise
+    
+    Option 2 — secure storage script (sets env vars for you):
+      bash _bmad/lens-work/scripts/store-github-pat.sh
     
     (from project root directory)
+
+# REQ-2: Question mode preference prompt
+output: |
+  
+  **Question Mode**
+  
+  How would you like to answer phase questions?
+  [1] Interactive (guided chat — recommended)
+  [2] Batch MD (single markdown file per phase)
+
+qm_input = prompt_user()
+if qm_input.strip() == "2":
+  question_mode = "batch"
+else:
+  question_mode = "interactive"
+
+# REQ-3: Tracker preference prompt
+output: |
+  
+  **Work Item Tracker**
+  
+  What work item tracker do you use?
+  [1] Jira
+  [2] Azure DevOps
+  [3] None
+
+tracker_input = prompt_user()
+if tracker_input.strip() == "1":
+  tracker = "jira"
+  output: |
+    Jira base URL (optional):
+    Example: https://mycompany.atlassian.net
+    Press Enter to skip.
+  jira_url_input = prompt_user()
+  jira_base_url = jira_url_input.strip() if jira_url_input.strip() else null
+elif tracker_input.strip() == "2":
+  tracker = "azure-devops"
+  jira_base_url = null
+else:
+  tracker = "none"
+  jira_base_url = null
 
 profile = {
   name: name,
@@ -156,14 +294,36 @@ profile = {
   created_at: now(),
   preferences: {
     communication_style: "professional",
-    auto_fetch: true
+    auto_fetch: true,
+    question_mode: question_mode,  # REQ-2
+    tracker: tracker,  # REQ-3
+    jira_base_url: jira_base_url if tracker == "jira" and jira_base_url else null  # REQ-3
   }
 }
+
+# REQ-4
+# ANTI-PATTERN: Do NOT create profiles/*.yaml files.
+# User preferences go ONLY in: personal/profile.yaml
+# Team roster info goes in the GOVERNANCE REPO: roster/{name}.yaml
+# The profiles/ directory must NOT exist.
+# The roster/ directory must NOT exist inside _bmad-output/lens-work/.
 
 # Save personal profile (local/gitignored)
 save(profile, "_bmad-output/lens-work/personal/profile.yaml")
 
-# Create roster entry (for team stats and repo associations)
+# Resolve governance repo root from module.yaml
+module = load_yaml("_bmad/lens-work/module.yaml")
+governance_root = module.outputs.governance_repo_root  # TargetProjects/lens/lens-governance
+
+# Verify governance repo is cloned
+if not dir_exists(governance_root) or not is_git_repo(governance_root):
+  output: |
+    ⚠️  Governance repo not cloned at ${governance_root}.
+    Running check-repos to clone it before saving roster entry...
+  run_workflow("check-repos", repo="bmad.lens.governance")
+
+# Create roster entry in the GOVERNANCE REPO (committed directly to default branch, no PR required)
+# Per governance rules: roster updates bypass PR and commit directly to the default branch
 roster_entry = {
   name: name,
   email: email,
@@ -176,51 +336,20 @@ roster_entry = {
     last_active: now()
   }
 }
-save(roster_entry, "_bmad-output/lens-work/roster/${sanitize(name)}.yaml")
-```
+roster_path = "${governance_root}/roster/${sanitize(name)}.yaml"
+save(roster_entry, roster_path)
 
-### 2a. Clone Stub Prompts from GitHub (Optional)
-
-```yaml
-# Clone stub prompts from the control repo defined in settings.json.
-# settings.json is written by the installer with:
-#   github.repo            - full HTTPS URL of the control repository
-#   github.branch          - branch to sparse-checkout
-#   github.stubsTargetPath - local destination (.github/stubPrompts)
-
-settings_path = "_bmad-output/lens-work/settings.json"
-
-if file_exists(settings_path):
-  settings = load_json(settings_path)
-  enabled    = settings.github.cloneOnboardingStubsEnabled
-  repo_url   = settings.github.repo
-  branch     = settings.github.branch
-  target_dir = settings.github.stubsTargetPath  # .github/stubPrompts
-
-  if enabled and repo_url:
-    output: |
-
-      📥 Syncing stub prompts from control repository...
-
-      Repository : ${repo_url}
-      Branch     : ${branch}
-      Target     : ${target_dir}
-
-    shell: |
-      set -e
-      mkdir -p "${target_dir}"
-      TMP=$(mktemp -d)
-      git clone --branch "${branch}" --depth 1 --filter=blob:none --sparse "${repo_url}" "$TMP" 2>&1
-      git -C "$TMP" sparse-checkout set .github/stubPrompts
-      cp -f "$TMP"/.github/stubPrompts/*.prompt.md "${target_dir}/"
-      rm -rf "$TMP"
-
-    output: "✅ Stub prompts synced to ${target_dir}"
-
-  else:
-    output: "⏭️  Stub prompt cloning is disabled (cloneOnboardingStubsEnabled=false)"
-else:
-  output: "⏭️  settings.json not found — stub cloning skipped (run installer first)"
+# Commit directly to default branch (no PR for roster updates)
+# Resolve the default branch dynamically from the governance repo
+shell: |
+  cd "${governance_root}"
+  default_branch=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+  git config user.name "${name}"
+  git config user.email "${email}"
+  git add roster/${sanitize(name)}.yaml
+  git commit -m "onboard: add ${name} to roster"
+  git push origin HEAD:${default_branch}
+output: "✅ Roster entry committed to governance repo"
 ```
 
 ### 3. Determine Bootstrap Scope
@@ -234,10 +363,38 @@ else:
   output: "Will bootstrap repos for ${scope}"
 ```
 
+### 3a. Ensure TargetProjects Directory <!-- REQ-5 -->
+
+```yaml
+# REQ-5: Auto-create TargetProjects directory before discovery
+# Derives the target-projects parent path from governance-setup.yaml
+# (or falls back to repo-inventory.yaml).
+# Idempotent — no error if directory already exists.
+
+gov_setup_path = "_bmad-output/lens-work/governance-setup.yaml"
+if file_exists(gov_setup_path):
+  gov_setup = load_yaml(gov_setup_path)
+  # e.g. "TargetProjects/lens/lens-governance" → "TargetProjects/lens"
+  target_path = dirname(gov_setup.repo.local_path)
+else:
+  # Fallback: derive from repo-inventory if available
+  inventory_path = "_bmad-output/lens-work/repo-inventory.yaml"
+  if file_exists(inventory_path):
+    inv = load_yaml(inventory_path)
+    target_path = inv.target_projects_root or "TargetProjects"
+  else:
+    target_path = "TargetProjects"
+
+shell: mkdir -p "${target_path}"
+
+output: |
+  📂 TargetProjects directory ensured: ${target_path}
+```
+
 ### 4. Run Discovery
 
 ```yaml
-invoke: scout.repo-discover
+invoke: discovery.repo-discover
 params:
   scope: bootstrap_scope
 
@@ -255,26 +412,23 @@ output: |
 ### 5. Run Reconcile (Clone Missing)
 
 ```yaml
+# SECURITY: NEVER run `git clone` directly from the chat context.
+# Always delegate to the reconcile workflow, which handles auth,
+# path resolution, and error recovery outside the LLM context.
+
 if missing > 0:
   output: |
-    📥 Cloning ${missing} missing repos...
+    Cloning ${missing} missing repos...
     This may take a few minutes.
   
-  invoke: scout.repo-reconcile
+  invoke: discovery.repo-reconcile
+  
+  # If reconcile fails (e.g. no PAT), report the count and suggest:
+  # "Run the PAT storage script, then re-run @lens onboard."
+  # Do NOT fall back to running git clone directly.
 ```
 
-### 6. Run Documentation
-
-```yaml
-output: |
-  📄 Generating initial documentation...
-
-invoke: scout.repo-document
-params:
-  mode: "full"  # First run = full documentation
-```
-
-### 7. Completion
+### 6. Completion
 
 ```
 🎉 Onboarding Complete!
@@ -285,13 +439,12 @@ Scope: ${profile.scope}
 What's ready:
 ├── ✅ Profile created
 ├── ✅ ${cloned_count} repos cloned
-├── ✅ ${documented_count} repos documented
-└── ✅ Canonical docs in Docs/
+└── ✅ PATs configured
 
 Next steps:
 ├── Run #new-feature "your-feature" to start an initiative
-├── Run @tracey ST to see status anytime
-└── Run @compass H for help
+├── Run @lens ST to see status anytime
+└── Run @lens H for help
 
 Welcome to the team! 🚀
 ```
@@ -313,30 +466,28 @@ created_at: 2026-02-03T10:00:00Z
 preferences:
   communication_style: professional
   auto_fetch: true
+  question_mode: interactive  # REQ-2
+  tracker: jira  # REQ-3
+  jira_base_url: https://mycompany.atlassian.net  # REQ-3 (only if tracker is jira)
 ```
 
-### GitHub Credentials (Gitignored)
-Your GitHub Personal Access Tokens are stored securely in `_bmad-output/lens-work/personal/github-credentials.yaml`:
+### GitHub PAT Environment Variables
+Your GitHub Personal Access Tokens are stored in environment variables.
 
-```yaml
-# _bmad-output/lens-work/personal/github-credentials.yaml
-github.com:
-  token: ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  created_at: 2026-02-03T10:00:00Z
-  type: github.com
+**Environment Variables:**
 
-github.foo.com:
-  token: ghp_yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
-  created_at: 2026-02-03T10:00:00Z
-  type: github_enterprise
-```
+| Variable | Purpose |
+|---|---|
+| `GITHUB_PAT` | PAT for github.com |
+| `GH_ENTERPRISE_TOKEN` | PAT for GitHub Enterprise |
+| `GH_TOKEN` | Fallback for either (used by GitHub REST API) |
 
 **Security Notes:**
-- This file is gitignored and never committed
+- NEVER read or print env var values — existence checks only
 - Used for GitHub API access (PRs, issues, CI status)
-- Separate tokens for each GitHub domain (SaaS and Enterprise)
+- Separate env vars for each GitHub domain type (SaaS and Enterprise)
 - Can be regenerated anytime from GitHub settings
-- Optional but recommended for full lens-work features
+- The PAT setup script sets these automatically
 
 **Generate Tokens:**
 - GitHub.com (SaaS): https://github.com/settings/tokens

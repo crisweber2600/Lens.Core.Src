@@ -1,35 +1,15 @@
-```prompt
+````prompt
 ---
-description: Display current initiative state, blocks, topology, and next steps
+description: 'Full status — detailed initiative, phase, gate, and branch info'
 ---
 
-Activate Tracey agent and execute ST (status):
+# lens-work.status (Stub)
 
-1. Load agent: `_bmad/lens-work/agents/tracey.agent.yaml`
-2. Execute `ST` command to display current state
-3. Show initiative position, merge gates, and recommendations
-
-**Output Format:**
-```
-📍 lens-work Status Report
-═══════════════════════════════════════════════════
-Initiative: {id}
-Layer: {layer} | Target: {target_repo}
-
-Current Position
-├── Phase: {phase} ({phase_name})
-├── Workflow: {workflow}
-└── Branch: {active_branch}
-
-Merge Gates
-├── ✅ completed
-├── 🔄 in_progress
-└── ⏳ pending
-
-Next Steps
-├── {recommendation_1}
-└── {recommendation_2}
-═══════════════════════════════════════════════════
-```
+> **This is a stub.** Load and execute the full prompt from the bmad.lens.release control repository.
 
 ```
+Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.status.prompt.md
+```
+
+Source: [lens-work.status.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.status.prompt.md)
+````

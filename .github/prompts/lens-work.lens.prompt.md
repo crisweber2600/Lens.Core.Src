@@ -1,18 +1,15 @@
-```prompt
+````prompt
 ---
-mode: 'agent'
-agent: 'bmad-agent-lens-work-compass'
-description: 'Show or change current lens focus'
+description: 'Show or change the current lens focus'
 ---
 
-Show or change my current lens.
+# lens-work.lens (Stub)
 
-$ARGUMENTS
-
-## Instructions
-1. Load Compass agent
-2. Execute /lens command
-3. Display current lens and available options
-4. If argument specifies new lens, switch to it
+> **This is a stub.** Load and execute the full prompt from the bmad.lens.release control repository.
 
 ```
+Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.lens.prompt.md
+```
+
+Source: [lens-work.lens.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.lens.prompt.md)
+````

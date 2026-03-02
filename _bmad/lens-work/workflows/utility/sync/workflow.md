@@ -1,8 +1,8 @@
 ---
 name: sync
 description: Fetch + re-validate + update state
-agent: tracey
-trigger: "@tracey SY"
+agent: "@lens/state-management"
+trigger: "@lens SY"
 category: utility
 ---
 
@@ -14,11 +14,52 @@ category: utility
 
 ## Execution Sequence
 
+### 0. Pull Governance Repo
+
+```yaml
+# Always pull the governance repo on an explicit sync — ignore TTL.
+module = load_yaml("_bmad/lens-work/module.yaml")
+governance_root = module.outputs.governance_repo_root
+marker_file = "${governance_root}/.last-governance-pull"
+
+output: "🔭 Syncing governance repo (${governance_root})..."
+
+if not dir_exists(governance_root) or not is_git_repo(governance_root):
+  output: |
+    ⚠️  Governance repo not cloned at ${governance_root}.
+    Skipping governance sync.  Run '@lens check-repos' to clone it.
+else:
+  governance_branch = git_current_branch(governance_root)
+  if governance_branch != "main":
+    output: |
+      ⚠️  Governance repo is on branch '${governance_branch}', not 'main'.
+      Skipping auto-pull to avoid overwriting in-progress governance work.
+  else:
+```
+
+```bash
+    git -C "${governance_root}" fetch origin main --quiet --prune
+    git -C "${governance_root}" merge --ff-only origin/main --quiet
+```
+
+```yaml
+    if pull_succeeded:
+      write_file(marker_file, str(unix_timestamp()))
+      output: "✅ Governance repo up to date"
+    else:
+      output: |
+        ⚠️  Could not fast-forward governance repo.
+        It may have local commits.  Resolve manually:
+          cd ${governance_root} && git status
+```
+
+---
+
 ### 1. Git Fetch
 
 ```yaml
-# Delegate to Casey
-invoke: casey.git-fetch
+# Delegate to git-orchestration skill
+invoke: git-orchestration.git-fetch
 
 output: "🔄 Fetching from remote..."
 ```

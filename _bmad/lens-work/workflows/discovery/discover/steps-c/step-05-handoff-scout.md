@@ -1,9 +1,9 @@
 ---
 name: 'step-05-handoff-scout'
-description: 'Hand off to SCOUT agent for deep analysis'
+description: 'Hand off to discovery skill for deep analysis'
 ---
 
-# Step 5: Hand Off to SCOUT
+# Step 5: Hand Off to Discovery
 
 ## ⚠️ MANDATORY - DO NOT SKIP THIS STEP
 
@@ -13,14 +13,14 @@ description: 'Hand off to SCOUT agent for deep analysis'
 3. ONLY THEN proceed based on their choice
 
 **DO NOT:**
-- Skip directly to Compass
+- Skip directly to @lens
 - Show "discovery complete" without the prompt
 - Assume user wants to skip
 
 ---
 
 ## Goal
-Hand off to SCOUT agent to run the full discovery pipeline (DS → AC → GD).
+Hand off to the discovery skill to run the full discovery pipeline (DS → AC → GD).
 
 ---
 
@@ -69,7 +69,7 @@ Discovery reports generated:
 ├──────────────────────────────────────────────────────────────┤
 │  🧭 Would you like to run a deep scan next?                  │
 │                                                              │
-│  SCOUT can run the complete discovery pipeline for           │
+│  The discovery skill can run the complete discovery pipeline  │
 │  comprehensive technical analysis and documentation:         │
 │                                                              │
 │  Pipeline Steps:                                             │
@@ -88,7 +88,7 @@ Discovery reports generated:
 ├──────────────────────────────────────────────────────────────┤
 │  Options:                                                    │
 │  [DEEP]  Run full deep scan pipeline (recommended)           │
-│  [SKIP]  Continue to Compass (you can run [DEEP] anytime)  │
+│  [SKIP]  Continue to @lens (you can run [DEEP] anytime)    │
 ╰──────────────────────────────────────────────────────────────╯
 ```
 
@@ -97,21 +97,21 @@ Discovery reports generated:
 ### 4. User Decision Branch
 
 **If user selects [DEEP]:**
-- Proceed to SCOUT Handoff (Section 4 below)
+- Proceed to Discovery Handoff (Section 4 below)
 - Run the complete discovery pipeline
 
 **If user selects [SKIP]:**
-- Return to Compass menu
+- Return to @lens menu
 - Deep scan can be triggered anytime with [DEEP] command
 - User retains access to initial discovery reports
 
-### 5. SCOUT Handoff - DEEP Command Workflow
+### 5. Discovery Handoff - DEEP Command Workflow
 
 **Display (if DEEP selected):**
 ```
-🧭→🔎 Handing off to SCOUT
+🧭→🔎 Handing off to discovery skill
 
-SCOUT will now run the complete discovery pipeline in FULL AUTO mode:
+The discovery skill will now run the complete discovery pipeline in FULL AUTO mode:
 
 For EVERY project in the domain map, executing in sequence:
 1. [DS] Full Discover ⭐ RECOMMENDED - Deep brownfield discovery
@@ -227,16 +227,16 @@ All documentation available at:
 Ready to proceed with next steps!
 ```
 
-### 9. Activate SCOUT Agent
+### 9. Activate Discovery Skill
 
-**Call SCOUT agent in AUTO/YOLO mode (if DEEP selected):**
+**Invoke discovery skill in AUTO/YOLO mode (if DEEP selected):**
 
 ```
-Activate SCOUT agent: {project-root}/_bmad/lens-work/agents/scout
+Activate discovery skill: bmad.lens.release/_bmad/lens-work/skills/discovery.md
 Trigger: AUTO (full auto mode - DS → AC → GD)
 
-SCOUT will:
-- Load domain map from: {project-root}/_bmad/lens-work/domain-map.yaml
+The discovery skill will:
+- Load domain map from: bmad.lens.release/_bmad/lens-work/domain-map.yaml
 - Execute [DS] on every service/microservice
 - Execute [AC] on every analyzed service
 - Execute [GD] on every analyzed codebase
@@ -261,13 +261,13 @@ Available actions:
 [HELP]   Show all available commands
 ```
 
-**Return to Compass menu with full discovery context**
+**Return to @lens menu with full discovery context**
 
 ### 11. Alternative: Skip Deep Scan
 
 **IF user selects [SKIP]:**
 
-Ensure the SCOUT agent is installed as part of the lens module.
+Ensure the discovery skill is installed as part of the lens module.
 
 ```
 ⏭️  Skipping Deep Scan
@@ -277,12 +277,12 @@ Initial discovery is complete. Discovery reports available at:
 
 To run the complete pipeline later:
 - Type [DEEP] to trigger the full DS → AC → GD workflow
-- Or navigate to: {project-root}/_bmad/lens-work/agents/scout
+- Or navigate to: bmad.lens.release/_bmad/lens-work/skills/discovery.md
 
-Or continue with Compass for other workflows.
+Or continue with @lens for other workflows.
 ```
 
-**Return to Compass menu**
+**Return to @lens menu**
 
 ---
 
@@ -310,23 +310,23 @@ This prevents accidental commits of:
 ---
 
 **IF user selected [DEEP]:**
-- Activate SCOUT agent by loading: {project-root}/_bmad/lens-work/agents/scout/scout.md
-- SCOUT will display its menu with DS, AC, GD options
+- Activate discovery skill by loading: bmad.lens.release/_bmad/lens-work/skills/discovery.md
+- The discovery skill will display its menu with DS, AC, GD options
 - User can select [AUTO] to run the full pipeline automatically
-- SCOUT will return to its menu after each operation completes
+- The discovery skill will return to its menu after each operation completes
 - Total estimated time: 35-50 minutes for full scan
 - All artifacts stored in: {project-root}/docs/{Domain}/{Service}/
 
 **IF user selected [SKIP]:**
-- Return to Compass menu with initial discovery available
+- Return to @lens menu with initial discovery available
 - Can trigger [DEEP] command anytime to start full pipeline
 - Initial reports available for reference
 
-**IF SCOUT not available:**
+**IF discovery skill not available:**
 - Discovery complete with basic reports
-- Return to Compass menu
+- Return to @lens menu
 - User can manually run advanced workflows
 
 ---
 
-**Note:** This step hands off to SCOUT agent. SCOUT always displays its menu and returns to it after each operation, enabling users to run DS, AC, GD in sequence or use AUTO mode.
+**Note:** This step hands off to the discovery skill. The discovery skill always displays its menu and returns to it after each operation, enabling users to run DS, AC, GD in sequence or use AUTO mode.

@@ -1,14 +1,14 @@
 ---
 name: constitution-check
 description: Run governance validation via constitution skill at workflow boundaries
-agent: scribe
+agent: "@lens/constitution"
 trigger: "background (auto-triggered)"
 category: background
 ---
 
 # Background Workflow: constitution-check
 
-**Purpose:** Run governance validation at workflow boundaries. Delegates to the constitution skill (Scribe agent). Ensures all operations comply with active constitutions.
+**Purpose:** Run governance validation at workflow boundaries. Delegates to the constitution skill (@lens/constitution). Ensures all operations comply with active constitutions.
 
 ---
 

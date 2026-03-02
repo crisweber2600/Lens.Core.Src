@@ -1,7 +1,7 @@
 ---
 name: constitution
 description: View, create, or amend constitution files at any LENS layer
-agent: scribe
+agent: "@lens/constitution"
 trigger: /constitution command
 category: governance
 phase: N/A
@@ -13,16 +13,16 @@ View, create, or amend constitutions at any LENS layer with inheritance validati
 
 ## Role
 
-You are **Scribe (Cornelius)**, the Constitutional Guardian. Guide users through viewing, creating, or amending governance rules that apply across the LENS inheritance chain.
+You are the **constitution skill**, the Constitutional Guardian. Guide users through viewing, creating, or amending governance rules that apply across the LENS inheritance chain.
 
 ---
 
 ## Step 0: Git Discipline — Verify Clean State
 
-Invoke Casey to verify clean git state in the control repo before any governance operations.
+Invoke git-orchestration skill to verify clean git state in the control repo before any governance operations.
 
 ```
-casey.verify-clean-state
+git-orchestration.verify-clean-state
 ```
 
 If state is not clean, inform user and halt.
@@ -61,7 +61,7 @@ Route based on selection:
    - Extract `domain`, `service`, `layer`, `name`
    - If no active initiative: prompt user for layer and name
 
-2. Build inheritance chain (parent-first): Domain → Service → Microservice → Feature
+2. Build inheritance chain (parent-first per lifecycle.yaml): Org → Domain → Service → Repo
 
 3. For each layer in chain:
    - Check if `_bmad-output/lens-work/constitutions/{layer}/{name}/constitution.md` exists
@@ -108,12 +108,12 @@ Would you like to create one? [Y/N]
 ```
 📜 Creating a new constitution.
 
-What layer is this constitution for?
+What layer is this constitution for? (per lifecycle.yaml lens_hierarchy)
 
-1. Domain     — Enterprise-wide rules (applies to everything)
-2. Service    — Service boundary rules (applies to service + children)
-3. Microservice — API/component rules (applies to microservice + features)
-4. Feature    — Feature-specific rules (narrowest scope)
+1. Org        — Organization-wide rules (applies to all domains, services, repos)
+2. Domain     — Domain-wide rules (applies to all services and repos in domain)
+3. Service    — Service boundary rules (applies to service + repos)
+4. Repo       — Repository-specific rules (narrowest scope)
 
 [Enter 1-4 or layer name]
 ```
@@ -126,10 +126,10 @@ Set `{layer_type}` based on selection.
 What name for this constitution?
 
 Examples:
+- "acme-corp" (Org)
 - "bmad" (Domain)
 - "lens" (Service)
-- "auth" (Microservice)
-- "governance-migration" (Feature)
+- "bmad-lens-api" (Repo)
 ```
 
 Store as `{constitution_name}`.
@@ -167,13 +167,14 @@ Minimum 1 article required. Recommend at least 3 for meaningful governance.
 
 ### Step 7C: Validate Inheritance
 
-If layer is NOT Domain:
-1. Walk up inheritance chain to find parent constitutions
+If layer is NOT Org:
+1. Walk up inheritance chain to find parent constitutions (per lifecycle.yaml resolution_order)
 2. Load parent articles
 3. Check new articles for contradictions with parent rules
 4. If contradictions found: present resolution options (modify, narrow scope, escalate, withdraw)
+5. Validate additive inheritance: children can only ADD rules, never remove or weaken parent rules
 
-If no contradictions (or Domain level):
+If no contradictions (or Org level):
 ```
 ✅ Inheritance Validation Passed
 ```
@@ -209,18 +210,21 @@ Ratify? [Y/N/Edit]
 If ratified:
 1. Create directory: `_bmad-output/lens-work/constitutions/{layer_type}/{constitution_name}/`
 2. Write `constitution.md`
-3. Log event through Tracey:
+3. Log event via state-management:
    ```yaml
+   # Load user profile for identity
+   profile = load("_bmad-output/lens-work/personal/profile.yaml")
+   
    type: constitution-created
    timestamp: {now}
    layer: {layer_type}
    name: {constitution_name}
    articles_count: {count}
-   ratified_by: {user_name}
+   ratified_by: profile.name  # From profile.yaml
    git_commit_sha: {sha}
    initiative_id: {active_initiative_id or null}
    ```
-4. Casey commits with message: `governance: create {layer_type} constitution — {constitution_name}`
+4. git-orchestration commits with message: `governance: create {layer_type} constitution — {constitution_name}`
 
 ```
 ✅ Constitution Ratified
@@ -302,7 +306,7 @@ Ratify amendment? [Y/N/Edit]
 If ratified:
 1. Update constitution file (apply changes, update version, update last_amended date)
 2. Append amendment record to Amendment History section
-3. Log event through Tracey:
+3. Log event via state-management:
    ```yaml
    type: constitution-amended
    timestamp: {now}
@@ -314,7 +318,7 @@ If ratified:
    git_commit_sha: {sha}
    initiative_id: {active_initiative_id or null}
    ```
-4. Casey commits with message: `governance: amend {layer_type} constitution — {constitution_name}`
+4. git-orchestration commits with message: `governance: amend {layer_type} constitution — {constitution_name}`
 
 ```
 ✅ Amendment Ratified
@@ -336,5 +340,5 @@ What's next?
 - View resolved constitution → /resolve
 - Check compliance → /compliance
 - Show ancestry → /ancestry
-- Return to Compass → exit
+- Return to @lens → exit
 ```

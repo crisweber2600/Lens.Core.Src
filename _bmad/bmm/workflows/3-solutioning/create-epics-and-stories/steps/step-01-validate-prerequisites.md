@@ -3,7 +3,7 @@ name: 'step-01-validate-prerequisites'
 description: 'Validate required documents exist and extract all requirements for epic and story creation'
 
 # Path Definitions
-workflow_path: '{project-root}/_bmad/bmm/workflows/3-solutioning/create-epics-and-stories'
+workflow_path: 'bmad.lens.release/_bmad/bmm/workflows/3-solutioning/create-epics-and-stories'
 
 # File References
 thisStepFile: './step-01-validate-prerequisites.md'
@@ -13,8 +13,8 @@ outputFile: '{planning_artifacts}/epics.md'
 epicsTemplate: '{workflow_path}/templates/epics-template.md'
 
 # Task References
-advancedElicitationTask: '{project-root}/_bmad/core/workflows/advanced-elicitation/workflow.xml'
-partyModeWorkflow: '{project-root}/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.xml'
+partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 
 # Template References
 epicsTemplate: '{workflow_path}/templates/epics-template.md'
@@ -229,12 +229,12 @@ Display: `**Confirm the Requirements are complete and correct to [C] continue:**
 
 #### Menu Handling Logic:
 
-- IF C: Save all to {outputFile}, update frontmatter, only then load, read entire file, then execute {nextStepFile}
+- IF C: Save all to {outputFile}, update frontmatter, then read fully and follow: {nextStepFile}
 - IF Any other comments or queries: help user respond then [Redisplay Menu Options](#10-present-menu-options)
 
 ## CRITICAL STEP COMPLETION NOTE
 
-ONLY WHEN C is selected and all requirements are saved to document and frontmatter is updated, will you then load, read entire file, then execute {nextStepFile} to execute and begin epic design step.
+ONLY WHEN C is selected and all requirements are saved to document and frontmatter is updated, will you then read fully and follow: {nextStepFile} to begin epic design step.
 
 ---
 

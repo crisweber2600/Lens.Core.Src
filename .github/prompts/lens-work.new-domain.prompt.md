@@ -3,12 +3,14 @@
 description: Create new domain-level initiative with domain-only branch and folder scaffolding
 ---
 
-Activate Compass agent and execute /new-domain:
+Activate @lens agent and execute /new-domain:
 
-1. Load agent: `_bmad/lens-work/agents/compass.agent.yaml`
+**⚠️ PATH CONTEXT:** All `_bmad/` paths in this prompt are relative to the `bmad.lens.release` control repository (where this prompt file lives). Do NOT copy `_bmad/` into or resolve these paths against the user's main project repo. The agent, workflows, and skills all execute from within `bmad.lens.release/`. Only `_bmad-output/` paths are written to the user's working context.
+
+1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/new-domain` command to create domain initiative
-3. Router dispatches to `workflows/router/init-initiative/` workflow
-4. Casey creates domain branch ONLY (no audience/phase branches) and pushes immediately
+3. Router dispatches to `_bmad/lens-work/workflows/router/init-initiative/` workflow
+4. Git-orchestration creates domain branch ONLY (no audience/phase branches) and pushes immediately
 5. Scaffold domain folders and Domain.yaml
 6. Route to `/new-service` or `/new-feature` within this domain
 

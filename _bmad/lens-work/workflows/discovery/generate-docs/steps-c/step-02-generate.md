@@ -4,6 +4,8 @@ description: 'Generate documentation artifacts from analysis results'
 nextStepFile: './step-03-report.md'
 templateDir: 'templates/docs/'
 qualityStandards: 'templates/docs/doc-quality-standards.md'
+requiredSkills:
+  - visual-documentation.md
 ---
 
 # Step 2: Generate Docs
@@ -15,10 +17,12 @@ Create **six** production-quality documentation artifacts from `analysis_inputs`
 
 **Before generating ANY document:**
 
-1. **Load quality standards** from `{project-root}/_bmad/lens-work/templates/docs/doc-quality-standards.md`
-2. **Load the template** for each document from `{project-root}/_bmad/lens-work/templates/docs/{doc-type}.template.md`
-3. **Read actual source files** — you MUST use `read_file` and `grep_search` to extract real code, real entity definitions, real endpoint paths, real configuration
-4. **Never output placeholder variables** — no `{service_name}`, no `{for x in y}`, no invented data
+1. **Load visual-documentation skill** from `_bmad/lens-work/skills/visual-documentation.md` - MANDATORY
+2. **Load bmadconfig.yaml visual_first_documentation convention** - MANDATORY
+3. **Load quality standards** from `bmad.lens.release/_bmad/lens-work/templates/docs/doc-quality-standards.md`
+4. **Load the template** for each document from `bmad.lens.release/_bmad/lens-work/templates/docs/{doc-type}.template.md`
+5. **Read actual source files** — you MUST use `read_file` and `grep_search` to extract real code, real entity definitions, real endpoint paths, real configuration
+6. **Never output placeholder variables** — no `{service_name}`, no `{for x in y}`, no invented data
 
 ### Minimum Line Counts
 
@@ -35,11 +39,23 @@ If a document falls below its minimum, re-read source files and expand before ac
 
 ### Required Content Types (every document)
 
+- **Mermaid diagrams** - MANDATORY: Every document MUST have at least one Mermaid diagram (see visual_first_documentation convention)
 - **Real code examples** extracted from the actual codebase
-- **ASCII art diagrams** using `┌─┐│└─┘▶◀▼▲` characters (not just Mermaid)
+- **ASCII art diagrams** using `┌─┐│└─┘▶◀▼▲` characters (in addition to Mermaid)
 - **Detailed tables** with actual data from the analysis
 - **Cross-references** to all 6 sibling documents
 - **Standard BMAD header and footer** per quality standards
+
+### Visual-First Documentation Requirements
+
+Per `visual_first_documentation` convention in bmadconfig.yaml:
+
+- **architecture.md** - MUST include: system architecture diagram (flowchart), component interaction (sequenceDiagram), deployment diagram
+- **api-surface.md** - MUST include: API flow diagram (sequenceDiagram), authentication flow (flowchart)
+- **data-model.md** - MUST include: ER diagram (erDiagram), data flow (sequenceDiagram)
+- **integration-map.md** - MUST include: integration landscape (flowchart), data flow diagrams (sequenceDiagram)
+- **onboarding.md** - MUST include: setup flow (flowchart), development workflow (flowchart)
+- **migration-map.md** - MUST include: migration phases (gantt or flowchart), architecture transformation (flowchart)
 
 ## Instructions
 
@@ -49,7 +65,7 @@ generation_context:
   target: from analysis_inputs.target
   doc_scope: from analysis_inputs.doc_scope
   output_dir: "{docs_output_path}/{domain}/{service}/"
-  template_dir: "{project-root}/_bmad/lens-work/templates/docs/"
+  template_dir: "bmad.lens.release/_bmad/lens-work/templates/docs/"
   
   style_config:
     heading_style: atx
@@ -220,14 +236,12 @@ quality_check:
 If any check fails, go back and fix the document before proceeding.
 
 **Merge logic:**
-```python
-def merge_preserving_manual_sections(existing, generated):
-    manual_sections = find_sections_without_generated_marker(existing)
-    merged = generated
-    for section in manual_sections:
-        merged = append_section(merged, section)
-    return merged
-```
+
+When merging existing docs with newly generated output:
+1. Identify all sections in the existing file that do NOT carry a `<!-- generated -->` marker — these are manual sections
+2. Start with the fully generated content as the base
+3. For each manual section found, append it to the merged result after the generated content
+4. The result preserves all generated sections in full, with manual additions appended
 
 ### 8. Track Results
 ```yaml

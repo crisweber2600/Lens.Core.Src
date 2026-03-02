@@ -1,8 +1,8 @@
 ---
 name: setup-rollback
 description: Revert bootstrap to previous snapshot
-agent: scout
-trigger: "@scout rollback"
+agent: "@lens/discovery"
+trigger: "@lens rollback"
 category: utility
 mutates: true
 ---
@@ -84,7 +84,7 @@ log_event:
   timestamp: ${ISO_TIMESTAMP}
 
 # Re-run discovery
-invoke: scout.repo-discover
+invoke: discovery.repo-discover
 ```
 
 ### 5. Report Results
@@ -100,8 +100,8 @@ TargetProjects: ${config.target_projects_path}
 Discovery re-run to update inventory.
 
 Next Steps:
-├── Run '@scout document' to regenerate docs
-└── Run '@scout repo-status' to verify health
+├── Run '@lens document' to regenerate docs
+└── Run '@lens repo-status' to verify health
 
 ═══════════════════════════════════════════════════
 ```

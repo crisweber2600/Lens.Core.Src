@@ -25,7 +25,7 @@ Documentation generation requires prior analysis. Check for:
 
 ```yaml
 required_inputs:
-  # Option 1: Scout sidecar analysis cache
+  # Option 1: Discovery sidecar analysis cache
   - path: "_bmad/lens-work/_memory/scout-sidecar/analysis/{target}.yaml"
     type: cached_analysis
     

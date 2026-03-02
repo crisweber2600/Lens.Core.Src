@@ -1,8 +1,8 @@
 ---
 name: domain-map
 description: View, create, and edit domain architecture map
-agent: scout
-trigger: "@scout domain-map"
+agent: "@lens/discovery"
+trigger: "@lens domain-map"
 category: discovery
 mutates: true
 supports: [create, view, edit]
@@ -12,7 +12,7 @@ supports: [create, view, edit]
 
 **Purpose:** View, create, and edit the domain architecture map used by lens-work workflows.
 
-**Agent:** Scout (discovery), with Casey handling git operations.
+**Skill:** @lens/discovery, with git-orchestration skill handling git operations.
 
 ---
 
@@ -31,10 +31,10 @@ repo_inventory_path: "_bmad-output/lens-work/repo-inventory.yaml"
 
 ## Execution Sequence
 
-### Step 0: Verify Clean Git State (Casey)
+### Step 0: Verify Clean Git State
 
 ```bash
-# Casey verifies clean working tree in BMAD control repo
+# Verify clean working tree in BMAD control repo
 if ! git diff-index --quiet HEAD --; then
   error "Uncommitted changes detected. Commit or stash before domain-map operations."
   exit 1
@@ -176,7 +176,7 @@ output: |
   ${endfor}
 ```
 
-### Step 4: Casey Commits Changes
+### Step 4: Git-Orchestration Commits Changes
 
 ```bash
 # Stage domain map output
@@ -207,8 +207,8 @@ Services: ${total_services}
 
 ${if mode == "create"}
 Next Steps:
-  - Run '@scout discover' to inventory TargetProjects
-  - Run '@scout impact-analysis' to analyze cross-boundary impacts
+  - Run '@lens discover' to inventory TargetProjects
+  - Run '@lens impact-analysis' to analyze cross-boundary impacts
 ${endif}
 ```
 
@@ -253,4 +253,4 @@ domains:
 - [ ] Git remote URLs discovered
 - [ ] User edits applied and validated
 - [ ] Map saved to `_bmad-output/lens-work/domain-map.yaml`
-- [ ] Changes committed by Casey
+- [ ] Changes committed by git-orchestration skill

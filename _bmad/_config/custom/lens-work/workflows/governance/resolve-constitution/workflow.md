@@ -1,10 +1,11 @@
 ---
 name: resolve-constitution
 description: Resolve accumulated constitutional rules for current LENS context
-agent: scribe
+agent: "@lens/constitution"
 trigger: /resolve command
 category: governance
 phase: N/A
+imports: lifecycle.yaml
 ---
 
 # Resolve Constitution Workflow — Governance
@@ -13,16 +14,16 @@ Walk the LENS inheritance chain and merge constitutional articles parent-first.
 
 ## Role
 
-You are **Scribe (Cornelius)**, presenting the constitutional heritage of the current context.
+You are the **constitution skill**, presenting the constitutional heritage of the current context.
 
 ---
 
 ## Step 0: Git Discipline — Verify Clean State
 
-Invoke Casey to verify clean git state.
+Invoke git-orchestration skill to verify clean git state.
 
 ```
-casey.verify-clean-state
+git-orchestration.verify-clean-state
 ```
 
 ---
@@ -33,40 +34,87 @@ Determine the current LENS context using this priority:
 
 1. **Active initiative** (primary — handles 95%+ of cases):
    - Load `_bmad-output/lens-work/initiatives/{active_id}.yaml`
-   - Extract: `domain`, `service`, `layer`, `name`, `microservice` (optional)
+   - Extract: `org` (optional), `domain`, `service`, `layer`, `name`, `repo` (optional)
+   - Also extract: `track` (for track-aware resolution)
 
 2. **Branch pattern** (fallback):
-   - If current branch matches `{featureBranchRoot}-{audience}-p{N}-{workflow}` (flat, hyphen-separated):
-   - Parse featureBranchRoot, load initiative by ID, recurse with loaded context
+   - If current branch matches `{initiative_root}-{audience}-{phase_name}-{workflow}` (named phases):
+   - Parse initiative_root, load initiative by ID, recurse with loaded context
+   - Legacy support: also match `{featureBranchRoot}-{audience}-p{N}-{workflow}`
 
 3. **User input** (last resort):
-   - Prompt: "Which layer? [domain/service/microservice/feature]"
+   - Prompt: "Which layer? [org/domain/service/repo]"
    - Prompt: "Name for this layer?"
 
 ---
 
 ## Step 2: Build Inheritance Chain
 
-Build hierarchy parent-first based on context:
+Build hierarchy parent-first based on context. Uses lifecycle.yaml `lens_hierarchy.levels: [org, domain, service, repo]` and `constitution.resolution_order: [org, domain, service, repo]`.
 
 ```python
+# Load lifecycle contract
+lifecycle = load("lifecycle.yaml")
+resolution_order = lifecycle.constitution.resolution_order  # [org, domain, service, repo]
+
 hierarchy = []
 visited = set()  # Cycle detection
 
-# Domain is ALWAYS included (top of chain)
+# Org is ALWAYS included if it exists (top of chain)
+if org:
+    hierarchy.append({ layer: "org", name: org })
+
+# Domain is ALWAYS included (required for all initiatives)
 hierarchy.append({ layer: "domain", name: domain })
 
-# Service included if context is service, microservice, or feature
-if layer in ["service", "microservice", "feature"]:
+# Service included if context is service or repo
+if layer in ["service", "repo"]:
     hierarchy.append({ layer: "service", name: service })
 
-# Microservice included if context is microservice or feature AND field is set
-if layer in ["microservice", "feature"] and microservice:
-    hierarchy.append({ layer: "microservice", name: microservice })
+# Repo included if context is repo AND field is set
+if layer == "repo" and repo:
+    hierarchy.append({ layer: "repo", name: repo })
 
-# Feature included if context is feature
-if layer == "feature":
-    hierarchy.append({ layer: "feature", name: name })
+# Legacy support: map old layer names to new
+legacy_layer_map = {
+    "microservice": "repo",   # microservice → repo
+    "feature": "repo"         # feature → repo (lowest level)
+}
+if layer in legacy_layer_map:
+    effective_layer = legacy_layer_map[layer]
+    # Build chain using effective_layer instead
+```
+
+### Track-Aware Resolution
+
+After building the chain, also collect track and gate governance:
+
+```python
+track = initiative.track  # e.g., "full", "feature", "tech-change"
+permitted_tracks = set()    # Intersection across chain
+required_gates = set()      # Union across chain
+additional_participants = {} # Merge across chain
+
+for level in hierarchy:
+    constitution = load_constitution(level)
+    if constitution:
+        # Track permissions (intersection — most restrictive wins)
+        if constitution.permitted_tracks:
+            if not permitted_tracks:
+                permitted_tracks = set(constitution.permitted_tracks)
+            else:
+                permitted_tracks = permitted_tracks.intersection(constitution.permitted_tracks)
+
+        # Required gates (union — all additions accumulate)
+        if constitution.required_gates:
+            required_gates = required_gates.union(constitution.required_gates)
+
+        # Review participants (additive merge)
+        if constitution.additional_review_participants:
+            for review_type, participants in constitution.additional_review_participants.items():
+                if review_type not in additional_participants:
+                    additional_participants[review_type] = []
+                additional_participants[review_type].extend(participants)
 ```
 
 ---
@@ -139,6 +187,25 @@ Resolution: Parent article prevails. Child article excluded from resolved set.
 These {total_articles} articles govern all work in this context.
 ```
 
+### Track & Gate Summary
+
+After article display, show accumulated track/gate governance:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## Track & Gate Governance (accumulated)
+
+Permitted Tracks: {permitted_tracks or "all (no restrictions)"}
+Required Gates: {required_gates or "none (track defaults apply)"}
+Additional Review Participants:
+{for each review_type in additional_participants:}
+  {review_type}: {participants}
+{or "none"}
+
+Track Validation: {initiative.track} → {"✅ permitted" or "❌ NOT PERMITTED by {restricting_layer}"}
+```
+
 **If no constitutions found at any layer:**
 ```
 📜 No constitutional rules defined for this context.
@@ -150,7 +217,7 @@ This is expected if governance has not been configured for this scope.
 
 ## Step 5: Event Logging
 
-Log resolution through Tracey:
+Log resolution event:
 
 ```yaml
 type: constitution-resolved
@@ -172,5 +239,5 @@ What's next?
 - Check compliance → /compliance
 - View ancestry → /ancestry
 - Create constitution → /constitution
-- Return to Compass → exit
+- Return to @lens → exit
 ```

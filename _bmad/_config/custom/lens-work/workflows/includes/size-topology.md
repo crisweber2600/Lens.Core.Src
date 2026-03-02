@@ -1,31 +1,36 @@
 ---
 name: size-topology
-description: Branch hierarchy, size definitions, and merge strategies for lens-work
+description: Branch hierarchy, audience promotion chain, and merge strategies for lens-work
 type: include
+imports: lifecycle.yaml
 ---
 
-# Size Topology Reference
+# Branch Topology Reference (v2 — Lifecycle Contract)
 
-This document defines the branch hierarchy used by lens-work to manage initiative lifecycle branches. All branch operations are orchestrated by Casey and triggered through Compass phase commands.
+This document defines the branch hierarchy used by lens-work to manage initiative lifecycle branches. All branch operations are orchestrated by the git-orchestration skill and triggered through @lens phase commands. The authoritative source for phase definitions, audience roles, and track configurations is `lifecycle.yaml`.
 
-**Branch naming convention:** `{featureBranchRoot}-{audience}-p{phaseNumber}-{workflow}`
+**Branch naming convention:** `{initiative_root}-{audience}-{phase_name}-{workflow}`
 
 ---
 
 ## Branch Hierarchy (5 Levels)
 
 ```
-Level 0: Domain              {domain_prefix}                                            (domain-layer only)
-Level 0s: Service            {domain_prefix}-{service_prefix}                            (service-layer only)
-Level 1: Feature Root        {featureBranchRoot}                                          (feature/microservice layers)
-Level 2: Audience Groups     {featureBranchRoot}-small, -medium, -large
-Level 3: Phases              {featureBranchRoot}-{audience}-p{N}
-Level 4: Workflows           {featureBranchRoot}-{audience}-p{N}-{workflow}
+Level 0:  Domain           {domain_prefix}                                         (domain-layer only)
+Level 0s: Service          {domain_prefix}-{service_prefix}                         (service-layer only)
+Level 1:  Initiative Root  {initiative_root}                                        (base / done state)
+Level 2:  Audiences        {initiative_root}-small, -medium, -large
+Level 3:  Phases           {initiative_root}-{audience}-{phase_name}
+Level 4:  Workflows        {initiative_root}-{audience}-{phase_name}-{workflow}
 ```
 
-Where `{featureBranchRoot}` = `{domain_prefix}-{service_prefix}-{initiative_id}` (service parent)
+Where `{initiative_root}` = `{domain_prefix}-{service_prefix}-{initiative_id}` (service parent)
   or `{domain_prefix}-{service_prefix}-{repo}-{initiative_id}` (multi-repo)
   or `{domain_prefix}-{initiative_id}` (domain parent, no service)
+
+> **v2 change:** `{initiative_root}` replaces the legacy `{featureBranchRoot}`. Named phase segments (e.g., `-preplan-`) replace numbered segments (e.g., `-p1-` through `-p4-`).
+
+---
 
 ### Level 0: Domain (domain-layer only)
 
@@ -75,18 +80,18 @@ Organizational branch for service-layer initiatives. Created via `init-initiativ
 
 ---
 
-### Level 1: Feature Root
+### Level 1: Initiative Root (base)
 
 ```
-{featureBranchRoot}
+{initiative_root}
 ```
 
-Root branch for the initiative. Created at init via `init-initiative` workflow. All work merges here eventually through the audience → root PR flow. This branch represents the "done" state of the initiative. **Replaces the old `/base` branch concept.**
+Root branch for the initiative. Created at init via `init-initiative` workflow. All work merges here eventually through the audience promotion chain. This branch represents the **"done" state** of the initiative — the base audience level.
 
 **Rules:**
 - Created from `main` (or current HEAD) at initiative start
 - Never worked on directly — only receives merges from audience branches
-- Protected: requires PR review for final PBR merge
+- Protected: requires constitution gate (constitution skill validation) for final promotion
 - One root branch per initiative
 - Pushed to remote immediately on creation
 
@@ -95,79 +100,108 @@ Root branch for the initiative. Created at init via `init-initiative` workflow. 
 ### Level 2: Audience Groups
 
 ```
-{featureBranchRoot}-small     # Small group (planning + implementation)
-{featureBranchRoot}-medium    # Medium group (future)
-{featureBranchRoot}-large     # Large group (gate reviews)
+{initiative_root}-small     # IC creation work (preplan, businessplan, techplan)
+{initiative_root}-medium    # Lead review (devproposal)
+{initiative_root}-large     # Stakeholder approval (sprintplan)
 ```
 
-Audience groups represent team-size-based workflow paths. Each group has its own lifecycle and phase progression. **Size is stored in the shared initiative config** (`initiatives/{id}.yaml`) — never in personal state.
+Audiences are the primary progression axis in the lifecycle. Phases happen WITHIN audiences. Promotion between audiences IS the review gate. Audience assignments are derived from the initiative's track via `lifecycle.yaml`.
 
-#### Group Definitions
+#### Audience Definitions (from lifecycle.yaml)
 
-| Group | Purpose | Typical Team Size | Phases | Created At |
-|-------|---------|-------------------|--------|------------|
-| `small` | Single developer or small team doing end-to-end work | 1–3 | P1–P4 | `init-initiative` |
-| `medium` | Medium team with parallel streams (reserved) | 4–8 | P1–P4 | Future |
-| `large` | Large review group for gate reviews | 1–2 | Review gates only | `init-initiative` |
+| Audience | Role | Phases Within | Entry Gate | Created At |
+|----------|------|---------------|------------|------------|
+| `small` | IC creation work | preplan, businessplan, techplan | (none — starting audience) | `init-initiative` |
+| `medium` | Lead review | devproposal | adversarial-review (party mode) | `init-initiative` |
+| `large` | Stakeholder approval | sprintplan | stakeholder-approval | `init-initiative` |
+| `base` | Ready for execution | (none) | constitution-gate (constitution skill) | = initiative root |
 
-#### Group Behaviors
+> **v2 change:** In the legacy model, phases p2/p3 mapped to medium/large audiences. In v2, ALL creation phases (preplan, businessplan, techplan) live in `small`. Audience promotions happen BETWEEN creation and review phases.
 
-**small group ({smallGroupBranchRoot}):**
-- Primary working group for most initiatives
-- Phase branches (e.g., `-small-p1`) branch from and merge back to this group
-- All planning and implementation happens here
-- After P2 complete → opens PR to `large` for review
+#### Audience Behaviors
 
-**large group ({largeGroupBranchRoot}):**
-- Receives PR from `small` after architecture review gate
-- Large-group reviewers approve the planning artifacts
-- After approval → opens PR to feature root for final PBR
+**small group (`{initiative_root}-small`):**
+- Primary working group where all planning artifacts are created
+- Phase branches (e.g., `-small-preplan`) branch from and merge back to this group
+- Contains 3 phases: preplan (Mary/Analyst), businessplan (John/PM + Sally/UX), techplan (Winston/Architect)
+- After all small phases complete → adversarial review gate → PR to `medium`
 
-**medium group ({mediumGroupBranchRoot}, future):**
-- Reserved for multi-team initiatives
-- Will support parallel phase execution
-- Not yet implemented — Compass will reject medium group requests
+**medium group (`{initiative_root}-medium`):**
+- Receives promoted content from `small` after adversarial review (party mode)
+- Contains 1 phase: devproposal (John/PM) — epics, stories, readiness check
+- After devproposal complete → stakeholder approval gate → PR to `large`
+
+**large group (`{initiative_root}-large`):**
+- Receives promoted content from `medium` after stakeholder sign-off
+- Contains 1 phase: sprintplan (Bob/SM) — sprint status, story files
+- After sprintplan complete → constitution gate (constitution skill) → PR to initiative root (base)
+
+#### Track-Aware Audience Creation
+
+Not all tracks create all audiences. The initiative's track (from lifecycle.yaml) determines which audiences are created at init:
+
+| Track | Audiences Created | Notes |
+|-------|-------------------|-------|
+| full | small, medium, large | All audiences |
+| feature | small, medium, large | All audiences |
+| tech-change | small, medium, large | medium/large may be constitution-controlled |
+| hotfix | small | Promotes directly to base (constitution-gated) |
+| spike | small | No promotion — research only |
 
 ---
 
 ### Level 3: Phases
 
 ```
-{featureBranchRoot}-{audience}-p1    # Analysis
-{featureBranchRoot}-{audience}-p2    # Planning
-{featureBranchRoot}-{audience}-p3    # Solutioning
-{featureBranchRoot}-{audience}-p4    # Implementation
+{initiative_root}-{audience}-preplan         # Analysis (Mary/Analyst)
+{initiative_root}-{audience}-businessplan    # Business planning (John/PM + Sally/UX)
+{initiative_root}-{audience}-techplan        # Technical design (Winston/Architect)
+{initiative_root}-{audience}-devproposal     # Implementation proposal (John/PM)
+{initiative_root}-{audience}-sprintplan      # Sprint planning (Bob/SM)
 ```
 
-Phases are sequential workflow stages within an audience group. Each phase branch is created by the corresponding phase router workflow (e.g., `/pre-plan` creates `-small-p1`). **All phase branches are pushed to remote immediately on creation.**
+Phases are sequential workflow stages within an audience group. Each phase branch is created by the corresponding phase router workflow (e.g., `/preplan` creates `-small-preplan`). **All phase branches are pushed to remote immediately on creation.**
 
-**Phase lifecycle:** At the START of a phase router, the phase branch is created from the audience group branch and pushed. At the END of the phase, a PR is created from the phase branch into the audience group branch, then the phase branch is deleted locally and the audience group branch is checked out.
+**Phase lifecycle:** At the START of a phase, the phase branch is created from the audience group branch and pushed. At the END of the phase, a PR is created from the phase branch into the audience group branch, then the phase branch is deleted locally and the audience group branch is checked out.
 
-#### Phase Definitions
+#### Phase Definitions (from lifecycle.yaml)
 
-| Phase | Name | Purpose | Key Artifacts | Trigger Command |
-|-------|------|---------|---------------|-----------------|
-| P1 | Analysis | Brainstorm, research, product brief | `p1-product-brief.md`, `p1-research-notes.md` | `/pre-plan` |
-| P2 | Planning | PRD, UX design, architecture | `p2-prd.md`, `p2-ux-design.md`, `p2-architecture.md` | `/spec` |
-| P3 | Solutioning | Epics, stories, readiness check | `p3-epics.md`, `p3-stories/`, `p3-readiness-checklist.md` | `/plan` |
-| P4 | Implementation | Dev stories, code review, retro | `p4-story-impl/`, `p4-review-notes.md`, `p4-retro.md` | `/dev` |
+| Phase | Display Name | Agent | Agent Role | Audience | Key Artifacts | Trigger |
+|-------|-------------|-------|------------|----------|---------------|---------|
+| preplan | PrePlan | Mary | Analyst | small | product-brief, research, brainstorm | `/preplan` |
+| businessplan | BusinessPlan | John (+Sally) | PM | small | prd, ux-design | `/businessplan` |
+| techplan | TechPlan | Winston | Architect | small | architecture | `/techplan` |
+| devproposal | DevProposal | John | PM | medium | epics, stories, implementation-readiness | `/devproposal` |
+| sprintplan | SprintPlan | Bob | Scrum Master | large | sprint-status, story-files | `/sprintplan` |
 
 #### Phase Progression Rules
 
-1. **Sequential only:** P{N} must complete before P{N+1} can start
-2. **Completion = PR merged:** A phase is complete when its PR into the audience group is merged
-3. **Ancestry check:** `git merge-base --is-ancestor origin/{phase_branch} origin/{audience_branch}`
-4. **P1 created by /pre-plan:** Phase branches are NOT created at init — they are created by phase router workflows
-5. **P2–P4 lazy-created:** Created by their respective router workflows on first access
+1. **Sequential within audience:** Phases within the same audience must complete in order
+2. **Audience gates between groups:** All phases in an audience must complete before promotion to the next audience
+3. **Completion = PR merged:** A phase is complete when its PR into the audience group is merged
+4. **Ancestry check:** `git merge-base --is-ancestor origin/{phase_branch} origin/{audience_branch}`
+5. **Lazy-created:** Phase branches are created by their phase router workflow on first access (NOT at init)
 6. **Immediate push:** All phase branches pushed to remote on creation
 7. **PR + delete:** At phase end, PR into audience group, delete phase branch, checkout audience
+
+#### Phase-Audience Mapping (canonical, from lifecycle.yaml)
+
+```
+small audience:    preplan → businessplan → techplan
+                   ↓ (adversarial review — party mode)
+medium audience:   devproposal
+                   ↓ (stakeholder approval)
+large audience:    sprintplan
+                   ↓ (constitution gate — constitution skill)
+base:              initiative root (ready for execution)
+```
 
 ---
 
 ### Level 4: Workflows
 
 ```
-{featureBranchRoot}-{audience}-p{N}-{workflow_name}
+{initiative_root}-{audience}-{phase_name}-{workflow_name}
 ```
 
 Workflow branches represent individual units of work within a phase. They are created by `start-workflow` and merged back to the phase branch by `finish-workflow`. **All workflow branches are pushed to remote immediately on creation.**
@@ -176,18 +210,17 @@ Workflow branches represent individual units of work within a phase. They are cr
 
 | Phase | Workflow Name | Full Branch Example |
 |-------|---------------|---------------------|
-| P1 | `brainstorm` | `{featureBranchRoot}-small-p1-brainstorm` |
-| P1 | `research` | `{featureBranchRoot}-small-p1-research` |
-| P1 | `product-brief` | `{featureBranchRoot}-small-p1-product-brief` |
-| P2 | `prd` | `{featureBranchRoot}-medium-p2-prd` |
-| P2 | `ux-design` | `{featureBranchRoot}-medium-p2-ux-design` |
-| P2 | `architecture` | `{featureBranchRoot}-medium-p2-architecture` |
-| P3 | `epics` | `{featureBranchRoot}-large-p3-epics` |
-| P3 | `stories` | `{featureBranchRoot}-large-p3-stories` |
-| P3 | `readiness-check` | `{featureBranchRoot}-large-p3-readiness-check` |
-| P4 | `dev-story` | `{featureBranchRoot}-large-p4-dev-story` |
-| P4 | `code-review` | `{featureBranchRoot}-large-p4-code-review` |
-| P4 | `retro` | `{featureBranchRoot}-large-p4-retro` |
+| preplan | `brainstorm` | `{initiative_root}-small-preplan-brainstorm` |
+| preplan | `research` | `{initiative_root}-small-preplan-research` |
+| preplan | `product-brief` | `{initiative_root}-small-preplan-product-brief` |
+| businessplan | `prd` | `{initiative_root}-small-businessplan-prd` |
+| businessplan | `ux-design` | `{initiative_root}-small-businessplan-ux-design` |
+| techplan | `architecture` | `{initiative_root}-small-techplan-architecture` |
+| devproposal | `epics` | `{initiative_root}-medium-devproposal-epics` |
+| devproposal | `stories` | `{initiative_root}-medium-devproposal-stories` |
+| devproposal | `readiness-check` | `{initiative_root}-medium-devproposal-readiness-check` |
+| sprintplan | `sprint-status` | `{initiative_root}-large-sprintplan-sprint-status` |
+| sprintplan | `story-files` | `{initiative_root}-large-sprintplan-story-files` |
 
 #### Workflow Rules
 
@@ -204,40 +237,66 @@ Workflow branches represent individual units of work within a phase. They are cr
 ### Merge Flow Diagram
 
 ```
-Workflow ──squash──► Phase ──PR+delete──► Audience ──PR──► Audience ──PR──► Root
- (-{aud}-p{N}-{wf})  (-{aud}-p{N})       (small)         (large)         ({featureBranchRoot})
+                          WITHIN AUDIENCE                                    BETWEEN AUDIENCES
+Workflow ──squash──► Phase ──PR+delete──► Audience ──promotion PR+gate──► Audience ──promotion PR+gate──► Root
+ (-{aud}-{phase}-{wf})  (-{aud}-{phase})     (small/medium/large)          (medium/large)                 (base)
 ```
 
 ### Detailed Merge Table
 
 | From → To | Branch Pattern | Strategy | Gate Required | Automation |
 |-----------|----------------|----------|---------------|------------|
-| workflow → phase | `-{aud}-p{N}-{wf}` → `-{aud}-p{N}` | Squash merge | No (auto) | `finish-workflow` |
-| phase → audience | `-{aud}-p{N}` → `-{aud}` | PR + delete phase branch | Phase gate | `finish-phase` PR |
-| small → large | `-small` → `-large` | PR merge | Review gate | `open-large-review` |
-| large → root | `-large` → `{featureBranchRoot}` | PR merge | Final PBR | `open-final-pbr` |
+| workflow → phase | `-{aud}-{phase}-{wf}` → `-{aud}-{phase}` | Squash merge | No (auto) | `finish-workflow` |
+| phase → audience | `-{aud}-{phase}` → `-{aud}` | PR + delete phase branch | Phase gate | `finish-phase` PR |
+| small → medium | `-small` → `-medium` | PR merge | Adversarial review (party mode) | `audience-promotion` |
+| medium → large | `-medium` → `-large` | PR merge | Stakeholder approval | `audience-promotion` |
+| large → root (base) | `-large` → `{initiative_root}` | PR merge | Constitution gate (constitution skill) | `audience-promotion` |
 
-### Phase Transition Flow
+### Phase Transition Flow (Full Track)
 
 ```
-┌─────────┐   PR+del    ┌─────────┐   PR+del    ┌─────────┐   PR+del    ┌─────────┐
-│  P1     │ ──────────► │  P2     │ ──────────► │  P3     │ ──────────► │  P4     │
-│Analysis │  gate:p1    │Planning │  gate:p2    │Solution │  gate:p3    │  Impl   │
-└─────────┘             └─────────┘             └─────────┘             └─────────┘
-                                                      │
-                                                      │ PR: small → large
-                                                      ▼
-                                                ┌─────────┐
-                                                │  Large  │
-                                                │ Review  │
-                                                └────┬────┘
-                                                     │ PR: large → root
-                                                     ▼
-                                                ┌──────────────┐
-                                                │ Feature Root │
-                                                │   (Done)     │
+SMALL AUDIENCE (IC creation)
+┌──────────┐  PR+del   ┌──────────────┐  PR+del   ┌──────────┐
+│ PrePlan  │ ────────► │ BusinessPlan │ ────────► │ TechPlan │
+│  (Mary)  │           │ (John+Sally) │           │(Winston) │
+└──────────┘           └──────────────┘           └──────────┘
+                                                       │
+                                          ═════════════╪═══════════════════
+                                          ADVERSARIAL REVIEW (party mode)
+                                          ═════════════╪═══════════════════
+                                                       ▼
+MEDIUM AUDIENCE (Lead review)                   ┌─────────────┐
+                                                │ DevProposal │
+                                                │   (John)    │
+                                                └──────┬──────┘
+                                                       │
+                                          ═════════════╪═══════════════════
+                                          STAKEHOLDER APPROVAL
+                                          ═════════════╪═══════════════════
+                                                       ▼
+LARGE AUDIENCE (Stakeholder)                    ┌────────────┐
+                                                │ SprintPlan │
+                                                │   (Bob)    │
+                                                └──────┬─────┘
+                                                       │
+                                          ═════════════╪═══════════════════
+                                          CONSTITUTION GATE (constitution skill)
+                                          ═════════════╪═══════════════════
+                                                       ▼
+BASE                                            ┌──────────────┐
+                                                │ Initiative   │
+                                                │ Root (Done)  │
                                                 └──────────────┘
 ```
+
+### Audience Promotion Gates (from lifecycle.yaml)
+
+| Promotion | Gate Type | Trigger | Review Mode |
+|-----------|-----------|---------|-------------|
+| small → medium | adversarial-review | All small phases complete (preplan, businessplan, techplan) | Party mode — multi-agent group review |
+| medium → large | stakeholder-approval | All medium phases complete (devproposal) | Stakeholder sign-off |
+| large → base | constitution-gate | All large phases complete (sprintplan) | Constitution skill validates compliance |
+| small → base (hotfix) | constitution-gate | All small phases complete (techplan only) | Constitution skill adversarial review |
 
 ### Phase Branch Lifecycle
 
@@ -248,7 +307,7 @@ At each phase:
 
 ### Merge Validation
 
-Before any merge, Casey validates:
+Before any merge, git-orchestration validates:
 
 1. **Clean state:** No uncommitted changes in working tree
 2. **Ancestry:** Source branch is ahead of target (has commits to merge)
@@ -267,7 +326,7 @@ git merge --no-commit --no-ff ${source_branch} && git merge --abort
 
 ## Branch Naming Validation
 
-Casey validates branch names against these patterns:
+git-orchestration validates branch names against these patterns:
 
 ```regex
 # Domain-layer branches (domain-only):
@@ -277,41 +336,113 @@ Casey validates branch names against these patterns:
 ^[a-z0-9-]+-[a-z0-9-]+$
 
 # Feature-layer initiative and audience branches:
-# {featureBranchRoot} or {featureBranchRoot}-{audience}
+# {initiative_root} or {initiative_root}-{audience}
 ^[a-z0-9-]+(-[a-z0-9-]+)*$
 
-# Feature-layer phase branches:
-# {featureBranchRoot}-{audience}-p{N}
-^[a-z0-9-]+-(?:small|medium|large)-p[0-9]+$
+# Feature-layer phase branches (v2 named phases):
+# {initiative_root}-{audience}-{phase_name}
+^[a-z0-9-]+-(?:small|medium|large)-(?:preplan|businessplan|techplan|devproposal|sprintplan)$
 
-# Feature-layer workflow branches:
-# {featureBranchRoot}-{audience}-p{N}-{workflow}
-^[a-z0-9-]+-(?:small|medium|large)-p[0-9]+-[a-z0-9-]+$
+# Feature-layer workflow branches (v2 named phases):
+# {initiative_root}-{audience}-{phase_name}-{workflow}
+^[a-z0-9-]+-(?:small|medium|large)-(?:preplan|businessplan|techplan|devproposal|sprintplan)-[a-z0-9-]+$
+
+# Branch patterns use named phases only (v2.0.0)
 ```
 
-> **Note:** All branches are flat (no `/` separators). Casey determines the layer from the initiative config to select the appropriate validation regex.
+> **Note:** All branches are flat (no `/` separators). git-orchestration determines the layer from the initiative config to select the appropriate validation regex.
 
 ### Parsing Branch Components
 
-Branch names are flat hyphen-separated. Parsing requires knowledge of the `featureBranchRoot` (stored in initiative config) to extract components:
+Branch names are flat hyphen-separated. Parsing requires knowledge of the `initiative_root` (stored in initiative config) to extract components:
 
 ```bash
-# Example: bmaddomain-lens-rate-limit-x7k2m9-small-p1-brainstorm
-# featureBranchRoot = "bmaddomain-lens-rate-limit-x7k2m9" (from initiative config)
+# Example: bmaddomain-lens-rate-limit-x7k2m9-small-preplan-brainstorm
+# initiative_root = "bmaddomain-lens-rate-limit-x7k2m9" (from initiative config)
 
-# Strip featureBranchRoot prefix to get segment
-featureBranchRoot="bmaddomain-lens-rate-limit-x7k2m9"
-branch="bmaddomain-lens-rate-limit-x7k2m9-small-p1-brainstorm"
-segment="${branch#${featureBranchRoot}-}"  # small-p1-brainstorm
+# Strip initiative_root prefix to get segment
+initiative_root="bmaddomain-lens-rate-limit-x7k2m9"
+branch="bmaddomain-lens-rate-limit-x7k2m9-small-preplan-brainstorm"
+segment="${branch#${initiative_root}-}"  # small-preplan-brainstorm
 
 # Parse segment
 audience=$(echo "$segment" | cut -d'-' -f1)     # small
-phase=$(echo "$segment" | cut -d'-' -f2)         # p1
+phase_name=$(echo "$segment" | cut -d'-' -f2)    # preplan
 workflow=$(echo "$segment" | cut -d'-' -f3-)     # brainstorm
 
 # For audience-only branches (e.g., "-small"):
-# phase and workflow will be empty
+# phase_name and workflow will be empty
 ```
+
+### Detecting Legacy vs New Naming
+
+```bash
+# After stripping initiative_root prefix:
+if [[ "$segment" =~ ^(small|medium|large)-p[0-9]+ ]]; then
+  # Legacy naming: translate via lifecycle-adapter
+  echo "Legacy branch detected — use adapter translation"
+elif [[ "$segment" =~ ^(small|medium|large)-(preplan|businessplan|techplan|devproposal|sprintplan) ]]; then
+  # New v2 naming
+  echo "v2 branch naming"
+fi
+```
+
+---
+
+## Track-Specific Topologies
+
+Different tracks produce different branch topologies. The full track creates all branches; shorter tracks skip audiences and phases.
+
+### Full Track
+```
+{initiative_root}
+├── {initiative_root}-small
+│   ├── {initiative_root}-small-preplan
+│   ├── {initiative_root}-small-businessplan
+│   └── {initiative_root}-small-techplan
+├── {initiative_root}-medium
+│   └── {initiative_root}-medium-devproposal
+└── {initiative_root}-large
+    └── {initiative_root}-large-sprintplan
+```
+
+### Feature Track (skip preplan)
+```
+{initiative_root}
+├── {initiative_root}-small
+│   ├── {initiative_root}-small-businessplan
+│   └── {initiative_root}-small-techplan
+├── {initiative_root}-medium
+│   └── {initiative_root}-medium-devproposal
+└── {initiative_root}-large
+    └── {initiative_root}-large-sprintplan
+```
+
+### Tech-Change Track (techplan + sprintplan only)
+```
+{initiative_root}
+├── {initiative_root}-small
+│   └── {initiative_root}-small-techplan
+├── {initiative_root}-medium    (constitution-controlled)
+└── {initiative_root}-large     (constitution-controlled)
+    └── {initiative_root}-large-sprintplan
+```
+
+### Hotfix Track (techplan → base)
+```
+{initiative_root}
+└── {initiative_root}-small
+    └── {initiative_root}-small-techplan
+```
+> Promotes directly from small → base (initiative root) via constitution-gated adversarial review.
+
+### Spike Track (preplan only, no promotion)
+```
+{initiative_root}
+└── {initiative_root}-small
+    └── {initiative_root}-small-preplan
+```
+> Research only — no audience promotion, no merge to base.
 
 ---
 
@@ -322,15 +453,19 @@ workflow=$(echo "$segment" | cut -d'-' -f3-)     # brainstorm
 | Initiative ID collision | Regenerate random suffix, prompt user |
 | Branch already exists | Skip creation, checkout existing |
 | Orphaned workflow branch | Detected by `fix-state`, prompted for cleanup |
-| Phase skipped | Blocked — sequential enforcement is strict |
+| Phase skipped | Blocked — sequential enforcement is strict within audience |
 | Multiple active workflows | Blocked — one workflow per phase at a time |
-| Medium group requested | Rejected with "not yet implemented" message |
+| Audience promotion before phases complete | Blocked — all phases in audience must be complete |
+| Legacy p{N} branch detected | Translate via lifecycle-adapter, warn user |
+| Track doesn't include requested phase | Blocked — phase not in track's active_phases |
 
 ---
 
 ## Related Workflows
 
-- **init-initiative:** Domain: creates Level 0 branch. Service: creates Level 0s branch. Feature: creates Level 1 (root) and Level 2 (audience groups) — 4 branches total
-- **phase routers (/pre-plan, /spec, /plan, /dev):** Create Level 3 (phase) branches at phase start, PR + delete at phase end
+- **init-initiative:** Domain: creates Level 0 branch. Service: creates Level 0s branch. Feature: creates Level 1 (root) and Level 2 (audience groups) — branch count depends on track
+- **phase routers (/preplan, /businessplan, /techplan, /devproposal, /sprintplan):** Create Level 3 (phase) branches at phase start, PR + delete at phase end
 - **start-workflow / finish-workflow:** Creates and closes Level 4 (workflow) branches
+- **audience-promotion:** Handles small→medium→large→base promotion gates
 - **fix-state:** Detects and repairs topology drift
+- **lifecycle-adapter (include):** Translation tables for legacy p{N} ↔ named phase interop

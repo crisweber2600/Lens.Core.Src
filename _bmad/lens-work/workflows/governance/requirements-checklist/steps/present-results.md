@@ -81,7 +81,7 @@ Where:
 1. Create directory path if it doesn't exist
 2. Write the full checklist report to the storage path
 3. **Overwrite** any existing file (idempotent — re-evaluation replaces previous result)
-4. Commit via Casey with governance-prefixed message:
+4. Commit via git-orchestration skill with governance-prefixed message:
    ```
    governance: checklist evaluation — {artifact_type} for {constitution_name}
    ```

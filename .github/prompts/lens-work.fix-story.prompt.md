@@ -1,24 +1,15 @@
-```prompt
+````prompt
 ---
-description: Correction loop for quick fixes (Quick-Spec → Review → Quick-Dev)
+description: 'Fix a story that failed review or has defects'
 ---
 
-Activate Compass agent and execute #fix-story:
+# lens-work.fix-story (Stub)
 
-1. Load agent: `_bmad/lens-work/agents/compass.agent.yaml`
-2. Execute `#fix-story` command to start correction loop
-3. Run: Quick-Spec → Review → Quick-Dev → Done
-
-Use `#think` before defining the fix scope or acceptance criteria.
-
-**Use When:**
-- Bug fix needed during development
-- Small correction that doesn't warrant full phase cycle
-- Post-review adjustments requested
-
-**Workflow:**
-1. Quick-Spec: Define the fix
-2. Review: Validate approach
-3. Quick-Dev: Implement and close
+> **This is a stub.** Load and execute the full prompt from the bmad.lens.release control repository.
 
 ```
+Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.fix-story.prompt.md
+```
+
+Source: [lens-work.fix-story.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.fix-story.prompt.md)
+````

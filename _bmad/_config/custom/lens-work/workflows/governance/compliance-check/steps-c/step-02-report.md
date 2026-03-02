@@ -154,7 +154,7 @@ Save this report?
 
 ## Audit Trail
 
-Log `compliance-evaluated` through Tracey with:
+Log `compliance-evaluated` via state-management skill with:
 - timestamp
 - artifact_path
 - artifact_type

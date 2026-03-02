@@ -3,6 +3,7 @@
 
 code: lens-work
 name: "LENS Workbench"
+version: "2.0.0"
 header: "Guided lifecycle router with git-orchestrated discipline"
 subheader: "Phase-aware orchestration for BMAD workflows with automated branch topology"
 default_selected: false
@@ -10,6 +11,11 @@ default_selected: false
 # Module Type
 type: standalone
 global: false
+
+# Lifecycle Contract (single source of truth for all lifecycle semantics)
+lifecycle:
+  file: lifecycle.yaml
+  schema_version: 2
 
 # Dependencies
 dependencies:
@@ -74,12 +80,12 @@ install_questions:
 
   lens_data_folder:
     prompt: "Path for lens data storage"
-    default: "{project-root}/_bmad/lens-work"
+    default: "bmad.lens.release/_bmad/lens-work"
     result: "{answer}"
 
   metadata_output_folder:
     prompt: "Path for BMAD metadata storage"
-    default: "{project-root}/_bmad-output"
+    default: "bmad.lens.release/_bmad-output"
     result: "{answer}"
 
   default_git_remote:
@@ -92,66 +98,31 @@ install_questions:
     default: github
     result: "{answer}"
 
-  github_repo:
-    prompt: "GitHub control repository URL (for stub prompt sync)"
-    optional: true
-    default: "https://github.com/crisweber2600/bmad.lens.release"
-    result: "{answer}"
-
-  github_branch:
-    prompt: "GitHub control repository branch"
-    optional: true
-    default: "release/2.0.0"
-    result: "{answer}"
-
-# Agent Roster
+# Agent Roster (v2: single @lens agent per TD-005)
 agents:
-  - id: compass
-    file: agents/compass.agent.yaml
-    name: Compass
-    role: Phase-aware lifecycle router
-  
-  - id: casey
-    file: agents/casey.agent.yaml
-    name: Casey
-    role: Git branch orchestrator
-  
-  - id: tracey
-    file: agents/tracey.agent.yaml
-    name: Tracey
-    role: State & recovery specialist
-  
-  - id: scout
-    file: agents/scout.agent.yaml
-    name: Scout
-    role: Bootstrap & discovery manager
-
-  - id: scribe
-    file: agents/scribe.agent.yaml
-    name: Cornelius
-    role: Constitutional governance guardian
+  - id: lens
+    file: agents/lens.agent.yaml
+    name: "@lens"
+    role: Unified lifecycle router with 5 skills (git-orchestration, state-management, discovery, constitution, checklist)
 
 # Workflow Categories
 workflow_categories:
   core:
     description: "Auto-triggered lifecycle operations"
     workflows:
-      - init-initiative    # DEPRECATED — use router/init-initiative instead
-      - start-workflow
-      - finish-workflow
-      - phase-lifecycle    # Consolidates: detect-layer, phase-transition, start-phase, finish-phase, open-large-review, open-final-pbr
+      - phase-lifecycle    # Consolidates: detect-layer, phase-transition, start-phase, finish-phase
+      - audience-promotion # v2: small→medium→large→base promotion gates
   
   router:
-    description: "Phase router commands (user-facing)"
+    description: "Phase router commands (user-facing, v2 named phases)"
     workflows:
-      - pre-plan
-      - spec
-      - plan
-      - tech-plan       # NEW: split from /spec — architecture phase
-      - story-gen       # NEW: split from /plan — story generation phase
-      - review
-      - dev
-      - init-initiative
+      - pre-plan        # /preplan (alias: /pre-plan) — Mary/Analyst, small audience
+      - spec            # /businessplan (alias: /spec) — John/PM + Sally/UX, small audience
+      - tech-plan       # /techplan (alias: /tech-plan) — Winston/Architect, small audience
+      - plan            # /devproposal (alias: /plan) — John/PM, medium audience
+      - sprintplan      # /sprintplan (alias: /review) — Bob/SM, large audience
+      - dev             # /dev — implementation loop
+      - init-initiative # /new-domain, /new-service, /new-feature
   
   background:
     description: "Auto-triggered lifecycle operations (never user-invoked)"
@@ -159,6 +130,7 @@ workflow_categories:
       - state-sync           # Validate state.yaml at workflow boundaries
       - event-log            # Append to event-log.jsonl on state mutations
       - branch-validate      # Verify branch topology matches expected patterns
+      - branch-preflight     # Check/switch branch before BMAD processes
       - constitution-check   # Run governance validation at workflow boundaries
       - checklist-update     # Update progressive checklist items
   
@@ -193,19 +165,21 @@ workflow_categories:
       - switch
       - check-repos
       - migrate-state
+      - migrate-lifecycle  # v1→v2 lifecycle contract migration
       - recreate-branches
 
   governance:
-    description: "Constitutional governance and compliance"
+    description: "Constitutional governance and compliance (v2: 4-level hierarchy)"
     workflows:
       - amendment-propagation
       - ancestry
-      - compliance-check
-      - constitution
+      - compliance-check     # v2: adds track permission + gate validation
+      - constitution         # v2: 4-level layer selection (org/domain/service/repo)
+      - constitution-check   # Background trigger — inline governance checks
       - cross-artifact-analysis
       - requirements-checklist
-      - resolve-constitution
-      - resolve-context
+      - resolve-constitution # v2: 4-level chain with track/gate accumulation
+      - resolve-context      # v2: 4-level chain with track_governance context
 
   includes:
     description: "Shared reference files included by workflows"
@@ -223,45 +197,45 @@ prompts:
   files:
     # System
     - lens-work.start.prompt.md
-    - lens-work.compass.prompt.md
-    # Phase Router (Compass)
-    - lens-work.pre-plan.prompt.md
+    - lens-work.compass.prompt.md        # Legacy alias — routes to @lens agent
+    # Phase Router (@lens)
+    - lens-work.preplan.prompt.md      # v2: renamed from pre-plan
     - lens-work.spec.prompt.md
     - lens-work.plan.prompt.md
-    - lens-work.tech-plan.prompt.md    # NEW: technical planning phase
+    - lens-work.techplan.prompt.md     # v2: renamed from tech-plan
     - lens-work.story-gen.prompt.md    # NEW: story generation phase
     - lens-work.review.prompt.md
     - lens-work.dev.prompt.md
-    # Initiative Commands (Compass)
+    # Initiative Commands (@lens)
     - lens-work.new-domain.prompt.md
     - lens-work.new-service.prompt.md
     - lens-work.new-feature.prompt.md
     - lens-work.fix-story.prompt.md
-    # State & Recovery (Tracey)
+    # State & Recovery (@lens/state-management)
     - lens-work.status.prompt.md
     - lens-work.resume.prompt.md
     - lens-work.sync.prompt.md
     - lens-work.fix.prompt.md
     - lens-work.override.prompt.md
     - lens-work.archive.prompt.md
-    # Context Commands (Compass)
+    # Context Commands (@lens)
     - lens-work.switch.prompt.md
     - lens-work.context.prompt.md
     - lens-work.focus.prompt.md
     - lens-work.lens.prompt.md
-    # Governance (Scribe)
+    # Governance (@lens/constitution)
     - lens-work.constitution.prompt.md
     - lens-work.compliance.prompt.md
     - lens-work.scribe.prompt.md
     - lens-work.ancestry.prompt.md
-    # Discovery (Scout)
+    # Discovery (@lens/discovery)
     - lens-work.domain-map.prompt.md
     - lens-work.impact-analysis.prompt.md
     # Help
     - lens-work.help.prompt.md         # NEW: full command reference with context
-    # Utility (Casey)
+    # Utility (@lens/git-orchestration)
     - lens-work.recreate-branches.prompt.md
-    # Bootstrap & Discovery (Scout)
+    # Bootstrap & Discovery (@lens/discovery)
     - lens-work.onboard.prompt.md
     - lens-work.bootstrap.prompt.md
     - lens-work.discover.prompt.md
@@ -289,10 +263,10 @@ templates:
   constitutions:
     directory: "templates/constitutions/"
     files:
+      - org-constitution.md          # v2: new top-level (4-level hierarchy)
       - domain-constitution.md
       - service-constitution.md
-      - microservice-constitution.md
-      - feature-constitution.md
+      - repo-constitution.md          # v2: replaces microservice/feature (4-level hierarchy)
   state:
     file: "templates/state-template.yaml"
     description: "Schema template for _bmad-output/lens-work/state.yaml"
@@ -320,14 +294,12 @@ docs:
     - configuration.md
     - examples.md
     - getting-started.md
-    - getting-started-old.md
     - installation-testing.md
     - migrations.md
     - operations.md
     - prerequisites.md
     - review-log.md
     - scope.md
-    - session-store.md
     - spec-checklist.md
     - testing.md
     - traceability.md
@@ -360,14 +332,23 @@ git:
   fetch_strategy: background
   fetch_ttl: 60
   branch_patterns:
-    domain: "{domain_prefix}"                                         # Domain-layer: single organizational branch
-    service: "{domain_prefix}-{service_prefix}"                       # Service-layer: single organizational branch
-    root: "{featureBranchRoot}"                                       # Feature root (final merge target)
-    audience_small: "{featureBranchRoot}-small"                       # Small review audience group
-    audience_medium: "{featureBranchRoot}-medium"                     # Medium review audience group
-    audience_large: "{featureBranchRoot}-large"                       # Large review audience group
-    phase: "{featureBranchRoot}-{audience}-p{phase_number}"           # Phase branch
-    workflow: "{featureBranchRoot}-{audience}-p{phase_number}-{workflow_name}"  # Workflow branch
+    # Organizational branches (unchanged)
+    domain: "{domain_prefix}"
+    service: "{domain_prefix}-{service_prefix}"
+    # Initiative branches (v2 named-phase patterns)
+    root: "{initiative_root}"
+    audience_small: "{initiative_root}-small"
+    audience_medium: "{initiative_root}-medium"
+    audience_large: "{initiative_root}-large"
+    phase: "{initiative_root}-{audience}-{phase_name}"
+    workflow: "{initiative_root}-{audience}-{phase_name}-{workflow_name}"
+  # Target project GitFlow patterns (defined in lifecycle.yaml)
+  target_project_patterns:
+    story: "feature/{jira-storyid}"
+    epic: "feature/{jira-epicid}"
+    integration: develop
+    release: "release/{version}"
+    production: main
 
 # Background Triggers (auto-triggered workflow dispatch)
 background_triggers:
@@ -391,3 +372,9 @@ background_triggers:
   error:
     - event-log            # Log error event
     - state-sync           # Mark error in state
+  bmad_process_start:
+    - branch-preflight     # Ensure correct branch before any BMAD command
+  command_invocation:
+    - branch-preflight     # Check branch for interactive commands
+  initiative_change:
+    - branch-preflight     # Switch branch when changing initiatives

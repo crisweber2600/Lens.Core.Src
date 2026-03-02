@@ -1,24 +1,15 @@
-```prompt
+````prompt
 ---
-description: Revert bootstrap to previous snapshot
+description: 'Rollback setup or state changes'
 ---
 
-Activate Scout agent and execute rollback:
+# lens-work.rollback (Stub)
 
-1. Load agent: `_bmad/lens-work/agents/scout.agent.yaml`
-2. Execute `rollback` command to revert setup
-3. Restore from snapshot taken during bootstrap/reconcile
-4. Update state to reflect rollback
-
-**Use When:**
-- Bootstrap caused issues
-- Reconcile introduced problems
-- Need to revert to known-good state
-
-**Requirements:**
-- Snapshot must exist from previous operation
-- Warning prompt before destructive action
-
-**Note:** Rollback deletes current TargetProjects state and restores snapshot.
+> **This is a stub.** Load and execute the full prompt from the bmad.lens.release control repository.
 
 ```
+Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.rollback.prompt.md
+```
+
+Source: [lens-work.rollback.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.rollback.prompt.md)
+````

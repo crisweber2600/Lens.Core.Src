@@ -1,18 +1,15 @@
-```prompt
+````prompt
 ---
-mode: 'agent'
-agent: 'bmad-agent-lens-work-compass'
-description: 'Set focus lens (domain/service/microservice/feature) for current work'
+description: 'Set focus to a specific initiative or lens'
 ---
 
-Set my focus lens.
+# lens-work.focus (Stub)
 
-$ARGUMENTS
-
-## Instructions
-1. If argument provided, set lens to that layer
-2. If no argument, show current lens and prompt for change
-3. Update initiative config with new layer if changed
-4. Options: domain, service, microservice, feature
+> **This is a stub.** Load and execute the full prompt from the bmad.lens.release control repository.
 
 ```
+Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.focus.prompt.md
+```
+
+Source: [lens-work.focus.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.focus.prompt.md)
+````

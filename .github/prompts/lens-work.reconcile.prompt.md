@@ -1,27 +1,15 @@
-```prompt
+````prompt
 ---
-description: Clone missing repos and fix checkout issues with snapshot support
+description: 'Reconcile repo inventory with service map'
 ---
 
-Activate Scout agent and execute reconcile:
+# lens-work.reconcile (Stub)
 
-1. Load agent: `_bmad/lens-work/agents/scout.agent.yaml`
-2. Execute `reconcile` command to fix repo state
-3. Clone missing repos, fix checkouts, snapshot before mutations
-4. Update inventory after changes
-
-**Prerequisites:**
-- `discover` must run first (needs repo-inventory.yaml)
-
-**Actions:**
-1. Snapshot current TargetProjects state
-2. Clone missing repos from service map
-3. Fix checkout issues (detached HEAD, wrong branch)
-4. Re-run discovery to update inventory
-
-**Safety:**
-- Always snapshots before mutations
-- Rollback available via `rollback` command
-- Never deletes repos
+> **This is a stub.** Load and execute the full prompt from the bmad.lens.release control repository.
 
 ```
+Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.reconcile.prompt.md
+```
+
+Source: [lens-work.reconcile.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.reconcile.prompt.md)
+````

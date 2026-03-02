@@ -3,8 +3,8 @@ name: 'step-08-report'
 description: 'Generate final validation report'
 
 validationReportOutput: '{validation_report_output}'
-agentValidationWorkflow: '{project-root}/_bmad/bmb/workflows/agent/steps-v/step-01-validate.md'
-workflowValidationWorkflow: '{project-root}/_bmad/bmb/workflows/workflow/steps-v/step-01-validate.md'
+agentValidationWorkflow: 'bmad.lens.release/_bmad/bmb/workflows/agent/steps-v/step-01-validate.md'
+workflowValidationWorkflow: 'bmad.lens.release/_bmad/bmb/workflows/workflow/steps-v/step-01-validate.md'
 ---
 
 # Step 8: Validation Report

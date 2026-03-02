@@ -1,7 +1,7 @@
 # Workflow Specification: ancestry
 
 **Module:** lens-work  
-**Agent:** Scribe  
+**Skill:** @lens/constitution  
 **Status:** Implemented
 
 ---
@@ -17,7 +17,7 @@ Display constitutional inheritance lineage and governance metadata for the activ
 ```yaml
 name: ancestry
 description: Display constitution inheritance chain with governance metadata
-agent: scribe
+agent: "@lens/constitution"
 category: governance
 ```
 

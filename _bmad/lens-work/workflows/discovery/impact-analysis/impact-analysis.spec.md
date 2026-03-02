@@ -1,7 +1,7 @@
 # Workflow Specification: impact-analysis
 
 **Module:** lens-work  
-**Agent:** Scout  
+**Skill:** @lens/discovery  
 **Status:** Implemented
 
 ---
@@ -17,7 +17,7 @@ Assess cross-boundary change impact across domains, services, and repositories.
 ```yaml
 name: impact-analysis
 description: Analyze cross-boundary impacts for proposed changes
-agent: scout
+agent: "@lens/discovery"
 category: discovery
 ```
 

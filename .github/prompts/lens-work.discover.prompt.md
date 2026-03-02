@@ -1,26 +1,15 @@
-```prompt
+````prompt
 ---
-description: Inventory TargetProjects vs service map (read-only, no mutations)
+description: 'Discover and scan all target projects'
 ---
 
-Activate Scout agent and execute discover:
+# lens-work.discover (Stub)
 
-1. Load agent: `_bmad/lens-work/agents/scout.agent.yaml`
-2. Execute `discover` command to inventory repos
-3. Compare expected (service map) vs actual (TargetProjects)
-4. Write inventory without making changes
-
-**Output:**
-```yaml
-repos:
-  matched:   # In both service map and TargetProjects
-  missing:   # In service map but not TargetProjects
-  extra:     # In TargetProjects but not service map
-```
-
-**Key Points:**
-- Read-only operation (no mutations)
-- Writes to `_bmad-output/lens-work/repo-inventory.yaml`
-- Must run before repo-document or repo-reconcile
+> **This is a stub.** Load and execute the full prompt from the bmad.lens.release control repository.
 
 ```
+Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.discover.prompt.md
+```
+
+Source: [lens-work.discover.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.discover.prompt.md)
+````

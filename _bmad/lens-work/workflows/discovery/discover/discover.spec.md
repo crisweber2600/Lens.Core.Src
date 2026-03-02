@@ -25,7 +25,7 @@
 name: discover
 description: Full brownfield discovery and documentation pipeline
 web_bundle: true
-installed_path: '{project-root}/_bmad/lens-work/workflows/discover'
+installed_path: 'bmad.lens.release/_bmad/lens-work/workflows/discover'
 ---
 ```
 
@@ -81,9 +81,9 @@ installed_path: '{project-root}/_bmad/lens-work/workflows/discover'
 
 ## Agent Integration
 
-### Primary Agent
+### Primary Skill
 
-Scout
+@lens/discovery
 
 ### Other Agents
 

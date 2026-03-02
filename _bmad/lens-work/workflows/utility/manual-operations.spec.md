@@ -2,18 +2,18 @@
 
 **Module:** lens-work
 **Category:** utility
-**Agent:** Tracey, Scout
+**Agent:** @lens/state-management, @lens/discovery
 **Status:** Specification
 
 ---
 
-## Tracey Workflows
+## State-Management Workflows
 
 ### Workflow: status (`ST`)
 
 **Purpose:** Display current state, blocks, topology, next steps.
 
-**Output:** Structured status report (see Tracey spec).
+**Output:** Structured status report (see state-management spec).
 
 ---
 
@@ -34,7 +34,7 @@
 **Purpose:** Fetch + re-validate + update state.
 
 **Sequence:**
-1. Casey: git fetch origin --prune
+1. git-orchestration: git fetch origin --prune
 2. Re-validate all merge gates
 3. Update state.yaml with current git state
 4. Report any discrepancies
@@ -80,7 +80,7 @@
 
 ---
 
-## Scout Workflows
+## Discovery Workflows
 
 ### Workflow: bootstrap
 
@@ -121,7 +121,7 @@
 
 ---
 
-## Compass Workflows
+## @lens Workflows
 
 ### Workflow: fix-story (`#fix-story`)
 

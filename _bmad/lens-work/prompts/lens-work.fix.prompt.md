@@ -1,25 +1,13 @@
-```prompt
 ---
-description: Reconstruct state from event log or git scan when state.yaml is corrupted
+name: fix-command
+description: Repair state (drift/gate/divergence) in 3 categories
 ---
 
-Activate Tracey agent and execute FIX:
+# Stub: S-036 /fix Command
 
-1. Load agent: `_bmad/lens-work/agents/tracey.agent.yaml`
-2. Execute `FIX` command to reconstruct state
-3. Try event-log.jsonl first, then git branch scan
-4. Write repaired state.yaml
-
-Use `#think` before choosing reconstruction strategy.
-
-**Use When:**
-- state.yaml missing or corrupted
-- State drift detected during sync
-- Manual intervention needed
-
-**Reconstruction Order:**
-1. Event log (authoritative history)
-2. Git branch topology scan
-3. Manual user input (last resort)
-
+This is a stub prompt. The actual implementation reads from:
 ```
+bmad.lens.release/.github/prompts/lens-work.fix.prompt.md
+```
+
+**Load from release repository when integrating full implementations.**

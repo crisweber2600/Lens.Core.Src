@@ -14,7 +14,7 @@ Load and validate analysis results that will drive documentation generation. Enr
 ### 1. Load Primary Analysis Data
 Based on preflight source detection:
 
-**From Scout Sidecar Cache:**
+**From Discovery Sidecar Cache:**
 ```yaml
 # _bmad/lens-work/_memory/scout-sidecar/analysis/{target}.yaml
 cache_data:
@@ -30,28 +30,12 @@ cache_data:
 ```
 
 **From Analysis Summary:**
-```python
-def parse_summary_report(path):
-    # Read markdown file
-    content = read_file(path)
-    
-    # Extract YAML frontmatter if present
-    frontmatter = extract_frontmatter(content)
-    
-    # Parse structured sections
-    sections = parse_markdown_sections(content)
-    
-    return {
-        "metadata": frontmatter,
-        "sections": sections,
-        "raw_content": content
-    }
-```
+
+Read the file at the summary report path. Extract the YAML frontmatter between the opening and closing `---` markers. Parse the markdown sections after the frontmatter into a sections map keyed by heading names. Combine into: `{ metadata: <frontmatter>, sections: <sections map>, raw_content: <full file text> }`.
 
 **From Session:**
-```python
-analysis_results = session.get("analysis_results")
-```
+
+Use the `analysis_results` produced earlier in the current session.
 
 ### 2. Validate Data Completeness
 Check required sections are present:
@@ -104,20 +88,15 @@ If available, merge into analysis inputs for richer documentation.
 ### 4. Load Previous Documentation (for merge mode)
 If overwrite_policy.mode == "merge":
 
-```python
-def load_existing_docs(target_path):
-    docs = {}
-    for doc_name in DOC_NAMES:
-        path = f"{target_path}/{doc_name}.md"
-        if exists(path):
-            docs[doc_name] = {
-                "content": read_file(path),
-                "sections": parse_sections(path),
-                "manual_sections": find_manual_sections(path),
-                "frontmatter": extract_frontmatter(path)
-            }
-    return docs
-```
+For each doc name in `[architecture, api-surface, data-model, integration-map, onboarding, migration-map]`:
+- Build path: `{target_path}/{doc_name}.md`
+- If file exists at that path:
+  - Read the full file content
+  - Extract YAML frontmatter (text between opening and closing `---` markers)
+  - Split into sections based on markdown headings (`## Heading`)
+  - Find manual sections: headings that do NOT have a `<!-- generated -->` comment marker
+  - Store as: `{ content, sections, manual_sections, frontmatter }` keyed by doc name
+- If file does not exist: skip it silently
 
 **Identify manual content to preserve:**
 ```yaml
@@ -264,13 +243,8 @@ doc_scope:
 ```
 
 ### 8. Store Loaded Data
-Cache for Step 2:
 
-**Session:**
-```python
-session.set("analysis_inputs", analysis_inputs)
-session.set("doc_scope", doc_scope)
-```
+Retain all loaded data (`analysis_inputs`, `doc_scope`) in your working context for Step 2 to use. Do not discard any loaded values between steps.
 
 ## Edge Cases and Failure Modes
 

@@ -1,8 +1,8 @@
 ---
 name: switch
 description: "Interactive context switcher with branch checkout and state sync"
-agent: compass
-trigger: "/switch via Compass"
+agent: "@lens"
+trigger: "/switch via @lens"
 category: utility
 ---
 
@@ -83,7 +83,7 @@ if state.active_initiative != null:
   initiative = load("_bmad-output/lens-work/initiatives/${state.active_initiative}.yaml")
   if initiative == null:
     error: "Initiative config not found: initiatives/${state.active_initiative}.yaml"
-    hint: "Run @tracey migrate or check initiatives/ directory."
+    hint: "Run @lens migrate or check initiatives/ directory."
     exit: 1
 else if state.initiative != null:
   # Legacy single-file format
@@ -136,7 +136,7 @@ output: |
   ├── Size: ${current_size}
   └── Branch: ${current_branch}
   ${if legacy_warning}
-  ⚠️  Legacy state format detected. Consider running @tracey migrate.
+  ⚠️  Legacy state format detected. Consider running @lens migrate.
   ${endif}
 ```
 
@@ -172,7 +172,7 @@ else:
   if sync_choice == "1":
     # Invoke sync-and-select-branch workflow
     invoke_workflow:
-      path: "{project-root}/_bmad/lens-work/workflows/utility/sync-and-select-branch/workflow.md"
+      path: "bmad.lens.release/_bmad/lens-work/workflows/utility/sync-and-select-branch/workflow.md"
       params:
         initiative_id: ${initiative.id}
         target_repo: ${initiative.target_repos[0]}  # Primary repo
@@ -287,12 +287,12 @@ if selected.id == initiative.id:
   output: "Already on this initiative. No change needed."
   exit: 0
 
-# Casey: checkout the selected initiative's active branch
+# git-orchestration: checkout the selected initiative's active branch
 output: "🔀 Switching to initiative: ${selected.name}..."
 ```
 
 ```bash
-# Casey integration: branch-status check
+# git-orchestration integration: branch-status check
 target_branch="${selected.active_branch}"
 
 # Fetch latest
@@ -408,21 +408,21 @@ goto: Step 7
 ```yaml
 # Show available phases with current position
 phase_map = {
-  "0": { code: "p0", name: "Pre-Plan",       description: "Discovery & initial analysis" },
-  "1": { code: "p1", name: "Analysis",        description: "Deep analysis & product brief" },
-  "2": { code: "p2", name: "Planning",        description: "PRD & UX design" },
-  "3": { code: "p3", name: "Solutioning",     description: "Architecture & epics/stories" },
-  "4": { code: "p4", name: "Implementation",  description: "Sprint planning & development" }
+  "preplan":      { name: "PrePlan",       description: "Discovery & initial analysis",         audience: "small" },
+  "businessplan": { name: "BusinessPlan",   description: "PRD & UX design",                     audience: "small" },
+  "techplan":     { name: "TechPlan",       description: "Architecture & epics/stories",         audience: "small" },
+  "devproposal":  { name: "DevProposal",    description: "Adversarial review & dev proposal",    audience: "medium" },
+  "sprintplan":   { name: "SprintPlan",     description: "Sprint planning & development",        audience: "large" }
 }
 
-current_phase_num = extract_phase_number(current_phase)
+current_phase_key = current_phase
 
 output: |
   📐 Switch Phase — Current: ${current_phase} (${current_phase_name})
   
   Available phases:
-  ${for num, phase in phase_map}
-  ${num == current_phase_num ? "▶" : " "} [${num}] P${num} — ${phase.name}
+  ${for key, phase in phase_map}
+  ${key == current_phase_key ? "▶" : " "} [${key}] ${phase.name} (${phase.audience})
        ${phase.description}
   ${endfor}
   
@@ -439,22 +439,22 @@ if phase_choice == "C" or phase_choice == "c" or phase_choice == null:
 selected_phase = phase_map[phase_choice]
 
 if selected_phase == null:
-  output: "Invalid choice. Please select 0-4 or C to cancel."
+  output: "Invalid choice. Please select a valid phase name or C to cancel."
   goto: Step 5
 
-if phase_choice == current_phase_num:
-  output: "Already on P${phase_choice} (${selected_phase.name}). No change needed."
+if phase_choice == current_phase_key:
+  output: "Already on ${selected_phase.name}. No change needed."
   exit: 0
 
 # Determine target branch for selected phase
-# Branch pattern: {featureBranchRoot}-{audience}-p{phaseNumber}
-target_branch = "${initiative.featureBranchRoot}-${current_size}-p${phase_choice}"
+# Branch pattern: {featureBranchRoot}-{audience}-{phaseName}
+target_branch = "${initiative.featureBranchRoot}-${selected_phase.audience}-${phase_choice}"
 
-output: "🔀 Switching to phase P${phase_choice} (${selected_phase.name})..."
+output: "🔀 Switching to phase ${selected_phase.name} (${selected_phase.audience})..."
 ```
 
 ```bash
-# Casey integration: checkout-branch or create-branch-if-missing
+# git-orchestration integration: checkout-branch or create-branch-if-missing
 target_branch="${target_branch}"
 
 git fetch origin
@@ -493,16 +493,16 @@ fi
 
 ```yaml
 # Update state with new phase
-state.current.phase = "P${phase_choice}"
+state.current.phase = phase_choice
 state.current.phase_name = selected_phase.name
 state.current.workflow = null
 state.current.workflow_status = null
 
 # Update initiative config
-initiative.current_phase = "P${phase_choice}"
+initiative.current_phase = phase_choice
 initiative.branches.active = target_branch
 
-output: "✅ Phase switched: ${current_phase} → P${phase_choice} (${selected_phase.name})"
+output: "✅ Phase switched: ${current_phase} → ${selected_phase.name}"
 
 # Continue to Step 7 for state sync
 goto: Step 7
@@ -565,7 +565,7 @@ output: "🔀 Switching to ${selected_size.code} size..."
 ```
 
 ```bash
-# Casey integration: checkout-branch or create-branch
+# git-orchestration integration: checkout-branch or create-branch
 target_branch="${target_branch}"
 size_branch="${size_branch}"
 
@@ -661,7 +661,7 @@ if initiative_modified:
 event = {
   ts: now_iso(),
   event: "context_switch",
-  agent: "compass",
+  agent: "lens",
   workflow: "switch",
   details: {
     type: sub_command or menu_choice_label,
@@ -733,14 +733,14 @@ output: |
 |-------|----------|
 | Uncommitted changes | Offer stash or abort |
 | State file missing | Prompt to create initiative |
-| Initiative config not found | Suggest @tracey migrate or check initiatives/ |
+| Initiative config not found | Suggest @lens migrate or check initiatives/ |
 | Branch not found locally | Attempt fetch from remote |
 | Branch not found on remote | Create from parent (size or base branch) |
 | Size branch missing | Create from base branch |
 | Phase branch missing | Create from size branch |
 | Git fetch/push failure | Check remote connectivity, retry |
 | Invalid menu selection | Re-display menu with guidance |
-| Legacy state format | Warn and suggest @tracey migrate |
+| Legacy state format | Warn and suggest @lens migrate |
 
 ---
 

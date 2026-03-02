@@ -1,8 +1,8 @@
 ---
 name: archive
 description: Archive completed initiative, clean state
-agent: tracey
-trigger: "@tracey ARCHIVE"
+agent: "@lens/state-management"
+trigger: "@lens ARCHIVE"
 category: utility
 ---
 

@@ -1,19 +1,15 @@
-```prompt
+````prompt
 ---
-mode: 'agent'
-agent: 'bmad-agent-lens-work-scribe'
-description: 'Check constitutional compliance of an artifact or initiative'
+description: 'Run compliance checks against constitution'
 ---
 
-Run constitutional compliance check.
+# lens-work.compliance (Stub)
 
-$ARGUMENTS
-
-## Instructions
-1. Load the Scribe agent (Cornelius)
-2. Execute the /compliance command
-3. Resolve applicable constitutions via governance/resolve-constitution/workflow.md
-4. Evaluate artifact against resolved constitutional rules
-5. Report pass/warn/fail counts with specific article citations
+> **This is a stub.** Load and execute the full prompt from the bmad.lens.release control repository.
 
 ```
+Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.compliance.prompt.md
+```
+
+Source: [lens-work.compliance.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.compliance.prompt.md)
+````

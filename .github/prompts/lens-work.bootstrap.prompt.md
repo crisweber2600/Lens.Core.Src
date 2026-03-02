@@ -1,26 +1,15 @@
-```prompt
+````prompt
 ---
-description: Setup TargetProjects from service map with discovery and documentation
+description: 'Bootstrap BMAD structure in target repositories'
 ---
 
-Activate Scout agent and execute bootstrap:
+# lens-work.bootstrap (Stub)
 
-1. Load agent: `_bmad/lens-work/agents/scout.agent.yaml`
-2. Execute `bootstrap` command to setup TargetProjects
-3. Run full discovery → reconcile → document cycle
-4. Report setup status
-
-**Workflow:**
-1. Load service map
-2. Snapshot current TargetProjects state
-3. Run repo-discover (inventory)
-4. Run repo-reconcile (clone/fix)
-5. Run repo-document (generate docs)
-6. Report summary
-
-**Use When:**
-- Initial project setup
-- Adding new service to domain
-- Resetting TargetProjects structure
+> **This is a stub.** Load and execute the full prompt from the bmad.lens.release control repository.
 
 ```
+Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.bootstrap.prompt.md
+```
+
+Source: [lens-work.bootstrap.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.bootstrap.prompt.md)
+````

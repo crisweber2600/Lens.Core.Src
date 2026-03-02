@@ -1,7 +1,7 @@
 ---
 name: resolve-context
 description: Resolve constitutional context for current LENS layer
-agent: scribe
+agent: "@lens/constitution"
 trigger: internal (not user-facing)
 category: governance
 phase: N/A
@@ -13,7 +13,7 @@ Internal workflow to resolve constitutional governance for the current LENS cont
 
 ## Role
 
-You are **Scribe (Cornelius)**, resolving constitutional context for mandatory workflow injection.
+You are the **constitution skill**, resolving constitutional context for mandatory workflow injection.
 
 ---
 
@@ -22,8 +22,8 @@ You are **Scribe (Cornelius)**, resolving constitutional context for mandatory w
 This workflow is invoked as a **required injection step** by lifecycle routers before running phase logic and by governance workflows that need resolved rules.
 
 **Invoked by:**
-- Compass routers: `/pre-plan`, `/spec`, `/plan`, `/review`, `/dev`
-- Scribe agent (direct governance operations)
+- @lens routers: `/preplan`, `/businessplan`, `/techplan`, `/devproposal`, `/sprintplan`, `/dev`
+- Constitution skill (direct governance operations)
 - Compliance-check workflow (to get applicable rules)
 - Ancestry workflow (to trace lineage)
 - Any workflow that needs constitutional context
@@ -57,14 +57,14 @@ constitutional_context:
 
 ## Step 3: Build Inheritance Chain
 
-Walk the layer hierarchy from Domain to the current layer:
+Walk the layer hierarchy from Org to the current layer (per lifecycle.yaml `constitution.resolution_order: [org, domain, service, repo]`):
 
 ```
 Layer hierarchy:
-- Domain → (root)
-- Service → Domain
-- Microservice → Service → Domain
-- Feature → Microservice → Service → Domain
+- Org → (root)
+- Domain → Org
+- Service → Domain → Org
+- Repo → Service → Domain → Org
 ```
 
 **For each layer in the hierarchy:**
@@ -80,13 +80,16 @@ Layer hierarchy:
 
 ## Step 4: Merge Articles
 
-**Order:** Domain articles first, then Service, then Microservice, then Feature.
+**Order:** Org articles first, then Domain, then Service, then Repo (parent-first).
 
 ```
 all_articles = []
 sources = []
+permitted_tracks = null  # Intersection across chain
+required_gates = set()   # Union across chain
+additional_participants = {}  # Merge across chain
 
-FOR constitution IN chain (Domain-first):
+FOR constitution IN chain (Org-first):
   sources.push({
     name: constitution.name,
     layer: constitution.layer,
@@ -100,6 +103,20 @@ FOR constitution IN chain (Domain-first):
       source: constitution.name,
       source_layer: constitution.layer
     })
+
+  # Track governance (additive inheritance)
+  IF constitution.permitted_tracks:
+    IF permitted_tracks == null:
+      permitted_tracks = set(constitution.permitted_tracks)
+    ELSE:
+      permitted_tracks = permitted_tracks.intersection(constitution.permitted_tracks)
+
+  IF constitution.required_gates:
+    required_gates = required_gates.union(constitution.required_gates)
+
+  IF constitution.additional_review_participants:
+    FOR review_type, participants IN constitution.additional_review_participants:
+      additional_participants[review_type] = additional_participants.get(review_type, []) + participants
 ```
 
 ---
@@ -121,16 +138,22 @@ constitutional_context:
         path: {file_path}
 
   constitution_chain:
+    - {org_constitution_path}
     - {domain_constitution_path}
     - {service_constitution_path}
-    - {microservice_constitution_path}
-    - {feature_constitution_path}
+    - {repo_constitution_path}
 
   constitution_article_count: {all_articles.length}
 
   constitution_last_amended: {most_recent_date from all constitutions}
 
   constitution_depth: {chain.length}
+
+  # Track & gate governance (accumulated across chain)
+  track_governance:
+    permitted_tracks: {permitted_tracks or null}  # Intersection — most restrictive wins
+    required_gates: {list(required_gates) or []}  # Union — all additions accumulate
+    additional_review_participants: {additional_participants or {}}  # Additive merge
 ```
 
 ---

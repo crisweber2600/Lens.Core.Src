@@ -1,0 +1,40 @@
+# LENS Workbench -- Governance Repo Setup
+# Control-repo-specific configuration for the governance repository.
+#
+# This file lives in _bmad-output/ because it varies per control repo.
+# The module (module.yaml / lifecycle.yaml) reads this file at runtime
+# to resolve governance paths instead of hardcoding them.
+#
+# To set up: copy governance-setup.example.yaml to governance-setup.yaml
+# and fill in your repo details.
+
+# Governance repository coordinates
+repo:
+  name: bmad.lens.governance
+  remote_url: https://github.com/crisweber2600/bmad.lens.governance
+  local_path: TargetProjects/lens/lens-governance
+  default_branch: main
+  role: governance
+
+# Artifacts managed in the governance repo
+artifacts:
+  constitutions_dir: constitutions/
+  roster_dir: roster/
+  policies_dir: policies/
+  repo_inventory: repo-inventory.yaml
+
+# Branch strategy for governance changes
+branch_strategy:
+  pattern: "universal/{slug}"
+  merge_target: main
+  pr_required: true
+  write_roles:
+    - Tech Lead
+    - Architect
+
+# Sync settings
+sync:
+  # How often (seconds) to pull the governance repo in the background.
+  # A marker file at {local_path}/.last-governance-pull records the
+  # last successful pull timestamp.
+  ttl: 900

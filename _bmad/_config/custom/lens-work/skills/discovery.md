@@ -1,14 +1,14 @@
 # Skill: discovery
 
 **Module:** lens-work
-**Owner:** Scout agent (delegated via Compass)
+**Skill of:** `@lens` agent
 **Type:** Internal delegation skill
 
 ---
 
 ## Purpose
 
-Handles repository scanning, documentation generation, bootstrapping, and user onboarding. Formalizes the Scout agent's API contract.
+Handles repository scanning, documentation generation, bootstrapping, and user onboarding. Formalizes the discovery skill's API contract.
 
 ## Responsibilities
 

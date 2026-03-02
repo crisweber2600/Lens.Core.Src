@@ -22,12 +22,12 @@ The cross-artifact-analysis workflow supports team-specific customization throug
 ```yaml
 # custom_artifact_map
 custom_artifact_map:
-  p2:  # Planning phase
+  businessplan:  # BusinessPlan phase
     - product-brief.md
     - prd.md
     - technical-constraints.md  # Custom artifact
     
-  p3:  # Solutioning phase
+  techplan:  # TechPlan phase
     - product-brief.md
     - prd.md
     - architecture.md
@@ -177,7 +177,7 @@ custom_categories:
 
 # Custom artifacts for Planning phase
 custom_artifact_map:
-  p2:
+  businessplan:
     - product-brief.md
     - prd.md
     - security-requirements.md

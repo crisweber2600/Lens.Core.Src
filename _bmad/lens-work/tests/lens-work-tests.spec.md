@@ -92,7 +92,7 @@ created: 2026-02-05
 |---|------|-----------------|
 | 2.1.1 | Lists all initiatives from `initiatives/*.yaml` and `initiatives/*/Domain.yaml` | Menu shows all initiative files with name, ID, layer |
 | 2.1.2 | Updates `state.yaml` `active_initiative` | After switch, `active_initiative` matches selected ID |
-| 2.1.3 | Casey checks out correct branch | `git branch --show-current` matches expected flat branch name pattern |
+| 2.1.3 | @lens git-orchestration checks out correct branch | `git branch --show-current` matches expected flat branch name pattern |
 | 2.1.4 | Handles non-existent initiative gracefully | Error: "Initiative '{id}' not found" with available options listed |
 | 2.1.5 | Switching to already-active initiative is a no-op | Message: "Already on initiative {id}" |
 
@@ -104,10 +104,10 @@ created: 2026-02-05
 
 | # | Test | Expected Result |
 |---|------|-----------------|
-| 2.2.1 | Creates phase branch via Casey if missing | New branch created matching `{featureBranchRoot}-{audience}-p{N}` |
-| 2.2.2 | Validates phase ordering (can't skip phases) | Attempting to skip from p1 to p3 shows gate violation error |
-| 2.2.3 | Updates `state.yaml` `current.phase` | Phase field updated to target phase number |
-| 2.2.4 | Branch pattern matches `{featureBranchRoot}-{audience}-p{N}` | Regex validation passes for created branch name |
+| 2.2.1 | Creates phase branch via @lens git-orchestration if missing | New branch created matching `{initiative_root}-{audience}-{phaseName}` |
+| 2.2.2 | Validates phase ordering (can't skip phases) | Attempting to skip from preplan to techplan shows gate violation error |
+| 2.2.3 | Updates `state.yaml` `current.phase` | Phase field updated to target canonical phase name |
+| 2.2.4 | Branch pattern matches `{initiative_root}-{audience}-{phaseName}` | Regex validation passes for created branch name |
 | 2.2.5 | Cannot switch to phase without passing previous gate | Gate check blocks advancement; shows required artifacts |
 | 2.2.6 | Switching to current phase is a no-op | Message: "Already on phase {N}" |
 
@@ -137,14 +137,14 @@ created: 2026-02-05
 | # | Test | Expected Result |
 |---|------|-----------------|
 | 3.1.1 | Generates valid initiative ID (feature) | Format: `{sanitized-name}-{6-random-chars}`, no spaces/special chars |
-| 3.1.2 | Creates root branch (feature) | `{featureBranchRoot}` branch exists and pushed |
-| 3.1.3 | Creates small audience branch (feature) | `{featureBranchRoot}-small` branch exists and pushed |
-| 3.1.4 | Creates medium audience branch (feature) | `{featureBranchRoot}-medium` branch exists and pushed |
-| 3.1.5 | Creates large audience branch (feature) | `{featureBranchRoot}-large` branch exists and pushed |
-| 3.1.6 | No phase branches created at init (feature) | No `-small-p1` or other phase branches exist after init |
-| 3.1.7 | Writes initiative config with required fields (feature) | `initiatives/{id}.yaml` contains: `id`, `name`, `layer`, `target_repos`, `featureBranchRoot`, `branches`, `review_audience_map`, `gates`, `blocks` |
+| 3.1.2 | Creates root branch (feature) | `{initiative_root}` branch exists and pushed |
+| 3.1.3 | Creates small audience branch (feature) | `{initiative_root}-small` branch exists and pushed |
+| 3.1.4 | Creates medium audience branch (feature) | `{initiative_root}-medium` branch exists and pushed |
+| 3.1.5 | Creates large audience branch (feature) | `{initiative_root}-large` branch exists and pushed |
+| 3.1.6 | No phase branches created at init (feature) | No `-small-preplan` or other phase branches exist after init |
+| 3.1.7 | Writes initiative config with required fields (feature) | `initiatives/{id}.yaml` contains: `id`, `name`, `layer`, `target_repos`, `initiative_root`, `branches`, `review_audience_map`, `gates`, `blocks` |
 | 3.1.8 | Logs init event to `event-log.jsonl` | Last entry has `event: init-initiative`, matching `initiative_id` |
-| 3.1.9 | Returns control to Compass | After init, Compass menu is displayed |
+| 3.1.9 | Returns control to @lens | After init, @lens menu is displayed |
 | 3.1.10 | Duplicate initiative name generates unique ID (feature) | Two inits with same name produce different IDs (random suffix differs) |
 | 3.1.11 | Domain-layer uses `domain_prefix` as initiative ID | `initiative_id` equals `domain_prefix` (no random suffix) |
 | 3.1.12 | Domain-layer creates only `{domain_prefix}` branch | Only one branch created and pushed — no audience/phase branches |
@@ -181,36 +181,36 @@ created: 2026-02-05
 **Category:** Workflow / Router  
 **Automation:** Agent-driven with state file verification
 
-#### 4.1.1 Pre-Plan Router (`/pre-plan`)
+#### 4.1.1 PrePlan Router (`/preplan`)
 
 | # | Test | Expected Result |
-|---|------|-----------------|
+|---|------|------------------|
 | 4.1.1.1 | Loads two-file state | Both `state.yaml` and active initiative file read |
-| 4.1.1.2 | Gate check allows entry at p1 | Pre-plan available when on phase 1 |
-| 4.1.1.3 | Auto-creates phase branch if missing | Branch `{featureBranchRoot}-{audience}-p1` created if not present |
+| 4.1.1.2 | Gate check allows entry at preplan | PrePlan available when on preplan phase |
+| 4.1.1.3 | Auto-creates phase branch if missing | Branch `{initiative_root}-small-preplan` created if not present |
 | 4.1.1.4 | State updates persist after execution | `state.yaml` updated with workflow progress |
 | 4.1.1.5 | Git discipline validates clean state | Dirty working directory blocks workflow start |
 | 4.1.1.6 | Constitutional context is injected | `constitutional_context` is resolved and available before analysis workflow calls |
 
-#### 4.1.2 Spec Router (`/spec`)
+#### 4.1.2 BusinessPlan Router (`/businessplan`)
 
 | # | Test | Expected Result |
-|---|------|-----------------|
+|---|------|------------------|
 | 4.1.2.1 | Loads two-file state | Both files read successfully |
-| 4.1.2.2 | Gate check requires p1 completion | Cannot enter spec without pre-plan artifacts |
-| 4.1.2.3 | Creates p2 branch via Casey | Branch `{featureBranchRoot}-{audience}-p2` created |
-| 4.1.2.4 | State updates persist | Phase advanced to p2 in state |
+| 4.1.2.2 | Gate check requires preplan completion | Cannot enter businessplan without preplan artifacts |
+| 4.1.2.3 | Creates businessplan branch via @lens git-orchestration | Branch `{initiative_root}-small-businessplan` created |
+| 4.1.2.4 | State updates persist | Phase advanced to businessplan in state |
 | 4.1.2.5 | Git discipline validates clean state | Blocks on dirty working directory |
 | 4.1.2.6 | Constitutional context is injected | `constitutional_context` is resolved before PRD/UX/architecture workflows run |
 
-#### 4.1.3 Plan Router (`/plan`)
+#### 4.1.3 TechPlan Router (`/techplan`)
 
 | # | Test | Expected Result |
-|---|------|-----------------|
+|---|------|------------------|
 | 4.1.3.1 | Loads two-file state | Both files read successfully |
-| 4.1.3.2 | Gate check requires p2 completion | Cannot enter plan without spec artifacts |
-| 4.1.3.3 | Creates p3 branch via Casey | Branch `{featureBranchRoot}-{audience}-p3` created |
-| 4.1.3.4 | State updates persist | Phase advanced to p3 in state |
+| 4.1.3.2 | Gate check requires businessplan completion | Cannot enter techplan without businessplan artifacts |
+| 4.1.3.3 | Creates techplan branch via @lens git-orchestration | Branch `{initiative_root}-small-techplan` created |
+| 4.1.3.4 | State updates persist | Phase advanced to techplan in state |
 | 4.1.3.5 | Git discipline validates clean state | Blocks on dirty working directory |
 | 4.1.3.6 | Constitutional context is injected | `constitutional_context` is resolved before epics/stories/readiness workflows run |
 | 4.1.3.7 | Epic adversarial stress gate runs | `bmm.check-implementation-readiness` executes after epics generation and blocks on fail |
@@ -221,7 +221,7 @@ created: 2026-02-05
 | # | Test | Expected Result |
 |---|------|-----------------|
 | 4.1.4.1 | Loads two-file state | Both files read successfully |
-| 4.1.4.2 | Gate check requires p3 completion | Cannot enter review without plan artifacts |
+| 4.1.4.2 | Gate check requires techplan completion | Cannot enter review without plan artifacts |
 | 4.1.4.3 | Creates review branch if needed | Branch created following naming convention |
 | 4.1.4.4 | State updates persist | Review status tracked in state |
 | 4.1.4.5 | Git discipline validates clean state | Blocks on dirty working directory |
@@ -234,13 +234,13 @@ created: 2026-02-05
 |---|------|-----------------|
 | 4.1.5.1 | Loads two-file state | Both files read successfully |
 | 4.1.5.2 | Gate check requires review completion | Cannot enter dev without review pass |
-| 4.1.5.3 | Creates p4 branch via Casey | Branch `{featureBranchRoot}-{audience}-p4` created |
-| 4.1.5.4 | State updates persist | Phase advanced to p4 in state |
+| 4.1.5.3 | Creates sprintplan branch via @lens git-orchestration | Branch `{initiative_root}-large-sprintplan` created |
+| 4.1.5.4 | State updates persist | Phase advanced to sprintplan in state |
 | 4.1.5.5 | Git discipline validates clean state | Blocks on dirty working directory |
 | 4.1.5.6 | Constitutional context is injected | `constitutional_context` is resolved before implementation guidance and review loops |
-| 4.1.5.7 | Dev story compliance gate blocks FAILs | `scribe.compliance-check` on dev story exits `/dev` on any FAIL |
+| 4.1.5.7 | Dev story compliance gate blocks FAILs | `@lens.constitution.compliance-check` on dev story exits `/dev` on any FAIL |
 | 4.1.5.8 | Adversarial code review is mandatory | `bmm.code-review` executes when implementation is signaled complete |
-| 4.1.5.9 | Code-review compliance gate blocks FAILs | `scribe.compliance-check` on code review report exits `/dev` on any FAIL |
+| 4.1.5.9 | Code-review compliance gate blocks FAILs | `@lens.constitution.compliance-check` on code review report exits `/dev` on any FAIL |
 | 4.1.5.10 | Party-mode teardown runs after code review | `core.party-mode` executes and writes `party-mode-review-${story_id}.md` |
 | 4.1.5.11 | Epic completion is detected in `/dev` | Current story resolves to parent epic and epic completion is evaluated before workflow exit |
 | 4.1.5.12 | Epic adversarial review runs on epic completion | `bmm.check-implementation-readiness` executes for completed epic and blocks `/dev` on fail |
@@ -268,12 +268,12 @@ created: 2026-02-05
 
 ---
 
-## 5. Agent Integration Tests
+## 5. @lens Skill Integration Tests
 
-### 5.1 Compass Agent
+### 5.1 @lens Core (Routing & Navigation)
 
 **Priority:** P0  
-**Category:** Agent / Compass  
+**Category:** Agent / @lens Core  
 **Automation:** Agent-driven (interactive command testing)
 
 | # | Test | Expected Result |
@@ -287,14 +287,14 @@ created: 2026-02-05
 | 5.1.7 | `/status` delegates to status workflow | Status workflow executed, output rendered |
 | 5.1.8 | `/resume` delegates to resume workflow | Resume workflow restores previous context |
 | 5.1.9 | Unknown command shows help | Unrecognized input triggers help/menu display |
-| 5.1.10 | Phase commands route correctly | `/pre-plan`, `/spec`, `/plan`, `/review`, `/dev` each trigger correct router |
+| 5.1.10 | Phase commands route correctly | `/preplan`, `/businessplan`, `/techplan`, `/devproposal`, `/sprintplan`, `/dev` each trigger correct router |
 | 5.1.11 | Initiative commands route correctly | `/new-domain`, `/new-service`, `/new-feature` trigger init with correct layer |
 | 5.1.12 | `/start` delegates to start workflow | Start workflow triggered for current context |
 
-### 5.2 Casey Agent
+### 5.2 git-orchestration Skill
 
 **Priority:** P0  
-**Category:** Agent / Casey  
+**Category:** Skill / git-orchestration  
 **Automation:** Git-verifiable
 
 | # | Test | Expected Result |
@@ -304,14 +304,14 @@ created: 2026-02-05
 | 5.2.3 | `create-branch-if-missing` sets upstream | New branch tracks remote after creation |
 | 5.2.4 | `fetch-and-checkout` fetches then checks out | Remote fetched first, then local checkout |
 | 5.2.5 | `show-branch` displays tracking info | Branch name, remote tracking, commit info shown |
-| 5.2.6 | Branch naming follows convention | All created branches match `{featureBranchRoot}[-{audience}[-p{N}]]` pattern |
+| 5.2.6 | Branch naming follows convention | All created branches match `{initiative_root}[-{audience}[-{phaseName}]]` pattern |
 | 5.2.7 | Handles detached HEAD state | Clear error with recovery instructions |
 | 5.2.8 | Handles merge conflicts | Conflict detected, user prompted for resolution |
 
-### 5.3 Scout Agent
+### 5.3 discovery Skill
 
 **Priority:** P1  
-**Category:** Agent / Scout  
+**Category:** Skill / discovery  
 **Automation:** Mixed
 
 | # | Test | Expected Result |
@@ -325,10 +325,10 @@ created: 2026-02-05
 | 5.3.7 | Repo-status shows all repo states | Summary table of all repos with git status |
 | 5.3.8 | Repo-reconcile fixes drift | Domain/service assignments corrected |
 
-### 5.4 Tracey Agent
+### 5.4 state-management Skill
 
 **Priority:** P1  
-**Category:** Agent / Tracey  
+**Category:** Skill / state-management  
 **Automation:** State file verification
 
 | # | Test | Expected Result |
@@ -340,6 +340,32 @@ created: 2026-02-05
 | 5.4.5 | State validation detects corruption | Malformed YAML reported with field-level details |
 | 5.4.6 | Fix-state repairs mismatches | Branch/state inconsistencies detected and corrected |
 | 5.4.7 | Concurrent state access handled | File locking or last-write-wins documented and consistent |
+
+### 5.5 constitution Skill
+
+**Priority:** P1  
+**Category:** Skill / constitution  
+**Automation:** Agent-driven
+
+| # | Test | Expected Result |
+|---|------|-----------------|
+| 5.5.1 | 4-level hierarchy resolution works | org → domain → service → repo constitution chain resolves correctly |
+| 5.5.2 | Additive merge applies union semantics | Lower-level rules add to but never remove parent rules |
+| 5.5.3 | Compliance check detects violations | FAIL result blocks gate progression |
+| 5.5.4 | Track validation enforces allowed tracks | Invalid track rejected with allowed values listed |
+| 5.5.5 | Gate validation checks artifacts and reviewers | Missing artifacts or reviewers block promotion |
+
+### 5.6 checklist Skill
+
+**Priority:** P1  
+**Category:** Skill / checklist  
+**Automation:** State file verification
+
+| # | Test | Expected Result |
+|---|------|-----------------|
+| 5.6.1 | Progressive checklist updates per phase | Checklist items added as phases complete |
+| 5.6.2 | Gate readiness accurately reported | Checklist reflects actual artifact and review status |
+| 5.6.3 | Expandable detail provides artifact status | Each checklist item shows file existence and validation result |
 
 ---
 
@@ -414,7 +440,7 @@ created: 2026-02-05
 | 7.5 | Final step creates targeted commit | init-initiative, finish-workflow | Commit message includes initiative_id, phase, and workflow context |
 | 7.6 | Final step pushes to remote | init-initiative, finish-workflow | `git push` executed after commit |
 | 7.7 | Commit message format consistent | All committing workflows | Format: `lens-work: {workflow} [{initiative_id}] {description}` |
-| 7.8 | Branch name parsed correctly (service/feature) | finish-workflow | Initiative ID, audience, phase extracted from `{featureBranchRoot}-{audience}-p{N}-{workflow}` |
+| 7.8 | Branch name parsed correctly (service/feature) | finish-workflow | Initiative ID, audience, phase extracted from `{initiative_root}-{audience}-{phaseName}-{workflow}` |
 | 7.9 | Branch name parsed correctly (domain-layer) | init-initiative (domain) | Domain prefix extracted from `{domain_prefix}` (no subpath) |
 | 7.10 | Non-mutating workflows skip commit | repo-discover, repo-document, repo-status | No git commits created by read-only workflows |
 | 7.11 | Utility workflows commit state changes | bootstrap, reconcile | State file changes committed with context |
@@ -430,8 +456,8 @@ created: 2026-02-05
 | # | Test | Expected Result |
 |---|------|-----------------|
 | 8.1 | All required directories exist | `agents/`, `workflows/`, `prompts/`, `docs/`, `tests/` present |
-| 8.2 | All agent files present | `compass.agent.yaml`, `casey.agent.yaml`, `tracey.agent.yaml`, `scout.agent.yaml` |
-| 8.3 | All agent spec files present | `compass.spec.md`, `casey.spec.md`, `tracey.spec.md`, `scout.spec.md` |
+| 8.2 | Agent configuration present | `lens.agent.yaml` exists with 5 skill definitions |
+| 8.3 | All skill files present | `skills/git-orchestration.md`, `skills/state-management.md`, `skills/discovery.md`, `skills/constitution.md`, `skills/checklist.md` |
 | 8.4 | All workflow categories present | `core/`, `router/`, `discovery/`, `utility/` under `workflows/` |
 | 8.5 | `module.yaml` is valid YAML | Parses without error; required fields present |
 | 8.6 | All agents in `module.yaml` have matching files | Each agent `file` reference resolves to existing file |
@@ -494,12 +520,12 @@ created: 2026-02-05
 | 2. Branch Switching | 10 | 4 | 0 | 0 | 14 |
 | 3. Initiative Creation | 13 | 9 | 0 | 0 | 22 |
 | 4. Workflow Execution | 40 | 11 | 0 | 0 | 51 |
-| 5. Agent Integration | 18 | 15 | 0 | 0 | 33 |
+| 5. @lens Skill Integration | 18 | 23 | 0 | 0 | 41 |
 | 6. Error Handling | 8 | 8 | 0 | 0 | 16 |
 | 7. Git Discipline | 11 | 0 | 0 | 0 | 11 |
 | 8. Module Structure | 0 | 0 | 10 | 0 | 10 |
 | 9. Cross-Cutting | 0 | 0 | 12 | 0 | 12 |
-| **Total** | **107** | **53** | **22** | **0** | **182** |
+| **Total** | **107** | **61** | **22** | **0** | **190** |
 
 ---
 
@@ -530,5 +556,5 @@ pwsh scripts/validate-lens-work.ps1 -ModulePath . -Verbose
 pwsh scripts/sync-prompts.ps1 -SourcePath . -DryRun
 
 # Full test execution (agent-driven)
-# Use Compass agent with /test command or manual walkthrough
+# Use @lens agent with /test command or manual walkthrough
 ```

@@ -3,12 +3,14 @@
 description: Create new service-level initiative with service-only branch and folder scaffolding
 ---
 
-Activate Compass agent and execute /new-service:
+Activate @lens agent and execute /new-service:
 
-1. Load agent: `_bmad/lens-work/agents/compass.agent.yaml`
+**⚠️ PATH CONTEXT:** All `_bmad/` paths in this prompt are relative to the `bmad.lens.release` control repository (where this prompt file lives). Do NOT copy `_bmad/` into or resolve these paths against the user's main project repo. The agent, workflows, and skills all execute from within `bmad.lens.release/`. Only `_bmad-output/` paths are written to the user's working context.
+
+1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/new-service` command to create service initiative
 3. The argument IS the service name (e.g., `/new-service Lens` → service = "Lens")
-4. Router dispatches to `workflows/router/init-initiative/` workflow
+4. Router dispatches to `_bmad/lens-work/workflows/router/init-initiative/` workflow
 
 **Context inheritance — service inherits from active domain:**
 - Load `_bmad-output/lens-work/state.yaml` → `active_initiative`
@@ -26,7 +28,7 @@ Activate Compass agent and execute /new-service:
 - That's it — everything else is derived
 
 **Process mirrors /new-domain:**
-1. Casey creates service branch ONLY (no audience/phase branches) and pushes immediately
+1. Git-orchestration creates service branch ONLY (no audience/phase branches) and pushes immediately
 2. Scaffold service folders under domain: `{domain}/{service}`
 3. Create Service.yaml (service descriptor + initiative config)
 4. Route to `/new-feature` within this service

@@ -1,7 +1,6 @@
 ---
 name: create-architecture
-description: Collaborative architectural decision facilitation for AI-agent consistency. Replaces template-driven architecture with intelligent, adaptive conversation that produces a decision-focused architecture document optimized for preventing agent conflicts.
-web_bundle: true
+description: 'Create architecture solution design decisions for AI agent consistency. Use when the user says "lets create architecture" or "create technical architecture" or "create a solution design"'
 ---
 
 # Architecture Workflow
@@ -28,7 +27,7 @@ This uses **micro-file architecture** for disciplined execution:
 
 ### Configuration Loading
 
-Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
+Load config from `bmad.lens.release/_bmad/bmm/bmadconfig.yaml` and resolve:
 
 - `project_name`, `output_folder`, `planning_artifacts`, `user_name`
 - `communication_language`, `document_output_language`, `user_skill_level`
@@ -37,7 +36,7 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
 
 ### Paths
 
-- `installed_path` = `{project-root}/_bmad/bmm/workflows/3-solutioning/architecture`
+- `installed_path` = `bmad.lens.release/_bmad/bmm/workflows/3-solutioning/create-architecture`
 - `template_path` = `{installed_path}/architecture-decision-template.md`
 - `data_files_path` = `{installed_path}/data/`
 
@@ -45,6 +44,6 @@ Load config from `{project-root}/_bmad/bmm/config.yaml` and resolve:
 
 ## EXECUTION
 
-Load and execute `steps/step-01-init.md` to begin the workflow.
+Read fully and follow: `bmad.lens.release/_bmad/bmm/workflows/3-solutioning/create-architecture/steps/step-01-init.md` to begin the workflow.
 
 **Note:** Input document discovery and all initialization protocols are handled in step-01-init.md.

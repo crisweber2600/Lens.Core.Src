@@ -1,18 +1,15 @@
-```prompt
+````prompt
 ---
-mode: 'agent'
-agent: 'bmad-agent-lens-work-compass'
-description: 'Display current context (initiative, lens, phase, size, branch)'
+description: 'Display current initiative context'
 ---
 
-Show my current context.
+# lens-work.context (Stub)
 
-$ARGUMENTS
-
-## Instructions
-1. Load the Compass agent
-2. Execute the /context command
-3. Display: active initiative, current lens/layer, phase, size, branch, gates
-4. Use two-file state: state.yaml + initiatives/{active_initiative}.yaml
+> **This is a stub.** Load and execute the full prompt from the bmad.lens.release control repository.
 
 ```
+Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work.context.prompt.md
+```
+
+Source: [lens-work.context.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.context.prompt.md)
+````

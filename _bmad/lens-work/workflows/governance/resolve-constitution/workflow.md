@@ -1,28 +1,36 @@
 ---
 name: resolve-constitution
 description: Resolve accumulated constitutional rules for current LENS context
-agent: scribe
+agent: "@lens/constitution"
 trigger: /resolve command
 category: governance
 phase: N/A
+imports: lifecycle.yaml
+skill: constitution
 ---
 
 # Resolve Constitution Workflow — Governance
 
 Walk the LENS inheritance chain and merge constitutional articles parent-first.
 
+> **Implementation note:** All path resolution, file parsing, hierarchy loading,
+> and governance merging is performed by the **constitution skill**
+> (`_bmad/lens-work/skills/constitution.md`). Do NOT call
+> `lib/constitution.js` or any Node.js lib files.
+
 ## Role
 
-You are **Scribe (Cornelius)**, presenting the constitutional heritage of the current context.
+You are the **constitutional guardian**, presenting the constitutional heritage of
+the current context using the constitution skill.
 
 ---
 
 ## Step 0: Git Discipline — Verify Clean State
 
-Invoke Casey to verify clean git state.
+Invoke git-orchestration skill to verify clean git state.
 
 ```
-casey.verify-clean-state
+git-orchestration.verify-clean-state
 ```
 
 ---
@@ -33,57 +41,85 @@ Determine the current LENS context using this priority:
 
 1. **Active initiative** (primary — handles 95%+ of cases):
    - Load `_bmad-output/lens-work/initiatives/{active_id}.yaml`
-   - Extract: `domain`, `service`, `layer`, `name`, `microservice` (optional)
+   - Extract: `org` (optional), `domain`, `service`, `layer`, `name`, `repo` (optional)
+   - Also extract: `track` (for track-aware resolution)
 
 2. **Branch pattern** (fallback):
-   - If current branch matches `{featureBranchRoot}-{audience}-p{N}-{workflow}` (flat, hyphen-separated):
-   - Parse featureBranchRoot, load initiative by ID, recurse with loaded context
+   - If current branch matches `{initiative_root}-{audience}-{phase_name}-{workflow}` (named phases):
+     parse initiative_root, load initiative by ID, recurse with loaded context
+   - Legacy support: also match `{featureBranchRoot}-{audience}-p{N}-{workflow}`
 
 3. **User input** (last resort):
-   - Prompt: "Which layer? [domain/service/microservice/feature]"
+   - Prompt: "Which layer? [org/domain/service/repo]"
    - Prompt: "Name for this layer?"
 
 ---
 
 ## Step 2: Build Inheritance Chain
 
-Build hierarchy parent-first based on context:
+**Use constitution skill — Part 3 (Hierarchy Loading):**
 
-```python
-hierarchy = []
-visited = set()  # Cycle detection
+Walk layers in order `[org, domain, service, repo]` per lifecycle.yaml
+`lens_hierarchy.levels` and `constitution.resolution_order`.
 
-# Domain is ALWAYS included (top of chain)
-hierarchy.append({ layer: "domain", name: domain })
+For each layer, apply skill Part 1 (Path Resolution) to build the path, then:
+- Skip if required context variables are absent
+- Skip silently if file does not exist at that path
+- Parse per skill Part 2 if file exists
+- Detect cycles: skip any path already visited in this chain
 
-# Service included if context is service, microservice, or feature
-if layer in ["service", "microservice", "feature"]:
-    hierarchy.append({ layer: "service", name: service })
+**Legacy layer name mapping:**
 
-# Microservice included if context is microservice or feature AND field is set
-if layer in ["microservice", "feature"] and microservice:
-    hierarchy.append({ layer: "microservice", name: microservice })
+| Legacy name | Maps to |
+|-------------|---------|
+| `microservice` | `repo` |
+| `feature` | `repo` |
 
-# Feature included if context is feature
-if layer == "feature":
-    hierarchy.append({ layer: "feature", name: name })
+If the context's `layer` field uses a legacy name, map it before building the chain.
+
+### Track-Aware Resolution
+
+After building the chain, collect governance using constitution skill **Part 4 (Merging)**:
+
+- `permitted_tracks` — INTERSECTION across all layers (most restrictive wins)
+- `required_gates` — UNION across all layers (all gates accumulate)
+- `additional_review_participants` — UNION per phase (additive)
+
+Start `resolved` with:
 ```
+permitted_tracks: null    (null = unrestricted)
+required_gates: []
+additional_review_participants: {}
+layers_loaded: []
+```
+
+For each found constitution in the chain, apply the merge rules from skill Part 4.
+
+If no constitutions found at any layer → return empty chain; all gates pass by default.
+
+### Note on Constitution Validation:
+
+> ⚠️ `permitted_tracks: []` (empty array) = NO tracks permitted.
+> `permitted_tracks: null` or absent = no restriction (all tracks permitted).
+> Treat these cases differently per skill Part 4 merge rules.
 
 ---
 
 ## Step 3: Walk Chain and Collect Articles
 
-For each level in the hierarchy:
+**Use constitution skill — Part 1 (Path Resolution) + Part 2 (Parsing):**
 
-1. Build path: `_bmad-output/lens-work/constitutions/{level.layer}/{level.name}/constitution.md`
-2. Guard against circular references:
-   - If `{layer}/{name}` already visited → log warning, skip
+For each level in the hierarchy chain from Step 2:
+
+1. Build path using skill Part 1 rules based on `{level.layer}` and context variables
+2. Guard against circular references (Part 3b — Cycle Detection):
+   - If this path already visited → log warning, skip
 3. If file exists:
-   - Parse YAML frontmatter and markdown content
-   - Extract articles with titles, rules, rationales
+   - Parse per skill Part 2: extract frontmatter, YAML blocks, governance config
+   - Extract articles with titles, rules, rationales from markdown body
    - Check for contradictions with already-collected articles
 4. If file does not exist:
-   - Skip silently (missing layers are not an error)
+   - Skip silently (missing layers are not an error — see skill Part 9 Edge Cases)
 
 **Contradiction Detection:**
 For each new article, compare against all parent articles:
@@ -139,6 +175,25 @@ Resolution: Parent article prevails. Child article excluded from resolved set.
 These {total_articles} articles govern all work in this context.
 ```
 
+### Track & Gate Summary
+
+After article display, show accumulated track/gate governance:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## Track & Gate Governance (accumulated)
+
+Permitted Tracks: {permitted_tracks or "all (no restrictions)"}
+Required Gates: {required_gates or "none (track defaults apply)"}
+Additional Review Participants:
+{for each review_type in additional_participants:}
+  {review_type}: {participants}
+{or "none"}
+
+Track Validation: {initiative.track} → {"✅ permitted" or "❌ NOT PERMITTED by {restricting_layer}"}
+```
+
 **If no constitutions found at any layer:**
 ```
 📜 No constitutional rules defined for this context.
@@ -150,7 +205,7 @@ This is expected if governance has not been configured for this scope.
 
 ## Step 5: Event Logging
 
-Log resolution through Tracey:
+Log resolution event:
 
 ```yaml
 type: constitution-resolved
@@ -172,5 +227,5 @@ What's next?
 - Check compliance → /compliance
 - View ancestry → /ancestry
 - Create constitution → /constitution
-- Return to Compass → exit
+- Return to @lens → exit
 ```
