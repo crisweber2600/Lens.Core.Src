@@ -6,9 +6,31 @@
 # this contract. No lifecycle semantics should be hardcoded elsewhere.
 #
 # Derived from architectural brainstorming session 2026-02-23.
+# Extended with language-specific constitutions on 2026-03-01.
 # =============================================================================
 
 schema_version: 2
+
+# Supported Programming Languages for Language-Specific Constitutions
+supported_languages:
+  - typescript   # TypeScript / JavaScript (web, Node.js)
+  - python       # Python (data science, backend, scripts)
+  - go           # Go (systems, microservices)
+  - java         # Java (enterprise, backend)
+  - csharp       # C# / .NET (enterprise, web)
+  - rust         # Rust (systems, performance-critical)
+  - php          # PHP (web)
+  - kotlin       # Kotlin (Android, JVM)
+  - swift        # Swift (iOS, macOS)
+  - cpp          # C++ (systems, performance)
+
+# Language auto-detection order (for compliance checks):
+# 1. Explicit {language} field in initiative config
+# 2. .bmad/language file in target repository (override)
+# 3. Build files (package.json → typescript, pyproject.toml → python, etc.)
+# 4. Source code analysis (file extension distribution)
+# 5. GitHub primary language (when available)
+# 6. "unknown" (default fallback)
 
 # -----------------------------------------------------------------------------
 # FUNDAMENTAL TRUTHS (non-negotiable design axioms)
@@ -26,10 +48,22 @@ fundamental_truths:
 # -----------------------------------------------------------------------------
 # LENS HIERARCHY
 # -----------------------------------------------------------------------------
+# LENS HIERARCHY
+# The core governance structure with language-specific constitution support
 lens_hierarchy:
   levels: [org, domain, service, repo]
   constitution_inheritance: additive  # Lower levels can only ADD, never remove
   # Resolution: merge all levels, union of all requirements
+  
+  # Language-Specific Constitutions
+  # Each LENS level can have universal (applies to all languages) and
+  # language-specific constitutions (applies only to repos using that language).
+  # Path structure:
+  #   - Universal: {level}/constitution.md
+  #   - Language-specific: {level}/{language}/constitution.md
+  # Load order: org-universal, org-{lang}, domain-universal, domain-{lang}, ...
+  language_constitution_support: enabled
+  language_scope_enforcement: "Language-specific constitutions apply ONLY to repos matching the declared language"
 
 # -----------------------------------------------------------------------------
 # AUDIENCES (promotion backbone)

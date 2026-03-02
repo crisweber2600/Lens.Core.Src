@@ -37,19 +37,35 @@ an inline skill — not as a separate workflow or runtime process.
 
 Base directory: `bmad.lens.release/_bmad-output/lens-work/constitutions`
 
+#### Universal Constitutions (applies to all programming languages)
+
 | Layer   | Path Pattern |
-|---------|-------------|
+|---------|----------|
 | org     | `{base}/org/constitution.md` |
 | domain  | `{base}/domain/{domain}/constitution.md` |
 | service | `{base}/service/{domain}/{service}/constitution.md` |
 | repo    | `{base}/repo/{domain}/{service}/{repo}/constitution.md` |
 
+#### Language-Specific Constitutions (applies only to target repos using that language)
+
+| Layer   | Path Pattern |
+|---------|----------|
+| org     | `{base}/org/{language}/constitution.md` |
+| domain  | `{base}/domain/{domain}/{language}/constitution.md` |
+| service | `{base}/service/{domain}/{service}/{language}/constitution.md` |
+| repo    | `{base}/repo/{domain}/{service}/{repo}/{language}/constitution.md` |
+
+**Variables:**
+- `{language}`: Programming language identifier (e.g., `typescript`, `python`, `go`, `java`, `csharp`)
+
 **Rules:**
 - `domain` requires `{domain}` variable to be set
 - `service` requires both `{domain}` and `{service}` to be set
 - `repo` requires `{domain}`, `{service}`, and `{repo}` to be set
+- `{language}` is optional — if provided, load both universal AND language-specific constitutions
 - If a required variable is not set for a layer, skip that layer entirely
 - Missing files at any layer are silently skipped — not an error
+- Language-specific files are loaded AFTER universal files at the same layer (inheritance order matters)
 
 ---
 
@@ -107,16 +123,34 @@ governance = {
 Walk layers in this order: `[org, domain, service, repo]`
 
 For each layer:
-1. Build the path using Part 1 rules
+1. Build the **universal path** using Part 1 rules
 2. Check if the path variable requirements are satisfied — if not, skip
 3. Check if the file exists at that path — if not, skip silently
 4. If file exists: read it, parse per Part 2, add to chain
 
-Result: `chain` — an ordered list of `{ path, layer, governance }` objects, parent-first.
+If `{language}` context is available (from initiative or user selection):
+5. Build the **language-specific path** for the same layer using Part 1 rules
+6. Check if the language-specific file exists at that path — if not, skip silently
+7. If file exists: read it, parse per Part 2, add to chain AFTER the universal version
+
+Result: `chain` — an ordered list of `{ path, layer, language, governance }` objects, parent-first, with universal before language-specific at each layer.
+
+**Chain building order (per frame):**
+```
+[org-universal, org-{language}, domain-universal, domain-{language}, service-universal, service-{language}, repo-universal, repo-{language}]
+```
 
 ### 3b. Cycle Detection
 
 Track visited paths. If a path appears twice in the chain (circular reference), log a warning and skip the duplicate.
+
+### 3c. Language Context Determination
+
+Programming language is determined in this priority order:
+1. **Explicit user selection** — user specifies language during `/constitution` command
+2. **Initiative context** — `language` field in active initiative's config file
+3. **Target repository detection** — analyze target repo primary language (detected from .gitattributes, package.json, pyproject.toml, go.mod, etc.)
+4. **None** — if no language available, load only universal constitutions
 
 ---
 
@@ -314,14 +348,33 @@ Handle these edge cases correctly:
 
 ---
 
-## Part 10 — Trigger Conditions
+## Part 10 — Language-Specific Constitution Scope
+
+**Scope rule:** Language-specific constitutions apply ONLY to target repositories that match the declared language.
+
+**Enforcement:**
+- When loading a language-specific constitution, record `{language}` in the governance config
+- During compliance checks, validate that the target repo's language matches
+- If target repo language does not match, warn (advisory) or block (enforced) based on mode
+- Example: A `typescript/constitution.md` rule does NOT apply to a `python-api` repository
+
+**Language detection in target repos:**
+- Check `.bmad/language` file if present (explicit override)
+- Analyze build files: `package.json`, `pyproject.toml`, `go.mod`, `pom.xml`, `.csproj`, etc.
+- Analyze source extensions: `.ts`/`.js`, `.py`, `.go`, `.java`, `.cs` distributions
+- Fall back to repo's GitHub primary language if available
+- Default to "unknown" if language cannot be determined
+
+---
+
+## Part 11 — Trigger Conditions
 
 - **Automatic** — at every workflow step (via background_triggers defined in lifecycle.yaml)
-- **Explicit** — via `/constitution` command (view/create/amend)
-- **Explicit** — via `/resolve` command (walk and display hierarchy)
-- **Explicit** — via `/compliance` command (check artifacts against constitution)
+- **Explicit** — via `/constitution` command (view/create/amend, with optional language selection)
+- **Explicit** — via `/resolve` command (walk and display hierarchy, with language support)
+- **Explicit** — via `/compliance` command (check artifacts against constitution, validates language match)
 - Results surface only when violations found (in automatic mode)
 
 ---
 
-_Skill spec backported from lens module on 2026-02-17_
+_Skill spec extended for language-specific constitutions on 2026-03-01_

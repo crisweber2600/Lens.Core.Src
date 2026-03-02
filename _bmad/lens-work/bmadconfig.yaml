@@ -66,6 +66,25 @@ conventions:
           state-management), ALL workflows in that domain MUST delegate to the skill.
           Duplicate logic inline in workflow steps is a defect.
 
+  language_specific_governance:
+    rule: Constitution workflows MUST support language-specific constitutions in addition
+          to universal ones. Each LENS layer (org/domain/service/repo) can have both:
+          - Universal: {layer}/constitution.md (applies to all languages)
+          - Language-specific: {layer}/{language}/constitution.md (applies only to repos using that language)
+    enforcement: hard
+    rationale: >
+      Different programming languages have different coding standards, architecture patterns,
+      and governance requirements. Language-specific constitutions allow organizations to
+      defined targeted governance that applies only to relevant repositories.
+    load_order: >
+      Chain building loads constitutions parent-first: org-universal, org-{lang}, domain-universal,
+      domain-{lang}, service-universal, service-{lang}, repo-universal, repo-{lang}.
+      Language-specific rules are additive (inheritance) and cannot weaken parent rules.
+    scope_enforcement: >
+      Language-specific constitutions apply ONLY to target repositories whose primary language
+      matches the declaration. Compliance checks detect repo language via .gitattributes, build files,
+      source extension analysis, or explicit .bmad/language override.
+
   data_zone_enforcement:
     # Hard rules that apply to every agent, workflow, and step in lens-work.
     # These rules solve the branching-policy problem: governance changes made inside
