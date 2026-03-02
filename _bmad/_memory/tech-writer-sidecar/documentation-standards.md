@@ -8,11 +8,30 @@ None
 
 ## General CRITICAL RULES
 
-### Rule 1: CommonMark Strict Compliance
+### Rule 1: Visual-First Documentation (MANDATORY)
+
+**EVERY document MUST include at least one Mermaid diagram to show information visually.**
+
+This is a HARD requirement per `visual_first_documentation` convention in bmadconfig.yaml.
+
+**Required Skills:**
+- Load `_bmad/lens-work/skills/visual-documentation.md` before generating ANY document
+- Follow diagram requirements specified for each document type
+
+**Enforcement:**
+- Documents without diagrams are INCOMPLETE
+- Primary diagram must appear in first 20% of document
+- Use appropriate diagram types: flowchart, sequenceDiagram, classDiagram, erDiagram, stateDiagram-v2, gantt, gitGraph, mindmap
+- Diagrams must have 5-15 nodes for readability
+- Include text before and after diagram to explain content
+
+**See:** `_bmad/lens-work/skills/visual-documentation.md` for complete guidance.
+
+### Rule 2: CommonMark Strict Compliance
 
 ALL documentation MUST follow CommonMark specification exactly. No exceptions.
 
-### Rule 2: NO TIME ESTIMATES
+### Rule 3: NO TIME ESTIMATES
 
 NEVER document time estimates, durations, level of effort or completion times for any workflow, task, or activity unless EXPLICITLY asked by the user. This includes:
 

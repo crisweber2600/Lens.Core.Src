@@ -181,3 +181,76 @@ conventions:
         Any workflow file containing 'git clone' must have a matching 'git checkout'
         within the same numbered step or bash code block. Post-clone state must be
         verified to not be in detached HEAD.
+
+  visual_first_documentation:
+    enforcement: hard
+    rule: >
+      EVERY document written by lens-work MUST include at least one Mermaid diagram
+      to show information visually. Documents without visual diagrams are incomplete.
+      The visual representation should appear early in the document to provide
+      immediate context and understanding.
+    rationale: >
+      Visual diagrams dramatically improve document comprehension, retention,
+      and usability. They provide immediate context that text alone cannot convey.
+      Mermaid diagrams are universally supported in Markdown renderers and
+      enable stakeholders to quickly grasp complex relationships, flows, and structures.
+    mandatory_diagrams:
+      architecture.md:
+        - System architecture diagram (flowchart or C4)
+        - Component interaction diagram (sequenceDiagram)
+      prd.md:
+        - User journey flow (flowchart)
+        - Feature relationship diagram (mindmap or flowchart)
+      product-brief.md:
+        - Problem-solution flow (flowchart)
+        - Stakeholder map (flowchart)
+      epics.md:
+        - Epic dependency graph (flowchart)
+        - Feature timeline (gantt)
+      stories.md:
+        - Story dependency graph (flowchart)
+        - Acceptance criteria workflow (flowchart)
+      techplan.md:
+        - Technical architecture diagram (flowchart or C4)
+        - Deployment flow (flowchart)
+        - Data flow diagram (sequenceDiagram)
+      constitution.md:
+        - Constitution hierarchy (flowchart)
+        - Compliance flow (flowchart)
+      discovery_docs:
+        - Code structure diagram (classDiagram)
+        - API flow diagram (sequenceDiagram)
+        - Data model diagram (erDiagram)
+    diagram_placement:
+      rule: Place primary diagram within first 20% of document (after overview)
+      additional: Add diagrams throughout to break text blocks > 100 lines
+    diagram_types:
+      use_when:
+        flowchart: Process flows, decision trees, system architecture, relationships
+        sequenceDiagram: API interactions, authentication flows, temporal processes
+        classDiagram: Code structure, object models, component relationships
+        erDiagram: Database schemas, entity relationships, data models
+        stateDiagram-v2: State machines, lifecycle stages, workflow states
+        gantt: Project timelines, phase planning, sprint schedules
+        gitGraph: Branch strategies, release workflows
+        mindmap: Concept maps, feature hierarchies, brainstorming
+    quality_standards:
+      - Diagram must be syntactically valid Mermaid v10+ syntax
+      - Nodes should have clear, concise labels (3-7 words)
+      - Limit diagrams to 5-15 nodes for readability
+      - Use subgraphs for logical grouping when needed
+      - Include diagram title as markdown heading before diagram
+      - Add brief text explanation after each diagram
+    enforcement_pattern: |
+      # Before writing ANY document:
+      1. Identify document type and required diagram types
+      2. Gather data/relationships to visualize
+      3. Create diagram(s) using appropriate Mermaid syntax
+      4. Validate syntax mentally or with tool
+      5. Place diagram early in document structure
+      6. Write supporting text around diagrams
+      7. Verify document has minimum required diagrams before saving
+    validation: >
+      Any document generation workflow, skill, or agent instruction MUST explicitly
+      reference mermaid diagram requirements. Documents written without diagrams
+      are defects and must be regenerated with visual content.

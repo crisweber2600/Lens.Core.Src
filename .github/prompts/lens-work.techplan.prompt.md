@@ -7,6 +7,8 @@ Activate @lens agent and execute /techplan:
 
 **⚠️ PATH CONTEXT:** All `_bmad/` paths in this prompt are relative to the `bmad.lens.release` control repository (where this prompt file lives). Do NOT copy `_bmad/` into or resolve these paths against the user's main project repo. The agent, workflows, and skills all execute from within `bmad.lens.release/`. Only `_bmad-output/` paths are written to the user's working context.
 
+**📊 VISUAL-FIRST DOCUMENTATION:** All documents generated in this phase MUST include Mermaid diagrams per the `visual_first_documentation` convention. Load `_bmad/lens-work/skills/visual-documentation.md` before creating any document. Architecture documents require: system architecture diagram (flowchart), component interaction (sequenceDiagram), and deployment flow (flowchart).
+
 1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/techplan` command to launch the TechPlan phase
 3. Load lifecycle contract: `_bmad/lens-work/lifecycle.yaml`
