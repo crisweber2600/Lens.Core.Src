@@ -39,23 +39,32 @@ Each sub-workflow below uses sequential step-file architecture.
 - 💾 Save/update frontmatter after completing each step before loading the next
 - 🎯 Read the ENTIRE step file before taking any action within it
 
-**Workflow sequence (present menu and WAIT for user selection before proceeding):**
+**Workflow sequence (present single batch prompt BEFORE loading any workflows):**
 
-- **[1] PRD Creation** (required) — Adopt John (PM) persona: `_bmad/bmm/agents/pm.md`
-  → When reached: Read fully and follow `_bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-create-prd.md`
-  → Uses step-file architecture with `steps-c/` folder — halt at each step, wait for user input
+```
+📋 BusinessPlan Phase Setup
 
-- **[2] PRD Validation** (required) — Continue as John (PM)
-  → When reached: Read fully and follow `_bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-validate-prd.md`
-  → Adversarial review of PRD for completeness and buildability
+Which workflows would you like to run?
 
-- **[3] UX Design** (required if UI involved) — Switch to Sally (UX Designer) persona: `_bmad/bmm/agents/ux-designer.md`
-  → When reached: Read fully and follow `_bmad/bmm/workflows/2-plan-workflows/create-ux-design/workflow.md`
-  → Uses step-file architecture with `steps/` folder — halt at each step, wait for user input
+[1] PRD Creation (required) [Required]
+[2] PRD Validation (required) [Required]
+[3] UX Design - Is UI involved in this feature? [Y/N]
+[4] Architecture (required) [Required]
 
-- **[4] Architecture** (required) — Switch to Winston (Architect) persona: `_bmad/bmm/agents/architect.md`
-  → When reached: Read fully and follow `_bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md`
-  → Uses step-file architecture with `steps/` folder — halt at each step, wait for user input
+Enter as: "Y | Y | Y | Y" or "required-only" (skips UX) or "all"
+```
+
+After receiving user input, execute workflows in sequence:
+- [1] PRD Creation — Adopt John (PM) persona: `_bmad/bmm/agents/pm.md`
+  → Read fully and follow `_bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-create-prd.md`
+- [2] PRD Validation — Continue as John (PM)
+  → Read fully and follow `_bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-validate-prd.md`
+- [3] UX Design (if Y) — Switch to Sally (UX Designer) persona: `_bmad/bmm/agents/ux-designer.md`
+  → Read fully and follow `_bmad/bmm/workflows/2-plan-workflows/create-ux-design/workflow.md`
+- [4] Architecture — Switch to Winston (Architect) persona: `_bmad/bmm/agents/architect.md`
+  → Read fully and follow `_bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md`
+
+Each workflow uses step-file architecture — halt at each step within the workflow, wait for user input.
 
 **User interaction keywords:**
 - `defaults` / `best defaults` → apply defaults to current step only

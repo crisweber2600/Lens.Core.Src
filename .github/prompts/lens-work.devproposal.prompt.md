@@ -52,30 +52,37 @@ Each sub-workflow below uses sequential step-file architecture.
 - 💾 Save/update frontmatter after completing each step before loading the next
 - 🎯 Read the ENTIRE step file before taking any action within it
 
-**Workflow sequence (present menu and WAIT for user selection before proceeding):**
+**Workflow sequence (present single batch prompt BEFORE loading any workflows):**
 
-- **[1] Epic Generation** (required) — Continue as John (PM)
-  → When reached: Read fully and follow `_bmad/bmm/workflows/3-solutioning/create-epics-and-stories/workflow.md`
-  → Uses step-file architecture with `steps/` folder — halt at each step, wait for user input
+```
+📝 DevProposal Phase Setup
+
+All workflows are required. Confirm execution:
+
+[1] Epic Generation [Required]
+[2] Epic Stress Gate (runs per epic) [Required]
+[3] Story Generation [Required]
+[4] Readiness Checklist [Required]
+
+Enter: "all" to proceed with all workflows
+```
+
+After receiving confirmation, execute workflows in sequence:
+- [1] Epic Generation — Continue as John (PM)
+  → Read fully and follow `_bmad/bmm/workflows/3-solutioning/create-epics-and-stories/workflow.md`
   → Output: `{docs_path}/epics.md`
-
-- **[2] Epic Stress Gate** (required, runs per epic) — Continue as John (PM)
+- [2] Epic Stress Gate (runs per epic) — Continue as John (PM)
   → For EACH epic: Read fully and follow `_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md`
   → Then run party-mode: Read fully and follow `_bmad/core/workflows/party-mode/workflow.md`
-  → FAIL if readiness returns `blocked` or party mode returns unresolved issues
-  → All epics must pass before stories are generated
   → Output: `{docs_path}/epic-{id}-party-mode-review.md` per epic
-
-- **[3] Story Generation** (required) — Continue as John (PM)
-  → Continue the epics-and-stories workflow from step [1] above (story generation portion)
-  → Uses same step-file architecture — halt at each step, wait for user input
+- [3] Story Generation — Continue as John (PM)
+  → Continue the epics-and-stories workflow from step [1] (story generation portion)
   → Output: `{docs_path}/stories.md`
-
-- **[4] Readiness Checklist** (required) — Continue as John (PM)
+- [4] Readiness Checklist — Continue as John (PM)
   → Read fully and follow `_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md`
-  → Validate all artifacts present and implementation-ready
-  → Halt and present readiness findings to user before marking complete
   → Output: `{docs_path}/readiness-checklist.md`
+
+Each workflow uses step-file architecture — halt at each step within the workflow, wait for user input.
 
 **Epic Stress Gate (mandatory — runs per epic):**
 - Run `_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md` in adversarial mode for each epic

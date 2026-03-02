@@ -39,26 +39,29 @@ Each sub-workflow below uses sequential step-file architecture.
 - 💾 Save/update frontmatter after completing each step before loading the next
 - 🎯 Read the ENTIRE step file before taking any action within it
 
-**Workflow options (present menu and WAIT for user selection before proceeding):**
+**Workflow options (present single batch prompt BEFORE loading any workflows):**
 
-- **[1] Brainstorming** (optional) — Creative exploration with CIS
-  → When selected: Read fully and follow `_bmad/core/workflows/brainstorming/workflow.md`
-  → Uses step-file architecture — halt at each step, wait for user input
+```
+🔍 PrePlan Phase Setup
 
-- **[2] Research** (optional) — Market/domain/competitive deep dive
-  → When selected: Ask user which type: [M]arket / [D]omain / [T]echnical, then read fully and follow:
-    - Market: `_bmad/bmm/workflows/1-analysis/research/workflow-market-research.md`
-    - Domain: `_bmad/bmm/workflows/1-analysis/research/workflow-domain-research.md`
-    - Technical: `_bmad/bmm/workflows/1-analysis/research/workflow-technical-research.md`
-  → Uses step-file architecture — halt at each step, wait for user input
+Which workflows would you like to run?
 
-- **[3] Product Brief** (required) — Define problem, vision, scope, and success criteria
-  → When reached: Read fully and follow `_bmad/bmm/workflows/1-analysis/create-product-brief/workflow.md`
-  → Loads step files one at a time (JIT): start with `steps/step-01-init.md`
-  → **NEVER** load multiple step files simultaneously
-  → **ALWAYS** halt at menus and wait for user input before proceeding
+[1] Brainstorming (optional) — Creative exploration with CIS [Y/N]
+[2] Research (optional) — Deep dive [Market/Domain/Technical/None]
+[3] Product Brief (required) — Problem definition and scope [Required - will run last]
 
-Recommended path: 1 → 2 → 3 (or skip to 3 if you have clarity)
+Enter as: "Y | Domain | Y" or "N | None | Y" or "best defaults"
+```
+
+After receiving user input, execute workflows in sequence:
+- If [1]=Y: Read fully and follow `_bmad/core/workflows/brainstorming/workflow.md`
+- If [2]≠None: Read fully and follow the appropriate research workflow:
+  - Market: `_bmad/bmm/workflows/1-analysis/research/workflow-market-research.md`
+  - Domain: `_bmad/bmm/workflows/1-analysis/research/workflow-domain-research.md`
+  - Technical: `_bmad/bmm/workflows/1-analysis/research/workflow-technical-research.md`
+- [3] Product Brief always runs: `_bmad/bmm/workflows/1-analysis/create-product-brief/workflow.md`
+
+Each workflow uses step-file architecture — halt at each step within the workflow, wait for user input.
 
 **User interaction keywords:**
 - `defaults` / `best defaults` → apply defaults to current step only

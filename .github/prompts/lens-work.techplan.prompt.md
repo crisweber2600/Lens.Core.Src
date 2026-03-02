@@ -42,21 +42,32 @@ Each sub-workflow below uses sequential step-file architecture.
 - 💾 Save/update frontmatter after completing each step before loading the next
 - 🎯 Read the ENTIRE step file before taking any action within it
 
-**Workflow sequence (present menu and WAIT for user selection before proceeding):**
+**Workflow sequence (present single batch prompt BEFORE loading any workflows):**
 
-- **[1] Architecture Refinement** (required) — Continue as Winston (Architect)
-  → When reached: Read fully and follow `_bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md`
+```
+🏗️ TechPlan Phase Setup
+
+All workflows are required. Confirm execution:
+
+[1] Architecture Refinement [Required]
+[2] Tech Decisions [Required]
+[3] Implementation Readiness Check [Required]
+
+Enter: "all" to proceed with all workflows
+```
+
+After receiving confirmation, execute workflows in sequence:
+- [1] Architecture Refinement — Continue as Winston (Architect)
+  → Read fully and follow `_bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md`
   → Context: pass existing `{docs_path}/architecture.md` as baseline for refinement, not fresh creation
-  → Uses step-file architecture with `steps/` folder — halt at each step, wait for user input
-
-- **[2] Tech Decisions** (required) — Continue as Winston (Architect)
+- [2] Tech Decisions — Continue as Winston (Architect)
   → Document key technical decisions, rationale, and trade-offs
   → Inline workflow — present decisions one at a time, wait for user review/approval of each
-
-- **[3] Implementation Readiness Check** (required) — Continue as Winston (Architect)
-  → When reached: Read fully and follow `_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md`
+- [3] Implementation Readiness Check — Continue as Winston (Architect)
+  → Read fully and follow `_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md`
   → Validate architecture is buildable and stories can be derived from it
-  → Halt and present readiness findings to user before marking complete
+
+Each workflow uses step-file architecture — halt at each step within the workflow, wait for user input.
 
 **User interaction keywords:**
 - `defaults` / `best defaults` → apply defaults to current step only

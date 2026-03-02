@@ -28,17 +28,27 @@ Activate @lens agent and execute /new-feature:
 - **Service-level:** Parent is a service → inherits service context + domain context
 - **Repo-level:** Parent is a domain → inherits domain context only, no service
 
-**Minimal user input required:**
-- Feature name (the command argument)
-- Confirm target repos (default: inherit all from parent)
-- That's it — everything else is derived
+**Minimal user input required (ask in single batch prompt):**
 
-**Work Item Tracking:**
-- Reads user's tracker preference from `personal/profile.yaml` (set during onboarding)
-- If tracker is configured (`jira` or `azure-devops`), prompts for work item ID:
-  - Jira: "Jira ticket ID (e.g., BMAD-123):"
-  - Azure DevOps: "Azure DevOps work item ID (e.g., 12345 or AB#12345):"
-- If tracker is `none`, no prompt — uses feature name directly
+Present all questions together:
+```
+🚀 New Feature Setup
+
+1. Feature name: {provided_or_prompt}
+2. Target repos: [Confirm inherited repos / Add / Remove]
+   Inherited: {list_inherited_repos}
+3. Work item ID {if_tracker_configured}:
+   {Jira ticket ID (e.g., BMAD-123) OR Azure DevOps ID (e.g., 12345)}
+   [Enter ID / Skip]
+4. Branch changes needed?
+   Current branches across repos:
+   {list_repos_with_current_branches}
+   [No changes / Specify: repo=branch]
+
+Enter as: "feature-name | inherited | BMAD-123 | no"
+```
+
+Parse user response and proceed with initiative creation.
 
 **Creates:**
 - Initiative ID:
@@ -67,47 +77,12 @@ Activate @lens agent and execute /new-feature:
 
 **In-Scope Repos:** Inherited from parent (service or domain)
 
-**Branch Review (Required at Feature Start):**
-After the feature initiative is created, check the current branches in each target repo and ask if any need to change.
+**Post-Creation Branch Management (if changes requested in setup):**
 
-Service-level feature (parent is a service):
-```bash
-for target_repo in {target_repos}; do
-  repo_path="TargetProjects/{domain_prefix}/{service_prefix}/${target_repo}"
-  if [ -d "$repo_path" ]; then
-    echo "📦 Repository: $target_repo"
-    echo "   Current branch:"
-    git -C "$repo_path" branch --show-current
-    echo ""
-    echo "   Available branches (remote):"
-    git -C "$repo_path" branch -r
-    echo ""
-  fi
+If user specified branch changes during setup, apply them now:
 
-```
-
-Repo-level feature (parent is a domain):
-```bash
-for target_repo in {target_repos}; do
-  repo_path="TargetProjects/{domain_prefix}/${target_repo}"
-  if [ -d "$repo_path" ]; then
-    echo "📦 Repository: $target_repo"
-    echo "   Current branch:"
-    git -C "$repo_path" branch --show-current
-    echo ""
-    echo "   Available branches (remote):"
-    git -C "$repo_path" branch -r
-    echo ""
-  fi
-**Review audience progression:**
-```
-
-**Question:** Do any of these branches need to be changed?
-
-- If **NO**: Continue with the feature workflow.
-- If **YES**: Provide the target repo name and desired branch, then use one of the options below.
-
-Repo-level features should use `TargetProjects/{domain_prefix}/{TARGET_REPO}` in the commands below.
+Service-level features use: `TargetProjects/{domain_prefix}/{service_prefix}/{TARGET_REPO}`
+Repo-level features use: `TargetProjects/{domain_prefix}/{TARGET_REPO}`
 
 Option A: Switch to a specific remote branch
 ```bash
