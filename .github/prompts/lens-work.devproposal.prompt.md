@@ -121,7 +121,7 @@ Each workflow uses step-file architecture — halt at each step within the workf
 - `stories.md` (required)
 - `readiness-checklist.md` (required)
 
-**After DevProposal:** Run medium → large audience promotion (stakeholder approval gate) before `/sprintplan`
+**After DevProposal:** Run `@lens next` (or `/sprintplan`). If promotion is required, LENS auto-triggers it.
 
 **Next phase:** `/sprintplan` — runs after medium→large promotion complete
 ```

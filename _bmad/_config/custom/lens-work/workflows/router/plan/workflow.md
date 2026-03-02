@@ -126,11 +126,10 @@ if initiative.audience_status exists:
         ❌ Audience promotion (small → medium) not complete
         ├── Gate: adversarial-review (party mode)
         ├── All small-audience phases (preplan, businessplan, techplan) must be complete
-        └── Run audience promotion before starting devproposal
+        └── Auto-triggering audience promotion now
 
-      ask: "Continue anyway? [Y]es / [N]o"
-      if no:
-        exit: 0
+      invoke_command: "@lens promote"
+      exit: 0
 else:
   warning: "⚠️ No audience_status in initiative config — legacy format detected"
 
@@ -182,7 +181,11 @@ if result.exit_code != 0:
 
 # Verify audience promotion gate (small → medium) passed
 if initiative.audience_status.small_to_medium != "complete":
-  error: "Audience promotion (small → medium) not complete. Run audience-promotion first."
+  output: |
+    ⏳ Audience promotion (small → medium) still incomplete
+    ▶️  Auto-triggering audience promotion now
+  invoke_command: "@lens promote"
+  exit: 0
 
 # Verify prior artifacts exist
 required_artifacts:
@@ -392,7 +395,7 @@ if all_workflows_complete("devproposal"):
     ├── PR: ${pr_result}
     ├── Status: pr_pending (awaiting merge)
     ├── Stories ready for sprint planning
-    └── Next: Run audience promotion (medium → large), then /sprintplan
+    └── Next: Run @lens next (or /sprintplan). If promotion is required, it is auto-triggered.
 ```
 
 ### 5. Update State Files
@@ -461,11 +464,11 @@ params:
 | Error | Recovery |
 |-------|----------|
 | TechPlan not complete | Error with merge instructions |
-| Audience promotion (small→medium) not done | Error — run audience-promotion first |
+| Audience promotion (small→medium) not done | Auto-triggers `@lens promote` |
 | PRD/Architecture missing | Warn, proceeding may produce incomplete epics |
 | Dirty working directory | Prompt to stash or commit changes first |
 | Branch creation failed | Check remote connectivity, retry with backoff |
-| Audience promotion check failed | Prompt to run audience-promotion before continuing |
+| Audience promotion check failed | Auto-triggers `@lens promote`, then pauses for gate completion |
 | Epic/Story generation failed | Retry or allow manual creation |
 | Epic adversarial review failed | Resolve implementation-readiness findings and re-run /plan |
 | Epic party-mode review failed | Address party-mode findings and re-run /plan |

@@ -44,7 +44,7 @@ Lifecycle Progress:
 1. **No profile** → "Run `/onboard` to set up your profile and repositories."
 2. **No active initiative** → "Run `/new-initiative` to start a new feature, service, or domain."
 3. **Active initiative, workflow_status = `in_progress`** → "Resume: `/resume` to continue `{current_phase}`."
-4. **Active initiative, phase complete, promotion pending** → "Run `/promote` to advance `{source_audience}` → `{target_audience}`."
+4. **Active initiative, phase complete, promotion pending** → "Run `@lens next` (or the target phase command). Promotion is auto-triggered when required."
 5. **Active initiative, promotion complete, next phase ready** → "Run `/{next_phase_prompt}` to start the next phase."
 6. **All phases complete** → "Initiative `{name}` is complete. Run `/archive` or `/new-initiative`."
 

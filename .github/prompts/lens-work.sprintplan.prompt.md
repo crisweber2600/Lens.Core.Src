@@ -87,12 +87,12 @@ Execute workflows in sequence:
 - `{initiative.docs.bmad_docs}/sprint-backlog.md` (required)
 - `{initiative.docs.bmad_docs}/dev-story-{id}.md` (required, one per selected story)
 
-**After SprintPlan:** Run large → base audience promotion (constitution gate via constitution skill) before `/dev`
+**After SprintPlan:** Run `@lens next` (or `/dev`). If promotion is required, LENS auto-triggers it.
 
 **Next steps:**
 1. Merge sprintplan PR into `{initiative_root}-large`
-2. Run audience promotion (large → base) — constitution gate
-3. Run `/dev` to begin implementation in target repos
+2. Run `@lens next` (or `/dev`) to continue flow
+3. Promotion gate checks execute automatically when required
 
 **Developer handoff:** Confirm story assignment and hand off dev story file to Amelia (Developer)
 ```

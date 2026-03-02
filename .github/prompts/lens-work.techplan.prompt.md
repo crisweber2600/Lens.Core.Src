@@ -100,7 +100,7 @@ Each workflow uses step-file architecture — halt at each step within the workf
 - `architecture.md` (required — complete technical design)
 - `tech-decisions.md` (required)
 
-**After TechPlan:** Run small → medium audience promotion (adversarial review gate) before `/devproposal`
+**After TechPlan:** Run `@lens next` (or `/devproposal`). If promotion is required, LENS auto-triggers it.
 
 **Next phase:** `/devproposal` — runs after small→medium promotion complete
 ```

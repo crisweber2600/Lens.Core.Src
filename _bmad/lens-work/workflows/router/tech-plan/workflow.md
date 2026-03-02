@@ -319,8 +319,8 @@ output: |
   Status: pr_pending (awaiting merge)
   Remaining on: ${phase_branch}
 
-  Next: Once all small-audience phases are merged, run audience promotion
-        (small → medium), then /devproposal to create implementation proposal
+  Next: Once all small-audience phases are merged, run @lens next (or /devproposal).
+        If promotion is required, it is auto-triggered.
 ```
 
 ---

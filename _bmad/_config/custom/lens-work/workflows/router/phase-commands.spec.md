@@ -117,7 +117,7 @@ Architect, Tech Lead
 4. Route to technology decisions workflow
 5. Optional: Route to API contracts workflow
 6. git-orchestration: finish-workflow
-7. Offer: run audience promotion (small → medium) or pause
+7. Offer: run @lens next (or /devproposal); promotion auto-triggers when required
 
 ---
 
@@ -152,7 +152,7 @@ PO, Architect, Tech Lead
 4. Route to Stories workflow
 5. Route to Readiness workflow
 6. git-orchestration: finish-workflow
-7. Offer: run audience promotion (medium → large) or pause
+7. Offer: run @lens next (or /sprintplan); promotion auto-triggers when required
 
 ---
 
@@ -186,7 +186,7 @@ Scrum Master (phase owner)
 3. Sprint planning (prioritize stories, allocate capacity)
 4. Create dev-ready story
 5. Hand off to Developer
-6. Offer: run audience promotion (large → base) then /dev
+6. Offer: run @lens next (or /dev); promotion auto-triggers when required
 
 ---
 

@@ -200,12 +200,13 @@ if current_audience == "medium":
     exit: 0
   else:
     output: |
-      ⏳ Waiting for adversarial review approval
+      ⏳ Adversarial review gate not yet marked passed
       
       Current status: ${medium_gate ? medium_gate.status : "pending"}
       
-      Next steps:
-      └── Run @lens promote when review is complete
+      ▶️  Running audience promotion check now
+      (this validates and advances as far as gate status allows)
+    invoke_command: "@lens promote"
     exit: 0
 
 if current_audience == "large":
@@ -221,12 +222,13 @@ if current_audience == "large":
     exit: 0
   else:
     output: |
-      ⏳ Waiting for stakeholder approval
+      ⏳ Stakeholder approval gate not yet marked passed
       
       Current status: ${large_gate ? large_gate.status : "pending"}
       
-      Next steps:
-      └── Run @lens promote when approval is received
+      ▶️  Running audience promotion check now
+      (this validates and advances as far as gate status allows)
+    invoke_command: "@lens promote"
     exit: 0
 
 # Priority 7: Base approved → start dev
@@ -242,12 +244,13 @@ if current_audience == "base":
     exit: 0
   else:
     output: |
-      ⏳ Constitution gate validation pending
+      ⏳ Constitution gate validation not yet marked passed
       
       Current status: ${constitution_gate ? constitution_gate.status : "pending"}
       
-      Next steps:
-      └── Resolve constitution requirements, then run @lens promote
+      ▶️  Running audience promotion check now
+      (this validates constitution gate status and advances when ready)
+    invoke_command: "@lens promote"
     exit: 0
 
 # Fallback: unclear state

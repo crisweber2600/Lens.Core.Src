@@ -130,11 +130,13 @@ if initiative.question_mode != "batch" and not dev_story_exists():
   error: "/sprintplan has not produced a dev-ready story. Run /sprintplan first."
 
 # Audience validation — verify large→base promotion passed
-if initiative.audience_status.large_to_base != "passed":
-  error: |
-    ❌ Audience promotion validation failed
+if initiative.audience_status.large_to_base not in ["passed", "passed_with_warnings"]:
+  output: |
+    ⏳ Audience promotion validation pending
     ├── Required: large → base promotion (constitution gate)
-    └── Run /promote to pass the constitution gate before /dev
+    └── ▶️  Auto-triggering audience promotion now
+  invoke_command: "@lens promote"
+  exit: 0
 
 # Determine phase branch [REQ-9]
 phase_branch = "${initiative.initiative_root}-dev"
@@ -186,7 +188,11 @@ if result.exit_code != 0:
 
 # Verify constitution gate (large→base) passed
 if initiative.audience_status.large_to_base not in ["passed", "passed_with_warnings"]:
-  error: "Constitution gate not passed. Run /promote to complete large → base promotion."
+  output: |
+    ⏳ Constitution gate still not passed for large → base
+    ▶️  Auto-triggering audience promotion now
+  invoke_command: "@lens promote"
+  exit: 0
 ```
 
 ### 1a. Constitutional Context Injection (Required)
@@ -523,7 +529,7 @@ Throughout `/dev`, the user may work in TargetProjects for actual coding, but al
 |-------|----------|
 | No dev story | Prompt to run /sprintplan first |
 | SprintPlan not merged | Error with merge gate blocked message |
-| Constitution gate not passed | Error — run /promote for large → base first |
+| Constitution gate not passed | Auto-triggers audience promotion (large → base) |
 | Audience promotion failed | Error — must complete large → base promotion |
 | Dirty working directory | Prompt to stash or commit changes first |
 | Target repo checkout failed | Check target_repos config, retry |

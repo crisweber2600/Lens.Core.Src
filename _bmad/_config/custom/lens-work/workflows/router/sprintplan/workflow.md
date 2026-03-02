@@ -127,11 +127,10 @@ if initiative.audience_status exists:
         ❌ Audience promotion (medium → large) not complete
         ├── Gate: stakeholder-approval
         ├── All medium-audience phases (devproposal) must be complete
-        └── Run audience promotion before starting sprintplan
+        └── Auto-triggering audience promotion now
 
-      ask: "Continue anyway? [Y]es / [N]o"
-      if no:
-        exit: 0
+      invoke_command: "@lens promote"
+      exit: 0
 else:
   warning: "⚠️ No audience_status in initiative config — legacy format detected"
 
@@ -182,7 +181,11 @@ if result.exit_code != 0:
 
 # Verify audience promotion gate (medium → large) passed
 if initiative.audience_status.medium_to_large != "complete":
-  error: "Audience promotion (medium → large) not complete. Run audience-promotion first."
+  output: |
+    ⏳ Audience promotion (medium → large) still incomplete
+    ▶️  Auto-triggering audience promotion now
+  invoke_command: "@lens promote"
+  exit: 0
 ```
 
 ### 1a. Checklist Enforcement — Verify Required Artifacts
@@ -473,8 +476,8 @@ The following story is ready for development:
 
 **Next steps:**
 1. Merge sprintplan PR into large audience branch
-2. Run audience promotion (large → base) for constitution gate
-3. Run /dev to start implementation
+2. Run @lens next (or /dev). If promotion is required, it is auto-triggered.
+3. Continue implementation flow once promotion gate is complete
 
 Hand off to developer? [Y]es / [N]o
 ```
@@ -497,7 +500,7 @@ Hand off to developer? [Y]es / [N]o
 | Error | Recovery |
 |-------|----------|
 | DevProposal not complete | Error with merge instructions |
-| Audience promotion (medium→large) not done | Error — run audience-promotion first |
+| Audience promotion (medium→large) not done | Auto-triggers `@lens promote` |
 | Missing artifacts | Warn with list, offer override (passed_with_warnings) |
 | Readiness blockers | Block — must resolve before proceeding |
 | Dirty working directory | Prompt to stash or commit changes first |
