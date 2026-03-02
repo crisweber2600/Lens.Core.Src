@@ -85,6 +85,85 @@ conventions:
       matches the declaration. Compliance checks detect repo language via .gitattributes, build files,
       source extension analysis, or explicit .bmad/language override.
 
+  article_specific_gates:
+    enforcement: hard
+    rule: >
+      Constitution compliance checks MUST report per-article pass/fail, not just aggregate
+      fail_count. Each constitutional article is evaluated as a discrete named gate with
+      its own checklist items derived from the article's rule text. Gate results include
+      the specific article ID, title, source layer, and violation detail for each failed item.
+    rationale: >
+      Aggregate pass/fail obscures which constitutional principles were violated and makes
+      remediation harder. Per-article gates give developers clear, actionable targets and
+      ensure code reviewers can challenge specific violations. Adopted from spec-kit's
+      Phase -1 Pre-Implementation Gates pattern.
+    skill_reference: constitution skill Part 7b (Article-Specific Gate Generation)
+
+  complexity_tracking:
+    enforcement: soft
+    rule: >
+      When a constitution gate violation is justified and the user proceeds (advisory mode
+      or explicit override), a structured justification entry SHOULD be recorded in
+      complexity-tracking.md. Each entry documents the violation, governing article,
+      why proceeding is necessary, and what simpler alternative was rejected.
+    rationale: >
+      Creates an audit trail for gate overrides that code reviewers and party-mode teardown
+      agents can challenge. Prevents silent accumulation of technical debt from constitution
+      exceptions. Adopted from spec-kit's Complexity Tracking pattern.
+    storage: "{bmad_docs}/complexity-tracking.md or _bmad-output/implementation-artifacts/complexity-tracking.md"
+    downstream_consumers:
+      - Code review (Quinn/QA) — challenges override justifications
+      - Party mode teardown — evaluates override validity
+      - Epic completion review — identifies systemic override patterns
+      - Retrospective — feeds process improvement
+    skill_reference: constitution skill Part 13 (Complexity Tracking)
+
+  checklist_quality_gates:
+    enforcement: soft
+    rule: >
+      Before implementation begins, any quality checklists in the initiative's BmadDocs
+      or implementation artifacts SHOULD be scanned and validated. Incomplete checklists
+      are presented to the user with a pass/fail status table. The user may choose to
+      proceed with incomplete checklists (override recorded via complexity tracking).
+    rationale: >
+      Checklists act as "unit tests for English" — validating that requirements are
+      well-defined before code is written. Prevents implementation from starting on
+      underspecified or unvalidated requirements. Adopted from spec-kit's checklist
+      quality gate pattern in the implement phase.
+    skill_reference: constitution skill Part 12 (Checklist Quality Gates)
+
+  constitution_sync_impact:
+    enforcement: hard
+    rule: >
+      Constitution amendments MUST include a sync impact report showing the blast radius
+      of the change — affected scopes, active initiatives, artifacts requiring re-validation,
+      and recommended post-amendment actions. The report MUST be displayed before the
+      ratification prompt. MAJOR version changes require explicit acknowledgment of
+      the blast radius.
+    rationale: >
+      Constitutional changes can silently invalidate planning artifacts across many
+      initiatives. Without a sync impact report, amendment ratifiers cannot assess the
+      downstream consequences of their changes. Adopted from spec-kit's consistency
+      propagation and sync impact report pattern.
+    version_semantics:
+      MAJOR: Article removed or principle weakened — re-run /compliance on ALL affected initiatives
+      MINOR: Article added, modified, or deprecated — re-run /compliance on in-progress initiatives
+      PATCH: Clarification only — no re-validation required
+    skill_reference: constitution skill Part 15 (Sync Impact Reports)
+
+  cross_artifact_analysis:
+    enforcement: soft
+    rule: >
+      Before implementation begins or at phase transitions, a cross-artifact consistency
+      analysis SHOULD be available via /analyze. This read-only analysis checks all planning
+      artifacts for constitution alignment, coverage gaps, inconsistencies, duplication,
+      ambiguity, and underspecification. Constitution violations are CRITICAL severity.
+    rationale: >
+      Individual artifact compliance checks miss inter-artifact inconsistencies. Cross-artifact
+      analysis catches naming mismatches, coverage gaps, and conflicting statements before
+      they become implementation defects. Adopted from spec-kit's /speckit.analyze command.
+    skill_reference: constitution skill Part 14 (Cross-Artifact Consistency Analysis)
+
   data_zone_enforcement:
     # Hard rules that apply to every agent, workflow, and step in lens-work.
     # These rules solve the branching-policy problem: governance changes made inside

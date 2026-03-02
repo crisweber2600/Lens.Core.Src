@@ -267,11 +267,98 @@ params:
   artifact_type: "Story/Epic"
   constitutional_context: ${constitutional_context}
 
-if dev_story_compliance.fail_count > 0:
+# Use article-specific gate results for richer error reporting (skill Part 7b)
+if dev_story_compliance.article_gate_results.failed_gates > 0:
+  # Display per-article gate results table
+  display: dev_story_compliance.article_gate_results  # Uses Part 7b display format
+
+  if enforcement_mode == "enforced":
+    error: |
+      Dev story failed constitutional compliance gate.
+      Failed gates: ${dev_story_compliance.article_gate_results.failed_gates}
+      ${for gate in dev_story_compliance.article_gate_results.gates where gate.status == "fail"}
+        ✗ Article ${gate.article_id}: ${gate.title} (${gate.source_layer})
+          ${for item in gate.failed_items}
+            → ${item.violation}
+          ${endfor}
+      ${endfor}
+      Resolve violations in /review before implementation.
+  else:
+    # Advisory mode — log warnings, invoke complexity tracking
+    warning: |
+      ⚠️ Dev story has ${dev_story_compliance.article_gate_results.failed_gates} article gate warning(s).
+    invoke: constitution.record-complexity-tracking
+    params:
+      article_gate_results: ${dev_story_compliance.article_gate_results}
+      initiative_id: ${initiative.id}
+      phase: "dev"
+
+# Backward-compatible aggregate check
+if dev_story_compliance.fail_count > 0 and enforcement_mode == "enforced":
   error: |
     Dev story failed constitutional compliance gate.
     FAIL count: ${dev_story_compliance.fail_count}
     Resolve story/compliance issues in /review before implementation.
+```
+
+### 2b. Pre-Implementation Gates (Required)
+
+Article-specific gate checkpoint before implementation begins. Mirrors spec-kit's
+"Phase -1: Pre-Implementation Gates" pattern. Each constitutional article becomes
+a named gate with discrete pass/fail checks.
+
+```yaml
+# Generate article-specific gates from resolved constitutional context (skill Part 7b)
+article_gates = invoke("constitution.generate-article-gates")
+params:
+  constitutional_context: ${constitutional_context}
+  artifact_path: ${dev_story_path}
+  artifact_type: "Story/Epic"
+
+# Display pre-implementation gate results
+output: |
+  ═══ Pre-Implementation Gates ═══
+  ${for gate in article_gates.gates}
+  Gate ${gate.article_id}: ${gate.title} (${gate.source_layer})  ${gate.status == "pass" ? "✓ PASS" : "✗ FAIL"}
+    ${for item in gate.check_items}
+    ${item.status == "pass" ? "✓" : "✗"} ${item.description}
+      ${if item.status == "fail"}→ ${item.violation}${endif}
+    ${endfor}
+  ${endfor}
+  ── Summary ──
+    Passed: ${article_gates.passed_gates}/${article_gates.total_gates} gates
+    Mode: ${enforcement_mode}
+
+# Gate decision based on enforcement mode
+if article_gates.failed_gates > 0:
+  if enforcement_mode == "enforced":
+    error: |
+      ❌ Pre-implementation gates BLOCKED.
+      ${article_gates.failed_gates} gate(s) failed. Resolve violations before implementation.
+  else:
+    # Advisory mode — record overrides in complexity tracking
+    output: |
+      ⚠️ ${article_gates.failed_gates} gate(s) have warnings (advisory mode).
+    for gate in article_gates.gates where gate.status == "fail":
+      ask: |
+        Override gate ${gate.article_id}: ${gate.title}?
+        Provide justification and simpler alternative considered:
+      invoke: constitution.record-complexity-tracking
+      params:
+        gate: ${gate}
+        initiative_id: ${initiative.id}
+        phase: "dev"
+        justification: ${user_justification}
+
+# Run checklist quality gate (skill Part 12)
+checklist_gate = invoke("constitution.checklist-quality-gate")
+params:
+  bmad_docs: ${bmad_docs}
+  docs_path: ${docs_path}
+  initiative_id: ${initiative.id}
+
+# Checklist gate renders its own status table and handles user interaction
+# per constitution skill Part 12c-12d
 ```
 
 ### 3. Checkout Target Repo
@@ -294,15 +381,75 @@ output: |
   └── You can now implement in the target repo
 ```
 
-### 4. Implementation Guidance
+### 4. Implementation Guidance + Constitutional Context
+
+Surface relevant constitutional articles as active implementation guidance.
+Developers see which rules govern their work BEFORE writing code.
+
+```yaml
+# Extract relevant articles from resolved constitutional context
+articles = constitutional_context.resolved.articles  # from Part 7b extraction
+
+# Categorize articles by implementation relevance
+tdd_articles = filter(articles, rule_text contains "test" or "TDD" or "test-first")
+arch_articles = filter(articles, rule_text contains "simplicity" or "abstraction" or "library")
+quality_articles = filter(articles, rule_text contains "observability" or "logging" or "coverage")
+integration_articles = filter(articles, rule_text contains "integration" or "contract" or "mock")
+
+# Load complexity tracking for context on any overrides
+complexity_tracking = load_if_exists("${bmad_docs}/complexity-tracking.md")
+override_count = count_entries(complexity_tracking) if complexity_tracking else 0
+```
 
 ```
 🔧 Implementation Mode
 
 You're now working in: ${target_path}
 
+═══ Constitutional Guidance ═══
+
+${if tdd_articles}
+🧪 Test-First Requirements:
+${for article in tdd_articles}
+  Article ${article.article_id}: ${article.title}
+  → ${article.rule_text_summary}
+${endfor}
+  ⚡ Action: Write tests FIRST. Verify they FAIL. Then implement.
+${endif}
+
+${if arch_articles}
+🏗️ Architecture Constraints:
+${for article in arch_articles}
+  Article ${article.article_id}: ${article.title}
+  → ${article.rule_text_summary}
+${endfor}
+${endif}
+
+${if quality_articles}
+📊 Quality Requirements:
+${for article in quality_articles}
+  Article ${article.article_id}: ${article.title}
+  → ${article.rule_text_summary}
+${endfor}
+${endif}
+
+${if integration_articles}
+🔗 Integration Rules:
+${for article in integration_articles}
+  Article ${article.article_id}: ${article.title}
+  → ${article.rule_text_summary}
+${endfor}
+${endif}
+
+${if override_count > 0}
+⚠️ Active Overrides: ${override_count} complexity tracking entries
+   Review: ${bmad_docs}/complexity-tracking.md
+${endif}
+
+═══════════════════════════════
+
 **Remember:**
-- Implement the story in the target repo
+- Follow constitutional articles above during implementation
 - Commit frequently with meaningful messages
 - Return to BMAD directory when ready for code review
 
@@ -328,14 +475,42 @@ params:
   constitutional_context: ${constitutional_context}
 
 # Re-check constitutional compliance on review outputs before allowing progression
+# Phase-transition re-validation: re-resolve context (articles may have been amended mid-sprint)
+refreshed_context = invoke("constitution.resolve-context")
+if refreshed_context.status != "parse_error":
+  session.constitutional_context = refreshed_context  # Update session with latest
+
 code_review_path = "_bmad-output/implementation-artifacts/code-review-${id}.md"
 code_review_compliance = invoke("constitution.compliance-check")
 params:
   artifact_path: ${code_review_path}
   artifact_type: "Code file"
-  constitutional_context: ${constitutional_context}
+  constitutional_context: ${session.constitutional_context}
 
-if code_review_compliance.fail_count > 0:
+# Use article-specific gates for code review validation (Part 7b)
+if code_review_compliance.article_gate_results:
+  review_gates = code_review_compliance.article_gate_results
+  if review_gates.failed_gates > 0:
+    output: |
+      ═══ Post-Review Constitutional Re-Validation ═══
+      ${for gate in review_gates.gates where gate.status == "fail"}
+      ✗ Article ${gate.article_id}: ${gate.title} (${gate.source_layer})
+        ${for item in gate.failed_items}
+        → ${item.violation}
+        ${endfor}
+      ${endfor}
+    if enforcement_mode == "enforced":
+      error: |
+        Code review failed ${review_gates.failed_gates} article gate(s).
+        Resolve violations and re-run @lens done.
+    else:
+      warning: |
+        ⚠️ ${review_gates.failed_gates} article gate warning(s) on code review.
+
+# Load complexity tracking entries — pass to party mode for adversarial challenge
+complexity_tracking = load_if_exists("${bmad_docs}/complexity-tracking.md")
+
+if code_review_compliance.fail_count > 0 and enforcement_mode == "enforced":
   error: |
     Code review compliance gate failed.
     FAIL count: ${code_review_compliance.fail_count}
@@ -347,7 +522,8 @@ params:
   input_file: ${code_review_path}
   artifacts_path: ${target_path}
   output_file: "_bmad-output/implementation-artifacts/party-mode-review-${story_id}.md"
-  constitutional_context: ${constitutional_context}
+  constitutional_context: ${session.constitutional_context}
+  complexity_tracking: ${complexity_tracking}  # Party mode agents challenge override justifications
 
 if party_mode.status not in ["pass", "complete"]:
   error: |
@@ -517,6 +693,7 @@ Throughout `/dev`, the user may work in TargetProjects for actual coding, but al
 | Code Review Report | `_bmad-output/implementation-artifacts/code-review-${id}.md` |
 | Party Mode Review Report | `_bmad-output/implementation-artifacts/party-mode-review-${story_id}.md` |
 | Epic Party Mode Review Report | `_bmad-output/implementation-artifacts/epic-*-party-mode-review.md` |
+| Complexity Tracking | `{bmad_docs}/complexity-tracking.md` |
 | Retro Notes | `_bmad-output/implementation-artifacts/retro-${id}.md` |
 | Initiative State | `_bmad-output/lens-work/initiatives/${id}.yaml` |
 | Event Log | `_bmad-output/lens-work/event-log.jsonl` |
@@ -535,8 +712,12 @@ Throughout `/dev`, the user may work in TargetProjects for actual coding, but al
 | Target repo checkout failed | Check target_repos config, retry |
 | Branch creation failed | Check remote connectivity, retry with backoff |
 | Dev story compliance gate failed | Resolve constitution FAILs in /review before coding |
+| Article-specific gate blocked | Resolve per-article violations or provide justification (advisory) |
+| Pre-implementation gate blocked | Address article gate failures; complexity track overrides |
+| Checklist quality gate failed | Complete checklist items or override with justification |
 | Code review failed | Allow retry or manual review |
 | Code review compliance gate failed | Resolve constitutional violations and re-run code review |
+| Post-review re-validation failed | Constitution amended mid-sprint; re-check violations |
 | Party mode teardown failed | Address party-mode findings and re-run code review |
 | Epic adversarial review failed | Resolve implementation-readiness findings for the epic and re-run code review |
 | Epic party mode teardown failed | Address epic party-mode findings and re-run code review |
@@ -553,10 +734,15 @@ Throughout `/dev`, the user may work in TargetProjects for actual coding, but al
 - [ ] initiatives/{id}.yaml updated with dev status and gate entries
 - [ ] event-log.jsonl entries appended
 - [ ] Dev story loaded and implementation started
-- [ ] Dev story compliance gate passed
+- [ ] Dev story compliance gate passed (article-specific)
+- [ ] Pre-implementation gates evaluated (article-specific, per Part 7b)
+- [ ] Checklist quality gate evaluated (per Part 12)
+- [ ] Complexity tracking entries recorded for any overrides (per Part 13)
+- [ ] Constitutional guidance surfaced to developer
 - [ ] Target repo feature branch checked out
 - [ ] Adversarial code review executed
-- [ ] Party mode teardown executed and report generated
+- [ ] Post-review constitutional re-validation passed (refreshed context)
+- [ ] Party mode teardown executed with complexity tracking context
 - [ ] Epic adversarial review executed when epic completion is detected
 - [ ] Epic party-mode teardown executed when epic completion is detected
 - [ ] All state changes pushed to origin
