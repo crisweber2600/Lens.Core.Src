@@ -20,22 +20,36 @@ This is the **first-run workflow** for new team members. It sets up profile, cre
 Read git config (name/email) and detect GitHub domains from repo inventory.
 
 Check PAT env vars status (GITHUB_PAT, GH_ENTERPRISE_TOKEN, GH_TOKEN):
-- If all domains covered: skip to [2]
-- If missing: include in single combined prompt below
+- If all domains covered: skip PAT questions
+- If missing: include PAT setup question
 
-**Single Onboarding Prompt:**
+**Present onboarding questions to the user:**
+
+Greet the user:
 ```
-Hello {git_user_name}
+Hello {git_user_name}!
 
-Set up your profile to enable initiative tracking:
- 1. Role: [Developer | Tech Lead | Architect | Product Owner | Scrum Master]
- 2. Scope: {detected_domains} or [all]
- 3. Question mode: [Interactive | Batch]
- 4. Work items: [Jira | Azure DevOps | None]
-{conditional_if_missing_pats}
- 5. GitHub PATs: [Already set in ENV | Run setup script now]
+Let's set up your profile to enable initiative tracking.
 ```
 
+**ASK THE FOLLOWING QUESTIONS** (use ask_questions tool or present as an interactive prompt):
+
+1. **Role:** What's your role?
+   - Options: Developer, Tech Lead, Architect, Product Owner, Scrum Master
+
+2. **Scope:** What domain/team do you work on?
+   - Options: {list detected_domains from repo inventory}, or "all" (full access to all domains)
+
+3. **Question mode:** How do you prefer to interact?
+   - Options: Interactive (step-by-step), Batch (all at once)
+
+4. **Work items:** What work item system do you use?
+   - Options: Jira, Azure DevOps, None
+
+5. **GitHub PATs:** (Only ask if PAT env vars are missing)
+   - Options: "Already set in ENV", "Run setup script now"
+
+**After receiving user responses:**
 - Write profile + PAT config to `_bmad-output/lens-work/personal/profile.yaml` (gitignored)
 
 **If PAT setup selected:** Present single terminal command (detect OS automatically):

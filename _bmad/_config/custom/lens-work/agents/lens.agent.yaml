@@ -135,8 +135,8 @@ menu:
 subPrompts:
   # CORE COMMANDS
   - id: "onboard"
-    title: "Implement /onboard flow (4-step)"
-    description: "Four-step onboarding: existing initiatives, concept teaching, Tier 1 commands, choose action"
+    title: "Implement /onboard flow"
+    description: "Create user profile, set up GitHub PAT, and bootstrap TargetProjects (interactive setup)"
     file: "./.github/prompts/lens-work.onboard.prompt.md"
     deprecated: false
     readFrom: "bmad.lens.release/.github/prompts/lens-work.onboard.md"
