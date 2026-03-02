@@ -8,7 +8,7 @@ agentSpecTemplate: '../data/agent-spec-template.md'
 workflowSpecTemplate: '../templates/workflow-spec-template.md'
 moduleStandardsFile: '../data/module-standards.md'
 moduleYamlConventionsFile: '../data/module-yaml-conventions.md'
-advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.xml'
+advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.yaml'
 partyModeWorkflow: '../../../../core/workflows/party-mode/workflow.md'
 ---
 

@@ -144,7 +144,7 @@ b) **HALT and wait for user selection.**
 - **[r]**: Execute Adversarial Review:
     1. **Invoke Adversarial Review Task**:
        > With `{finalFile}` constructed, invoke the review task. If possible, use information asymmetry: run this task, and only it, in a separate subagent or process with read access to the project, but no context except the `{finalFile}`.
-       <invoke-task>Review {finalFile} using bmad.lens.release/_bmad/core/tasks/review-adversarial-general.xml</invoke-task>
+       <invoke-task>Review {finalFile} using bmad.lens.release/_bmad/core/tasks/review-adversarial-general.yaml</invoke-task>
        > **Platform fallback:** If task invocation not available, load the task file and execute its instructions inline, passing `{finalFile}` as the content.
        > The task should: review `{finalFile}` and return a list of findings.
 

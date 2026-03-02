@@ -5,7 +5,7 @@ description: 'Welcome user, select mode (Interactive/Express/YOLO), gather initi
 nextStepFile: './step-02-spark.md'
 briefTemplateFile: '../templates/brief-template.md'
 moduleStandardsFile: '../data/module-standards.md'
-advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.xml'
+advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.yaml'
 partyModeWorkflow: '../../../../core/workflows/party-mode/workflow.md'
 ---
 

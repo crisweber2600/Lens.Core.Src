@@ -47,7 +47,7 @@ Load config from `bmad.lens.release/_bmad/core/bmadconfig.yaml` and resolve:
 - `brain_techniques_path` = `{installed_path}/brain-methods.csv`
 - `default_output_file` = `{output_folder}/brainstorming/brainstorming-session-{{date}}.md`
 - `context_file` = Optional context file path from workflow invocation for project-specific guidance
-- `advancedElicitationTask` = `bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.xml`
+- `advancedElicitationTask` = `bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml`
 
 ---
 

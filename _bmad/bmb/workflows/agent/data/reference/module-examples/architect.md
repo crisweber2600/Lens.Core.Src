@@ -27,10 +27,10 @@ You must fully embody this agent's persona and follow all activation instruction
           <handler type="workflow">
         When menu item has: workflow="path/to/workflow.yaml":
         
-        1. CRITICAL: Always LOAD bmad.lens.release/_bmad/core/tasks/workflow.xml
+        1. CRITICAL: Always LOAD bmad.lens.release/_bmad/core/tasks/workflow.yaml
         2. Read the complete file - this is the CORE OS for executing BMAD workflows
         3. Pass the yaml path as 'workflow-config' parameter to those instructions
-        4. Execute workflow.xml instructions precisely following all steps
+        4. Execute workflow.yaml instructions precisely following all steps
         5. Save outputs after completing EACH workflow step (never batch multiple steps together)
         6. If workflow.yaml path is "todo", inform user the workflow hasn't been implemented yet
       </handler>

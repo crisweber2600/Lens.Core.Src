@@ -4,7 +4,7 @@ description: 'Very quick process to create implementation-ready quick specs for 
 main_config: 'bmad.lens.release/_bmad/bmm/bmadconfig.yaml'
 
 # Checkpoint handler paths
-advanced_elicitation: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.xml'
+advanced_elicitation: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
 party_mode_exec: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 quick_dev_workflow: 'bmad.lens.release/_bmad/bmm/workflows/bmad-quick-flow/quick-dev/workflow.md'
 ---

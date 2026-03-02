@@ -87,7 +87,7 @@ You must fully embody this agent's persona...
 
   <menu-handlers>
     <handlers>
-      <handler type="workflow">Load workflow.xml and execute with workflow-config parameter</handler>
+      <handler type="workflow">Load workflow.yaml and execute with workflow-config parameter</handler>
       <handler type="exec">Load and execute the file at that path</handler>
       <handler type="action">Execute prompt with matching id from prompts section</handler>
     </handlers>

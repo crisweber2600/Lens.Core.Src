@@ -3,7 +3,7 @@ name: 'step-07-value'
 description: 'Unique Value Proposition — what makes this module special?'
 
 nextStepFile: './step-08-agents.md'
-advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.xml'
+advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.yaml'
 partyModeWorkflow: '../../../../core/workflows/party-mode/workflow.md'
 ---
 

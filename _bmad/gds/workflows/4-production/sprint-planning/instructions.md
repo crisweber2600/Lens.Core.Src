@@ -1,6 +1,6 @@
 # Sprint Planning - Sprint Status Generator
 
-<critical>The workflow execution engine is governed by: bmad.lens.release/_bmad/core/tasks/workflow.xml</critical>
+<critical>The workflow execution engine is governed by: bmad.lens.release/_bmad/core/tasks/workflow.yaml</critical>
 <critical>You MUST have already loaded and processed: bmad.lens.release/_bmad/gds/workflows/4-production/sprint-planning/workflow.yaml</critical>
 
 ## 📚 Document Discovery - Full Epic Loading

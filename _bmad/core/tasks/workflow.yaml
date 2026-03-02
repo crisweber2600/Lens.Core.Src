@@ -1,4 +1,4 @@
-<task id="_bmad/core/tasks/workflow.xml" name="Execute Workflow" internal="true">
+<task id="_bmad/core/tasks/workflow.yaml" name="Execute Workflow" internal="true">
   <objective>Execute given workflow by loading its configuration, following instructions, and producing output</objective>
 
   <llm critical="true">
@@ -60,7 +60,7 @@
           <tag>action xml tag → Perform the action</tag>
           <tag>check if="condition" xml tag → Conditional block wrapping actions (requires closing &lt;/check&gt;)</tag>
           <tag>ask xml tag → Prompt user and WAIT for response</tag>
-          <tag>invoke-workflow xml tag → Execute another workflow with given inputs and the workflow.xml runner</tag>
+          <tag>invoke-workflow xml tag → Execute another workflow with given inputs and the workflow.yaml runner</tag>
           <tag>invoke-task xml tag → Execute specified task</tag>
           <tag>invoke-protocol name="protocol_name" xml tag → Execute reusable protocol from protocols section</tag>
           <tag>goto step="x" → Jump to specified step</tag>
@@ -74,7 +74,7 @@
           <action>Display generated content</action>
           <ask> [a] Advanced Elicitation, [c] Continue, [p] Party-Mode, [y] YOLO the rest of this document only. WAIT for response. <if
               response="a">
-              <action>Start the advanced elicitation workflow bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.xml</action>
+              <action>Start the advanced elicitation workflow bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml</action>
             </if>
             <if
               response="c">
@@ -225,7 +225,7 @@
     <critical-rules>
       • This is the complete workflow execution engine
       • You MUST Follow instructions exactly as written
-      • The workflow execution engine is governed by: bmad.lens.release/_bmad/core/tasks/workflow.xml
+      • The workflow execution engine is governed by: bmad.lens.release/_bmad/core/tasks/workflow.yaml
       • You MUST have already loaded and processed: {installed_path}/workflow.yaml
       • This workflow uses INTENT-DRIVEN PLANNING - adapt organically to product type and context
       • YOU ARE FACILITATING A CONVERSATION With a user to produce a final document step by step. The whole process is meant to be
