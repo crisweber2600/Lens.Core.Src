@@ -71,30 +71,27 @@ lens_hierarchy:
 # Audiences are the primary progression axis. Phases happen WITHIN audiences.
 # Promotion between audiences IS the review gate.
 audiences:
-  # NOTE ON AUDIENCE ASSIGNMENT CONVENTION:
-  # The `phases` list here defines which phases were *created during* this audience scope.
-  # However, the prompts for devproposal and sprintplan branch from medium and large
-  # respectively (post-promotion). This is intentional:
-  #   - preplan, businessplan, techplan → branch from small (created in small scope)
+  # AUDIENCE ASSIGNMENT:
+  # The `phases` list defines which phases branch from this audience.
+  # The `audience` field on each phase below matches the audience it branches from.
+  #   - preplan, businessplan, techplan → branch from small
   #   - devproposal → branches from medium (requires small→medium promotion first)
   #   - sprintplan → branches from large (requires medium→large promotion first)
   #   - dev → branches from base (requires large→base promotion first)
-  # The `audience: small` field on each phase below indicates the IC work context,
-  # while the prompt/router `branch_pattern` determines the actual branching audience.
   small:
     role: "IC creation work"
-    description: "Where ALL 5 planning phases happen — individual contributor generates artifacts"
-    phases: [preplan, businessplan, techplan, devproposal, sprintplan]
+    description: "Individual contributor generates early planning artifacts"
+    phases: [preplan, businessplan, techplan]
   medium:
     role: "Lead review"
     description: "Adversarial review gate using party mode — promotion carries planning artifacts"
-    phases: []
+    phases: [devproposal]
     entry_gate: adversarial-review
     entry_gate_mode: party
   large:
     role: "Stakeholder approval"
     description: "Stakeholder sign-off — promotion carries planning artifacts"
-    phases: []
+    phases: [sprintplan]
     entry_gate: stakeholder-approval
   base:
     role: "Ready for execution"
@@ -146,7 +143,7 @@ phases:
       - ux-design
     audience: small
     auto_advance_to: /techplan
-    auto_advance_promote: true   # small → medium promotion before /techplan
+    auto_advance_promote: false  # same audience — no promote needed (both on small)
     sub_workflows:
       - name: prd_creation
         required: true
@@ -170,7 +167,7 @@ phases:
       - architecture
     audience: small
     auto_advance_to: /devproposal
-    auto_advance_promote: true   # small → medium promotion before /devproposal
+    auto_advance_promote: true   # small → medium promotion before /devproposal (last small-audience phase)
     sub_workflows:
       - name: architecture_design
         required: true
@@ -191,9 +188,9 @@ phases:
       - epics
       - stories
       - implementation-readiness
-    audience: small
+    audience: medium
     auto_advance_to: /sprintplan
-    auto_advance_promote: true   # large → base promotion before /sprintplan
+    auto_advance_promote: true   # medium → large promotion before /sprintplan
     sub_workflows:
       - name: epic_generation
         required: true
@@ -219,9 +216,9 @@ phases:
     artifacts:
       - sprint-status
       - story-files
-    audience: small
+    audience: large
     auto_advance_to: /dev
-    auto_advance_promote: true   # base → dev-ready promotion before /dev
+    auto_advance_promote: true   # large → base promotion before /dev
     sub_workflows:
       - name: readiness_recheck
         required: true

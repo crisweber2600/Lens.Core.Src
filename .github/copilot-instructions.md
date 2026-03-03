@@ -37,6 +37,22 @@
 - Save outputs after EACH step when using the workflow engine
 - The `{project-root}` variable resolves to the workspace root at runtime
 
+## Change Management — bmad.lens.release
+
+When making modifications to files in the **bmad.lens.release** repository (this repo):
+
+1. **Create a feature branch** off the current branch before making any changes:
+   ```
+   git checkout -b <descriptive-branch-name>
+   ```
+   Use a descriptive name (e.g., `fix/lifecycle-audience-fields`, `feat/quickdev-track`).
+2. **Make all changes** on the feature branch — never commit directly to the current branch.
+3. **Commit** with a clear, conventional commit message (e.g., `fix(lifecycle): correct audience assignments for devproposal/sprintplan`).
+4. **Push** the feature branch and **create a PR** targeting the branch you branched from.
+5. Use the `promote-branch` script or GitHub CLI (`gh pr create`) to create the PR.
+
+> **Why:** bmad.lens.release is a shared control repo. All changes must go through PR review to prevent regressions in lifecycle definitions, workflows, and agent configurations.
+
 ## Available Agents
 
 | Agent | Persona | Title | Capabilities |
