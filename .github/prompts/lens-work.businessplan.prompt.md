@@ -96,5 +96,10 @@ Each workflow uses step-file architecture — halt at each step within the workf
 - `prd.md` (required)
 - `ux-design.md` (if UX workflow was run)
 
-**Next phase:** `/techplan` — runs after businessplan PR is merged into `{initiative_root}-small`
+**Auto-Advance:** After phase PR is created, auto-execute `@lens promote` to promote
+from `-small` to `-medium`. Load and execute `lens-work.promote.prompt.md`.
+After the promotion PR is created: pause and inform the user the PR must be merged.
+On the user's next message after merge, auto-execute `/techplan` — load and execute
+`lens-work.techplan.prompt.md`. Do NOT display "Run @lens promote" or "Run /techplan" —
+just execute them.
 ```

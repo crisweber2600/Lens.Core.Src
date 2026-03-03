@@ -123,7 +123,10 @@ Each workflow uses step-file architecture — halt at each step within the workf
 - `stories.md` (required)
 - `readiness-checklist.md` (required)
 
-**After DevProposal:** Run `@lens next` (or `/sprintplan`). If promotion is required, LENS auto-triggers it.
-
-**Next phase:** `/sprintplan` — runs after medium→large promotion complete
+**Auto-Advance:** After phase PR is created, auto-execute `@lens promote` to promote
+from `-large` to base. Load and execute `lens-work.promote.prompt.md`.
+After the promotion PR is created: pause and inform the user the PR must be merged.
+On the user's next message after merge, auto-execute `/sprintplan` — load and execute
+`lens-work.sprintplan.prompt.md`. Do NOT display "Run @lens next" or "Run /sprintplan" —
+just execute them.
 ```

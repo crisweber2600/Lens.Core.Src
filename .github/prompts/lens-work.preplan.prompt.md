@@ -92,7 +92,11 @@ Each workflow uses step-file architecture — halt at each step within the workf
 - `brainstorm-notes.md` (if brainstorming run)
 - `research-summary.md` (if research run)
 
-**Next phase:** `/businessplan` — runs after preplan PR is merged into `{initiative_root}-small`
+**Auto-Advance:** After phase PR is created, this phase is complete. Since both
+preplan and businessplan run on the `-small` audience branch, no promotion is needed.
+After the preplan PR is merged, automatically execute `/businessplan` — load and
+execute `lens-work.businessplan.prompt.md`. Do NOT display "Run /businessplan" — just
+execute it.
 
 **CRITICAL — User Input Anchoring:**
 If the user provided text alongside this prompt invocation, treat it as additional

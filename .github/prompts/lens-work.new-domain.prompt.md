@@ -12,7 +12,7 @@ Activate @lens agent and execute /new-domain:
 3. Router dispatches to `_bmad/lens-work/workflows/router/init-initiative/` workflow
 4. Git-orchestration creates domain branch ONLY (no audience/phase branches) and pushes immediately
 5. Scaffold domain folders and Domain.yaml
-6. Route to `/new-service` or `/new-feature` within this domain
+6. After domain creation, auto-execute `/new-service` within this domain (load and execute `lens-work.new-service.prompt.md`). Do NOT display "Run /new-service" — just execute it.
 
 Use `#think` before defining domain boundaries or scope.
 

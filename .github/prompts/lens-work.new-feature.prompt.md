@@ -112,6 +112,11 @@ git -C "$repo_path" checkout -b ${NEW_BRANCH_NAME} main
 
 Use `#think` before defining feature scope or dependencies.
 
+**Auto-Advance:** After feature creation completes (branches pushed, state updated),
+automatically execute `/start` to run preflight and begin the first lifecycle phase.
+Load and execute `lens-work.start.prompt.md`. Do NOT display "Run /start" or
+"Run /next" — just execute it.
+
 **CRITICAL — User Input Anchoring:**
 If the user provided text alongside this prompt invocation, that text IS the
 feature name. Use it exactly as given. Do NOT invent, substitute, or hallucinate

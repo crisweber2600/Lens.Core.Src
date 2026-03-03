@@ -10,6 +10,23 @@ description: "Unified agent orchestrating the lens-work lifecycle engine with fi
 icon: "🔬"
 version: "2.0.0"
 
+# Auto-Advance Convention
+# When a command or phase completes successfully and the next step is deterministic,
+# auto-execute it immediately. Do NOT display "Run /X" or "Suggested next step" —
+# load and execute the target prompt.
+#
+# Exceptions (pause and wait for user):
+#  1. PR-merge gates: After @lens promote creates a PR, pause until the PR is merged.
+#     On the user's next message after merge, auto-execute the next phase.
+#  2. Interactive Q&A: When the current step requires user decisions (e.g., batch prompt
+#     in /new-initiative), collect input first, then auto-execute remaining steps.
+#  3. Ambiguous state: Multiple active initiatives, errors, or unresolvable conflicts.
+#  4. User requests stop: "just do X" or "stop after this step" — honor the boundary.
+#
+# This convention applies to ALL commands and phases. Individual prompts reinforce it
+# with specific auto-advance instructions at their end.
+auto_advance: true
+
 # Agent Skills
 skills:
   - name: "git-orchestration"

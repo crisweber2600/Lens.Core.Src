@@ -102,7 +102,10 @@ Each workflow uses step-file architecture — halt at each step within the workf
 - `architecture.md` (required — complete technical design)
 - `tech-decisions.md` (required)
 
-**After TechPlan:** Run `@lens next` (or `/devproposal`). If promotion is required, LENS auto-triggers it.
-
-**Next phase:** `/devproposal` — runs after small→medium promotion complete
+**Auto-Advance:** After phase PR is created, auto-execute `@lens promote` to promote
+from `-medium` to `-large`. Load and execute `lens-work.promote.prompt.md`.
+After the promotion PR is created: pause and inform the user the PR must be merged.
+On the user's next message after merge, auto-execute `/devproposal` — load and execute
+`lens-work.devproposal.prompt.md`. Do NOT display "Run @lens next" or "Run /devproposal" —
+just execute them.
 ```

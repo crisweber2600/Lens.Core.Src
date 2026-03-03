@@ -89,12 +89,12 @@ Execute workflows in sequence:
 - `{initiative.docs.bmad_docs}/sprint-backlog.md` (required)
 - `{initiative.docs.bmad_docs}/dev-story-{id}.md` (required, one per selected story)
 
-**After SprintPlan:** Run `@lens next` (or `/dev`). If promotion is required, LENS auto-triggers it.
+**Auto-Advance:** After phase PR is created, auto-execute `@lens promote` to promote
+from base to dev-ready. Load and execute `lens-work.promote.prompt.md`.
+After the promotion PR is created: pause and inform the user the PR must be merged.
+On the user's next message after merge, auto-execute `/dev` — load and execute
+`lens-work.dev.prompt.md`. Do NOT display "Run @lens next" or "Run /dev" — just
+execute them.
 
-**Next steps:**
-1. Merge sprintplan PR into `{initiative_root}-large`
-2. Run `@lens next` (or `/dev`) to continue flow
-3. Promotion gate checks execute automatically when required
-
-**Developer handoff:** Confirm story assignment and hand off dev story file to Amelia (Developer)
+**Developer handoff:** Story assignment and handoff to Amelia (Developer) happens automatically.
 ```

@@ -74,10 +74,14 @@ Wait for confirmation, then verify `git_credentials` added to profile.
 
 Profile: {name} ({role}, {scope})
 Ready: {cloned_count} repos cloned
-
-Next: Run #new-feature "your-feature" to start, or @lens H for help
 ```
 
+**Auto-Advance:** After onboarding completes, automatically execute `/switch`.
+Load and execute `lens-work.switch.prompt.md`. The `/switch` prompt presents the
+full command menu and handles routing to the appropriate next action.
+Do NOT display "Run /switch" — just execute it.
+
 **Re-run Behavior:**
-If profile exists: ask user whether to [Update settings | Reset & re-onboard]
+If profile exists: ask user whether to [Update settings | Reset & re-onboard].
+On re-onboard, do NOT auto-advance — the user likely already has initiatives.
 ```

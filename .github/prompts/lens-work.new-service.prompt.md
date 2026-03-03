@@ -53,14 +53,29 @@ Use `#think` before defining service boundaries or naming.
 **In-Scope Repos:** Inherited from parent Domain.yaml (or subset if specified)
 
 **Repo Onboarding:**
-After service creation, instruct the user to clone each target repo into the service folder:
+After service creation, clone each target repo into the service folder:
 ```
 git clone <repo-url> TargetProjects/{domain_prefix}/{service_prefix}/{repo_name}
 ```
 Repos must be cloned into the service's TargetProjects folder to be onboarded for discovery and planning.
 
+**Auto-Documentation (after service creation):**
+After cloning target repos, automatically generate project documentation:
+1. Load and follow `_bmad/bmm/workflows/document-project/instructions.md`
+   - Scan depth: **deep** (default — adjust if user specifies quick or exhaustive)
+   - Project root = `TargetProjects/{domain_prefix}/{service_prefix}/{repo_name}`
+   - Output to = `docs/{domain_prefix}/{service_prefix}/`
+2. Load and follow `_bmad/bmm/workflows/generate-project-context/workflow.md`
+   - Output `project-context.md` to `docs/{domain_prefix}/{service_prefix}/`
+- If `docs/{domain_prefix}/{service_prefix}/project-context.md` already exists → skip (offer re-scan only if user explicitly asks)
+- Do NOT pause or ask the user to run a separate command — execute docs inline
+
 **Note:** Service-layer does NOT create audience/phase branches.
 Feature initiatives within this service will create their own branch topology.
+
+**Auto-Advance:** After service creation and documentation, automatically execute
+`/new-feature` within this service. Load and execute `lens-work.new-feature.prompt.md`.
+Do NOT display "Run /new-feature" — just execute it.
 
 **CRITICAL — User Input Anchoring:**
 If the user provided text alongside this prompt invocation, that text IS the
