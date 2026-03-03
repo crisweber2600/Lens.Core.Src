@@ -178,10 +178,11 @@ For every step file:
 ```markdown
 ### N. Present MENU OPTIONS
 
-Display: "**Select:** [A] [action A] [P] [action P] [C] Continue"
+Display: "**Select:** [A] [action A] [B] Batch Mode [P] [action P] [C] Continue"
 
 #### Menu Handling Logic:
 - IF A: Execute {advancedElicitationTask}, and when finished redisplay the menu
+- IF B: Save current content, then read fully and follow batch-mode protocol: {batchModeWorkflow} — execute all remaining steps continuously then present batch review
 - IF P: Execute {partyModeWorkflow}, and when finished redisplay the menu
 - IF C: Save content to {outputFile}, update frontmatter, then load, read entire file, then execute {nextStepFile}
 - IF Any other comments or queries: help user respond then [Redisplay Menu Options](#n-present-menu-options)
@@ -190,6 +191,7 @@ Display: "**Select:** [A] [action A] [P] [action P] [C] Continue"
 - ALWAYS halt and wait for user input after presenting menu
 - ONLY proceed to next step when user selects 'C'
 - After other menu items execution, return to this menu
+- IF B selected, do NOT return to this menu — batch mode takes over remaining steps
 ```
 
 ---

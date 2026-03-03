@@ -90,7 +90,7 @@ audiences = lifecycle.audiences  # {small, medium, large, base}
 ```yaml
 current_phase = state.current.phase_name
 current_workflow_status = state.current.workflow_status
-current_audience = determine_audience(initiative.branches.active)  # e.g., "small"
+current_audience = determine_audience(initiative.branches.active, current_phase, lifecycle)  # e.g., "small", "medium", "large", "base"
 
 # Load track to determine which phases are active
 track = initiative.track
@@ -300,15 +300,27 @@ exit: 0
 ### 5. Helper Functions
 
 ```yaml
-# Determine audience from branch name
-function determine_audience(branch_name):
+# Determine audience for current phase using lifecycle contract
+# Primary: use branching_audience from lifecycle (authoritative)
+# Fallback: parse from branch name (handles legacy/manual scenarios)
+function determine_audience(branch_name, current_phase, lifecycle):
+  # 1. Check lifecycle for authoritative branching_audience
+  if current_phase != null and lifecycle != null:
+    phase_config = lifecycle.phases[current_phase]
+    if phase_config != null:
+      if phase_config.branching_audience != null:
+        return phase_config.branching_audience  # e.g., "medium" for devproposal, "large" for sprintplan
+      return phase_config.audience  # e.g., "small" for preplan/businessplan/techplan
+  
+  # 2. Fallback: parse audience from branch name
   if branch_name.includes("-small"):
     return "small"
   if branch_name.includes("-medium"):
     return "medium"
   if branch_name.includes("-large"):
     return "large"
-  if not branch_name.includes("-"):
+  # Dev phase or initiative root branch → base
+  if branch_name.endsWith("-dev") or not branch_name.includes("-"):
     return "base"
   return "unknown"
 

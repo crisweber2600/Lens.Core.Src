@@ -81,8 +81,10 @@ size = initiative.size
 domain_prefix = initiative.domain_prefix
 
 # Derive audience from lifecycle contract (sprintplan → large)
+# Uses branching_audience (the audience branch this phase branches FROM)
+# Falls back to audience field for backward compatibility
 current_phase = "sprintplan"
-audience = lifecycle.phases[current_phase].audience    # "large"
+audience = lifecycle.phases[current_phase].branching_audience || lifecycle.phases[current_phase].audience    # "large"
 initiative_root = initiative.initiative_root
 audience_branch = "${initiative_root}-${audience}"     # {initiative_root}-large
 

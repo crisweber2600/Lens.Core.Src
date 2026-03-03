@@ -63,8 +63,10 @@ invoke: shared.preflight
 # NOTE: sprintplan is the FIRST phase in large audience — requires medium→large promotion
 
 # Derive audience from lifecycle contract (sprintplan → large)
+# Uses branching_audience (the audience branch this phase branches FROM)
+# Falls back to audience field for backward compatibility
 current_phase = "sprintplan"
-audience = lifecycle.phases[current_phase].audience    # "large"
+audience = lifecycle.phases[current_phase].branching_audience || lifecycle.phases[current_phase].audience    # "large"
 audience_branch = "${initiative_root}-${audience}"     # {initiative_root}-large
 
 # Resolve docs_path and repo_docs_path (read via fragment; override output_path below)
