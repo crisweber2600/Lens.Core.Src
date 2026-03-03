@@ -7,6 +7,7 @@
 | Letter | Purpose              | After Execution                |
 | ------ | -------------------- | ------------------------------ |
 | **A**  | Advanced Elicitation | Redisplay menu                |
+| **B**  | Batch Mode           | Execute all remaining steps, then batch review |
 | **P**  | Party Mode           | Redisplay menu                |
 | **C**  | Continue/Accept      | Save → update → load next step |
 | **X**  | Exit/Cancel          | End workflow                  |
@@ -18,13 +19,14 @@
 ### Section 1: Display
 ```markdown
 ### N. Present MENU OPTIONS
-Display: "**Select:** [A] [action] [P] [action] [C] Continue"
+Display: "**Select:** [A] [action] [B] Batch Mode [P] [action] [C] Continue"
 ```
 
 ### Section 2: Handler (MANDATORY)
 ```markdown
 #### Menu Handling Logic:
 - IF A: Execute {advancedElicitationTask}, and when finished redisplay the menu
+- IF B: Save current content, then read fully and follow batch-mode protocol: {batchModeWorkflow} — execute all remaining steps continuously then present batch review
 - IF P: Execute {partyModeWorkflow}, and when finished redisplay the menu
 - IF C: Save content to {outputFile}, update frontmatter, then load, read entire file, then execute {nextStepFile}
 - IF Any other: help user, then [Redisplay Menu Options](#n-present-menu-options)
@@ -46,12 +48,13 @@ Display: "**Select:** [A] [action] [P] [action] [C] Continue"
 
 ## Menu Patterns
 
-### Pattern 1: Standard A/P/C
+### Pattern 1: Standard A/B/P/C
 ```markdown
-Display: "**Select an Option:** [A] Advanced Elicitation [P] Party Mode [C] Continue"
+Display: "**Select an Option:** [A] Advanced Elicitation [B] Batch Mode [P] Party Mode [C] Continue"
 
 #### Menu Handling Logic:
 - IF A: Execute {advancedElicitationTask}, and when finished redisplay the menu
+- IF B: Save current content, then read fully and follow batch-mode protocol: {batchModeWorkflow} — execute all remaining steps continuously then present batch review
 - IF P: Execute {partyModeWorkflow}, and when finished redisplay the menu
 - IF C: Save content to {outputFile}, update frontmatter, then load, read entire file, then execute {nextStepFile}
 - IF Any other: help user, then [Redisplay Menu Options](#n-present-menu-options)
@@ -60,6 +63,7 @@ Display: "**Select an Option:** [A] Advanced Elicitation [P] Party Mode [C] Cont
 - ALWAYS halt and wait for user input after presenting menu
 - ONLY proceed to next step when user selects 'C'
 - After other menu items execution, return to this menu
+- IF B selected, do NOT return to this menu — batch mode takes over remaining steps
 ```
 
 ### Pattern 2: C Only (No A/P)
@@ -106,6 +110,20 @@ Display: "**Select:** [L] Load Existing [N] Create New [C] Continue"
 - Branching options load different steps based on user choice
 ```
 
+### Pattern 5: Batch Mode Activation
+When user selects `[B]` from any menu that includes it:
+1. Complete current step's content generation (treat as `[C]` for current step)
+2. Save content and update frontmatter for current step
+3. Read fully and follow the batch-mode protocol: `_bmad/core/workflows/batch-mode/workflow.md`
+4. Execute ALL remaining steps continuously without halting at menus
+5. Log all decisions made on behalf of the user
+6. Present Batch Review with summary, decisions, and section summaries
+7. User reviews and can edit/refine individual sections before accepting
+
+**Use for:** When user wants to generate all remaining content at once and review afterward
+
+**Note:** Batch mode is also activatable via profile setting `question_mode: batch` — workflows should check the user profile at init and auto-activate batch mode after interactive init steps complete.
+
 ## Critical Rules
 
 ### ❌ DON'T:
@@ -119,6 +137,7 @@ Display: "**Select:** [L] Load Existing [N] Create New [C] Continue"
 - "Halt and wait" in EXECUTION RULES
 - Non-C options specify "redisplay menu"
 - A/P only when appropriate for step type
+- Include [B] Batch Mode in menus that have A/P (same eligibility)
 
 ## Validation Checklist
 
