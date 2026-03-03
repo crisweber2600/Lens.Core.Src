@@ -15,7 +15,7 @@ description: 'Conduct technical research on technologies and architecture. Use w
 
 ## CONFIGURATION
 
-Load config from `_bmad/bmm/bmadconfig.yaml` and resolve:
+Load config from `bmad.lens.release/_bmad/bmm/bmadconfig.yaml` and resolve:
 - `project_name`, `output_folder`, `planning_artifacts`, `user_name`
 - `communication_language`, `document_output_language`, `user_skill_level`
 - `date` as a system-generated value

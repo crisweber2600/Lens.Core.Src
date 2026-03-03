@@ -3,12 +3,12 @@ name: 'step-02-vision'
 description: 'Discover and define the core product vision, problem statement, and unique value proposition'
 
 # File References
-nextStepFile: '_bmad/bmm/workflows/1-analysis/create-product-brief/steps/step-03-users.md'
+nextStepFile: 'bmad.lens.release/_bmad/bmm/workflows/1-analysis/create-product-brief/steps/step-03-users.md'
 outputFile: '{planning_artifacts}/product-brief-{{project_name}}-{{date}}.md'
 
 # Task References
-advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Step 2: Product Vision Discovery

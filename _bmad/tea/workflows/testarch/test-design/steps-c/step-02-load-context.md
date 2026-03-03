@@ -2,7 +2,7 @@
 name: 'step-02-load-context'
 description: 'Load documents, configuration, and knowledge fragments for the chosen mode'
 nextStepFile: './step-03-risk-and-testability.md'
-knowledgeIndex: '_bmad/tea/testarch/tea-index.csv'
+knowledgeIndex: 'bmad.lens.release/_bmad/tea/testarch/tea-index.csv'
 outputFile: '{test_artifacts}/test-design-progress.md'
 ---
 

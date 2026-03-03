@@ -1,7 +1,7 @@
 # Correct Course - Sprint Change Management Instructions
 
-<critical>The workflow execution engine is governed by: _bmad/core/tasks/workflow.yaml</critical>
-<critical>You MUST have already loaded and processed: _bmad/bmm/workflows/4-implementation/correct-course/workflow.yaml</critical>
+<critical>The workflow execution engine is governed by: bmad.lens.release/_bmad/core/tasks/workflow.yaml</critical>
+<critical>You MUST have already loaded and processed: bmad.lens.release/_bmad/bmm/workflows/4-implementation/correct-course/workflow.yaml</critical>
 <critical>Communicate all responses in {communication_language} and language MUST be tailored to {user_skill_level}</critical>
 <critical>Generate all documents in {document_output_language}</critical>
 

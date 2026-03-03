@@ -7,7 +7,7 @@ description: Switch active initiative from available list
 
 This is a stub prompt. The actual implementation reads from:
 ```
-.github/prompts/lens-work.switch.prompt.md
+bmad.lens.release/.github/prompts/lens-work.switch.prompt.md
 ```
 
 **Load from release repository when integrating full implementations.**

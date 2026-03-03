@@ -1,13 +1,13 @@
 ---
 name: quick-spec
 description: 'Conversational spec engineering workflow - ask questions, investigate code, produce implementation-ready tech-spec. Use when the user says "lets create a tech spec" or "I want to create a technical specification"'
-main_config: '_bmad/gds/bmadconfig.yaml'
+main_config: 'bmad.lens.release/_bmad/gds/bmadconfig.yaml'
 web_bundle: true
 
 # Checkpoint handler paths
-advanced_elicitation: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-party_mode_exec: '_bmad/core/workflows/party-mode/workflow.md'
-quick_dev_workflow: '_bmad/gds/workflows/gds-quick-flow/quick-dev/workflow.md'
+advanced_elicitation: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+party_mode_exec: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
+quick_dev_workflow: 'bmad.lens.release/_bmad/gds/workflows/gds-quick-flow/quick-dev/workflow.md'
 ---
 
 # Quick-Spec Workflow

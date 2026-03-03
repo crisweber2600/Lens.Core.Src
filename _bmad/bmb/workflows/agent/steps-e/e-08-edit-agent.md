@@ -22,8 +22,8 @@ criticalActions: ../data/critical-actions.md
 noSidecarExample: ../data/reference/without-sidecar/commit-poet.agent.yaml
 withSidecarExample: ../data/reference/with-sidecar/journal-keeper/journal-keeper.agent.yaml
 
-advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Edit Step 8: Edit Agent
@@ -99,7 +99,7 @@ For each planned edit:
 - Add `critical_actions` section with sidecar file references
 - Create sidecar directory: `{agent-folder}/{agent-name}-sidecar/`
 - Create starter files: `memories.md`, `instructions.md`
-- Update all references to use `_bmad/_memory/{sidecar-folder}/` format
+- Update all references to use `bmad.lens.release/_bmad/_memory/{sidecar-folder}/` format
 
 **true → false (Removing sidecar):**
 - Set `hasSidecar: false`
@@ -127,7 +127,7 @@ For each planned edit:
 - Additions: append to critical_actions array
 - Modifications: update specific actions
 - Removals: remove from array
-- Ensure all references use correct `_bmad/_memory/` paths
+- Ensure all references use correct `bmad.lens.release/_bmad/_memory/` paths
 
 ### 5. Validate After Each Edit
 

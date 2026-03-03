@@ -5,8 +5,8 @@
 
 project_name: bmad.lens.release
 game_dev_experience: intermediate
-planning_artifacts: "_bmad-output/planning-artifacts"
-implementation_artifacts: "_bmad-output/implementation-artifacts"
+planning_artifacts: "bmad.lens.release/_bmad-output/planning-artifacts"
+implementation_artifacts: "bmad.lens.release/_bmad-output/implementation-artifacts"
 project_knowledge: "{project-root}/docs"
 primary_platform:
   - unity
@@ -18,4 +18,4 @@ primary_platform:
 user_name: CrisWeber
 communication_language: English
 document_output_language: English
-output_folder: "_bmad-output"
+output_folder: "bmad.lens.release/_bmad-output"

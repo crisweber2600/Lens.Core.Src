@@ -19,7 +19,7 @@
 
 ## CONTEXT BOUNDARIES:
 
-- Agent manifest CSV is available at `_bmad/_config/agent-manifest.csv`
+- Agent manifest CSV is available at `bmad.lens.release/_bmad/_config/agent-manifest.csv`
 - User configuration from bmadconfig.yaml is loaded and resolved
 - Party mode is standalone interactive workflow
 - All agent data is available for conversation orchestration
@@ -38,7 +38,7 @@ Begin agent loading process:
 
 **Agent Manifest Loading:**"
 
-Load and parse the agent manifest CSV from `_bmad/_config/agent-manifest.csv`
+Load and parse the agent manifest CSV from `bmad.lens.release/_bmad/_config/agent-manifest.csv`
 
 ### 2. Extract Agent Data
 

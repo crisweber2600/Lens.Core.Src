@@ -1,7 +1,7 @@
 ---
 name: create-game-brief
 description: 'Game vision definition workflow through collaborative step-by-step discovery. Use when the user says "lets create a game brief" or "I want to define my game vision"'
-main_config: '_bmad/gds/bmadconfig.yaml'
+main_config: 'bmad.lens.release/_bmad/gds/bmadconfig.yaml'
 web_bundle: true
 ---
 

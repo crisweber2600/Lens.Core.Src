@@ -3,7 +3,7 @@ name: analyze-codebase
 description: Analyze a target codebase and generate a summary
 nextStep: './steps-c/step-00-preflight.md'
 web_bundle: true
-installed_path: '_bmad/lens-work/workflows/analyze-codebase'
+installed_path: 'bmad.lens.release/_bmad/lens-work/workflows/analyze-codebase'
 
 # Analyze Codebase Workflow (Create-Only)
 

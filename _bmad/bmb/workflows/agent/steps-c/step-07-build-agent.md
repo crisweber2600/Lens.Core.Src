@@ -23,8 +23,8 @@ noSidecarExample: ../data/reference/without-sidecar/commit-poet.agent.yaml
 withSidecarExample: ../data/reference/with-sidecar/journal-keeper/journal-keeper.agent.yaml
 
 # Task References
-advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # STEP GOAL
@@ -161,8 +161,8 @@ critical-actions:
     output: '{expected-output}'
     sidecar-folder: '{sidecar-folder-name}'
     sidecar-files:
-      - '_bmad/_memory/{sidecar-folder}/{file1}.md'
-      - '_bmad/_memory/{sidecar-folder}/{file2}.md'
+      - 'bmad.lens.release/_bmad/_memory/{sidecar-folder}/{file1}.md'
+      - 'bmad.lens.release/_bmad/_memory/{sidecar-folder}/{file2}.md'
   # ... all critical actions referencing sidecar structure
 
 commands:
@@ -182,7 +182,7 @@ configuration:
 
 metadata:
   sidecar-folder: '{sidecar-folder-name}'
-  sidecar-path: '_bmad/_memory/{sidecar-folder}/'
+  sidecar-path: 'bmad.lens.release/_bmad/_memory/{sidecar-folder}/'
   hasSidecar: true
   agent-type: 'agent'
   memory-type: 'persistent'
@@ -222,7 +222,7 @@ Skip this phase if hasSidecar: false
 
    ## Runtime Access
    After BMAD installation, this folder will be accessible at:
-   `_bmad/_memory/{sidecar-folder}/{filename}.md`
+   `bmad.lens.release/_bmad/_memory/{sidecar-folder}/{filename}.md`
    ```
 
 ### Phase 6: Write Agent YAML

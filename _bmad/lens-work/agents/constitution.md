@@ -14,21 +14,21 @@ You must fully embody this agent's persona and follow all activation instruction
   <activation critical="MANDATORY">
     <step n="1">Load persona from this agent file (already in context)</step>
     <step n="2">🚨 IMMEDIATE ACTION REQUIRED - BEFORE ANY OUTPUT:
-      - Load and read _bmad/lens-work/bmadconfig.yaml NOW
+      - Load and read bmad.lens.release/_bmad/lens-work/bmadconfig.yaml NOW
       - Store ALL fields as session variables:
         {user_name}, {communication_language}, {output_folder},
-        {project_root}, {constitutions_dir} = "_bmad-output/lens-work/constitutions"
+        {project_root}, {constitutions_dir} = "bmad.lens.release/_bmad-output/lens-work/constitutions"
       - VERIFY: If config not loaded, STOP and report error
       - DO NOT PROCEED to step 3 until config is loaded
     </step>
     <step n="3">Load and internalize the constitution skill:
-      - Read _bmad/lens-work/skills/constitution.md
+      - Read bmad.lens.release/_bmad/lens-work/skills/constitution.md
       - This file defines ALL path resolution, parsing, loading, merging,
         display, and validation logic. All operations MUST follow the skill's instructions.
       - NEVER call JS lib files. The skill IS the implementation.
     </step>
     <step n="4">Attempt to load active initiative context:
-      - Read _bmad-output/lens-work/state.yaml
+      - Read bmad.lens.release/_bmad-output/lens-work/state.yaml
       - If active initiative found: extract domain, service, repo, track
       - Store as {active_context}
     </step>
@@ -77,22 +77,22 @@ You must fully embody this agent's persona and follow all activation instruction
   </menu>
 
   <menu-handlers>
-    <handler cmd="V" exec="_bmad/lens-work/workflows/governance/constitution/workflow.md">
+    <handler cmd="V" exec="bmad.lens.release/_bmad/lens-work/workflows/governance/constitution/workflow.md">
       Run constitution workflow in VIEW mode. Pre-select mode "V" automatically.
     </handler>
-    <handler cmd="R" exec="_bmad/lens-work/workflows/governance/resolve-constitution/workflow.md">
+    <handler cmd="R" exec="bmad.lens.release/_bmad/lens-work/workflows/governance/resolve-constitution/workflow.md">
       Run resolve-constitution workflow.
     </handler>
-    <handler cmd="C" exec="_bmad/lens-work/workflows/governance/constitution/workflow.md">
+    <handler cmd="C" exec="bmad.lens.release/_bmad/lens-work/workflows/governance/constitution/workflow.md">
       Run constitution workflow in CREATE mode. Pre-select mode "C" automatically.
     </handler>
-    <handler cmd="A" exec="_bmad/lens-work/workflows/governance/constitution/workflow.md">
+    <handler cmd="A" exec="bmad.lens.release/_bmad/lens-work/workflows/governance/constitution/workflow.md">
       Run constitution workflow in AMEND mode. Pre-select mode "A" automatically.
     </handler>
-    <handler cmd="CH" exec="_bmad/lens-work/workflows/governance/compliance-check/workflow.md">
+    <handler cmd="CH" exec="bmad.lens.release/_bmad/lens-work/workflows/governance/compliance-check/workflow.md">
       Run compliance-check workflow.
     </handler>
-    <handler cmd="AN" exec="_bmad/lens-work/workflows/governance/ancestry/workflow.md">
+    <handler cmd="AN" exec="bmad.lens.release/_bmad/lens-work/workflows/governance/ancestry/workflow.md">
       Run ancestry workflow.
     </handler>
     <handler cmd="H">

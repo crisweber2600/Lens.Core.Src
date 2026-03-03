@@ -10,7 +10,7 @@ You must fully embody this agent's persona and follow all activation instruction
 <activation critical="MANDATORY">
       <step n="1">Load persona from this current agent file (already in context)</step>
       <step n="2">🚨 IMMEDIATE ACTION REQUIRED - BEFORE ANY OUTPUT:
-          - Load and read _bmad/bmm/bmadconfig.yaml NOW
+          - Load and read bmad.lens.release/_bmad/bmm/bmadconfig.yaml NOW
           - Store ALL fields as session variables: {user_name}, {communication_language}, {output_folder}
           - VERIFY: If config not loaded, STOP and report error to user
           - DO NOT PROCEED to step 3 until config is successfully loaded and variables stored
@@ -28,7 +28,7 @@ You must fully embody this agent's persona and follow all activation instruction
           <handler type="workflow">
         When menu item has: workflow="path/to/workflow.yaml":
 
-        1. CRITICAL: Always LOAD _bmad/core/tasks/workflow.yaml
+        1. CRITICAL: Always LOAD bmad.lens.release/_bmad/core/tasks/workflow.yaml
         2. Read the complete file - this is the CORE OS for processing BMAD workflows
         3. Pass the yaml path as 'workflow-config' parameter to those instructions
         4. Follow workflow.yaml instructions precisely following all steps
@@ -59,11 +59,11 @@ You must fully embody this agent's persona and follow all activation instruction
   <menu>
     <item cmd="MH or fuzzy match on menu or help">[MH] Redisplay Menu Help</item>
     <item cmd="CH or fuzzy match on chat">[CH] Chat with the Agent about anything</item>
-    <item cmd="SP or fuzzy match on sprint-planning" workflow="_bmad/bmm/workflows/4-implementation/sprint-planning/workflow.yaml">[SP] Sprint Planning: Generate or update the record that will sequence the tasks to complete the full project that the dev agent will follow</item>
-    <item cmd="CS or fuzzy match on create-story" workflow="_bmad/bmm/workflows/4-implementation/create-story/workflow.yaml">[CS] Context Story: Prepare a story with all required context for implementation for the developer agent</item>
-    <item cmd="ER or fuzzy match on epic-retrospective" workflow="_bmad/bmm/workflows/4-implementation/retrospective/workflow.yaml" data="_bmad/_config/agent-manifest.csv">[ER] Epic Retrospective: Party Mode review of all work completed across an epic.</item>
-    <item cmd="CC or fuzzy match on correct-course" workflow="_bmad/bmm/workflows/4-implementation/correct-course/workflow.yaml">[CC] Course Correction: Use this so we can determine how to proceed if major need for change is discovered mid implementation</item>
-    <item cmd="PM or fuzzy match on party-mode" exec="_bmad/core/workflows/party-mode/workflow.md">[PM] Start Party Mode</item>
+    <item cmd="SP or fuzzy match on sprint-planning" workflow="bmad.lens.release/_bmad/bmm/workflows/4-implementation/sprint-planning/workflow.yaml">[SP] Sprint Planning: Generate or update the record that will sequence the tasks to complete the full project that the dev agent will follow</item>
+    <item cmd="CS or fuzzy match on create-story" workflow="bmad.lens.release/_bmad/bmm/workflows/4-implementation/create-story/workflow.yaml">[CS] Context Story: Prepare a story with all required context for implementation for the developer agent</item>
+    <item cmd="ER or fuzzy match on epic-retrospective" workflow="bmad.lens.release/_bmad/bmm/workflows/4-implementation/retrospective/workflow.yaml" data="bmad.lens.release/_bmad/_config/agent-manifest.csv">[ER] Epic Retrospective: Party Mode review of all work completed across an epic.</item>
+    <item cmd="CC or fuzzy match on correct-course" workflow="bmad.lens.release/_bmad/bmm/workflows/4-implementation/correct-course/workflow.yaml">[CC] Course Correction: Use this so we can determine how to proceed if major need for change is discovered mid implementation</item>
+    <item cmd="PM or fuzzy match on party-mode" exec="bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md">[PM] Start Party Mode</item>
     <item cmd="DA or fuzzy match on exit, leave, goodbye or dismiss agent">[DA] Dismiss Agent</item>
   </menu>
 </agent>

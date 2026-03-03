@@ -144,28 +144,28 @@ subPrompts:
     description: "Create user profile, set up GitHub PAT, and bootstrap TargetProjects (interactive setup)"
     file: "./.github/prompts/lens-work.onboard.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.onboard.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.onboard.md"
 
   - id: "new-initiative"
     title: "Implement /new (initiative creation)"
     description: "Create new initiative with branch topology and config"
     file: "./.github/prompts/lens-work.new-initiative.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.new-initiative.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.new-initiative.md"
 
   - id: "status"
     title: "Implement /status command (3-line + verbose)"
     description: "Quick status line + extended view with artifact checklist"
     file: "./.github/prompts/lens-work.status.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.status.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.status.md"
 
   - id: "next"
     title: "Implement /next command (auto-execute next action)"
     description: "Determine and execute the next required action based on current state"
     file: "./.github/prompts/lens-work.next.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.next.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.next.md"
 
   # PHASE COMMANDS
   - id: "preplan"
@@ -173,35 +173,35 @@ subPrompts:
     description: "PrePlan phase: delegate to Mary (Analyst) for product brief creation"
     file: "./.github/prompts/lens-work.preplan.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.preplan.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.preplan.md"
 
   - id: "businessplan"
     title: "Implement /businessplan workflow (John+Sally → PRD)"
     description: "BusinessPlan phase: delegate to John (PM) + Sally (UX) for PRD creation"
     file: "./.github/prompts/lens-work.businessplan.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.businessplan.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.businessplan.md"
 
   - id: "techplan"
     title: "Implement /techplan workflow (Winston → architecture)"
     description: "TechPlan phase: delegate to Winston (Architect) for architecture and tech decisions"
     file: "./.github/prompts/lens-work.techplan.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.techplan.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.techplan.md"
 
   - id: "devproposal"
     title: "Implement /devproposal workflow (John → epics+stories)"
     description: "DevProposal phase: delegate to John (PM) for epics and stories"
     file: "./.github/prompts/lens-work.devproposal.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.devproposal.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.devproposal.md"
 
   - id: "sprintplan"
     title: "Implement /sprintplan workflow (Bob → sprint-status)"
     description: "SprintPlan phase: delegate to Bob (Scrum Master) for sprint planning"
     file: "./.github/prompts/lens-work.sprintplan.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.sprintplan.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.sprintplan.md"
 
   # NAVIGATION
   - id: "switch"
@@ -209,7 +209,7 @@ subPrompts:
     description: "Switch active initiative from available list"
     file: "./.github/prompts/lens-work.switch.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.switch.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.switch.md"
 
   # RECOVERY & GOVERNANCE
   - id: "sync"
@@ -217,21 +217,21 @@ subPrompts:
     description: "Reconcile state from git branches using remote-wins strategy"
     file: "./.github/prompts/lens-work.sync.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.sync.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.sync.md"
 
   - id: "fix"
     title: "Implement /fix (3-category repair)"
     description: "Fix state drift, gate blocks, or divergence between files"
     file: "./.github/prompts/lens-work.fix.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.fix.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.fix.md"
 
   - id: "constitution"
     title: "Implement /constitution display command"
     description: "Display constitution hierarchy or update rules"
     file: "./.github/prompts/lens-work.constitution.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.constitution.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.constitution.md"
 
   # UTILITY COMMANDS
   - id: "adjust"
@@ -239,14 +239,14 @@ subPrompts:
     description: "Make small tweaks after dev without full ceremony (abbreviated review, advisory constitution)"
     file: "./.github/prompts/lens-work.adjust.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.adjust.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.adjust.md"
 
   - id: "fix-story"
     title: "Quick correction loop"
     description: "Fix a story that failed review or has defects (Quick-Spec, Review, Quick-Dev)"
     file: "./.github/prompts/lens-work.fix-story.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.fix-story.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.fix-story.md"
 
   # FOUNDATION STORIES (Implementation Tasks)
   - id: "impl-safety-audit"
@@ -254,196 +254,196 @@ subPrompts:
     description: "Remove all auto-advance patterns from phase workflows"
     file: "./.github/prompts/lens-work.impl-safety-audit.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-safety-audit.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-safety-audit.md"
 
   - id: "impl-pr-gates"
     title: "PR-Gate Enforcement: add to all phase exits"
     description: "Ensure all phase exits require PR gate"
     file: "./.github/prompts/lens-work.impl-pr-gates.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-pr-gates.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-pr-gates.md"
 
   - id: "impl-state-yaml"
     title: "State YAML: implement read/write with v2 schema"
     description: "State management for v2 lifecycle with named phases"
     file: "./.github/prompts/lens-work.impl-state-yaml.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-state-yaml.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-state-yaml.md"
 
   - id: "impl-initiative-crud"
     title: "Initiative CRUD: create, read, update, delete operations"
     description: "Create, read, update, delete initiative configuration"
     file: "./.github/prompts/lens-work.impl-initiative-crud.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-initiative-crud.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-initiative-crud.md"
 
   - id: "impl-dual-write"
     title: "Dual-Write Contract: enforce synchronization"
     description: "Ensure state.yaml and initiative config stay synchronized"
     file: "./.github/prompts/lens-work.impl-dual-write.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-dual-write.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-dual-write.md"
 
   - id: "impl-event-log"
     title: "Event Log: implement append (JSONL)"
     description: "Append-only audit trail in JSONL format"
     file: "./.github/prompts/lens-work.impl-event-log.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-event-log.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-event-log.md"
 
   - id: "impl-divergence-detection"
     title: "Divergence Detection: detect state mismatches"
     description: "Detect and report mismatches between state files"
     file: "./.github/prompts/lens-work.impl-divergence-detection.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-divergence-detection.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-divergence-detection.md"
 
   - id: "impl-audience-branches"
     title: "Audience Branches: create and manage"
     description: "Create and manage audience-level branches (small, medium, large)"
     file: "./.github/prompts/lens-work.impl-audience-branches.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-audience-branches.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-audience-branches.md"
 
   - id: "impl-phase-branch-lifecycle"
     title: "Phase Branch Lifecycle: create, manage, retire"
     description: "Create, manage, and retire phase-specific branches"
     file: "./.github/prompts/lens-work.impl-phase-branch-lifecycle.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-phase-branch-lifecycle.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-phase-branch-lifecycle.md"
 
   - id: "impl-pr-creation"
     title: "PR Creation: GitHub MCP with fallback"
     description: "Create PRs via GitHub API with manual fallback"
     file: "./.github/prompts/lens-work.impl-pr-creation.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-pr-creation.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-pr-creation.md"
 
   - id: "impl-branch-naming"
     title: "Branch Naming: validation implementation"
     description: "Validate branch names against naming conventions"
     file: "./.github/prompts/lens-work.impl-branch-naming.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-branch-naming.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-branch-naming.md"
 
   - id: "impl-cascade-merge"
     title: "Cascade Merge: for audience promotion"
     description: "Multi-step merge from small→medium→large→base"
     file: "./.github/prompts/lens-work.impl-cascade-merge.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-cascade-merge.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-cascade-merge.md"
 
   - id: "impl-constitution-loading"
     title: "Constitution Loading: from 4-level hierarchy"
     description: "Load constitution from org, domain, service, repo levels"
     file: "./.github/prompts/lens-work.impl-constitution-loading.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-constitution-loading.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-constitution-loading.md"
 
   - id: "impl-additive-merge"
     title: "Additive Merge: set-union algorithm"
     description: "Merge constitution rules using set-union semantics"
     file: "./.github/prompts/lens-work.impl-additive-merge.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-additive-merge.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-additive-merge.md"
 
   - id: "impl-gate-validation"
     title: "Gate Validation: for tracks, artifacts, reviewers"
     description: "Validate preconditions at phase transitions"
     file: "./.github/prompts/lens-work.impl-gate-validation.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-gate-validation.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-gate-validation.md"
 
   - id: "impl-artifact-resolution"
     title: "Artifact Resolution: path resolution implementation"
     description: "Resolve paths for product-brief, PRD, architecture, etc."
     file: "./.github/prompts/lens-work.impl-artifact-resolution.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-artifact-resolution.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-artifact-resolution.md"
 
   - id: "discovery"
     title: "Discovery: initiative discovery (filesystem scan)"
     description: "Scan for initiatives and sync with git state"
     file: "./.github/prompts/lens-work.discovery.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.discovery.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.discovery.md"
 
   - id: "impl-checklist-schema"
     title: "Checklist Schema: gate logic implementation"
     description: "Track gate readiness through progressive checklists"
     file: "./.github/prompts/lens-work.impl-checklist-schema.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-checklist-schema.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-checklist-schema.md"
 
   - id: "impl-artifact-checks"
     title: "Artifact Checks: existence validation"
     description: "Validate that required artifacts exist"
     file: "./.github/prompts/lens-work.impl-artifact-checks.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-artifact-checks.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-artifact-checks.md"
 
   - id: "impl-gate-recording"
     title: "Gate Recording: decision logging"
     description: "Log gate evaluation results for audit trail"
     file: "./.github/prompts/lens-work.impl-gate-recording.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-gate-recording.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-gate-recording.md"
 
   - id: "impl-routing-table"
     title: "Routing Table: command-to-workflow mapping"
     description: "Map commands to phase workflows"
     file: "./.github/prompts/lens-work.impl-routing-table.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-routing-table.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-routing-table.md"
 
   - id: "impl-precondition-validation"
     title: "Precondition Validation: chain implementation"
     description: "Chain validation steps before workflow execution"
     file: "./.github/prompts/lens-work.impl-precondition-validation.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-precondition-validation.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-precondition-validation.md"
 
   - id: "impl-context-injection"
     title: "Context Injection: agent context loading"
     description: "Inject prior artifacts as context for phase agents"
     file: "./.github/prompts/lens-work.impl-context-injection.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-context-injection.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-context-injection.md"
 
   - id: "impl-feedback-messages"
     title: "Feedback Messages: gate error handling"
     description: "Format actionable error messages when gates block"
     file: "./.github/prompts/lens-work.impl-feedback-messages.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-feedback-messages.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-feedback-messages.md"
 
   - id: "impl-state-reconstruction"
     title: "State Reconstruction: from event log + git"
     description: "Rebuild state from authoritative sources"
     file: "./.github/prompts/lens-work.impl-state-reconstruction.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-state-reconstruction.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-state-reconstruction.md"
 
   - id: "impl-dogfood"
     title: "Dogfood: complete initiative through all phases"
     description: "End-to-end execution test of the entire lifecycle"
     file: "./.github/prompts/lens-work.impl-dogfood.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-dogfood.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-dogfood.md"
 
   - id: "impl-constitution-stress"
     title: "Constitution Stress Test: multi-level merge"
     description: "Test constitution merge with complex hierarchies"
     file: "./.github/prompts/lens-work.impl-constitution-stress.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-constitution-stress.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-constitution-stress.md"
 
   - id: "impl-gate-idempotency"
     title: "Gate Idempotency: enforcement and testing"
     description: "Test gate logic and ensure operations are idempotent"
     file: "./.github/prompts/lens-work.impl-gate-idempotency.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.impl-gate-idempotency.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.impl-gate-idempotency.md"
 
   # AUDIENCE PROMOTION (Supporting)
   - id: "promote-medium"
@@ -451,21 +451,21 @@ subPrompts:
     description: "Promote initiative to medium audience after TechPlan"
     file: "./.github/prompts/lens-work.promote-medium.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.promote-medium.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.promote-medium.md"
 
   - id: "promote-large"
     title: "Audience Promotion: Medium → Large"
     description: "Promote initiative to large audience after SprintPlan"
     file: "./.github/prompts/lens-work.promote-large.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.promote-large.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.promote-large.md"
 
   - id: "promote-base"
     title: "Audience Promotion: Large → Base"
     description: "Promote initiative to base (merge to main)"
     file: "./.github/prompts/lens-work.promote-base.prompt.md"
     deprecated: false
-    readFrom: ".github/prompts/lens-work.promote-base.md"
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.promote-base.md"
 
 # Delegation to BMM Phase Agents
 delegations:

@@ -8,8 +8,8 @@ personaProperties: ../data/persona-properties.md
 principlesCrafting: ../data/principles-crafting.md
 communicationPresets: ../data/communication-presets.csv
 
-advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Edit Step 5: Persona

@@ -3,12 +3,12 @@ name: 'step-05-scope'
 description: 'Define MVP scope with clear boundaries and outline future vision while managing scope creep'
 
 # File References
-nextStepFile: '_bmad/bmm/workflows/1-analysis/create-product-brief/steps/step-06-complete.md'
+nextStepFile: 'bmad.lens.release/_bmad/bmm/workflows/1-analysis/create-product-brief/steps/step-06-complete.md'
 outputFile: '{planning_artifacts}/product-brief-{{project_name}}-{{date}}.md'
 
 # Task References
-advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Step 5: MVP Scope Definition

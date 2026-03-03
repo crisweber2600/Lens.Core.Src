@@ -74,14 +74,14 @@
           <action>Display generated content</action>
           <ask> [a] Advanced Elicitation, [c] Continue, [p] Party-Mode, [y] YOLO the rest of this document only. WAIT for response. <if
               response="a">
-              <action>Start the advanced elicitation workflow _bmad/core/workflows/advanced-elicitation/workflow.yaml</action>
+              <action>Start the advanced elicitation workflow bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml</action>
             </if>
             <if
               response="c">
               <action>Continue to next step</action>
             </if>
             <if response="p">
-              <action>Start the party-mode workflow _bmad/core/workflows/party-mode/workflow.md</action>
+              <action>Start the party-mode workflow bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md</action>
             </if>
             <if
               response="y">
@@ -225,7 +225,7 @@
     <critical-rules>
       • This is the complete workflow execution engine
       • You MUST Follow instructions exactly as written
-      • The workflow execution engine is governed by: _bmad/core/tasks/workflow.yaml
+      • The workflow execution engine is governed by: bmad.lens.release/_bmad/core/tasks/workflow.yaml
       • You MUST have already loaded and processed: {installed_path}/workflow.yaml
       • This workflow uses INTENT-DRIVEN PLANNING - adapt organically to product type and context
       • YOU ARE FACILITATING A CONVERSATION With a user to produce a final document step by step. The whole process is meant to be

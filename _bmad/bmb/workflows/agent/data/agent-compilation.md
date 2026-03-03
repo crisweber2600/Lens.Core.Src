@@ -23,9 +23,9 @@ agent:
       - "Core belief or methodology"
 
   critical_actions:              # Optional - ANY agent can have these
-    - "Load COMPLETE file _bmad/_memory/journal-sidecar/memories.md"
-    - "Load COMPLETE file _bmad/_memory/journal-sidecar/instructions.md"
-    - "ONLY read/write files in _bmad/_memory/journal-sidecar/"
+    - "Load COMPLETE file bmad.lens.release/_bmad/_memory/journal-sidecar/memories.md"
+    - "Load COMPLETE file bmad.lens.release/_bmad/_memory/journal-sidecar/instructions.md"
+    - "ONLY read/write files in bmad.lens.release/_bmad/_memory/journal-sidecar/"
 
   prompts:                        # Optional - standalone agents
     - id: prompt-name
@@ -133,9 +133,9 @@ Your `critical_actions` become numbered activation steps.
 ### With sidecar (hasSidecar: true):
 ```yaml
 critical_actions:
-  - "Load COMPLETE file _bmad/_memory/journal-sidecar/memories.md"
-  - "Load COMPLETE file _bmad/_memory/journal-sidecar/instructions.md"
-  - "ONLY read/write files in _bmad/_memory/journal-sidecar/"
+  - "Load COMPLETE file bmad.lens.release/_bmad/_memory/journal-sidecar/memories.md"
+  - "Load COMPLETE file bmad.lens.release/_bmad/_memory/journal-sidecar/instructions.md"
+  - "ONLY read/write files in bmad.lens.release/_bmad/_memory/journal-sidecar/"
 ```
 → Injected as steps 4, 5, 6
 

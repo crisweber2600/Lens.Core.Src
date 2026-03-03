@@ -7,7 +7,7 @@ description: Implement state.yaml read/write with v2 schema
 
 This is a stub prompt. The actual implementation reads from:
 ```
-.github/prompts/lens-work.dev.prompt.md
+bmad.lens.release/.github/prompts/lens-work.dev.prompt.md
 ```
 
 **Load from release repository when integrating full implementations.**

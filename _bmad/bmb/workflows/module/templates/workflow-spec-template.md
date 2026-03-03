@@ -25,7 +25,7 @@
 name: {workflow_name}
 description: {workflow_description}
 web_bundle: true
-installed_path: '_bmad/{module_code}/workflows/{workflow_folder_name}'
+installed_path: 'bmad.lens.release/_bmad/{module_code}/workflows/{workflow_folder_name}'
 ---
 ```
 

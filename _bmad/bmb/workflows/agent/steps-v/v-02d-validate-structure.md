@@ -90,7 +90,7 @@ Perform these checks systematically - validate EVERY rule specified in agentComp
   - [ ] Loads sidecar memories
   - [ ] Loads sidecar instructions
   - [ ] Restricts file access to sidecar folder
-- [ ] All critical_actions reference correct `_bmad/_memory/` paths
+- [ ] All critical_actions reference correct `bmad.lens.release/_bmad/_memory/` paths
 - [ ] Menu handlers that update sidecar use correct path format
 
 ### 3. Append Findings to Report

@@ -7,7 +7,7 @@ description: Lightweight post-dev adjustment (abbreviated review, advisory const
 
 This is a stub prompt. The actual implementation reads from:
 ```
-.github/prompts/lens-work.adjust.prompt.md
+bmad.lens.release/.github/prompts/lens-work.adjust.prompt.md
 ```
 
 **Load from release repository when integrating full implementations.**

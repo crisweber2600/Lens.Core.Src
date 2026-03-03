@@ -5,6 +5,6 @@ description: 'Perform a Cynical Review and produce a findings report. Use when t
 
 # review-adversarial-general
 
-Read the entire task file at: _bmad/core/tasks/review-adversarial-general.xml
+Read the entire task file at: bmad.lens.release/_bmad/core/tasks/review-adversarial-general.xml
 
 Follow all instructions in the task file exactly as written.

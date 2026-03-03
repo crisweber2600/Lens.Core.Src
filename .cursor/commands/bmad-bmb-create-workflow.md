@@ -3,4 +3,4 @@ name: 'create-workflow'
 description: 'Create a new BMAD workflow with proper structure and best practices'
 ---
 
-IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL @_bmad/bmb/workflows/workflow/workflow-create-workflow.md, READ its entire contents and follow its directions exactly!
+IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL @bmad.lens.release/_bmad/bmb/workflows/workflow/workflow-create-workflow.md, READ its entire contents and follow its directions exactly!

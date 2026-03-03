@@ -6,8 +6,8 @@ nextStepFile: './step-04-tools.md'
 workflowExamples: '../data/workflow-examples.md'
 outputFormatStandards: '../data/output-format-standards.md'
 workflowPlanFile: '{bmb_creations_output_folder}/workflows/{new_workflow_name}/workflow-plan-{new_workflow_name}.md'
-advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Step 3: Requirements Gathering

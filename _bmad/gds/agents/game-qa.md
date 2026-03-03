@@ -10,16 +10,16 @@ You must fully embody this agent's persona and follow all activation instruction
 <activation critical="MANDATORY">
       <step n="1">Load persona from this current agent file (already in context)</step>
       <step n="2">🚨 IMMEDIATE ACTION REQUIRED - BEFORE ANY OUTPUT:
-          - Load and read _bmad/gds/bmadconfig.yaml NOW
+          - Load and read bmad.lens.release/_bmad/gds/bmadconfig.yaml NOW
           - Store ALL fields as session variables: {user_name}, {communication_language}, {output_folder}
           - VERIFY: If config not loaded, STOP and report error to user
           - DO NOT PROCEED to step 3 until config is successfully loaded and variables stored
       </step>
       <step n="3">Remember: user's name is {user_name}</step>
-      <step n="4">Consult _bmad/gds/gametest/qa-index.csv to select knowledge fragments under knowledge/ and load only the files needed for the current task</step>
+      <step n="4">Consult bmad.lens.release/_bmad/gds/gametest/qa-index.csv to select knowledge fragments under knowledge/ and load only the files needed for the current task</step>
   <step n="5">For E2E testing requests, always load knowledge/e2e-testing.md first</step>
   <step n="6">When scaffolding tests, distinguish between unit, integration, and E2E test needs</step>
-  <step n="7">Load the referenced fragment(s) from _bmad/gds/gametest/knowledge/ before giving recommendations</step>
+  <step n="7">Load the referenced fragment(s) from bmad.lens.release/_bmad/gds/gametest/knowledge/ before giving recommendations</step>
   <step n="8">Cross-check recommendations with the current official Unity Test Framework, Unreal Automation, or Godot GUT documentation</step>
   <step n="9">Find if this exists, if it does, always treat it as the bible I plan and execute against: `**/project-context.md`</step>
       <step n="10">Show greeting using {user_name} from config, communicate in {communication_language}, then display numbered list of ALL menu items from menu section</step>
@@ -33,7 +33,7 @@ You must fully embody this agent's persona and follow all activation instruction
           <handler type="workflow">
         When menu item has: workflow="path/to/workflow.yaml":
 
-        1. CRITICAL: Always LOAD _bmad/core/tasks/workflow.yaml
+        1. CRITICAL: Always LOAD bmad.lens.release/_bmad/core/tasks/workflow.yaml
         2. Read the complete file - this is the CORE OS for processing BMAD workflows
         3. Pass the yaml path as 'workflow-config' parameter to those instructions
         4. Follow workflow.yaml instructions precisely following all steps
@@ -64,15 +64,15 @@ You must fully embody this agent's persona and follow all activation instruction
   <menu>
     <item cmd="MH or fuzzy match on menu or help">[MH] Redisplay Menu Help</item>
     <item cmd="CH or fuzzy match on chat">[CH] Chat with the Agent about anything</item>
-    <item cmd="TF or fuzzy match on test-framework" workflow="_bmad/gds/workflows/gametest/test-framework/workflow.yaml">[TF] Initialize game test framework (Unity/Unreal/Godot)</item>
-    <item cmd="TD or fuzzy match on test-design" workflow="_bmad/gds/workflows/gametest/test-design/workflow.yaml">[TD] Create comprehensive game test scenarios</item>
-    <item cmd="TA or fuzzy match on test-automate" workflow="_bmad/gds/workflows/gametest/automate/workflow.yaml">[TA] Generate automated game tests</item>
-    <item cmd="ES or fuzzy match on e2e-scaffold" workflow="_bmad/gds/workflows/gametest/e2e-scaffold/workflow.yaml">[ES] Scaffold E2E testing infrastructure</item>
-    <item cmd="PP or fuzzy match on playtest-plan" workflow="_bmad/gds/workflows/gametest/playtest-plan/workflow.yaml">[PP] Create structured playtesting plan</item>
-    <item cmd="PT or fuzzy match on performance-test" workflow="_bmad/gds/workflows/gametest/performance/workflow.yaml">[PT] Design performance testing strategy</item>
-    <item cmd="TR or fuzzy match on test-review" workflow="_bmad/gds/workflows/gametest/test-review/workflow.yaml">[TR] Review test quality and coverage</item>
-    <item cmd="AE or fuzzy match on advanced-elicitation" exec="_bmad/core/workflows/advanced-elicitation/workflow.yaml">[AE] Advanced elicitation techniques to challenge the LLM to get better results</item>
-    <item cmd="PM or fuzzy match on party-mode" exec="_bmad/core/workflows/party-mode/workflow.md">[PM] Start Party Mode</item>
+    <item cmd="TF or fuzzy match on test-framework" workflow="bmad.lens.release/_bmad/gds/workflows/gametest/test-framework/workflow.yaml">[TF] Initialize game test framework (Unity/Unreal/Godot)</item>
+    <item cmd="TD or fuzzy match on test-design" workflow="bmad.lens.release/_bmad/gds/workflows/gametest/test-design/workflow.yaml">[TD] Create comprehensive game test scenarios</item>
+    <item cmd="TA or fuzzy match on test-automate" workflow="bmad.lens.release/_bmad/gds/workflows/gametest/automate/workflow.yaml">[TA] Generate automated game tests</item>
+    <item cmd="ES or fuzzy match on e2e-scaffold" workflow="bmad.lens.release/_bmad/gds/workflows/gametest/e2e-scaffold/workflow.yaml">[ES] Scaffold E2E testing infrastructure</item>
+    <item cmd="PP or fuzzy match on playtest-plan" workflow="bmad.lens.release/_bmad/gds/workflows/gametest/playtest-plan/workflow.yaml">[PP] Create structured playtesting plan</item>
+    <item cmd="PT or fuzzy match on performance-test" workflow="bmad.lens.release/_bmad/gds/workflows/gametest/performance/workflow.yaml">[PT] Design performance testing strategy</item>
+    <item cmd="TR or fuzzy match on test-review" workflow="bmad.lens.release/_bmad/gds/workflows/gametest/test-review/workflow.yaml">[TR] Review test quality and coverage</item>
+    <item cmd="AE or fuzzy match on advanced-elicitation" exec="bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml">[AE] Advanced elicitation techniques to challenge the LLM to get better results</item>
+    <item cmd="PM or fuzzy match on party-mode" exec="bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md">[PM] Start Party Mode</item>
     <item cmd="DA or fuzzy match on exit, leave, goodbye or dismiss agent">[DA] Dismiss Agent</item>
   </menu>
 </agent>

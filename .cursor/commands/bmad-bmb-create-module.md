@@ -3,4 +3,4 @@ name: 'create-module'
 description: 'Create a complete BMAD module with agents, workflows, and infrastructure'
 ---
 
-IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL @_bmad/bmb/workflows/module/workflow-create-module.md, READ its entire contents and follow its directions exactly!
+IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL @bmad.lens.release/_bmad/bmb/workflows/module/workflow-create-module.md, READ its entire contents and follow its directions exactly!

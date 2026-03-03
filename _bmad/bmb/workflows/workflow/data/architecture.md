@@ -89,7 +89,7 @@ workflow.md → step-01-init.md (detects existing) → step-01b-continue.md → 
 
 ### Standard
 ```yaml
-workflow_path: '_bmad/[module]/workflows/[name]'
+workflow_path: 'bmad.lens.release/_bmad/[module]/workflows/[name]'
 thisStepFile: './step-[N]-[name].md'
 nextStepFile: './step-[N+1]-[name].md'
 outputFile: '{output_folder}/[output].md'
@@ -97,7 +97,7 @@ outputFile: '{output_folder}/[output].md'
 
 ### Module-Specific
 ```yaml
-bmb_creations_output_folder: '_bmad/bmb-creations'
+bmb_creations_output_folder: 'bmad.lens.release/_bmad/bmb-creations'
 ```
 
 ### Rules

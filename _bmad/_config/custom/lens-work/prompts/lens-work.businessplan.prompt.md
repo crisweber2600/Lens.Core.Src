@@ -7,7 +7,7 @@ description: BusinessPlan phase workflow delegating to John + Sally
 
 This is a stub prompt. The actual implementation reads from:
 ```
-.github/prompts/lens-work.businessplan.prompt.md
+bmad.lens.release/.github/prompts/lens-work.businessplan.prompt.md
 ```
 
 **Load from release repository when integrating full implementations.**

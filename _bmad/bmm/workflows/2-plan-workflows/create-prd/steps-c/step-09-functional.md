@@ -3,12 +3,12 @@ name: 'step-09-functional'
 description: 'Synthesize all discovery into comprehensive functional requirements'
 
 # File References
-nextStepFile: '_bmad/bmm/workflows/2-plan-workflows/create-prd/steps-c/step-10-nonfunctional.md'
+nextStepFile: 'bmad.lens.release/_bmad/bmm/workflows/2-plan-workflows/create-prd/steps-c/step-10-nonfunctional.md'
 outputFile: '{planning_artifacts}/prd.md'
 
 # Task References
-advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Step 9: Functional Requirements Synthesis

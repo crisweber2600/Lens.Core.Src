@@ -7,7 +7,7 @@ description: Initiative discovery via filesystem scan
 
 This is a stub prompt. The actual implementation reads from:
 ```
-.github/prompts/lens-work.discover.prompt.md
+bmad.lens.release/.github/prompts/lens-work.discover.prompt.md
 ```
 
 **Load from release repository when integrating full implementations.**

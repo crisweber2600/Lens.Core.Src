@@ -1,7 +1,7 @@
 # Step 3: Interactive Technique Execution and Facilitation
 
 ---
-advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
 ---
 
 ## MANDATORY EXECUTION RULES (READ FIRST):

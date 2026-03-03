@@ -83,7 +83,7 @@ Perform these checks systematically - validate EVERY rule specified in agentMenu
    - [ ] Determine hasSidecar from metadata
    - [ ] For hasSidecar: true:
      - [ ] Menu handlers MAY reference sidecar files using correct path format
-     - [ ] Sidecar references use: `_bmad/_memory/{sidecar-folder}/...`
+     - [ ] Sidecar references use: `bmad.lens.release/_bmad/_memory/{sidecar-folder}/...`
    - [ ] For hasSidecar: false:
      - [ ] Menu handlers MUST NOT have sidecar file links
      - [ ] Menu handlers use only internal references (#) or inline prompts

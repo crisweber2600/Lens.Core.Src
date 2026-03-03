@@ -4,14 +4,14 @@ description: 'Summarize sprint status and surface risks. Use when the user says 
 author: "BMad"
 
 # Critical variables from config
-config_source: "_bmad/bmm/bmadconfig.yaml"
+config_source: "bmad.lens.release/_bmad/bmm/bmadconfig.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
 document_output_language: "{config_source}:document_output_language"
 implementation_artifacts: "{config_source}:implementation_artifacts"
 
 # Workflow components
-installed_path: "_bmad/bmm/workflows/4-implementation/sprint-status"
+installed_path: "bmad.lens.release/_bmad/bmm/workflows/4-implementation/sprint-status"
 instructions: "{installed_path}/instructions.md"
 
 # Inputs

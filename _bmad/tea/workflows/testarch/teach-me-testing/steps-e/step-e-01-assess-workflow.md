@@ -4,8 +4,8 @@ description: 'Assess what needs to be edited in the teaching workflow'
 
 nextStepFile: './step-e-02-apply-edits.md'
 workflowPath: '../'
-advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Edit Step 1: Assess What to Edit

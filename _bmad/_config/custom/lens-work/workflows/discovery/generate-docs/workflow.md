@@ -3,7 +3,7 @@ name: generate-docs
 description: Generate BMAD-ready documentation from analysis
 nextStep: './steps-c/step-00-preflight.md'
 web_bundle: true
-installed_path: '_bmad/lens-work/workflows/generate-docs'
+installed_path: 'bmad.lens.release/_bmad/lens-work/workflows/generate-docs'
 
 # Generate Docs Workflow (Create-Only)
 

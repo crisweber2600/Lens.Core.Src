@@ -3,7 +3,7 @@ name: 'step-05-core-gameplay'
 description: 'Define game pillars, core gameplay loop, and win/loss conditions'
 
 # Path Definitions
-workflow_path: '_bmad/gds/workflows/2-design/gdd'
+workflow_path: 'bmad.lens.release/_bmad/gds/workflows/2-design/gdd'
 
 # File References
 thisStepFile: './step-05-core-gameplay.md'
@@ -12,8 +12,8 @@ workflowFile: '{workflow_path}/workflow.md'
 outputFile: '{output_folder}/gdd.md'
 
 # Task References
-advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Step 5: Core Gameplay

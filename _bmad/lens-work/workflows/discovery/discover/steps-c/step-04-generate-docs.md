@@ -21,8 +21,8 @@ Generate **six** BMAD-ready documentation artifacts from analysis results and up
 
 **Before generating ANY document:**
 
-1. **Load quality standards** from `_bmad/lens-work/templates/docs/doc-quality-standards.md`
-2. **Load the template** for each document from `_bmad/lens-work/templates/docs/{doc-type}.template.md`
+1. **Load quality standards** from `bmad.lens.release/_bmad/lens-work/templates/docs/doc-quality-standards.md`
+2. **Load the template** for each document from `bmad.lens.release/_bmad/lens-work/templates/docs/{doc-type}.template.md`
 3. **Read actual source files** — you MUST use `read_file` and `grep_search` to extract real code, real entity definitions, real endpoint paths, real configuration
 4. **Never output placeholder variables** — no `{service_name}`, no `{for x in y}`, no invented data
 
@@ -517,7 +517,7 @@ curl http://localhost:{port}/health
 ### 7. Generate Migration Map Document ← NEW
 **File:** `{output_dir}/migration-map.md`
 
-**Load template:** `_bmad/lens-work/templates/docs/migration-map.template.md`
+**Load template:** `bmad.lens.release/_bmad/lens-work/templates/docs/migration-map.template.md`
 
 ```markdown
 # {Service Name} → Modern Migration Map

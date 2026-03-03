@@ -31,7 +31,7 @@ What layer is this constitution for?
 
 **Based on selection, set:**
 - `{layer_type}` = Domain | Service | Microservice | Feature
-- `{template_path}` = `_bmad/lens-work/templates/constitutions/{layer_type-lower}-constitution.md`
+- `{template_path}` = `bmad.lens.release/_bmad/lens-work/templates/constitutions/{layer_type-lower}-constitution.md`
 
 ---
 
@@ -110,7 +110,7 @@ Would you like to review the Principle Catalog for guidance? [Y/N]
 ```
 
 **IF Y:**
-- Load and display `_bmad/lens-work/data/governance/principle-catalog.md`
+- Load and display `bmad.lens.release/_bmad/lens-work/data/governance/principle-catalog.md`
 - Highlight principles relevant to selected layer
 - Return to gather flow
 
