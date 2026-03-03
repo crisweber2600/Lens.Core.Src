@@ -25,7 +25,7 @@
 name: analyze-codebase
 description: Deep technical analysis without full discovery
 web_bundle: true
-installed_path: 'bmad.lens.release/_bmad/lens-work/workflows/analyze-codebase'
+installed_path: '_bmad/lens-work/workflows/analyze-codebase'
 ---
 ```
 

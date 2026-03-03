@@ -1,7 +1,7 @@
 ---
 name: create-prd
 description: 'Create a PRD from scratch. Use when the user says "lets create a product requirements document" or "I want to create a new PRD"'
-main_config: 'bmad.lens.release/_bmad/bmm/bmadconfig.yaml'
+main_config: '_bmad/bmm/bmadconfig.yaml'
 nextStep: './steps-c/step-01-init.md'
 ---
 

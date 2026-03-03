@@ -3,7 +3,7 @@ name: 'step-07-patterns'
 description: 'Design implementation patterns and novel architectural patterns for consistency'
 
 # Path Definitions
-workflow_path: 'bmad.lens.release/_bmad/gds/workflows/3-technical/game-architecture'
+workflow_path: '_bmad/gds/workflows/3-technical/game-architecture'
 
 # File References
 thisStepFile: './step-07-patterns.md'
@@ -15,8 +15,8 @@ outputFile: '{output_folder}/game-architecture.md'
 patternCategories: '{workflow_path}/pattern-categories.csv'
 
 # Task References
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Step 7: Implementation Patterns

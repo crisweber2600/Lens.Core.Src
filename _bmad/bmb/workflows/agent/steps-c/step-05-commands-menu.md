@@ -12,8 +12,8 @@ simpleExample: ../data/reference/without-sidecar/commit-poet.agent.yaml
 expertExample: ../data/reference/with-sidecar/journal-keeper/journal-keeper.agent.yaml
 
 # Task References
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # STEP GOAL

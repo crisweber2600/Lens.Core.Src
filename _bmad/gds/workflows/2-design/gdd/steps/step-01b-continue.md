@@ -3,7 +3,7 @@ name: 'step-01b-continue'
 description: 'Resume an interrupted GDD workflow from the last completed step'
 
 # Path Definitions
-workflow_path: 'bmad.lens.release/_bmad/gds/workflows/2-design/gdd'
+workflow_path: '_bmad/gds/workflows/2-design/gdd'
 
 # File References
 thisStepFile: './step-01b-continue.md'

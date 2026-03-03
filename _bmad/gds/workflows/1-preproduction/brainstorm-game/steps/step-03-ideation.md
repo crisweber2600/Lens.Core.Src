@@ -3,7 +3,7 @@ name: 'step-03-ideation'
 description: 'Execute the brainstorming session with game-specific techniques'
 
 # Path Definitions
-workflow_path: 'bmad.lens.release/_bmad/gds/workflows/1-preproduction/brainstorm-game'
+workflow_path: '_bmad/gds/workflows/1-preproduction/brainstorm-game'
 
 # File References
 thisStepFile: './step-03-ideation.md'
@@ -12,11 +12,11 @@ workflowFile: '{workflow_path}/workflow.md'
 outputFile: '{output_folder}/brainstorming-session-{date}.md'
 
 # Core Brainstorming Reference
-coreBrainstorming: 'bmad.lens.release/_bmad/core/workflows/brainstorming/workflow.md'
+coreBrainstorming: '_bmad/core/workflows/brainstorming/workflow.md'
 
 # Task References
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Step 3: Ideation Session

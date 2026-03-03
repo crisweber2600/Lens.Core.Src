@@ -3,7 +3,7 @@ name: discover
 description: Discover target structure and generate lens-ready documentation
 nextStep: './steps-c/step-00-preflight.md'
 web_bundle: true
-installed_path: 'bmad.lens.release/_bmad/lens-work/workflows/discover'
+installed_path: '_bmad/lens-work/workflows/discover'
 ---
 
 # Discover Workflow (Create-Only)

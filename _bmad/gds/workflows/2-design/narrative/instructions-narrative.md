@@ -2,7 +2,7 @@
 
 <workflow>
 
-<critical>The workflow execution engine is governed by: bmad.lens.release/_bmad/core/tasks/workflow.yaml</critical>
+<critical>The workflow execution engine is governed by: _bmad/core/tasks/workflow.yaml</critical>
 <critical>You MUST have already completed the GDD workflow</critical>
 <critical>Communicate all responses in {communication_language}</critical>
 <critical>This workflow creates detailed narrative content for story-driven games</critical>

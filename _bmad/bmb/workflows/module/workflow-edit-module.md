@@ -2,7 +2,7 @@
 name: edit-module
 description: Edit existing BMAD modules while maintaining coherence
 web_bundle: true
-installed_path: 'bmad.lens.release/_bmad/bmb/workflows/module'
+installed_path: '_bmad/bmb/workflows/module'
 editWorkflow: './steps-e/step-01-load-target.md'
 ---
 
@@ -52,7 +52,7 @@ This uses **step-file architecture** for disciplined execution.
 
 ### 1. Configuration Loading
 
-Load and read full config from `bmad.lens.release/_bmad/bmb/bmadconfig.yaml` and resolve:
+Load and read full config from `_bmad/bmb/bmadconfig.yaml` and resolve:
 
 - `project_name`, `user_name`, `communication_language`, `document_output_language`, `bmb_creations_output_folder`
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`

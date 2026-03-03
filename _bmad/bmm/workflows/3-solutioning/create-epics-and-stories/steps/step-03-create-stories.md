@@ -3,7 +3,7 @@ name: 'step-03-create-stories'
 description: 'Generate all epics with their stories following the template structure'
 
 # Path Definitions
-workflow_path: 'bmad.lens.release/_bmad/bmm/workflows/3-solutioning/create-epics-and-stories'
+workflow_path: '_bmad/bmm/workflows/3-solutioning/create-epics-and-stories'
 
 # File References
 thisStepFile: './step-03-create-stories.md'
@@ -12,8 +12,8 @@ workflowFile: '{workflow_path}/workflow.md'
 outputFile: '{planning_artifacts}/epics.md'
 
 # Task References
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
 
 # Template References
 epicsTemplate: '{workflow_path}/templates/epics-template.md'

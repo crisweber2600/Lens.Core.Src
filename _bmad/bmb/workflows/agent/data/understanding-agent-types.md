@@ -71,9 +71,9 @@ agent-name.agent.yaml
 **Required critical_actions:**
 ```yaml
 critical_actions:
-  - "Load COMPLETE file bmad.lens.release/_bmad/_memory/{sidecar-folder}/memories.md"
-  - "Load COMPLETE file bmad.lens.release/_bmad/_memory/{sidecar-folder}/instructions.md"
-  - "ONLY read/write files in bmad.lens.release/_bmad/_memory/{sidecar-folder}/"
+  - "Load COMPLETE file _bmad/_memory/{sidecar-folder}/memories.md"
+  - "Load COMPLETE file _bmad/_memory/{sidecar-folder}/instructions.md"
+  - "ONLY read/write files in _bmad/_memory/{sidecar-folder}/"
 ```
 
 ---

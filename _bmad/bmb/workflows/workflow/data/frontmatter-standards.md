@@ -31,7 +31,7 @@ Workflows in a MODULE can access additional variables from its `module.yaml`.
 
 **Example:**
 ```yaml
-bmb_creations_output_folder: 'bmad.lens.release/_bmad/bmb-creations'
+bmb_creations_output_folder: '_bmad/bmb-creations'
 ```
 
 **Standalone workflows:** Only have access to standard variables.
@@ -64,7 +64,7 @@ someData: './data/config.csv'
 outputFile: '{planning_artifacts}/product-brief-{{project_name}}-{{date}}.md'
 
 # External references - use {project-root}
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
 ---
 ```
 
@@ -100,7 +100,7 @@ nextStepFile: './step-02-foo.md'
 | Step to Step (same folder) | `./filename.md` | `./step-02-vision.md` |
 | Step to Template (parent) | `../filename.md` | `../template.md` |
 | Step to Subfolder | `./subfolder/file.md` | `./data/config.csv` |
-| External References | `{project-root}/...` | `bmad.lens.release/_bmad/core/workflows/...` |
+| External References | `{project-root}/...` | `_bmad/core/workflows/...` |
 | Output Files | `{folder_variable}/...` | `{planning_artifacts}/output.md` |
 
 ---

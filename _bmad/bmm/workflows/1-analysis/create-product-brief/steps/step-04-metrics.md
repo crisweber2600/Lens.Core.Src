@@ -3,12 +3,12 @@ name: 'step-04-metrics'
 description: 'Define comprehensive success metrics that include user success, business objectives, and key performance indicators'
 
 # File References
-nextStepFile: 'bmad.lens.release/_bmad/bmm/workflows/1-analysis/create-product-brief/steps/step-05-scope.md'
+nextStepFile: '_bmad/bmm/workflows/1-analysis/create-product-brief/steps/step-05-scope.md'
 outputFile: '{planning_artifacts}/product-brief-{{project_name}}-{{date}}.md'
 
 # Task References
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Step 4: Success Metrics Definition

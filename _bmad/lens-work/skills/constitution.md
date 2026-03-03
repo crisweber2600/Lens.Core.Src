@@ -35,7 +35,7 @@ an inline skill — not as a separate workflow or runtime process.
 
 ### Constitution File Locations
 
-Base directory: `bmad.lens.release/_bmad-output/lens-work/constitutions`
+Base directory: `_bmad-output/lens-work/constitutions`
 
 #### Universal Constitutions (applies to all programming languages)
 

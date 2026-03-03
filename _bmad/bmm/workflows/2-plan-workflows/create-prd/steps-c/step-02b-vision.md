@@ -3,12 +3,12 @@ name: 'step-02b-vision'
 description: 'Discover the product vision and differentiator through collaborative dialogue'
 
 # File References
-nextStepFile: 'bmad.lens.release/_bmad/bmm/workflows/2-plan-workflows/create-prd/steps-c/step-02c-executive-summary.md'
+nextStepFile: '_bmad/bmm/workflows/2-plan-workflows/create-prd/steps-c/step-02c-executive-summary.md'
 outputFile: '{planning_artifacts}/prd.md'
 
 # Task References
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Step 2b: Product Vision Discovery

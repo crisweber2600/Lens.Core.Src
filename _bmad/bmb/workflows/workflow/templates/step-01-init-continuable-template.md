@@ -13,7 +13,7 @@ description: 'Initialize the [workflow-type] workflow by detecting continuation 
 
 <!-- Path Definitions -->
 
-workflow\*path: `bmad.lens.release/_bmad/[module-path]/workflows/[workflow-name]`
+workflow\*path: `_bmad/[module-path]/workflows/[workflow-name]`
 
 # File References (all use {variable} format in file)
 

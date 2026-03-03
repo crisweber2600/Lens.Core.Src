@@ -7,7 +7,7 @@ description: PrePlan phase workflow delegating to Mary (Analyst)
 
 This is a stub prompt. The actual implementation reads from:
 ```
-bmad.lens.release/.github/prompts/lens-work.preplan.prompt.md
+.github/prompts/lens-work.preplan.prompt.md
 ```
 
 **Load from release repository when integrating full implementations.**

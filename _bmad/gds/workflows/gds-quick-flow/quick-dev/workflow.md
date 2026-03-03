@@ -25,7 +25,7 @@ This uses **step-file architecture** for focused execution:
 
 ### Configuration Loading
 
-Load config from `bmad.lens.release/_bmad/gds/bmadconfig.yaml` and resolve:
+Load config from `_bmad/gds/bmadconfig.yaml` and resolve:
 
 - `user_name`, `communication_language`, `game_dev_experience`
 - `output_folder`, `planning_artifacts`,  `implementation_artifacts`
@@ -34,16 +34,16 @@ Load config from `bmad.lens.release/_bmad/gds/bmadconfig.yaml` and resolve:
 
 ### Paths
 
-- `installed_path` = `bmad.lens.release/_bmad/gds/workflows/gds-quick-flow/quick-dev`
+- `installed_path` = `_bmad/gds/workflows/gds-quick-flow/quick-dev`
 - `project_context` = `**/project-context.md` (load if exists)
-- `project_levels` = `bmad.lens.release/_bmad/gds/workflows/workflow-status/project-levels.yaml`
+- `project_levels` = `_bmad/gds/workflows/workflow-status/project-levels.yaml`
 
 ### Related Workflows
 
-- `quick_spec_workflow` = `bmad.lens.release/_bmad/gds/workflows/bmad-quick-flow/quick-spec/workflow.md`
-- `workflow_init` = `bmad.lens.release/_bmad/gds/workflows/workflow-status/init/workflow.yaml`
-- `party_mode_exec` = `bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md`
-- `advanced_elicitation` = `bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml`
+- `quick_spec_workflow` = `_bmad/gds/workflows/bmad-quick-flow/quick-spec/workflow.md`
+- `workflow_init` = `_bmad/gds/workflows/workflow-status/init/workflow.yaml`
+- `party_mode_exec` = `_bmad/core/workflows/party-mode/workflow.md`
+- `advanced_elicitation` = `_bmad/core/workflows/advanced-elicitation/workflow.yaml`
 
 ---
 

@@ -7,7 +7,7 @@ description: Repair state (drift/gate/divergence) in 3 categories
 
 This is a stub prompt. The actual implementation reads from:
 ```
-bmad.lens.release/.github/prompts/lens-work.fix.prompt.md
+.github/prompts/lens-work.fix.prompt.md
 ```
 
 **Load from release repository when integrating full implementations.**

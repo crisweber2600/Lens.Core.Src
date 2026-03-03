@@ -73,13 +73,13 @@ ${if layer == "service"}
 ```yaml
 # Service-layer MUST have a parent domain initiative.
 # Strategy: try active_initiative first, then auto-discover, only error if zero domains exist.
-state = load("bmad.lens.release/_bmad-output/lens-work/state.yaml")
+state = load("_bmad-output/lens-work/state.yaml")
 
 domain_config = null
 
 # Attempt 1: Use active_initiative if set and points to a Domain.yaml
 if state.active_initiative != null:
-  domain_config_path = "bmad.lens.release/_bmad-output/lens-work/initiatives/${state.active_initiative}/Domain.yaml"
+  domain_config_path = "_bmad-output/lens-work/initiatives/${state.active_initiative}/Domain.yaml"
   if exists(domain_config_path):
     candidate = load(domain_config_path)
     if candidate.layer == "domain":
@@ -87,7 +87,7 @@ if state.active_initiative != null:
 
 # Attempt 2: Auto-discover domains by scanning initiatives/*/Domain.yaml
 if domain_config == null:
-  domain_yaml_files = glob("bmad.lens.release/_bmad-output/lens-work/initiatives/*/Domain.yaml")
+  domain_yaml_files = glob("_bmad-output/lens-work/initiatives/*/Domain.yaml")
   if domain_yaml_files.length == 0:
     error: "No domain found. Create a domain first with /new-domain."
     exit: 1
@@ -95,7 +95,7 @@ if domain_config == null:
     domain_config = load(domain_yaml_files[0])
     # Auto-heal: set active_initiative so future commands skip scanning
     state.active_initiative = domain_config.domain_prefix
-    save("bmad.lens.release/_bmad-output/lens-work/state.yaml", state)
+    save("_bmad-output/lens-work/state.yaml", state)
     info: "Auto-selected domain '${domain_config.domain}' (${domain_config.domain_prefix}) — state.yaml updated."
   else:
     # Multiple domains — let user pick
@@ -107,7 +107,7 @@ if domain_config == null:
     domain_config = load(selected_file)
     # Update state to selected domain
     state.active_initiative = domain_config.domain_prefix
-    save("bmad.lens.release/_bmad-output/lens-work/state.yaml", state)
+    save("_bmad-output/lens-work/state.yaml", state)
 
 if domain_config.layer != "domain":
   error: "Active initiative is not a domain. Switch to a domain first or create one with /new-domain."
@@ -127,7 +127,7 @@ ${if layer == "feature"}
 ```yaml
 # Feature-layer: needs a parent context (service OR domain).
 # Strategy: check active_initiative, then auto-discover, only error if zero parents exist.
-state = load("bmad.lens.release/_bmad-output/lens-work/state.yaml")
+state = load("_bmad-output/lens-work/state.yaml")
 
 parent_config = null
 parent_layer = null
@@ -135,7 +135,7 @@ parent_layer = null
 # Attempt 1: Use active_initiative if set and points to a Service.yaml or Domain.yaml
 if state.active_initiative != null:
   # Check for Service.yaml first (more specific parent)
-  service_config_path = "bmad.lens.release/_bmad-output/lens-work/initiatives/${state.active_initiative}/Service.yaml"
+  service_config_path = "_bmad-output/lens-work/initiatives/${state.active_initiative}/Service.yaml"
   if exists(service_config_path):
     candidate = load(service_config_path)
     if candidate.layer == "service":
@@ -144,7 +144,7 @@ if state.active_initiative != null:
 
   # Fall back to Domain.yaml
   if parent_config == null:
-    domain_config_path = "bmad.lens.release/_bmad-output/lens-work/initiatives/${state.active_initiative}/Domain.yaml"
+    domain_config_path = "_bmad-output/lens-work/initiatives/${state.active_initiative}/Domain.yaml"
     if exists(domain_config_path):
       candidate = load(domain_config_path)
       if candidate.layer == "domain":
@@ -153,8 +153,8 @@ if state.active_initiative != null:
 
 # Attempt 2: Auto-discover by scanning initiatives/
 if parent_config == null:
-  service_yaml_files = glob("bmad.lens.release/_bmad-output/lens-work/initiatives/*/*/Service.yaml")
-  domain_yaml_files = glob("bmad.lens.release/_bmad-output/lens-work/initiatives/*/Domain.yaml")
+  service_yaml_files = glob("_bmad-output/lens-work/initiatives/*/*/Service.yaml")
+  domain_yaml_files = glob("_bmad-output/lens-work/initiatives/*/Domain.yaml")
 
   all_parents = []
   for file in service_yaml_files:
@@ -173,7 +173,7 @@ if parent_config == null:
       state.active_initiative = "${parent_config.domain_prefix}/${parent_config.service_prefix}"
     else:
       state.active_initiative = parent_config.domain_prefix
-    save("bmad.lens.release/_bmad-output/lens-work/state.yaml", state)
+    save("_bmad-output/lens-work/state.yaml", state)
     info: "Auto-selected ${parent_layer} '${parent_config[parent_layer == 'service' ? 'service' : 'domain']}' — state.yaml updated."
   else:
     # Multiple parents — let user pick
@@ -190,7 +190,7 @@ if parent_config == null:
       state.active_initiative = "${parent_config.domain_prefix}/${parent_config.service_prefix}"
     else:
       state.active_initiative = parent_config.domain_prefix
-    save("bmad.lens.release/_bmad-output/lens-work/state.yaml", state)
+    save("_bmad-output/lens-work/state.yaml", state)
 
 # Inherit from parent
 domain = parent_config.domain
@@ -212,7 +212,7 @@ ${endif}
 ```yaml
 # Load user profile to source default preferences.
 # Profile preferences act as defaults — can be overridden per-initiative.
-profile_path = "bmad.lens.release/_bmad-output/lens-work/personal/profile.yaml"
+profile_path = "_bmad-output/lens-work/personal/profile.yaml"
 
 if exists(profile_path):
   profile = load(profile_path)
@@ -457,7 +457,7 @@ fi
 # Check if an initiative with this ID already exists before creating anything.
 # Applies to ALL layers (domain, service, feature, microservice).
 
-initiatives_root = "bmad.lens.release/_bmad-output/lens-work/initiatives"
+initiatives_root = "_bmad-output/lens-work/initiatives"
 
 if layer == "domain":
   # REQ-1: Domain — check nested path: initiatives/{domain_prefix}/Domain.yaml
@@ -511,7 +511,7 @@ if file_exists(initiative_path):
 ### 3. Resolve Target Repos
 
 ```yaml
-service_map = load("bmad.lens.release/_bmad/lens-work/service-map.yaml")
+service_map = load("_bmad/lens-work/service-map.yaml")
 
 # Resolve based on layer
 if layer == "domain":
@@ -722,7 +722,7 @@ ${elif layer == "service"}
 both the service descriptor AND the initiative config. No separate
 `{initiative_id}.yaml` file is created for service-layer.
 ${else}
-Create directory and file at `bmad.lens.release/_bmad-output/lens-work/initiatives/${initiative_id}.yaml`:
+Create directory and file at `_bmad-output/lens-work/initiatives/${initiative_id}.yaml`:
 
 ```yaml
 # v2 — Lifecycle Contract initiative config
@@ -809,7 +809,7 @@ mkdir -p "Docs/${DOMAIN_NAME}"
 touch "Docs/${DOMAIN_NAME}/.gitkeep"
 ```
 
-Create `bmad.lens.release/_bmad-output/lens-work/initiatives/${DOMAIN_NAME}/Domain.yaml`.
+Create `_bmad-output/lens-work/initiatives/${DOMAIN_NAME}/Domain.yaml`.
 This file serves as BOTH the domain descriptor AND the initiative config for domain-layer.
 No separate `{initiative_id}.yaml` is created.
 
@@ -869,7 +869,7 @@ mkdir -p "Docs/${DOMAIN_NAME}/${SERVICE_NAME}"
 touch "Docs/${DOMAIN_NAME}/${SERVICE_NAME}/.gitkeep"
 ```
 
-Create `bmad.lens.release/_bmad-output/lens-work/initiatives/${DOMAIN_NAME}/${SERVICE_NAME}/Service.yaml`.
+Create `_bmad-output/lens-work/initiatives/${DOMAIN_NAME}/${SERVICE_NAME}/Service.yaml`.
 This file serves as BOTH the service descriptor AND the initiative config for service-layer.
 No separate `{initiative_id}.yaml` is created.
 
@@ -932,7 +932,7 @@ ${endif}
 
 ### 7. Write Personal State (Git-Ignored)
 
-Write to `bmad.lens.release/_bmad-output/lens-work/state.yaml`:
+Write to `_bmad-output/lens-work/state.yaml`:
 
 ```yaml
 # v2 — Lifecycle Contract personal state
@@ -979,7 +979,7 @@ last_activity: "${ISO_TIMESTAMP}"
 
 ### 8. Log Event
 
-Append to `bmad.lens.release/_bmad-output/lens-work/event-log.jsonl`:
+Append to `_bmad-output/lens-work/event-log.jsonl`:
 
 ```json
 {"ts":"${ISO_TIMESTAMP}","event":"init-initiative","id":"${initiative_id}","layer":"${layer}","target_repos":${JSON.stringify(target_repos)},"domain":"${domain}","service":"${service}","question_mode":"${question_mode}","docs_path":"${docs_path}"}
@@ -1118,7 +1118,7 @@ for target_repo in ${target_repos[@]}; do
   # Invoke sync-and-select-branch workflow with force_sync=true
   # (Always sync on first initiative creation, even if profile was synced today)
   invoke_workflow:
-    path: "bmad.lens.release/_bmad/lens-work/workflows/utility/sync-and-select-branch/workflow.md"
+    path: "_bmad/lens-work/workflows/utility/sync-and-select-branch/workflow.md"
     params:
       initiative_id: ${initiative_id}
       target_repo: ${target_repo}

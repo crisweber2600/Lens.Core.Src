@@ -3,7 +3,7 @@ name: 'step-04-final-validation'
 description: 'Validate complete coverage of all requirements and ensure implementation readiness'
 
 # Path Definitions
-workflow_path: 'bmad.lens.release/_bmad/bmm/workflows/3-solutioning/create-epics-and-stories'
+workflow_path: '_bmad/bmm/workflows/3-solutioning/create-epics-and-stories'
 
 # File References
 thisStepFile: './step-04-final-validation.md'
@@ -11,8 +11,8 @@ workflowFile: '{workflow_path}/workflow.md'
 outputFile: '{planning_artifacts}/epics.md'
 
 # Task References
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
 
 # Template References
 epicsTemplate: '{workflow_path}/templates/epics-template.md'
@@ -144,6 +144,6 @@ If all validations pass:
 
 When C is selected, the workflow is complete and the epics.md is ready for development.
 
-Epics and Stories complete. Read fully and follow: `bmad.lens.release/_bmad/core/tasks/help.md`
+Epics and Stories complete. Read fully and follow: `_bmad/core/tasks/help.md`
 
 Upon Completion of task output: offer to answer any questions about the Epics and Stories.

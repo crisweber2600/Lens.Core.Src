@@ -55,9 +55,9 @@ Let's set up your profile to enable initiative tracking.
 **If PAT setup selected:** Present single terminal command (detect OS automatically):
 ```bash
 # Auto-detected for your platform:
-cd "{PROJECT_ROOT}" && bash bmad.lens.release/_bmad/lens-work/scripts/store-github-pat.sh  # Unix/Mac
+cd "{PROJECT_ROOT}" && bash _bmad/lens-work/scripts/store-github-pat.sh  # Unix/Mac
 # OR
-cd "{PROJECT_ROOT}"; .\bmad.lens.release\_bmad\lens-work\scripts\store-github-pat.ps1  # Windows
+cd "{PROJECT_ROOT}"; .\_bmad\lens-work\scripts\store-github-pat.ps1  # Windows
 ```
 Wait for confirmation, then verify `git_credentials` added to profile.
 

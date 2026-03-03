@@ -3,15 +3,15 @@ name: 'step-06-innovation'
 description: 'Detect and explore innovative aspects of the product (optional step)'
 
 # File References
-nextStepFile: 'bmad.lens.release/_bmad/bmm/workflows/2-plan-workflows/create-prd/steps-c/step-07-project-type.md'
+nextStepFile: '_bmad/bmm/workflows/2-plan-workflows/create-prd/steps-c/step-07-project-type.md'
 outputFile: '{planning_artifacts}/prd.md'
 
 # Data Files
-projectTypesCSV: 'bmad.lens.release/_bmad/bmm/workflows/2-plan-workflows/create-prd/data/project-types.csv'
+projectTypesCSV: '_bmad/bmm/workflows/2-plan-workflows/create-prd/data/project-types.csv'
 
 # Task References
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Step 6: Innovation Discovery

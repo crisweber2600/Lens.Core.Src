@@ -101,11 +101,11 @@ agent:
 
 ### Sidecar Path Rules
 
-**Installation path:** `bmad.lens.release/_bmad/_memory/{sidecar-folder}/`
+**Installation path:** `_bmad/_memory/{sidecar-folder}/`
 
 **ALL references MUST use:**
 ```yaml
-bmad.lens.release/_bmad/_memory/{sidecar-folder}/{file}
+_bmad/_memory/{sidecar-folder}/{file}
 ```
 
 | Component | Value |
@@ -116,8 +116,8 @@ bmad.lens.release/_bmad/_memory/{sidecar-folder}/{file}
 ```yaml
 # ✅ CORRECT
 critical_actions:
-  - "Load COMPLETE file bmad.lens.release/_bmad/_memory/journal-keeper-sidecar/memories.md"
-  - "ONLY read/write files in bmad.lens.release/_bmad/_memory/journal-keeper-sidecar/"
+  - "Load COMPLETE file _bmad/_memory/journal-keeper-sidecar/memories.md"
+  - "ONLY read/write files in _bmad/_memory/journal-keeper-sidecar/"
 
 # ❌ WRONG
 critical_actions:
@@ -129,9 +129,9 @@ critical_actions:
 
 ```yaml
 critical_actions:
-  - 'Load COMPLETE file bmad.lens.release/_bmad/_memory/{sidecar-folder}/memories.md'
-  - 'Load COMPLETE file bmad.lens.release/_bmad/_memory/{sidecar-folder}/instructions.md'
-  - 'ONLY read/write files in bmad.lens.release/_bmad/_memory/{sidecar-folder}/'
+  - 'Load COMPLETE file _bmad/_memory/{sidecar-folder}/memories.md'
+  - 'Load COMPLETE file _bmad/_memory/{sidecar-folder}/instructions.md'
+  - 'ONLY read/write files in _bmad/_memory/{sidecar-folder}/'
 ```
 
 ---
@@ -155,7 +155,7 @@ menu:
     description: "[WC] Write commit message"
 
   - trigger: SM or fuzzy match on save
-    action: "Update bmad.lens.release/_bmad/_memory/{sidecar-folder}/memories.md"
+    action: "Update _bmad/_memory/{sidecar-folder}/memories.md"
     description: "[SM] Save session"
 ```
 
@@ -205,11 +205,11 @@ communication_style: |
 
 ```yaml
 # Single folder (most common)
-- 'ONLY read/write files in bmad.lens.release/_bmad/_memory/{sidecar-folder}/'
+- 'ONLY read/write files in _bmad/_memory/{sidecar-folder}/'
 
 # Read-only knowledge + write memories
-- 'Load from bmad.lens.release/_bmad/_memory/{sidecar-folder}/knowledge/ but NEVER modify'
-- 'Write ONLY to bmad.lens.release/_bmad/_memory/{sidecar-folder}/memories.md'
+- 'Load from _bmad/_memory/{sidecar-folder}/knowledge/ but NEVER modify'
+- 'Write ONLY to _bmad/_memory/{sidecar-folder}/memories.md'
 
 # User folder access
 - 'ONLY access files in {user-folder}/journals/ - private space'
@@ -234,7 +234,7 @@ communication_style: |
 - [ ] No sidecar path references
 
 ### hasSidecar: true
-- [ ] ALL paths: `bmad.lens.release/_bmad/_memory/{sidecar-folder}/...`
+- [ ] ALL paths: `_bmad/_memory/{sidecar-folder}/...`
 - [ ] `{project-root}` is literal
 - [ ] Sidecar folder exists with required files
 

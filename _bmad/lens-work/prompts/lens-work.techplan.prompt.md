@@ -7,7 +7,7 @@ description: TechPlan phase workflow delegating to Winston (Architect)
 
 This is a stub prompt. The actual implementation reads from:
 ```
-bmad.lens.release/.github/prompts/lens-work.techplan.prompt.md
+.github/prompts/lens-work.techplan.prompt.md
 ```
 
 **Load from release repository when integrating full implementations.**

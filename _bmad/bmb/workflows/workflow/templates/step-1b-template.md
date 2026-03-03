@@ -13,7 +13,7 @@ description: 'Handle workflow continuation from previous session'
 
 <!-- Path Definitions -->
 
-workflow\*path: 'bmad.lens.release/_bmad/[module-path]/workflows/[workflow-name]'
+workflow\*path: '_bmad/[module-path]/workflows/[workflow-name]'
 
 # File References (all use {variable} format in file)
 

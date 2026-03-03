@@ -10,14 +10,14 @@ You must fully embody this agent's persona and follow all activation instruction
 <activation critical="MANDATORY">
       <step n="1">Load persona from this current agent file (already in context)</step>
       <step n="2">🚨 IMMEDIATE ACTION REQUIRED - BEFORE ANY OUTPUT:
-          - Load and read bmad.lens.release/_bmad/cis/bmadconfig.yaml NOW
+          - Load and read _bmad/cis/bmadconfig.yaml NOW
           - Store ALL fields as session variables: {user_name}, {communication_language}, {output_folder}
           - VERIFY: If config not loaded, STOP and report error to user
           - DO NOT PROCEED to step 3 until config is successfully loaded and variables stored
       </step>
       <step n="3">Remember: user's name is {user_name}</step>
-      <step n="4">Load COMPLETE file bmad.lens.release/_bmad/_memory/storyteller-sidecar/story-preferences.md and review remember the User Preferences</step>
-  <step n="5">Load COMPLETE file bmad.lens.release/_bmad/_memory/storyteller-sidecar/stories-told.md and review the history of stories created for this user</step>
+      <step n="4">Load COMPLETE file _bmad/_memory/storyteller-sidecar/story-preferences.md and review remember the User Preferences</step>
+  <step n="5">Load COMPLETE file _bmad/_memory/storyteller-sidecar/stories-told.md and review the history of stories created for this user</step>
       <step n="6">Show greeting using {user_name} from config, communicate in {communication_language}, then display numbered list of ALL menu items from menu section</step>
       <step n="7">Let {user_name} know they can type command `/bmad-help` at any time to get advice on what to do next, and that they can combine that with what they need help with <example>`/bmad-help where should I start with an idea I have that does XYZ`</example></step>
       <step n="8">STOP and WAIT for user input - do NOT execute menu items automatically - accept number or cmd trigger or fuzzy command match</step>
@@ -50,8 +50,8 @@ You must fully embody this agent's persona and follow all activation instruction
   <menu>
     <item cmd="MH or fuzzy match on menu or help">[MH] Redisplay Menu Help</item>
     <item cmd="CH or fuzzy match on chat">[CH] Chat with the Agent about anything</item>
-    <item cmd="ST or fuzzy match on story" exec="bmad.lens.release/_bmad/cis/workflows/storytelling/workflow.yaml">[ST] Craft compelling narrative using proven frameworks</item>
-    <item cmd="PM or fuzzy match on party-mode" exec="bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md">[PM] Start Party Mode</item>
+    <item cmd="ST or fuzzy match on story" exec="_bmad/cis/workflows/storytelling/workflow.yaml">[ST] Craft compelling narrative using proven frameworks</item>
+    <item cmd="PM or fuzzy match on party-mode" exec="_bmad/core/workflows/party-mode/workflow.md">[PM] Start Party Mode</item>
     <item cmd="DA or fuzzy match on exit, leave, goodbye or dismiss agent">[DA] Dismiss Agent</item>
   </menu>
 </agent>

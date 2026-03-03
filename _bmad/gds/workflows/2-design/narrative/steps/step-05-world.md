@@ -3,7 +3,7 @@ name: 'step-05-world'
 description: 'Build the world including setting, history, factions, and key locations'
 
 # Path Definitions
-workflow_path: 'bmad.lens.release/_bmad/gds/workflows/2-design/narrative'
+workflow_path: '_bmad/gds/workflows/2-design/narrative'
 
 # File References
 thisStepFile: './step-05-world.md'
@@ -12,8 +12,8 @@ workflowFile: '{workflow_path}/workflow.md'
 outputFile: '{output_folder}/narrative-design.md'
 
 # Task References
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Step 5: World Building

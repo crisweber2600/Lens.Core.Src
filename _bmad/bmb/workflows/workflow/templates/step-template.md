@@ -11,7 +11,7 @@ description: '[Brief description of what this step accomplishes]'
 
 <!-- Path Definitions -->
 
-workflow\*path: 'bmad.lens.release/_bmad/[module]/reference/workflows/[workflow-name]' # the folder the workflow.md file is in
+workflow\*path: '_bmad/[module]/reference/workflows/[workflow-name]' # the folder the workflow.md file is in
 
 # File References (all use {variable} format in file)
 
@@ -23,8 +23,8 @@ outputFile: '{output_folder}/[output-file-name]-{project_name}.md'
 
 # Task References (IF THE workflow uses and it makes sense in this step to have these )
 
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
 
 # Template References (if this step uses a specific templates)
 

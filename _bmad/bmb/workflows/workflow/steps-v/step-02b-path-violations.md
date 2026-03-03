@@ -99,7 +99,7 @@ done
 ```
 
 **What we're catching:**
-- Content like: `Load bmad.lens.release/_bmad/foo/workflows/.../file.csv`
+- Content like: `Load _bmad/foo/workflows/.../file.csv`
 - Should be: `Load {dataFile}` (frontmatter variable with a relative path like ../data/file.csv)
 
 **SKIP:** Paths using KNOWN_CONFIG_VARIABLES (these are valid exceptions)
@@ -161,7 +161,7 @@ done
 ```bash
 # Check if in non-bmb module, then search for bmb-specific paths
 if pwd | grep -q "/modules/[^/]\+/" && ! pwd | grep -q "/bmb/"; then
-  grep -rn "bmad.lens.release/_bmad/bmb/" steps-c/ steps-e/ steps-v/ 2>/dev/null || echo "No bmb-specific paths found"
+  grep -rn "_bmad/bmb/" steps-c/ steps-e/ steps-v/ 2>/dev/null || echo "No bmb-specific paths found"
 fi
 ```
 

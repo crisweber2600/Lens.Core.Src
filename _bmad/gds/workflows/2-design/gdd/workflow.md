@@ -1,7 +1,7 @@
 ---
 name: create-gdd
 description: 'Comprehensive game design document creator through collaborative discovery. Use when the user says "lets create a game design document" or "I want to create a comprehensive GDD"'
-main_config: 'bmad.lens.release/_bmad/gds/bmadconfig.yaml'
+main_config: '_bmad/gds/bmadconfig.yaml'
 web_bundle: true
 ---
 

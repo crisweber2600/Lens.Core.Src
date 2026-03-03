@@ -3,4 +3,4 @@ name: 'rework-workflow'
 description: 'Rework a Workflow to a V6 Compliant Version'
 ---
 
-IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL @bmad.lens.release/_bmad/bmb/workflows/workflow/workflow-rework-workflow.md, READ its entire contents and follow its directions exactly!
+IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL @_bmad/bmb/workflows/workflow/workflow-rework-workflow.md, READ its entire contents and follow its directions exactly!

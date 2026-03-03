@@ -10,8 +10,8 @@ editPlan: '{bmb_creations_output_folder}/edit-plan-{agent-name}.md'
 agentMetadata: ../data/agent-metadata.md
 agentMenuPatterns: ../data/agent-menu-patterns.md
 
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Edit Step 1: Load Existing Agent

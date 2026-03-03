@@ -35,11 +35,11 @@ From `workflow.yaml`, resolve:
 ### 2. First Step
 
 Load, read completely, and execute:
-`bmad.lens.release/_bmad/tea/workflows/testarch/ci/steps-c/step-01-preflight.md`
+`_bmad/tea/workflows/testarch/ci/steps-c/step-01-preflight.md`
 
 ### 3. Resume Support
 
 If the user selects **Resume** mode, load, read completely, and execute:
-`bmad.lens.release/_bmad/tea/workflows/testarch/ci/steps-c/step-01b-resume.md`
+`_bmad/tea/workflows/testarch/ci/steps-c/step-01b-resume.md`
 
 This checks the output document for progress tracking frontmatter and routes to the next incomplete step.

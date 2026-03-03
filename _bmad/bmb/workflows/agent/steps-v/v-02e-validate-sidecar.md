@@ -66,7 +66,7 @@ Perform these checks systematically - validate EVERY rule specified in agentVali
 #### C. Path Reference Validation
 For each sidecar path reference in agent YAML:
 - [ ] Extract path from YAML reference
-- [ ] Verify path format is correct: `bmad.lens.release/_bmad/_memory/{sidecar-folder}/...`
+- [ ] Verify path format is correct: `_bmad/_memory/{sidecar-folder}/...`
 - [ ] `{project-root}` is literal
 - [ ] `{sidecar-folder}` is actual folder name
 - [ ] Validate no broken path references
@@ -74,9 +74,9 @@ For each sidecar path reference in agent YAML:
 #### D. Critical Actions Validation (MANDATORY for hasSidecar: true)
 - [ ] critical_actions section exists in agent YAML
 - [ ] Contains at minimum 3 actions
-- [ ] Loads sidecar memories: `bmad.lens.release/_bmad/_memory/{sidecar-folder}/memories.md`
-- [ ] Loads sidecar instructions: `bmad.lens.release/_bmad/_memory/{sidecar-folder}/instructions.md`
-- [ ] Restricts file access: `ONLY read/write files in bmad.lens.release/_bmad/_memory/{sidecar-folder}/`
+- [ ] Loads sidecar memories: `_bmad/_memory/{sidecar-folder}/memories.md`
+- [ ] Loads sidecar instructions: `_bmad/_memory/{sidecar-folder}/instructions.md`
+- [ ] Restricts file access: `ONLY read/write files in _bmad/_memory/{sidecar-folder}/`
 - [ ] No placeholder text in critical_actions
 - [ ] No compiler-injected steps
 
@@ -105,7 +105,7 @@ Append to `{validationReport}`:
 
 **Checks:**
 - [ ] metadata.sidecar-folder present (if hasSidecar: true)
-- [ ] Sidecar path format correct: `bmad.lens.release/_bmad/_memory/{sidecar-folder}/...`
+- [ ] Sidecar path format correct: `_bmad/_memory/{sidecar-folder}/...`
 - [ ] Sidecar files exist at specified path (if hasSidecar: true)
 - [ ] All referenced files present
 - [ ] No broken path references

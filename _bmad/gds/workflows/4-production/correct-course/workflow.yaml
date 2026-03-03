@@ -3,7 +3,7 @@ name: "correct-course"
 description: 'Sprint change impact analysis and planning. Use when the user says "I want to analyze and plan significant sprint changes"'
 author: "BMad Method"
 
-config_source: "bmad.lens.release/_bmad/gds/bmadconfig.yaml"
+config_source: "_bmad/gds/bmadconfig.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
 game_dev_experience: "{config_source}:game_dev_experience"
@@ -56,7 +56,7 @@ input_file_patterns:
     sharded: "{project_knowledge}/index.md"
     load_strategy: "INDEX_GUIDED"
 
-installed_path: "bmad.lens.release/_bmad/gds/workflows/4-production/correct-course"
+installed_path: "_bmad/gds/workflows/4-production/correct-course"
 template: false
 instructions: "{installed_path}/instructions.md"
 validation: "{installed_path}/checklist.md"

@@ -3,7 +3,7 @@ name: 'step-05-crosscutting'
 description: 'Address cross-cutting concerns that affect all game systems'
 
 # Path Definitions
-workflow_path: 'bmad.lens.release/_bmad/gds/workflows/3-technical/game-architecture'
+workflow_path: '_bmad/gds/workflows/3-technical/game-architecture'
 
 # File References
 thisStepFile: './step-05-crosscutting.md'
@@ -12,8 +12,8 @@ workflowFile: '{workflow_path}/workflow.md'
 outputFile: '{output_folder}/game-architecture.md'
 
 # Task References
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Step 5: Cross-cutting Concerns

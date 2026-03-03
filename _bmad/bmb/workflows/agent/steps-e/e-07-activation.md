@@ -8,8 +8,8 @@ criticalActions: ../data/critical-actions.md
 # Edit step route (determined by hasSidecar)
 agentEdit: './e-08-edit-agent.md'
 
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: '_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: '_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Edit Step 7: Activation and Routing

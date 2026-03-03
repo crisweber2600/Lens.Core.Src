@@ -7,7 +7,7 @@ description: Execute the next required action directly without prompting
 
 This is a stub prompt. The actual implementation reads from:
 ```
-bmad.lens.release/.github/prompts/lens-work.next.prompt.md
+.github/prompts/lens-work.next.prompt.md
 ```
 
 **Purpose:** Automatically determine and execute the next required action based on current state.

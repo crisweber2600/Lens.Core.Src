@@ -25,7 +25,7 @@ This uses **step-file architecture** for focused execution:
 
 ### Configuration Loading
 
-Load config from `bmad.lens.release/_bmad/bmm/bmadconfig.yaml` and resolve:
+Load config from `_bmad/bmm/bmadconfig.yaml` and resolve:
 
 - `user_name`, `communication_language`, `user_skill_level`
 - `planning_artifacts`, `implementation_artifacts`
@@ -34,17 +34,17 @@ Load config from `bmad.lens.release/_bmad/bmm/bmadconfig.yaml` and resolve:
 
 ### Paths
 
-- `installed_path` = `bmad.lens.release/_bmad/bmm/workflows/bmad-quick-flow/quick-dev`
+- `installed_path` = `_bmad/bmm/workflows/bmad-quick-flow/quick-dev`
 - `project_context` = `**/project-context.md` (load if exists)
 
 ### Related Workflows
 
-- `quick_spec_workflow` = `bmad.lens.release/_bmad/bmm/workflows/bmad-quick-flow/quick-spec/workflow.md`
-- `party_mode_exec` = `bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md`
-- `advanced_elicitation` = `bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml`
+- `quick_spec_workflow` = `_bmad/bmm/workflows/bmad-quick-flow/quick-spec/workflow.md`
+- `party_mode_exec` = `_bmad/core/workflows/party-mode/workflow.md`
+- `advanced_elicitation` = `_bmad/core/workflows/advanced-elicitation/workflow.yaml`
 
 ---
 
 ## EXECUTION
 
-Read fully and follow: `bmad.lens.release/_bmad/bmm/workflows/bmad-quick-flow/quick-dev/steps/step-01-mode-detection.md` to begin the workflow.
+Read fully and follow: `_bmad/bmm/workflows/bmad-quick-flow/quick-dev/steps/step-01-mode-detection.md` to begin the workflow.
