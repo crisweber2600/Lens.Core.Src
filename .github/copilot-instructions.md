@@ -19,7 +19,7 @@
 - **Workflow definitions**: `_bmad/bmm/workflows/` (organized by phase)
 - **Core tasks**: `_bmad/core/tasks/` (help, editorial review, indexing, sharding, adversarial review)
 - **Core workflows**: `_bmad/core/workflows/` (brainstorming, party-mode, advanced-elicitation)
-- **Workflow engine**: `_bmad/core/tasks/workflow.xml` (executes YAML-based workflows)
+- **Workflow engine**: `_bmad/core/tasks/workflow.yaml` (executes YAML-based workflows)
 - **Module configuration**: `_bmad/bmm/bmadconfig.yaml`
 - **Core configuration**: `_bmad/core/bmadconfig.yaml`
 - **Agent manifest**: `_bmad/_config/agent-manifest.csv`
@@ -32,7 +32,7 @@
 - Always load `_bmad/bmm/bmadconfig.yaml` before any agent activation or workflow execution
 - Store all config fields as session variables: `{user_name}`, `{communication_language}`, `{output_folder}`, `{planning_artifacts}`, `{implementation_artifacts}`, `{project_knowledge}`
 - MD-based workflows execute directly — load and follow the `.md` file
-- YAML-based workflows require the workflow engine — load `workflow.xml` first, then pass the `.yaml` config
+- YAML-based workflows require the workflow engine — load `workflow.yaml` first, then pass the `.yaml` config
 - Follow step-based workflow execution: load steps JIT, never multiple at once
 - Save outputs after EACH step when using the workflow engine
 - The `{project-root}` variable resolves to the workspace root at runtime

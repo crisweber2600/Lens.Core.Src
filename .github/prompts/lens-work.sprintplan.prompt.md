@@ -46,7 +46,7 @@ Use `#think` before prioritizing stories or allocating sprint capacity.
 
 **⚠️ CRITICAL — Workflow Engine Rules:**
 Sub-workflows [3] and [4] use YAML-based workflow.yaml files with the workflow engine.
-- Load `_bmad/core/tasks/workflow.xml` FIRST as the execution engine
+- Load `_bmad/core/tasks/workflow.yaml` FIRST as the execution engine
 - Pass the `workflow.yaml` path to the engine
 - Follow the engine instructions precisely — execute steps sequentially
 - Save outputs after completing EACH engine step (never batch)
@@ -60,13 +60,13 @@ Execute workflows in sequence:
 - [2] Constitutional Compliance Check — Continue as Bob (Scrum Master)
   → Constitution skill evaluates all artifacts against resolved constitutional rules
 - [3] Sprint Planning — Continue as Bob (Scrum Master)
-  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.xml`
+  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.yaml`
   → Pass to engine: `_bmad/bmm/workflows/4-implementation/sprint-planning/workflow.yaml`
 - [4] Dev Story Creation — Continue as Bob (Scrum Master)
-  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.xml`
+  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.yaml`
   → Pass to engine: `_bmad/bmm/workflows/4-implementation/create-story/workflow.yaml`
 
-⚠️ **Workflow Engine Rules for [3] and [4]:** Load workflow.xml FIRST, pass workflow.yaml, execute steps sequentially, save after EACH step, STOP at decision points.
+⚠️ **Workflow Engine Rules for [3] and [4]:** Load workflow.yaml FIRST, pass workflow.yaml, execute steps sequentially, save after EACH step, STOP at decision points.
 
 **Sub-workflow tracking:** After each sub-workflow completes successfully, immediately update
 `sub_workflows.sprintplan.{name}: complete` in the initiative config (dual-write to state.yaml).

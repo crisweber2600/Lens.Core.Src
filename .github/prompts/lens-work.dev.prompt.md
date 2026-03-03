@@ -44,7 +44,7 @@ Use `#think` before decomposing implementation tasks or selecting code patterns.
 
 **⚠️ CRITICAL — Workflow Engine Rules:**
 Sub-workflows [4], [5], and [7] use YAML-based workflow.yaml files with the workflow engine.
-- Load `_bmad/core/tasks/workflow.xml` FIRST as the execution engine
+- Load `_bmad/core/tasks/workflow.yaml` FIRST as the execution engine
 - Pass the `workflow.yaml` path to the engine
 - Follow the engine instructions precisely — execute steps sequentially
 - Save outputs after completing EACH engine step (never batch)
@@ -79,7 +79,7 @@ Sub-workflows [4], [5], and [7] use YAML-based workflow.yaml files with the work
 - Checkout feature branch in target repo (creates if needed, pushes immediately)
 
 **[4] Implementation Loop (repeating per task)** — Continue as Amelia (Developer)
-  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.xml`
+  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.yaml`
   → Pass to engine: `_bmad/bmm/workflows/4-implementation/dev-story/workflow.yaml`
   → Amelia implements task per dev story guidance and constitutional context
   → Engine executes steps sequentially — save outputs after EACH step
@@ -87,7 +87,7 @@ Sub-workflows [4], [5], and [7] use YAML-based workflow.yaml files with the work
   → Push implementation commits to feature branch in target repo
 
 **[5] Code Review (per task, constitution-aware)** — Switch to Quinn (QA) persona: `_bmad/bmm/agents/qa.md`
-  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.xml`
+  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.yaml`
   → Pass to engine: `_bmad/bmm/workflows/4-implementation/code-review/workflow.yaml`
   → Adversarial review against: story acceptance criteria, constitutional rules, architecture decisions
   → FAIL blocks the task (not the whole story)
@@ -101,7 +101,7 @@ Sub-workflows [4], [5], and [7] use YAML-based workflow.yaml files with the work
   → Epic teardown participants: Winston (Arch) `_bmad/bmm/agents/architect.md`, Mary (Analyst) `_bmad/bmm/agents/analyst.md`, Quinn (QA) `_bmad/bmm/agents/qa.md`
 
 **[7] Retrospective** — Switch to Bob (Scrum Master) persona: `_bmad/bmm/agents/sm.md`
-  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.xml`
+  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.yaml`
   → Pass to engine: `_bmad/bmm/workflows/4-implementation/retrospective/workflow.yaml`
   → Bob conducts sprint retrospective
   → Output: `retro.md` documenting what worked, what didn't, action items
