@@ -174,6 +174,50 @@ for artifact in required_artifacts:
 assert: current_branch == phase_branch
 ```
 
+### 3. Execution Mode Selection (Interactive or Batch)
+
+```yaml
+# Allow per-phase override of global question_mode preference
+# Users can select [I]nteractive (step-by-step workflows) or [B]atch (single file)
+ask: |
+  📋 Execution Mode Selection
+  
+  How would you like to proceed with this phase?
+  
+  **[I] Interactive** (current default) — Choose workflows and answer step-by-step
+  **[B] Batch**     (faster)           — Answer all questions at once in a single file
+  
+  Select mode: [I] or [B]
+  (Default: ${initiative.question_mode})
+
+user_choice = user_input || initiative.question_mode
+session.execution_mode = user_choice
+session.mode_switched = (user_choice != initiative.question_mode) ? true : false
+session.mode_switch_point = "entry"
+
+# Log mode selection to compliance reports
+log_event:
+  type: "execution_mode_selected"
+  phase: "techplan"
+  mode: "${session.execution_mode}"
+  global_default: "${initiative.question_mode}"
+  override: ${session.mode_switched}
+  timestamp: "${ISO_TIMESTAMP}"
+
+# If batch mode selected: invoke batch-process and exit
+if session.execution_mode == "batch":
+  invoke: lens-work.batch-process
+  params:
+    phase_name: "techplan"
+    display_name: "TechPlan"
+    template_path: "templates/techplan-questions.template.md"
+    output_filename: "techplan-questions.md"
+    scope: "phase"
+  exit: 0
+
+# Otherwise continue to Step 4 for interactive workflow selection
+```
+
 ### 4. Architecture Design
 
 **⚠️ CRITICAL — Interactive Workflow Rules:**
