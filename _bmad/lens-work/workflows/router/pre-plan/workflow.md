@@ -228,7 +228,7 @@ params:
 assert: current_branch == phase_branch
 ```
 
-### 2b. Execution Mode Selection (Interactive or Batch)
+### 2a. Execution Mode Selection (Interactive or Batch)
 
 ```yaml
 # Allow per-phase override of global question_mode preference
@@ -238,15 +238,24 @@ ask: |
   
   How would you like to proceed with this phase?
   
-  **[I] Interactive** (current default) — Choose workflows and answer step-by-step
-  **[B] Batch**     (faster)           — Answer all questions at once in a single file
+  **[I] Interactive** — Choose workflows and answer step-by-step
+  **[B] Batch**     — Answer all questions at once in a single file
   
   Select mode: [I] or [B]
   (Default: ${initiative.question_mode})
 
-user_choice = user_input || initiative.question_mode
-session.execution_mode = user_choice
-session.mode_switched = (user_choice != initiative.question_mode) ? true : false
+raw_choice = user_input
+normalized_choice = null
+
+if raw_choice:
+  upper_choice = raw_choice.upper()
+  if upper_choice == "B" or upper_choice == "BATCH":
+    normalized_choice = "batch"
+  elif upper_choice == "I" or upper_choice == "INTERACTIVE":
+    normalized_choice = "interactive"
+
+session.execution_mode = normalized_choice || initiative.question_mode
+session.mode_switched = (session.execution_mode != initiative.question_mode) ? true : false
 session.mode_switch_point = "entry"
 
 # Log mode selection to compliance reports
