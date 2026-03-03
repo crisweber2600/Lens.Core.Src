@@ -298,6 +298,20 @@
       <action>ONLY THEN mark the task (and subtasks) checkbox with [x]</action>
       <action>Update File List section with ALL new, modified, or deleted files (paths relative to repo root)</action>
       <action>Add completion notes to Dev Agent Record summarizing what was ACTUALLY implemented and tested</action>
+
+      <!-- AUTO-COMMIT: Task completion triggers immediate commit + push in target repo -->
+      <critical>After marking task complete, auto-commit all changes to the target repo story branch</critical>
+      <action>Determine current task number (count of completed [x] tasks) and total task count</action>
+      <action>Execute in target repo:
+        git add -A
+        git commit -m "feat({{story_key}}): {{task_description}}
+
+        Story: {{story_key}}
+        Task: {{task_number}}/{{total_tasks}}
+        Epic: {{epic_key}}"
+        git push origin "{{story_branch}}"
+      </action>
+      <output>✅ Task {{task_number}}/{{total_tasks}} committed and pushed to {{story_branch}}</output>
     </check>
 
     <check if="ANY validation fails">
@@ -326,6 +340,44 @@
     <action>Confirm File List includes every changed file</action>
     <action>Execute enhanced definition-of-done validation</action>
     <action>Update the story Status to: "review"</action>
+
+    <!-- AUTO-PR: Create PR from story branch to epic branch in target repo -->
+    <critical>When all tasks are complete, auto-create a PR from story branch to epic branch</critical>
+    <action>Ensure all changes are committed and pushed to the story branch in the target repo:
+      cd {{target_repo_path}}
+      git add -A
+      if any staged changes exist:
+        git commit -m "feat({{story_key}}): story complete — all tasks done"
+        git push origin "{{story_branch}}"
+    </action>
+    <action>Create PR from story branch to epic branch:
+      gh pr create \
+        --base "{{epic_branch}}" \
+        --head "{{story_branch}}" \
+        --title "feat({{epic_key}}): {{story_title}} [{{story_key}}]" \
+        --body "## Story Complete: {{story_key}}
+
+      ### {{story_title}}
+
+      All tasks completed. Ready for code review.
+
+      **Epic:** {{epic_key}}
+      **Story Branch:** {{story_branch}}
+      **Target Branch:** {{epic_branch}}
+
+      ### Acceptance Criteria
+      {{acceptance_criteria_summary}}
+
+      ### Tasks Completed
+      {{completed_tasks_list}}
+
+      ### Files Changed
+      {{file_list}}"
+    </action>
+    <action>Capture PR URL and store as {{story_pr_url}}</action>
+    <output>✅ PR auto-created: {{story_branch}} → {{epic_branch}}
+      PR URL: {{story_pr_url}}
+    </output>
 
     <!-- Enhanced Definition of Done Validation -->
     <action>Validate definition-of-done checklist with essential requirements:

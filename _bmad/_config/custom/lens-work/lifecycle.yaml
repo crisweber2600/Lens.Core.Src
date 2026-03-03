@@ -238,22 +238,25 @@ planning_repo:
 # -----------------------------------------------------------------------------
 # BRANCH TOPOLOGY — TARGET PROJECTS (code execution)
 # -----------------------------------------------------------------------------
-# GitFlow with Jira-linked branch names.
+# GitFlow with epic-key/story-key branch names.
 # AI-speed execution (sprints in hours, not weeks).
 target_projects:
   branching_model: gitflow
   branch_patterns:
-    story: "feature/{jira-storyid}"
-    epic: "feature/{jira-epicid}"
+    # Epic branch: feature/{epic-key}  e.g., feature/epic-1
+    epic: "feature/{epic-key}"
+    # Story branch: feature/{epic-key}-{story-key}  e.g., feature/epic-1-1-1-user-auth
+    story: "feature/{epic-key}-{story-key}"
     integration: develop
     release: "release/{version}"
     production: main
   merge_chain:
-    - source: "feature/{jira-storyid}"
-      target: "feature/{jira-epicid}"
+    - source: "feature/{epic-key}-{story-key}"
+      target: "feature/{epic-key}"
       type: story-completion
       gate: code-review
-    - source: "feature/{jira-epicid}"
+      auto_pr: true
+    - source: "feature/{epic-key}"
       target: develop
       type: epic-completion
       gate: feature-complete-review
@@ -271,6 +274,13 @@ target_projects:
     "small → medium":      "epic → develop"
     "medium → large":      "develop → release"
     "large → base":        "release → main"
+  # Automation rules for target project branch management
+  auto_branch_management:
+    create_epic_branch_on: sprint-plan-start
+    create_story_branch_on: dev-story-start
+    auto_commit_on: task-completion
+    auto_pr_on: story-completion
+    epic_branch_parent: develop
 
 # -----------------------------------------------------------------------------
 # INITIATIVE CONFIGURATION

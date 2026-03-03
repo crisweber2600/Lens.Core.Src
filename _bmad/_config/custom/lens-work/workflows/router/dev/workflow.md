@@ -352,24 +352,54 @@ params:
 # per constitution skill Part 12c-12d
 ```
 
-### 3. Checkout Target Repo
+### 3. Checkout Target Repo — Epic & Story Branch Management
 
 **IMPORTANT:** This is where we switch from BMAD control repo to TargetProjects.
+Branch management follows `lifecycle.yaml → target_projects` and `git-orchestration → Target Project Branch Management`.
 
 ```yaml
-# git-orchestration checks out the feature branch in the actual repo
-invoke: git-orchestration.checkout-target
+# Resolve epic and story keys from the dev story
+# Story key format: "1-2-user-authentication" → epic number is first segment
+epic_num = story_key.split("-")[0]
+epic_key = "epic-${epic_num}"
+epic_branch = "feature/${epic_key}"
+story_branch = "feature/${epic_key}-${story_key}"
+
+target_repo = "${initiative.target_repos[0]}"
+target_path = "TargetProjects/${domain}/${service}/${repo}"
+
+# --- Epic Branch: Ensure parent epic branch exists ---
+invoke: git-orchestration.ensure-epic-branch
 params:
-  target_repo: "${initiative.target_repos[0]}"
-  target_path: "TargetProjects/${domain}/${service}/${repo}"
-  branch: "feature/${story_id}"
+  target_repo_path: "${target_path}"
+  epic_key: "${epic_key}"
+  epic_branch: "${epic_branch}"
+  integration_branch: "develop"  # fallback to "main" if develop doesn't exist
+
+# --- Story Branch: Create or checkout story branch from epic ---
+invoke: git-orchestration.ensure-story-branch
+params:
+  target_repo_path: "${target_path}"
+  epic_key: "${epic_key}"
+  epic_branch: "${epic_branch}" 
+  story_key: "${story_key}"
+  story_branch: "${story_branch}"
+
+# Store branch references for use in Steps 5-9
+session.epic_key = "${epic_key}"
+session.epic_branch = "${epic_branch}"
+session.story_branch = "${story_branch}"
+session.target_path = "${target_path}"
 
 output: |
   📂 Target Repo Ready
   ├── Repo: ${target_repo}
   ├── Path: ${target_path}
-  ├── Branch: feature/${story_id}
-  └── You can now implement in the target repo
+  ├── Epic Branch: ${epic_branch}
+  ├── Story Branch: ${story_branch} (checked out)
+  ├── Branch Chain: ${story_branch} → ${epic_branch} → develop
+  └── Auto-commit: ON (tasks auto-committed after completion)
+  └── Auto-PR: ON (PR created when all tasks complete)
 ```
 
 ### 4. Implementation Guidance + Constitutional Context
@@ -462,7 +492,7 @@ params:
 invoke: bmm.code-review
 params:
   target_repo: "${target_path}"
-  branch: "feature/${story_id}"
+  branch: "${session.story_branch}"
   constitutional_context: ${constitutional_context}
 
 # Re-check constitutional compliance on review outputs before allowing progression

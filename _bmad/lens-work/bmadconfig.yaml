@@ -248,6 +248,39 @@ conventions:
         Any workflow file containing 'git commit' must have a matching 'git push'
         within the same numbered step or bash code block.
 
+    target_project_branching:
+      enforcement: hard
+      rule: >
+        Target project repos MUST use the GitFlow branch topology defined in
+        lifecycle.yaml → target_projects. Epic branches (feature/{epic-key}) are
+        created from the integration branch (develop or main). Story branches
+        (feature/{epic-key}-{story-key}) are created from their parent epic branch.
+      branch_patterns:
+        epic: "feature/{epic-key}"
+        story: "feature/{epic-key}-{story-key}"
+      auto_commit_tasks:
+        enforcement: hard
+        rule: >
+          When a task in a dev-story is marked complete (checkbox [x]), all changes
+          in the target repo MUST be immediately committed and pushed to the story
+          branch. Commit message format: feat({story-key}): {task-description}.
+        commit_format: "feat({story-key}): {task-description}"
+      auto_pr_on_story_completion:
+        enforcement: hard
+        rule: >
+          When ALL tasks in a story are complete, a PR MUST be automatically
+          created from the story branch (feature/{epic-key}-{story-key}) to the
+          epic branch (feature/{epic-key}). The PR title follows the format:
+          feat({epic-key}): {story-title} [{story-key}].
+        pr_title_format: "feat({epic-key}): {story-title} [{story-key}]"
+      auto_pr_on_epic_completion:
+        enforcement: hard
+        rule: >
+          When ALL stories in an epic are complete and merged to the epic branch,
+          a PR MUST be automatically created from the epic branch
+          (feature/{epic-key}) to the integration branch (develop or main).
+        pr_title_format: "feat({epic-key}): Epic complete — {epic-title}"
+
     auto_checkout_on_clone:
       enforcement: hard
       rule: >

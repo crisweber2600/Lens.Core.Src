@@ -12,11 +12,13 @@ Manages all git branch operations for the lens-work lifecycle. Handles branch cr
 
 ## Responsibilities
 
-1. **Branch creation** — Create initiative root, audience, and phase branches
-2. **Branch validation** — Verify topology matches expected patterns
-3. **Targeted commits** — Commit only relevant files per workflow
-4. **Push management** — Push branches at workflow boundaries
-5. **PR preparation** — Set up pull request metadata
+1. **Repository cloning** — Clone repos and auto-checkout to last-committed branch
+2. **Branch creation** — Create initiative root, audience, and phase branches
+3. **Branch validation** — Verify topology matches expected patterns
+4. **Targeted commits** — Commit only relevant files per workflow
+5. **Push management** — Push branches at workflow boundaries
+6. **PR preparation** — Set up pull request metadata
+7. **Target project branching** — Epic/story branch creation, task auto-commit, story auto-PR
 
 ## Branch Patterns (v2 — Lifecycle Contract)
 
@@ -47,9 +49,29 @@ workflow: "{initiative_root}-{audience}-{phase_name}-{workflow}"
 
 1. Clean working directory before any branch operation
 2. Targeted commits (only files relevant to current workflow)
-3. Push branches at workflow end, not mid-workflow
-4. Never force-push without explicit user confirmation
-5. Use `{default_git_remote}` from config for all remote operations
+3. **Auto-push: EVERY commit MUST be immediately followed by `git push`** (bmadconfig.yaml: git_discipline.auto_push)
+4. Push branches at workflow end, not mid-workflow (use auto-push after each commit instead)
+5. Never force-push without explicit user confirmation
+6. Use `{default_git_remote}` from config for all remote operations
+
+## Target Project Branch Management
+
+Target project repos follow the GitFlow branching model defined in `lifecycle.yaml → target_projects`.
+Full details in the source skill: `_bmad/lens-work/skills/git-orchestration.md`.
+
+### Branch Naming Contract
+
+- **Epic branch:** `feature/{epic-key}` (e.g., `feature/epic-1`)
+- **Story branch:** `feature/{epic-key}-{story-key}` (e.g., `feature/epic-1-1-1-user-authentication`)
+
+### Automation Rules
+
+| Trigger | Action |
+|---------|--------|
+| Dev story starts | Ensure epic branch exists (from develop/main), create story branch from epic |
+| Task marked complete | Auto-commit + push to story branch: `feat({story-key}): {task-desc}` |
+| All story tasks done | Auto-create PR: story branch → epic branch |
+| All epic stories done | Auto-create PR: epic branch → develop |
 
 ## Error Handling
 

@@ -74,9 +74,12 @@ Sub-workflows [4], [5], and [7] use YAML-based workflow.yaml files with the work
 - Constitution skill runs compliance check on dev story
 - BLOCK if `fail_count > 0` — resolve story issues before implementation
 
-**[3] Checkout Target Repo**
+**[3] Checkout Target Repo — Epic & Story Branch Management**
 - Git-orchestration switches from BMAD control repo to `TargetProjects/{repo}/`
-- Checkout feature branch in target repo (creates if needed, pushes immediately)
+- Resolve epic key from story key (e.g., story `1-2-user-auth` → `epic-1`)
+- Ensure epic branch exists: `feature/{epic-key}` (created from `develop` or `main` if missing)
+- Create/checkout story branch: `feature/{epic-key}-{story-key}` (from epic branch, push immediately)
+- Store `epic_key`, `epic_branch`, `story_branch` in session for Steps 4-6
 
 **[4] Implementation Loop (repeating per task)** — Continue as Amelia (Developer)
   → Load workflow engine FIRST: `_bmad/core/tasks/workflow.yaml`
@@ -84,7 +87,10 @@ Sub-workflows [4], [5], and [7] use YAML-based workflow.yaml files with the work
   → Amelia implements task per dev story guidance and constitutional context
   → Engine executes steps sequentially — save outputs after EACH step
   → STOP and wait for user at decision points
-  → Push implementation commits to feature branch in target repo
+  → **Auto-commit:** After each task completion, `git add -A && commit && push` to story branch
+  → Commit format: `feat({story-key}): {task-description}`
+  → **Auto-PR:** When ALL story tasks are complete, auto-create PR: story branch → epic branch
+  → PR title format: `feat({epic-key}): {story-title} [{story-key}]`
 
 **[5] Code Review (per task, constitution-aware)** — Switch to Quinn (QA) persona: `_bmad/bmm/agents/qa.md`
   → Load workflow engine FIRST: `_bmad/core/tasks/workflow.yaml`
@@ -120,8 +126,12 @@ Sub-workflows [4], [5], and [7] use YAML-based workflow.yaml files with the work
 
 **Branch lifecycle:**
 - BMAD branch: `{initiative_root}-dev` (stays on this throughout the dev phase)
-- TARGET branch: `{repo-feature-branch}` in `TargetProjects/{repo}/` (implementation lives here)
-- END: PR from target feature branch → target repo main; dev phase branch updated with any BMAD artifacts
+- TARGET epic branch: `feature/{epic-key}` in `TargetProjects/{repo}/` (parent for all story branches)
+- TARGET story branch: `feature/{epic-key}-{story-key}` in `TargetProjects/{repo}/` (implementation lives here)
+- Task auto-commit: every completed task is committed+pushed to story branch immediately
+- Story auto-PR: when all tasks done, PR from `feature/{epic-key}-{story-key}` → `feature/{epic-key}`
+- Epic auto-PR: when all stories done and merged, PR from `feature/{epic-key}` → `develop`
+- END: dev phase branch updated with any BMAD artifacts
 
 **Phase completion:**
 - All stories in sprint complete
