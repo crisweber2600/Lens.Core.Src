@@ -31,7 +31,17 @@ Use `#think` before defining domain boundaries or scope.
 - `initiative_id` = `domain_prefix` (no random suffix generated)
 - No separate `{initiative_id}.yaml` file — Domain.yaml IS the initiative config
 
-**In-Scope Repos:** All repos in domain (or prompt "all vs subset")
+**In-Scope Repos:** All repos in domain by default.
+
+**No-Confirm — Show & Go:**
+After resolving the domain name (from user input or prompt), display a brief
+summary and proceed immediately. Do NOT ask "Confirm?" or wait for approval.
+```
+📋 Creating domain: {domain_name}
+   Prefix: {domain_prefix} | Repos: all
+   Proceeding... (reply "edit" to change)
+```
+If the user replies "edit", pause and let them adjust, then resume.
 
 **Note:** Domain-layer does NOT create audience/phase branches.
 Service and feature initiatives within this domain will create their own branch topology.

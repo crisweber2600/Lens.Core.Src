@@ -27,6 +27,17 @@ version: "2.0.0"
 # with specific auto-advance instructions at their end.
 auto_advance: true
 
+# No-Confirm Convention (Show & Go)
+# After collecting user input or resolving defaults, proceed immediately.
+# Do NOT ask "Confirm?" or block on approval. Instead:
+#  - Display a brief summary of resolved choices
+#  - Proceed with execution
+#  - Include "(reply 'edit' to change choices)" so the user CAN intervene if needed
+# This applies to all /new-* commands and cascade steps. Defaults (inherited repos,
+# scan depth, etc.) are used as-is without confirmation. Only pause for genuinely
+# ambiguous decisions (e.g., multiple parent domains to choose from).
+no_confirm: true
+
 # Agent Skills
 skills:
   - name: "git-orchestration"

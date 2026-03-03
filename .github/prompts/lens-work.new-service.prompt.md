@@ -24,8 +24,18 @@ Activate @lens agent and execute /new-service:
 
 **Minimal user input required:**
 - Service name (the command argument)
-- Confirm target repos (default: inherit all from Domain.yaml)
+- Target repos: inherited from Domain.yaml by default (no confirmation needed)
 - That's it — everything else is derived
+
+**No-Confirm — Show & Go:**
+After resolving service name and parent domain, display a brief summary and
+proceed immediately. Do NOT ask "Confirm?" or wait for approval.
+```
+📋 Creating service: {service_name} under {domain_name}
+   Repos: {inherited_repo_list}
+   Proceeding... (reply "edit" to change)
+```
+If the user replies "edit", pause and let them adjust repos or service name, then resume.
 
 **Process mirrors /new-domain:**
 1. Git-orchestration creates service branch ONLY (no audience/phase branches) and pushes immediately

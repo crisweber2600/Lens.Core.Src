@@ -83,11 +83,22 @@ Only include questions for layers that need to be created:
 5. Feature name: {user_provided_text OR prompt — e.g., "Baseline"}
 6. Work item ID (optional): {Jira/ADO ID or Skip}
 
-Enter as space-separated: "domain-name service-name repo-url deep feature-name skip"
+Enter as: "domain-name service-name repo-url deep feature-name skip"
 ```
 
 Adapt the prompt to only show questions for missing layers. If domain already
 exists, skip questions 1-2. If service exists, skip questions 2-4. Etc.
+
+**No-Confirm — Show & Go:**
+After receiving batch input, display a brief summary of resolved choices and
+proceed immediately. Do NOT ask "Confirm?" or wait for approval.
+```
+📋 Creating: domain={X} → service={Y} → docs(deep) → feature={Z}
+   Repos: {repo_list}
+   Proceeding... (reply "edit" to change choices)
+```
+If the user replies "edit", pause and let them adjust specific fields, then resume.
+Otherwise continue executing without waiting.
 
 **Cascade Execution Sequence:**
 

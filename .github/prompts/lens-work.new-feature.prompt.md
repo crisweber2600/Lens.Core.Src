@@ -30,23 +30,36 @@ Activate @lens agent and execute /new-feature:
 
 **Minimal user input required (ask in single batch prompt):**
 
-Present all questions together:
+Present all questions together — use defaults for everything possible:
 ```
 🚀 New Feature Setup
 
 1. Feature name: {provided_or_prompt}
-2. Target repos: [Confirm inherited repos / Add / Remove]
-   Inherited: {list_inherited_repos}
-3. Work item ID {if_tracker_configured}:
+2. Work item ID {if_tracker_configured}:
    {Jira ticket ID (e.g., BMAD-123) OR Azure DevOps ID (e.g., 12345)}
    [Enter ID / Skip]
-4. Branch changes needed?
+3. Branch changes needed?
    Current branches across repos:
    {list_repos_with_current_branches}
    [No changes / Specify: repo=branch]
 
-Enter as: "feature-name | inherited | BMAD-123 | no"
+Enter as: "feature-name | BMAD-123 | no"
 ```
+
+Target repos are inherited from the parent (service or domain) by default.
+Do NOT ask the user to confirm inherited repos — use them as-is.
+
+**No-Confirm — Show & Go:**
+After receiving input, display a brief summary and proceed immediately.
+Do NOT ask "Confirm?" or wait for approval.
+```
+📋 Creating feature: {feature_name}
+   Parent: {domain}/{service} | Repos: {inherited_repo_list}
+   Tracker: {tracker_id or "none"} | Branches: {changes or "no changes"}
+   Proceeding... (reply "edit" to change choices)
+```
+If the user replies "edit", pause and let them adjust specific fields, then resume.
+Otherwise continue executing without waiting.
 
 Parse user response and proceed with initiative creation.
 
