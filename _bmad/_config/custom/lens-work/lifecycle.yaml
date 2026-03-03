@@ -36,26 +36,30 @@ lens_hierarchy:
 # -----------------------------------------------------------------------------
 # Audiences are the primary progression axis. Phases happen WITHIN audiences.
 # Promotion between audiences IS the review gate.
+#
+# Gate chain (full track):
+#   preplan(small) → businessplan(small) → techplan(small) → [small→medium]
+#   → devproposal(medium) → [medium→large] → sprintplan(large) → [large→base] → dev(base)
 audiences:
   small:
     role: "IC creation work"
-    description: "Where ALL 5 planning phases happen — individual contributor generates artifacts"
-    phases: [preplan, businessplan, techplan, devproposal, sprintplan]
+    description: "Where early planning phases happen — individual contributor generates artifacts"
+    phases: [preplan, businessplan, techplan]
   medium:
     role: "Lead review"
-    description: "Adversarial review gate using party mode — promotion carries planning artifacts"
-    phases: []
+    description: "Adversarial review gate — devproposal phase branches from here post-promotion"
+    phases: [devproposal]
     entry_gate: adversarial-review
     entry_gate_mode: party
   large:
     role: "Stakeholder approval"
-    description: "Stakeholder sign-off — promotion carries planning artifacts"
-    phases: []
+    description: "Stakeholder sign-off — sprintplan phase branches from here post-promotion"
+    phases: [sprintplan]
     entry_gate: stakeholder-approval
   base:
     role: "Ready for execution"
-    description: "Constitution-gated — @lens validates before promotion"
-    phases: []
+    description: "Constitution-gated — dev phase branches from here post-promotion"
+    phases: [dev]
     entry_gate: constitution-gate
 
 # -----------------------------------------------------------------------------
@@ -115,6 +119,7 @@ phases:
       - stories
       - implementation-readiness
     audience: small
+    branching_audience: medium  # devproposal branches from medium (post small→medium promotion)
     legacy_phase_number: 4
     legacy_gate_key: story_gen
 
@@ -128,6 +133,7 @@ phases:
       - sprint-status
       - story-files
     audience: small
+    branching_audience: large   # sprintplan branches from large (post medium→large promotion)
     legacy_phase_number: 5
     legacy_gate_key: review
 
