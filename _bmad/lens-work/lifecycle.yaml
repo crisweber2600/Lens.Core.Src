@@ -119,6 +119,18 @@ phases:
       - research
       - brainstorm
     audience: small
+    auto_advance_to: /businessplan
+    auto_advance_promote: false  # same audience — no promote needed
+    sub_workflows:
+      - name: brainstorming
+        required: false
+        workflow_ref: "_bmad/core/workflows/brainstorming/workflow.md"
+      - name: research
+        required: false
+        workflow_ref: "_bmad/bmm/workflows/1-analysis/research/"
+      - name: product_brief
+        required: true
+        workflow_ref: "_bmad/bmm/workflows/1-analysis/create-product-brief/workflow.md"
     # Legacy mapping (for adapter during migration)
     legacy_phase_number: 1
     legacy_gate_key: pre_plan
@@ -133,6 +145,18 @@ phases:
       - prd
       - ux-design
     audience: small
+    auto_advance_to: /techplan
+    auto_advance_promote: true   # small → medium promotion before /techplan
+    sub_workflows:
+      - name: prd_creation
+        required: true
+        workflow_ref: "_bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-create-prd.md"
+      - name: prd_validation
+        required: true
+        workflow_ref: "_bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-validate-prd.md"
+      - name: ux_design
+        required: false
+        workflow_ref: "_bmad/bmm/workflows/2-plan-workflows/create-ux-design/workflow.md"
     legacy_phase_number: 2
     legacy_gate_key: plan
 
@@ -145,6 +169,15 @@ phases:
     artifacts:
       - architecture
     audience: small
+    auto_advance_to: /devproposal
+    auto_advance_promote: true   # small → medium promotion before /devproposal
+    sub_workflows:
+      - name: architecture_design
+        required: true
+        workflow_ref: "_bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md"
+      - name: architecture_validation
+        required: true
+        workflow_ref: "_bmad/core/workflows/party-mode/workflow.md"
     legacy_phase_number: 3
     legacy_gate_key: tech_plan
 
@@ -159,6 +192,21 @@ phases:
       - stories
       - implementation-readiness
     audience: small
+    auto_advance_to: /sprintplan
+    auto_advance_promote: true   # large → base promotion before /sprintplan
+    sub_workflows:
+      - name: epic_generation
+        required: true
+        workflow_ref: "_bmad/bmm/workflows/3-solutioning/create-epics-and-stories/workflow.md"
+      - name: epic_stress_gate
+        required: true
+        workflow_ref: "_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md"
+      - name: story_generation
+        required: true
+        workflow_ref: "_bmad/bmm/workflows/3-solutioning/create-epics-and-stories/workflow.md"
+      - name: readiness_checklist
+        required: true
+        workflow_ref: "_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md"
     legacy_phase_number: 4
     legacy_gate_key: story_gen
 
@@ -172,6 +220,21 @@ phases:
       - sprint-status
       - story-files
     audience: small
+    auto_advance_to: /dev
+    auto_advance_promote: true   # base → dev-ready promotion before /dev
+    sub_workflows:
+      - name: readiness_recheck
+        required: true
+        workflow_ref: "_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md"
+      - name: constitutional_compliance
+        required: true
+        workflow_ref: null  # inline constitution skill check
+      - name: sprint_planning
+        required: true
+        workflow_ref: "_bmad/bmm/workflows/4-implementation/sprint-planning/workflow.yaml"
+      - name: dev_story_creation
+        required: true
+        workflow_ref: "_bmad/bmm/workflows/4-implementation/create-story/workflow.yaml"
     legacy_phase_number: 5
     legacy_gate_key: review
 

@@ -146,6 +146,27 @@ if current_workflow_status == "in_progress":
   # Don't auto-continue — user is mid-workflow
   exit: 0
 
+# Priority 3.5: All sub-workflows complete but phase not yet finalized
+lifecycle = load("_bmad/lens-work/lifecycle.yaml")
+sub_workflow_defs = lifecycle.phases[current_phase].sub_workflows || []
+sub_workflow_status = initiative.sub_workflows[current_phase] || {}
+all_required_done = true
+for sw in sub_workflow_defs:
+  if sw.required == true && sub_workflow_status[sw.name] != "complete":
+    all_required_done = false
+    break
+
+phase_status = initiative.phase_status[current_phase]
+if all_required_done && phase_status not in ["pr_pending", "passed", "complete"]:
+  output: |
+    ✅ All required sub-workflows for ${current_phase} are complete!
+    
+    ▶️  Loading phase-completion skill to finalize phase...
+  
+  # Load and execute phase-completion.md which handles PR, state, and auto-advance
+  load_skill: "_bmad/lens-work/skills/phase-completion.md"
+  exit: 0
+
 # Priority 4: Current phase incomplete
 current_phase_index = phase_order.indexOf(current_phase)
 if current_phase_index >= 0:
@@ -322,6 +343,7 @@ function find_next_phase_in_track(current_phase, active_phases, phase_order):
 1. Blocks (stop)
 2. Failed gates (stop)
 3. In-progress workflow (pause)
+3.5. All sub-workflows complete — finalize phase (phase-completion skill)
 4. Incomplete current phase (continue)
 5. Next phase in track (advance)
 6. Audience promotion (advance)

@@ -31,6 +31,7 @@ Use `#think` before prioritizing stories or allocating sprint capacity.
 - Agent owner: Bob (Scrum Master) — `_bmad/bmm/agents/sm.md`
 - Branch pattern: `{initiative_root}-large-sprintplan`
 - Role gate: Scrum Master
+- Auto-advance: `/dev` (promote base→dev-ready first)
 
 **Prerequisites:**
 - `/devproposal` complete: `{initiative_root}-medium-devproposal` PR merged into `{initiative_root}-medium`
@@ -67,6 +68,10 @@ Execute workflows in sequence:
 
 ⚠️ **Workflow Engine Rules for [3] and [4]:** Load workflow.xml FIRST, pass workflow.yaml, execute steps sequentially, save after EACH step, STOP at decision points.
 
+**Sub-workflow tracking:** After each sub-workflow completes successfully, immediately update
+`sub_workflows.sprintplan.{name}: complete` in the initiative config (dual-write to state.yaml).
+This tracking persists across context compaction.
+
 **Constitutional compliance gate:**
 - Constitution skill evaluates: `product-brief.md`, `prd.md`, `architecture.md`, `epics.md`, `stories.md`, `readiness-checklist.md`
 - FAIL (block) on any compliance failures; WARN on warnings (passed_with_warnings)
@@ -77,26 +82,16 @@ Execute workflows in sequence:
 - WORK: Sprint backlog and dev stories created on this branch
 - END: PR from `{initiative_root}-large-sprintplan` → `{initiative_root}-large`; remain on phase branch
 
-**Phase completion:**
-- Verify PAT configured: Check for `GITHUB_PAT` or `GH_ENTERPRISE_TOKEN` environment variable, or `_bmad-output/lens-work/personal/profile.yaml` has `git_credentials` for current git host
-- If PAT missing: Direct user to set `GITHUB_PAT` env var (or `GH_ENTERPRISE_TOKEN` for enterprise) or run `store-github-pat.ps1`/`store-github-pat.sh` in separate terminal, then retry
-- Push artifacts to `{initiative_root}-large-sprintplan`
-- Create PR using promote-branch script: `_bmad/lens-work/scripts/promote-branch.sh -s {initiative_root}-large-sprintplan -t {initiative_root}-large` (or `.ps1` on Windows)
-- Update `phase_status.sprintplan: pr_pending` (or `passed_with_warnings`) and `audience_status.medium_to_large: complete`
-- Update `state.yaml`: `current_phase: sprintplan`, `workflow_status: pr_pending`
-- Append events to `event-log.jsonl` (sprintplan-start, sprintplan-checklist, sprintplan-compliance, sprintplan-complete)
-- Remain on phase branch (REQ-7: never auto-merge)
+**Phase completion & Auto-Advance:**
+When all required sub-workflows are complete, load and execute:
+`_bmad/lens-work/skills/phase-completion.md`
+This skill handles: sub-workflow verification, PR creation, state updates, event logging,
+and auto-advance to the next phase. It reads everything from persistent state — it does
+NOT depend on conversation context.
 
 **Output artifacts:**
 - `{initiative.docs.bmad_docs}/sprint-backlog.md` (required)
 - `{initiative.docs.bmad_docs}/dev-story-{id}.md` (required, one per selected story)
-
-**Auto-Advance:** After phase PR is created, auto-execute `@lens promote` to promote
-from base to dev-ready. Load and execute `lens-work.promote.prompt.md`.
-After the promotion PR is created: pause and inform the user the PR must be merged.
-On the user's next message after merge, auto-execute `/dev` — load and execute
-`lens-work.dev.prompt.md`. Do NOT display "Run @lens next" or "Run /dev" — just
-execute them.
 
 **Developer handoff:** Story assignment and handoff to Amelia (Developer) happens automatically.
 ```
