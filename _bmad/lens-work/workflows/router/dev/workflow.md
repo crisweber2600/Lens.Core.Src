@@ -100,37 +100,60 @@ prev_audience_branch = "${initiative.initiative_root}-${prev_audience}"
 
 if initiative.phase_status[prev_phase] exists:
   if initiative.phase_status[prev_phase] == "pr_pending":
-    # Check if the audience branch contains the phase commits (merged via PR)
-    result = git-orchestration.exec("git merge-base --is-ancestor origin/${prev_phase_branch} origin/${prev_audience_branch}")
+    # Check if the audience branch still exists remotely (may be deleted after PR merge)
+    branch_exists_result = git-orchestration.exec("git ls-remote --heads origin ${prev_audience_branch}")
+    prev_audience_branch_exists = (branch_exists_result.stdout != "")
 
-    if result.exit_code == 0:
-      # PR was merged! Auto-update status
-      invoke: state-management.update-initiative
-      params:
-        initiative_id: ${initiative.id}
-        updates:
-          phase_status:
-            sprintplan: "complete"
-      output: "✅ Previous phase (sprintplan) PR merged — status updated to complete"
+    if prev_audience_branch_exists:
+      # Check if the audience branch contains the phase commits (merged via PR)
+      result = git-orchestration.exec("git merge-base --is-ancestor origin/${prev_phase_branch} origin/${prev_audience_branch}")
+
+      if result.exit_code == 0:
+        # PR was merged! Auto-update status
+        invoke: state-management.update-initiative
+        params:
+          initiative_id: ${initiative.id}
+          updates:
+            phase_status:
+              sprintplan: "complete"
+        output: "✅ Previous phase (sprintplan) PR merged — status updated to complete"
+      else:
+        # PR not merged yet — warn but allow proceeding
+        pr_url = initiative.phase_status.sprintplan_pr_url || "(no PR URL recorded)"
+        output: |
+          ⚠️  Previous phase (sprintplan) PR not yet merged
+          ├── Status: pr_pending
+          ├── PR: ${pr_url}
+          └── You may continue, but phase artifacts may not be on the audience branch
+
+        ask: "Continue anyway? [Y]es / [N]o"
+        if no:
+          exit: 0  # User chose to wait for merge
     else:
-      # PR not merged yet — warn but allow proceeding
-      pr_url = initiative.phase_status.sprintplan_pr_url || "(no PR URL recorded)"
-      output: |
-        ⚠️  Previous phase (sprintplan) PR not yet merged
-        ├── Status: pr_pending
-        ├── PR: ${pr_url}
-        └── You may continue, but phase artifacts may not be on the audience branch
-
-      ask: "Continue anyway? [Y]es / [N]o"
-      if no:
-        exit: 0  # User chose to wait for merge
+      # Audience branch was deleted (e.g., GitHub auto-delete after PR merge)
+      # Check if large→base promotion is already complete — if so, sprintplan is implicitly done
+      if initiative.audience_status.large_to_base in ["complete", "passed", "passed_with_warnings"]:
+        invoke: state-management.update-initiative
+        params:
+          initiative_id: ${initiative.id}
+          updates:
+            phase_status:
+              sprintplan: "complete"
+        output: "✅ Previous phase (sprintplan) complete — audience branch merged and deleted (large→base promotion passed)"
+      else:
+        pr_url = initiative.phase_status.sprintplan_pr_url || "(no PR URL recorded)"
+        output: |
+          ⚠️  Audience branch ${prev_audience_branch} not found remotely
+          ├── May have been deleted after PR merge
+          ├── PR: ${pr_url}
+          └── Proceeding — verify manually if needed
 
 # Require dev story for interactive mode
 if initiative.question_mode != "batch" and not dev_story_exists():
   error: "/sprintplan has not produced a dev-ready story. Run /sprintplan first."
 
 # Audience validation — verify large→base promotion passed
-if initiative.audience_status.large_to_base not in ["passed", "passed_with_warnings"]:
+if initiative.audience_status.large_to_base not in ["complete", "passed", "passed_with_warnings"]:
   output: |
     ⏳ Audience promotion validation pending
     ├── Required: large → base promotion (constitution gate)
@@ -176,18 +199,33 @@ output: |
 sprintplan_branch = "${initiative.initiative_root}-large-sprintplan"
 large_branch = "${initiative.initiative_root}-large"
 
-# Ancestry check: sprintplan must be merged into large audience branch
-result = git-orchestration.exec("git merge-base --is-ancestor origin/${sprintplan_branch} origin/${large_branch}")
+# Check if audience branches still exist remotely (may be deleted after PR merge)
+sprintplan_branch_exists = git-orchestration.exec("git ls-remote --heads origin ${sprintplan_branch}").stdout != ""
+large_branch_exists = git-orchestration.exec("git ls-remote --heads origin ${large_branch}").stdout != ""
 
-if result.exit_code != 0:
-  error: |
-    ❌ Merge gate blocked
-    ├── SprintPlan not merged into large audience branch
-    ├── Expected: ${sprintplan_branch} is ancestor of ${large_branch}
-    └── Action: Complete /sprintplan and merge PR first
+if sprintplan_branch_exists and large_branch_exists:
+  # Ancestry check: sprintplan must be merged into large audience branch
+  result = git-orchestration.exec("git merge-base --is-ancestor origin/${sprintplan_branch} origin/${large_branch}")
+
+  if result.exit_code != 0:
+    error: |
+      ❌ Merge gate blocked
+      ├── SprintPlan not merged into large audience branch
+      ├── Expected: ${sprintplan_branch} is ancestor of ${large_branch}
+      └── Action: Complete /sprintplan and merge PR first
+else:
+  # Audience branch(es) deleted post-PR-merge — check status instead
+  if initiative.audience_status.large_to_base in ["complete", "passed", "passed_with_warnings"]:
+    output: "✅ Audience branch(es) deleted post-merge — large→base promotion already complete"
+  else:
+    output: |
+      ⚠️  Audience branch(es) not found remotely
+      ├── sprintplan: ${sprintplan_branch} (${sprintplan_branch_exists ? 'found' : 'gone'})
+      ├── large: ${large_branch} (${large_branch_exists ? 'found' : 'gone'})
+      └── Proceeding — verify manually if needed
 
 # Verify constitution gate (large→base) passed
-if initiative.audience_status.large_to_base not in ["passed", "passed_with_warnings"]:
+if initiative.audience_status.large_to_base not in ["complete", "passed", "passed_with_warnings"]:
   output: |
     ⏳ Constitution gate still not passed for large → base
     ▶️  Auto-triggering audience promotion now
@@ -233,13 +271,31 @@ if initiative.question_mode == "batch":
 ### 2. Load Dev Story
 
 ```yaml
-# REQ-10: Read dev story from BmadDocs first, fallback to legacy location
+# REQ-10: Read dev story from BmadDocs first, fallback to legacy locations
+# Supports multiple naming conventions:
+#   1. dev-story-${id}.md (canonical from sprintplan router)
+#   2. ${sprint}-${story_number}-${story_slug}.md (implementation-time naming)
+#   3. Glob fallback: any .md file in BmadDocs or implementation-artifacts matching story id
 if bmad_docs != null and file_exists("${bmad_docs}/dev-story-${id}.md"):   # REQ-10
   dev_story = load("${bmad_docs}/dev-story-${id}.md")
   dev_story_source = "${bmad_docs}/dev-story-${id}.md"
-else:
+else if file_exists("_bmad-output/implementation-artifacts/dev-story-${id}.md"):
   dev_story = load("_bmad-output/implementation-artifacts/dev-story-${id}.md")
   dev_story_source = "_bmad-output/implementation-artifacts/dev-story-${id}.md"
+else:
+  # Glob fallback: search for story files by id pattern in both locations
+  # Matches: {sprint}-{story_number}-{story_slug}.md or any file containing the story id
+  candidates = []
+  if bmad_docs != null:
+    candidates += glob("${bmad_docs}/*${id}*.md") + glob("${bmad_docs}/${id}-*.md")
+  candidates += glob("_bmad-output/implementation-artifacts/*${id}*.md") + glob("_bmad-output/implementation-artifacts/${id}-*.md")
+  
+  if candidates.length > 0:
+    dev_story = load(candidates[0])
+    dev_story_source = candidates[0]
+  else:
+    error: "No dev story found for story ${id}. Run /sprintplan to create dev stories."
+    exit: 1
 
 output: |
   🚀 /dev — Implementation Phase
