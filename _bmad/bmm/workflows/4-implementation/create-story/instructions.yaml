@@ -325,11 +325,28 @@
     </check>
 
     <!-- ADO MCP Sync: Create work item in Azure DevOps when tracker is azure-devops -->
+    <action>Resolve ADO runtime context for BMM workflow execution:
+      - Set ado_profile_path = "_bmad-output/lens-work/personal/profile.yaml"
+      - If profile exists, load it and read profile.preferences.tracker, profile.preferences.ado_organization, profile.preferences.ado_project
+      - Normalize tracker = tracker || profile.preferences.tracker || profile.tracker || "none"
+      - Normalize ado_organization = profile.preferences.ado_organization || profile.ado_organization || ""
+      - Normalize ado_project = profile.preferences.ado_project || profile.ado_project || ""
+    </action>
+    <output>ℹ️ ADO create-story context: tracker={{tracker}}, ado_org={{ado_organization}}, ado_project={{ado_project}}</output>
+
+    <check if="tracker != 'azure-devops'">
+      <output>ℹ️ ADO work item creation skipped: tracker is '{{tracker}}' (requires 'azure-devops').</output>
+    </check>
+
+    <check if="tracker == 'azure-devops' AND (ado_organization is empty OR ado_project is empty)">
+      <output>ℹ️ ADO profile org/project not set; relying on MCP connection defaults.</output>
+    </check>
+
     <check if="tracker == 'azure-devops'">
       <action>Attempt to create ADO work item via MCP (non-blocking)</action>
       <action>Call mcp_microsoft_azu_wit_create_work_item with:
-        - organization: profile.ado_organization
-        - project: profile.ado_project
+        - organization: ado_organization (if set; otherwise MCP default)
+        - project: ado_project (if set; otherwise MCP default)
         - type: "User Story"
         - title: "Story ${story_id}: ${story_title}"
         - description: "Initiative: ${initiative_id}\nEpic: ${epic_num}\nStory Key: ${story_key}\nPlanning artifacts: ${docs_path}/"

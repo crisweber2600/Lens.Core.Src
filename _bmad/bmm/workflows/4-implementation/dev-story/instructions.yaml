@@ -221,12 +221,34 @@
     </check>
 
     <!-- ADO MCP Sync: Update work item to Active when starting development -->
+    <action>Resolve ADO runtime context for BMM workflow execution:
+      - Set ado_profile_path = "_bmad-output/lens-work/personal/profile.yaml"
+      - Check story front matter for "Tracker" field and extract tracker_from_story if present
+      - If profile exists, load it and read profile.preferences.tracker, profile.preferences.ado_organization, profile.preferences.ado_project
+      - Normalize tracker = tracker || tracker_from_story || profile.preferences.tracker || profile.tracker || "none"
+      - Normalize ado_organization = profile.preferences.ado_organization || profile.ado_organization || ""
+      - Normalize ado_project = profile.preferences.ado_project || profile.ado_project || ""
+    </action>
     <action>Check story front matter for "Work Item ID" field and extract {{ado_work_item_id}}</action>
-    <check if="tracker == 'azure-devops' AND {{ado_work_item_id}} is not empty">
+    <output>ℹ️ ADO dev-story context: tracker={{tracker}}, work_item_id={{ado_work_item_id}}, ado_org={{ado_organization}}, ado_project={{ado_project}}</output>
+
+    <check if="tracker != 'azure-devops'">
+      <output>ℹ️ ADO status sync skipped: tracker is '{{tracker}}' (requires 'azure-devops').</output>
+    </check>
+
+    <check if="tracker == 'azure-devops' AND ado_work_item_id is empty">
+      <output>⚠️ ADO status sync skipped: story front matter 'Work Item ID' is empty.</output>
+    </check>
+
+    <check if="tracker == 'azure-devops' AND (ado_organization is empty OR ado_project is empty)">
+      <output>ℹ️ ADO profile org/project not set; relying on MCP connection defaults.</output>
+    </check>
+
+    <check if="tracker == 'azure-devops' AND ado_work_item_id is not empty">
       <action>Attempt ADO status sync via MCP (non-blocking):
         mcp_microsoft_azu_wit_update_work_item(
-          organization: profile.ado_organization,
-          project: profile.ado_project,
+          organization: ado_organization (if set; otherwise MCP default),
+          project: ado_project (if set; otherwise MCP default),
           id: {{ado_work_item_id}},
           state: "Active"
         )
