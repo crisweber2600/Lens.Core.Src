@@ -13,7 +13,10 @@ planning_artifacts: "{config_source}:planning_artifacts"
 implementation_artifacts: "{config_source}:implementation_artifacts"
 sprint_status: "{implementation_artifacts}/sprint-status.yaml"
 auto_fix_rerun: true
-auto_fix_severities: "CRITICAL,HIGH,MEDIUM"
+auto_fix_severities:
+  - CRITICAL
+  - HIGH
+  - MEDIUM
 max_review_passes: 2
 on_max_passes: "needs_manual"
 
