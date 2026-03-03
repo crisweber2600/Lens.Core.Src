@@ -146,7 +146,7 @@ Tracks control which phases are required (defined in `lifecycle.yaml`):
 | `tech-change` | techplan → sprintplan | Technical migration/upgrade |
 | `hotfix` | techplan only | Critical bug fix |
 | `spike` | preplan only | Research/exploration |
-| `quickdev` | devproposal only | Rapid execution with parity verification |
+| `quickdev` | techplan → devproposal | Rapid execution with parity verification (small → medium) |
 
 ### Audience Promotion Gates
 
