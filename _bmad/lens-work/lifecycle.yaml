@@ -77,7 +77,6 @@ audiences:
   #   - preplan, businessplan, techplan → branch from small
   #   - devproposal → branches from medium (requires small→medium promotion first)
   #   - sprintplan → branches from large (requires medium→large promotion first)
-  #   - dev → branches from base (requires large→base promotion first)
   small:
     role: "IC creation work"
     description: "Individual contributor generates early planning artifacts"
@@ -279,10 +278,10 @@ tracks:
 
   quickdev:
     description: "Rapid execution — delegates to target-project agents for implementation with parity verification"
-    phases: [devproposal]
-    audiences: [small, base]
+    phases: [techplan, devproposal]
+    audiences: [small, medium, base]
     constitution_controlled_gates: [adversarial-review]
-    start_phase: devproposal
+    start_phase: techplan
 
 # -----------------------------------------------------------------------------
 # ADVERSARIAL REVIEW (party mode)

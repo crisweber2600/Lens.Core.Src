@@ -359,7 +359,7 @@ Which lifecycle track for this initiative?
 **[3] Tech-Change**  — Pure technical: techplan → sprintplan
 **[4] Hotfix**       — Urgent fix: techplan only (fast to execution)
 **[5] Spike**        — Research only: preplan (no implementation)
-**[6] QuickDev**     — Rapid execution: devproposal only (parity verification)
+**[6] QuickDev**     — Rapid execution: techplan → devproposal (small → medium, parity verification)
 
 Default: full   (press Enter to keep)
 Select track: [1-6] (default: 1)
