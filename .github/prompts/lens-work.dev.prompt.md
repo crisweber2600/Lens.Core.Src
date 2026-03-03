@@ -96,8 +96,13 @@ Sub-workflows [4], [5], and [7] use YAML-based workflow.yaml files with the work
   → Load workflow engine FIRST: `_bmad/core/tasks/workflow.yaml`
   → Pass to engine: `_bmad/bmm/workflows/4-implementation/code-review/workflow.yaml`
   → Adversarial review against: story acceptance criteria, constitutional rules, architecture decisions
+  → **Default mode:** auto-fix + auto-rerun review (no decision prompt)
+  → **Auto-fix severities:** `CRITICAL,HIGH,MEDIUM`
+  → **Max passes:** `2`; unresolved issues after max passes become `needs_manual` follow-ups
   → FAIL blocks the task (not the whole story)
   → WARN records in review-log but allows continuation
+  → **Auto-PR:** after successful review gates, create PR from story branch → epic branch automatically
+  → If PR auto-create fails, emit manual `gh pr create` fallback command (no auto-merge)
   → After review: switch back to Amelia for next task
 
 **[6] Epic Completion Check**
