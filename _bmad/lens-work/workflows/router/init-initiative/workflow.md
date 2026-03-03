@@ -1001,7 +1001,7 @@ git checkout "${domain_prefix}"
 # Stage domain scaffolding and event log (NO separate initiative config — Domain.yaml IS the config)
 git add "_bmad-output/lens-work/initiatives/${domain_prefix}/Domain.yaml"
 git add "_bmad-output/lens-work/initiatives/${domain_prefix}/.gitkeep"
-git add "TargetProjects/${domain_prefix}/.gitkeep"
+git add -f "TargetProjects/${domain_prefix}/.gitkeep"   # -f required: TargetProjects/ is gitignored
 git add "Docs/${domain_prefix}/.gitkeep"
 git add "_bmad-output/lens-work/event-log.jsonl"
 
@@ -1031,7 +1031,7 @@ git checkout "${domain_prefix}-${service_prefix}"
 # Stage service scaffolding and event log (NO separate initiative config — Service.yaml IS the config)
 git add "_bmad-output/lens-work/initiatives/${domain_prefix}/${service_prefix}/Service.yaml"
 git add "_bmad-output/lens-work/initiatives/${domain_prefix}/${service_prefix}/.gitkeep"
-git add "TargetProjects/${domain_prefix}/${service_prefix}/.gitkeep"
+git add -f "TargetProjects/${domain_prefix}/${service_prefix}/.gitkeep"   # -f required: TargetProjects/ is gitignored
 git add "Docs/${domain_prefix}/${service_prefix}/.gitkeep"
 git add "_bmad-output/lens-work/event-log.jsonl"
 
