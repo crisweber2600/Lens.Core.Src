@@ -50,7 +50,7 @@ workflow: "{initiative_root}-{audience}-{phase_name}-{workflow}"
 1. Clean working directory before any branch operation
 2. Targeted commits (only files relevant to current workflow)
 3. **Auto-push: EVERY commit MUST be immediately followed by `git push`** (bmadconfig.yaml: git_discipline.auto_push)
-4. Push branches at workflow end, not mid-workflow (use auto-push after each commit instead)
+4. Workflow end: verify branch is fully pushed and clean. With `git_discipline.auto_push` enabled, every commit is already pushed; if auto-push is disabled, perform a single push of any accumulated commits here (no ad-hoc mid-workflow pushes).
 5. Never force-push without explicit user confirmation
 6. Use `{default_git_remote}` from config for all remote operations
 
