@@ -219,6 +219,25 @@
       <output>ℹ️ No sprint status file exists - story progress will be tracked in story file only</output>
       <action>Set {{current_sprint_status}} = "no-sprint-tracking"</action>
     </check>
+
+    <!-- ADO MCP Sync: Update work item to Active when starting development -->
+    <action>Check story front matter for "Work Item ID" field and extract {{ado_work_item_id}}</action>
+    <check if="tracker == 'azure-devops' AND {{ado_work_item_id}} is not empty">
+      <action>Attempt ADO status sync via MCP (non-blocking):
+        mcp_microsoft_azu_wit_update_work_item(
+          organization: profile.ado_organization,
+          project: profile.ado_project,
+          id: {{ado_work_item_id}},
+          state: "Active"
+        )
+      </action>
+      <check if="ADO MCP call succeeds">
+        <output>✅ ADO work item #{{ado_work_item_id}} → Active</output>
+      </check>
+      <check if="ADO MCP call fails or MCP unavailable">
+        <output>⚠️ ADO status sync skipped (in-progress). Continue local development.</output>
+      </check>
+    </check>
   </step>
 
   <step n="5" goal="Implement task following red-green-refactor cycle">

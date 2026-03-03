@@ -278,6 +278,39 @@
       <output>ℹ️ Story status updated (no sprint tracking configured)</output>
     </check>
 
+    <!-- ADO MCP Sync: Update work item status based on review outcome -->
+    <action>Check story front matter for "Work Item ID" field and extract {{ado_work_item_id}}</action>
+    <check if="tracker == 'azure-devops' AND {{ado_work_item_id}} is not empty">
+      <check if="{{new_status}} == 'done'">
+        <action>Attempt ADO status sync via MCP (non-blocking):
+          mcp_microsoft_azu_wit_update_work_item(
+            organization: profile.ado_organization,
+            project: profile.ado_project,
+            id: {{ado_work_item_id}},
+            state: "Closed"
+          )
+        </action>
+        <check if="ADO MCP call succeeds">
+          <output>✅ ADO work item #{{ado_work_item_id}} → Closed</output>
+          <!-- Optionally add completion comment -->
+          <action>Attempt to add comment via MCP (non-blocking):
+            mcp_microsoft_azu_wit_add_work_item_comment(
+              organization: profile.ado_organization,
+              project: profile.ado_project,
+              id: {{ado_work_item_id}},
+              text: "Story completed via BMAD lens-work code review. Status: done."
+            )
+          </action>
+        </check>
+        <check if="ADO MCP call fails or MCP unavailable">
+          <output>⚠️ ADO status sync skipped (done). Update ADO work item #{{ado_work_item_id}} manually.</output>
+        </check>
+      </check>
+      <check if="{{new_status}} == 'in-progress'">
+        <output>ℹ️ ADO work item #{{ado_work_item_id}} remains Active (review returned to in-progress)</output>
+      </check>
+    </check>
+
     <output>**✅ Review Complete!**
 
       **Story Status:** {{new_status}}
