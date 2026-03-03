@@ -191,7 +191,7 @@ if sub_command == null:
     🧭 Switch Context
     ├── [1] Switch Initiative (change active initiative)
     ├── [2] Switch Lens (domain/service/microservice/feature)
-    ├── [3] Switch Phase (P0-P4)
+    ├── [3] Switch Phase (preplan/businessplan/techplan/devproposal/sprintplan/dev)
     ├── [4] Switch Size (small/medium/large)
     └── [0] Cancel
   

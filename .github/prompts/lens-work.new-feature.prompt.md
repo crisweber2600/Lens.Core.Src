@@ -76,7 +76,7 @@ Parse user response and proceed with initiative creation.
   - `{featureBranchRoot}-small` AKA `{smallGroupBranchRoot}` (review audience: small)
   - `{featureBranchRoot}-medium` AKA `{mediumGroupBranchRoot}` (review audience: medium)
   - `{featureBranchRoot}-large` AKA `{largeGroupBranchRoot}` (review audience: large)
-- NOTE: No phase branches at init. Phase branches (e.g., `-small-p1`) created by phase routers.
+- NOTE: No phase branches at init. Phase branches (e.g., `-small-preplan`) created by phase routers.
 - Two-file state:
   - `_bmad-output/lens-work/state.yaml` (active initiative = initiative_id)
   - `_bmad-output/lens-work/initiatives/{initiative_id}.yaml` (initiative config with parent lineage and tracker_id)
