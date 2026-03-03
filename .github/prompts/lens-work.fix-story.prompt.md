@@ -16,4 +16,8 @@ Read and follow all instructions in: bmad.lens.release/.github/prompts/lens-work
 ```
 
 Source: [lens-work.fix-story.prompt.md](https://github.com/crisweber2600/bmad.lens.release/blob/release/2.0.0/.github/prompts/lens-work.fix-story.prompt.md)
+
+Behavior note:
+- `#fix-story` now auto-creates a PR from the generated fix branch to `main` after review/implementation.
+- If automatic PR creation cannot run (auth/permissions), workflow outputs the exact fallback `gh pr create` command.
 ````

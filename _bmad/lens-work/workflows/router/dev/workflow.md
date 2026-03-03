@@ -589,6 +589,10 @@ params:
   target_repo: "${target_path}"
   branch: "${session.story_branch}"
   constitutional_context: ${constitutional_context}
+  auto_fix_rerun: true
+  auto_fix_severities: "CRITICAL,HIGH,MEDIUM"
+  max_review_passes: 2
+  on_max_passes: "needs_manual"
 
 # Re-check constitutional compliance on review outputs before allowing progression
 # Phase-transition re-validation: re-resolve context (articles may have been amended mid-sprint)
@@ -707,6 +711,33 @@ if current_epic_id:
       error: |
         Epic party-mode teardown found unresolved issues for ${current_epic_id}.
         Address _bmad-output/implementation-artifacts/epic-${current_epic_id}-party-mode-review.md and re-run @lens done.
+
+# Auto-create story PR in target repo after successful review gates
+invoke: git-orchestration.create-pr
+params:
+  repo_path: ${target_path}
+  head: ${session.story_branch}
+  base: ${session.epic_branch}
+  title: "feat(${session.epic_key}): ${story_id}"
+  body: |
+    Story ${story_id} completed and passed automated review flow.
+
+    Source branch: ${session.story_branch}
+    Target branch: ${session.epic_branch}
+
+    This PR was auto-created by /dev after adversarial code review and constitutional gates.
+capture: story_pr_result
+
+if story_pr_result.fallback:
+  warning: |
+    ⚠️ Auto-PR fallback triggered for story ${story_id}.
+    Run this in target repo (${target_path}):
+    gh pr create --base "${session.epic_branch}" --head "${session.story_branch}" --title "feat(${session.epic_key}): ${story_id}"
+else:
+  output: |
+    ✅ Story PR auto-created
+    ├── Branch: ${session.story_branch} → ${session.epic_branch}
+    └── URL: ${story_pr_result.url}
 
 # After code review: switch back to Amelia (Developer) — _bmad/bmm/agents/dev.md
 invoke: git-orchestration.finish-workflow
