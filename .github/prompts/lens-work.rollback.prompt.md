@@ -3,6 +3,8 @@
 description: 'Rollback setup or state changes'
 ---
 
+**⚠️ PATH CONTEXT:** All `_bmad/` paths in this prompt are relative to the `bmad.lens.release` control repository (where this prompt file lives). Do NOT copy `_bmad/` into or resolve these paths against the user's main project repo. The agent, workflows, and skills all execute from within `bmad.lens.release/`. Only `_bmad-output/` paths are written to the user's working context.
+
 # lens-work.rollback (Stub)
 
 > **This is a stub.** Load and execute the full prompt from the bmad.lens.release control repository.
