@@ -34,12 +34,14 @@ active_track: "{full|feature|tech-change|hotfix|spike}"
 workflow_status: "{idle|running|error}"
 
 # Phase status (v2: named phases, dual-written to initiative config)
+# Values: null (not started), in_progress (phase active), pr_pending (PR created awaiting merge),
+#         passed (complete), blocked (gate failed)
 phase_status:
-  preplan: "{null|passed|blocked}"
-  businessplan: "{null|passed|blocked}"
-  techplan: "{null|passed|blocked}"
-  devproposal: "{null|passed|blocked}"
-  sprintplan: "{null|passed|blocked}"
+  preplan: "{null|in_progress|pr_pending|passed|blocked}"
+  businessplan: "{null|in_progress|pr_pending|passed|blocked}"
+  techplan: "{null|in_progress|pr_pending|passed|blocked}"
+  devproposal: "{null|in_progress|pr_pending|passed|blocked}"
+  sprintplan: "{null|in_progress|pr_pending|passed|blocked}"
 
 # Audience promotion status (v2)
 audience_status:
@@ -84,14 +86,41 @@ active_phases: [preplan, businessplan, ...]  # From lifecycle.yaml tracks[track]
 audiences: [small, medium, large, base]      # From lifecycle.yaml tracks[track].audiences
 
 # Phase status (dual-written from state.yaml)
+# Values: null | in_progress | pr_pending | passed | blocked
 phase_status:
-  preplan: "{null|passed|blocked}"
-  businessplan: "{null|passed|blocked}"
-  techplan: "{null|passed|blocked}"
-  devproposal: "{null|passed|blocked}"
-  sprintplan: "{null|passed|blocked}"
+  preplan: "{null|in_progress|pr_pending|passed|blocked}"
+  businessplan: "{null|in_progress|pr_pending|passed|blocked}"
+  techplan: "{null|in_progress|pr_pending|passed|blocked}"
+  devproposal: "{null|in_progress|pr_pending|passed|blocked}"
+  sprintplan: "{null|in_progress|pr_pending|passed|blocked}"
 
 current_phase: "{named_phase}"
+
+# Sub-workflow progress tracking (persisted per phase, dual-written)
+# Values per sub-workflow: null (not started) | skipped | in_progress | complete
+# Required sub-workflows defined in lifecycle.yaml phases.{phase}.sub_workflows
+sub_workflows:
+  preplan:
+    brainstorming: "{null|skipped|complete}"
+    research: "{null|skipped|complete}"
+    product_brief: "{null|in_progress|complete}"
+  businessplan:
+    prd_creation: "{null|in_progress|complete}"
+    prd_validation: "{null|in_progress|complete}"
+    ux_design: "{null|skipped|complete}"
+  techplan:
+    architecture_design: "{null|in_progress|complete}"
+    architecture_validation: "{null|in_progress|complete}"
+  devproposal:
+    epic_generation: "{null|in_progress|complete}"
+    epic_stress_gate: "{null|in_progress|complete}"
+    story_generation: "{null|in_progress|complete}"
+    readiness_checklist: "{null|in_progress|complete}"
+  sprintplan:
+    readiness_recheck: "{null|in_progress|complete}"
+    constitutional_compliance: "{null|in_progress|complete}"
+    sprint_planning: "{null|in_progress|complete}"
+    dev_story_creation: "{null|in_progress|complete}"
 ```
 
 ## Event Log Schema (event-log.jsonl)
@@ -118,11 +147,15 @@ current_phase: "{named_phase}"
 | `initiative_archived` | /archive runs |
 | `constitution_violation` | Governance check fails |
 | `constitution_passed` | Governance check passes |
+| `sub_workflow_start` | Sub-workflow begins within a phase |
+| `sub_workflow_complete` | Sub-workflow finishes within a phase |
+| `sub_workflow_skipped` | Optional sub-workflow deliberately skipped |
+| `phase_completion_triggered` | All required sub-workflows complete, phase-completion skill loaded |
 | `migrate_lifecycle` | v1→v2 lifecycle migration completes |
 
 ## Dual-Write Contract
 
-When `phase_status`, `current_phase`, or `audience_status` changes in state.yaml:
+When `phase_status`, `current_phase`, `audience_status`, or `sub_workflows` changes in state.yaml:
 1. Write to `_bmad-output/lens-work/state.yaml`
 2. Also write to the initiative config file:
    - Domain: `initiatives/{id}/Domain.yaml`

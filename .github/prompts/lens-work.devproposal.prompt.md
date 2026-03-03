@@ -31,6 +31,7 @@ Use `#think` before decomposing architecture into epics or estimating scope.
 - Branch pattern: `{initiative_root}-medium-devproposal`
 - Aliases: `/plan`
 - Role gate: PO, Architect, Tech Lead
+- Auto-advance: `/sprintplan` (promote large→base first)
 
 **Prerequisites:**
 - All small-audience phases complete: `preplan`, `businessplan`, `techplan` PRs merged into `{initiative_root}-small`
@@ -86,6 +87,10 @@ After receiving confirmation, execute workflows in sequence:
 
 Each workflow uses step-file architecture — halt at each step within the workflow, wait for user input.
 
+**Sub-workflow tracking:** After each sub-workflow completes successfully, immediately update
+`sub_workflows.devproposal.{name}: complete` in the initiative config (dual-write to state.yaml).
+This tracking persists across context compaction.
+
 **Epic Stress Gate (mandatory — runs per epic):**
 - Run `_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md` in adversarial mode for each epic
 - Run `_bmad/core/workflows/party-mode/workflow.md` review focused on each epic
@@ -107,26 +112,16 @@ Each workflow uses step-file architecture — halt at each step within the workf
 - WORK: Epic/story generation on this branch
 - END: PR from `{initiative_root}-medium-devproposal` → `{initiative_root}-medium`; remain on phase branch
 
-**Phase completion:**
-- Verify PAT configured: Check for `GITHUB_PAT` or `GH_ENTERPRISE_TOKEN` environment variable, or `_bmad-output/lens-work/personal/profile.yaml` has `git_credentials` for current git host
-- If PAT missing: Direct user to set `GITHUB_PAT` env var (or `GH_ENTERPRISE_TOKEN` for enterprise) or run `store-github-pat.ps1`/`store-github-pat.sh` in separate terminal, then retry
-- Push artifacts to `{initiative_root}-medium-devproposal`
-- Create PR using promote-branch script: `_bmad/lens-work/scripts/promote-branch.sh -s {initiative_root}-medium-devproposal -t {initiative_root}-medium` (or `.ps1` on Windows)
-- Update `phase_status.devproposal: pr_pending` and `audience_status.small_to_medium: complete` in initiative config
-- Update `state.yaml`: `current_phase: devproposal`, `workflow_status: pr_pending`
-- Append event to `event-log.jsonl`
-- Remain on phase branch (REQ-7: never auto-merge)
+**Phase completion & Auto-Advance:**
+When all required sub-workflows are complete, load and execute:
+`_bmad/lens-work/skills/phase-completion.md`
+This skill handles: sub-workflow verification, PR creation, state updates, event logging,
+and auto-advance to the next phase. It reads everything from persistent state — it does
+NOT depend on conversation context.
 
 **Output artifacts** (written to `{docs_path}/`):
 - `epics.md` (required)
 - `epic-{id}-party-mode-review.md` (per epic, written alongside)
 - `stories.md` (required)
 - `readiness-checklist.md` (required)
-
-**Auto-Advance:** After phase PR is created, auto-execute `@lens promote` to promote
-from `-large` to base. Load and execute `lens-work.promote.prompt.md`.
-After the promotion PR is created: pause and inform the user the PR must be merged.
-On the user's next message after merge, auto-execute `/sprintplan` — load and execute
-`lens-work.sprintplan.prompt.md`. Do NOT display "Run @lens next" or "Run /sprintplan" —
-just execute them.
 ```
