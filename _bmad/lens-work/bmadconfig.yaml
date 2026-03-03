@@ -354,3 +354,28 @@ conventions:
       Any document generation workflow, skill, or agent instruction MUST explicitly
       reference mermaid diagram requirements. Documents written without diagrams
       are defects and must be regenerated with visual content.
+# ─────────────────────────────────────────────────────────────────────────────
+# SESSION CACHE POLICY
+# Files listed here are loaded ONCE per session and reused without re-reading.
+# Agents MUST honour this cache: if the file was already loaded earlier in the
+# same conversation turn, use the cached value instead of making a new read.
+# ─────────────────────────────────────────────────────────────────────────────
+session_cache:
+  always:
+    - path: "_bmad/lens-work/lifecycle.yaml"
+      reason: "Immutable per session — phase order, audience map, phase metadata"
+    - path: "_bmad/lens-work/module.yaml"
+      reason: "Immutable per session — module identity, output paths, target repos"
+
+  per_command:
+    - path: "_bmad-output/lens-work/state.yaml"
+      reason: "Load once per command; reload only after explicit state-write (save())"
+    - path: "_bmad-output/lens-work/initiatives/${state.active_initiative}.yaml"
+      reason: "Load once per command; use cached copy for all subsequent reads within same workflow"
+    - path: "_bmad-output/lens-work/personal/profile.yaml"
+      reason: "Load once; user preferences are stable for the duration of a command"
+
+  shared_fragments:
+    preflight:    "_bmad/lens-work/workflows/shared/preflight.fragment.md"
+    resolve_docs: "_bmad/lens-work/workflows/shared/resolve-docs-path.fragment.md"
+    load_state:   "_bmad/lens-work/workflows/shared/load-state.fragment.md"

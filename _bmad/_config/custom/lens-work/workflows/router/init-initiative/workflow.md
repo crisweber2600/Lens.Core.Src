@@ -67,13 +67,44 @@ fi
 git fetch origin main
 ```
 
+### 0-pre. Batch Context Pre-Load (Parallel)
+
+```yaml
+# OPTIMIZATION: Load all context files in a single parallel batch BEFORE
+# the conditional Steps 0a/0b/0c. Each step then uses already-loaded data
+# instead of making separate sequential file-read tool calls.
+
+parallel:
+  - load_profile:
+      path: "_bmad-output/lens-work/personal/profile.yaml"
+      store: profile_raw           # Used by Step 0c — no separate load needed
+
+  - scan_domain_files:
+      glob: "_bmad-output/lens-work/initiatives/*/Domain.yaml"
+      store: domain_yaml_files     # Used by Step 0a (service-layer)
+
+  - scan_service_files:
+      glob: "_bmad-output/lens-work/initiatives/*/*/Service.yaml"
+      store: service_yaml_files    # Used by Step 0b (feature-layer)
+
+  - load_state:
+      path: "_bmad-output/lens-work/state.yaml"
+      store: state                 # Used by Steps 0a/0b for active_initiative check
+
+# All four results are now available in memory for Steps 0a, 0b, and 0c.
+# Steps proceed with cached values — no additional file reads are needed.
+```
+
+---
+
 ### 0a. Load Parent Domain Context (Service-Layer)
 
 ${if layer == "service"}
 ```yaml
 # Service-layer MUST have a parent domain initiative.
 # Strategy: try active_initiative first, then auto-discover, only error if zero domains exist.
-state = load("bmad.lens.release/_bmad-output/lens-work/state.yaml")
+# NOTE: state and domain_yaml_files are already loaded from Step 0-pre (Batch Context Pre-Load).
+# No additional file reads needed here.
 
 domain_config = null
 
@@ -85,9 +116,9 @@ if state.active_initiative != null:
     if candidate.layer == "domain":
       domain_config = candidate
 
-# Attempt 2: Auto-discover domains by scanning initiatives/*/Domain.yaml
+# Attempt 2: Auto-discover domains using pre-loaded domain_yaml_files scan
 if domain_config == null:
-  domain_yaml_files = glob("bmad.lens.release/_bmad-output/lens-work/initiatives/*/Domain.yaml")
+  # domain_yaml_files already populated by Step 0-pre parallel scan
   if domain_yaml_files.length == 0:
     error: "No domain found. Create a domain first with /new-domain."
     exit: 1
@@ -127,7 +158,8 @@ ${if layer == "feature"}
 ```yaml
 # Feature-layer: needs a parent context (service OR domain).
 # Strategy: check active_initiative, then auto-discover, only error if zero parents exist.
-state = load("bmad.lens.release/_bmad-output/lens-work/state.yaml")
+# NOTE: state, domain_yaml_files, and service_yaml_files are already loaded from Step 0-pre.
+# No additional file reads are needed for the initial discovery.
 
 parent_config = null
 parent_layer = null
@@ -151,10 +183,9 @@ if state.active_initiative != null:
         parent_config = candidate
         parent_layer = "domain"
 
-# Attempt 2: Auto-discover by scanning initiatives/
+# Attempt 2: Auto-discover using pre-loaded service_yaml_files and domain_yaml_files from Step 0-pre
 if parent_config == null:
-  service_yaml_files = glob("bmad.lens.release/_bmad-output/lens-work/initiatives/*/*/Service.yaml")
-  domain_yaml_files = glob("bmad.lens.release/_bmad-output/lens-work/initiatives/*/Domain.yaml")
+  # service_yaml_files and domain_yaml_files already populated by Step 0-pre parallel scan
 
   all_parents = []
   for file in service_yaml_files:
@@ -210,12 +241,11 @@ ${endif}
 ### 0c. Load User Profile Preferences  # REQ-2, REQ-3
 
 ```yaml
-# Load user profile to source default preferences.
-# Profile preferences act as defaults — can be overridden per-initiative.
-profile_path = "bmad.lens.release/_bmad-output/lens-work/personal/profile.yaml"
+# Use pre-loaded profile data from Step 0-pre (no additional file read needed).
+# profile_raw was already loaded in the parallel batch; extract preferences here.
 
-if exists(profile_path):
-  profile = load(profile_path)
+if profile_raw != null:
+  profile = profile_raw
   profile_question_mode = profile.preferences.question_mode || "interactive"   # REQ-2
   profile_tracker       = profile.preferences.tracker       || "none"          # REQ-3
 else:

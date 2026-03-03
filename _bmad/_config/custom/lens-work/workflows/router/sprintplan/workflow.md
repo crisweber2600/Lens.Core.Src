@@ -55,46 +55,23 @@ if user_role != "Scrum Master":
 ### 0. Pre-Flight [REQ-9]
 
 ```yaml
-# PRE-FLIGHT (mandatory, never skip) [REQ-9]
-# 1. Verify working directory is clean
-# 2. Load two-file state (state.yaml + initiative config)
-# 3. Validate audience promotion (medium → large must be complete)
-# 4. Determine correct phase branch: {initiative_root}-{audience}-{phase_name}
-# 5. Create phase branch if it doesn't exist
-# 6. Checkout phase branch
-# 7. Confirm to user: "Now on branch: {branch_name}"
+# Standard pre-flight: clean state, two-file state load, lifecycle load
+# Post-conditions: state, initiative, lifecycle, size, domain_prefix, initiative_root
+invoke: shared.preflight
+# Fragment: _bmad/lens-work/workflows/shared/preflight.fragment.md
 # GATE: All steps must pass before proceeding to sprint planning
 # NOTE: sprintplan is the FIRST phase in large audience — requires medium→large promotion
-
-# Verify working directory is clean
-invoke: git-orchestration.verify-clean-state
-
-# Load two-file state
-state = load("_bmad-output/lens-work/state.yaml")
-initiative = load("_bmad-output/lens-work/initiatives/${state.active_initiative}.yaml")
-
-# Load lifecycle contract for phase → audience mapping
-lifecycle = load("lifecycle.yaml")
-
-# Read initiative config
-size = initiative.size
-domain_prefix = initiative.domain_prefix
 
 # Derive audience from lifecycle contract (sprintplan → large)
 current_phase = "sprintplan"
 audience = lifecycle.phases[current_phase].audience    # "large"
-initiative_root = initiative.initiative_root
 audience_branch = "${initiative_root}-${audience}"     # {initiative_root}-large
 
-# === Path Resolver (S01-S06: Context Enhancement) ===
-docs_path = initiative.docs.path
-repo_docs_path = "docs/${initiative.docs.domain}/${initiative.docs.service}/${initiative.docs.repo}"
+# Resolve docs_path and repo_docs_path (read via fragment; override output_path below)
+invoke: shared.resolve-docs-path
+# Fragment: _bmad/lens-work/workflows/shared/resolve-docs-path.fragment.md
 
-if docs_path == null or docs_path == "":
-  docs_path = "_bmad-output/planning-artifacts/"
-  repo_docs_path = null
-  warning: "⚠️ DEPRECATED: Initiative missing docs.path configuration."
-
+# sprintplan-specific output path: reviews/ subdirectory
 output_path = "${docs_path}/reviews/"
 ensure_directory("${docs_path}/reviews/")
 

@@ -54,16 +54,21 @@ if state == null:
     error: "Invalid choice. Run @lens next again."
     exit: 1
 
-# Load initiative config
+# Load initiative config from state (two-file architecture with legacy fallback)
+# NOTE: /next has a unique null-state branch above (prompts to create initiative).
+# The initiative loading below mirrors shared.load-state.
+# Fragment: _bmad/lens-work/workflows/shared/load-state.fragment.md
 if state.active_initiative != null:
   initiative = load("_bmad-output/lens-work/initiatives/${state.active_initiative}.yaml")
   if initiative == null:
     error: "Initiative config not found: initiatives/${state.active_initiative}.yaml"
     hint: "Run @lens migrate to convert legacy state, or check initiatives/ directory."
     exit: 1
+  legacy_warning: false
 else if state.initiative != null:
   # LEGACY single-file format
   initiative = state.initiative
+  legacy_warning: true
   output: "⚠️  Legacy state detected. Consider running @lens migrate."
 else:
   # Malformed state
