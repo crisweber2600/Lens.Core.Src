@@ -39,18 +39,18 @@ lens_hierarchy:
 audiences:
   small:
     role: "IC creation work"
-    description: "Where ALL 5 planning phases happen — individual contributor generates artifacts"
-    phases: [preplan, businessplan, techplan, devproposal, sprintplan]
+    description: "Individual contributor generates early planning artifacts"
+    phases: [preplan, businessplan, techplan]
   medium:
     role: "Lead review"
     description: "Adversarial review gate using party mode — promotion carries planning artifacts"
-    phases: []
+    phases: [devproposal]
     entry_gate: adversarial-review
     entry_gate_mode: party
   large:
     role: "Stakeholder approval"
     description: "Stakeholder sign-off — promotion carries planning artifacts"
-    phases: []
+    phases: [sprintplan]
     entry_gate: stakeholder-approval
   base:
     role: "Ready for execution"
@@ -114,7 +114,7 @@ phases:
       - epics
       - stories
       - implementation-readiness
-    audience: small
+    audience: medium
     legacy_phase_number: 4
     legacy_gate_key: story_gen
 
@@ -127,7 +127,7 @@ phases:
     artifacts:
       - sprint-status
       - story-files
-    audience: small
+    audience: large
     legacy_phase_number: 5
     legacy_gate_key: review
 
@@ -172,6 +172,13 @@ tracks:
     phases: [preplan]
     audiences: [small]
     start_phase: preplan
+
+  quickdev:
+    description: "Rapid execution — delegates to target-project agents for implementation with parity verification"
+    phases: [devproposal]
+    audiences: [small, base]
+    constitution_controlled_gates: [adversarial-review]
+    start_phase: devproposal
 
 # -----------------------------------------------------------------------------
 # ADVERSARIAL REVIEW (party mode)
