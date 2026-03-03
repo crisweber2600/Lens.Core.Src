@@ -58,8 +58,8 @@ audiences:
     entry_gate: stakeholder-approval
   base:
     role: "Ready for execution"
-    description: "Constitution-gated — dev phase branches from here post-promotion"
-    phases: [dev]
+    description: "Constitution-gated — dev execution happens outside this planning lifecycle; promotion to base hands off to implementation"
+    phases: []
     entry_gate: constitution-gate
 
 # -----------------------------------------------------------------------------

@@ -60,6 +60,7 @@ invoke: git-orchestration.verify-clean-state
 # Load two-file state
 state = load("_bmad-output/lens-work/state.yaml")
 initiative = load_initiative_config(state.active_initiative)
+lifecycle = load("_bmad/lens-work/lifecycle.yaml")
 
 # Read initiative config
 size = initiative.size
