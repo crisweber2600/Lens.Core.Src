@@ -245,12 +245,12 @@ created: 2026-02-05
 | 4.1.5.11 | Epic completion is detected in `/dev` | Current story resolves to parent epic and epic completion is evaluated before workflow exit |
 | 4.1.5.12 | Epic adversarial review runs on epic completion | `bmm.check-implementation-readiness` executes for completed epic and blocks `/dev` on fail |
 | 4.1.5.13 | Epic party-mode teardown runs on epic completion | `core.party-mode` writes `epic-*-party-mode-review.md` and blocks `/dev` on unresolved issues |
-| 4.1.5.14 | Step 4→5 requires @lens done signal | Agent halts after Step 4 implementation output with `halt: true` and `wait_for: "@lens done"`; does not proceed to Step 5 code review without user signal |
-| 4.1.5.15 | Step 5 pre-condition checks story status | Code review is blocked with `halt: true` if story status is not `"in-progress"` or `"review"` when Step 5 begins |
-| 4.1.5.16 | Code review auto-fix/rerun loop is default | `bmm.code-review` runs with `auto_fix_rerun=true`, fixes `CRITICAL/HIGH/MEDIUM`, and reruns up to 2 passes without prompting |
-| 4.1.5.17 | Story PR auto-created after successful `/dev` review gates | `git-orchestration.create-pr` is invoked with story branch → epic branch; fallback emits manual `gh pr create` command |
-| 4.1.5.18 | Epic completion gate uses `halt: true` on failure | Both `bmm.check-implementation-readiness` and `core.party-mode` epic gates use `halt: true` — workflow cannot proceed past Step 5a on failure |
-| 4.1.5.19 | Story-status hard gate blocks PR when status ≠ done | `reviewed_story_status != "done"` check fires `halt: true` before `git-orchestration.create-pr` — PR is never created if review fixes are unresolved |
+| 4.1.5.14 | Code review auto-fix/rerun loop is default | `bmm.code-review` runs with `auto_fix_rerun=true`, fixes `CRITICAL/HIGH/MEDIUM`, and reruns up to 2 passes without prompting |
+| 4.1.5.15 | Story PR auto-created after successful `/dev` review gates | `git-orchestration.create-pr` is invoked with story branch → epic branch; fallback emits manual `gh pr create` command |
+| 4.1.5.16 | Epic completion gate uses `halt: true` on failure | Both `bmm.check-implementation-readiness` and `core.party-mode` epic gates use `halt: true` — workflow cannot proceed past Step 5a on failure |
+| 4.1.5.17 | Story-status hard gate blocks PR when status ≠ done | `reviewed_story_status != "done"` check fires `halt: true` before `git-orchestration.create-pr` — PR is never created if review fixes are unresolved |
+| 4.1.5.18 | Step 4→5 requires @lens done signal | Agent halts after Step 4 implementation output with `halt: true` and `wait_for: "@lens done"`; does not proceed to Step 5 code review without user signal |
+| 4.1.5.19 | Step 5 pre-condition checks story status | Code review is blocked with `halt: true` if story status is not `"in-progress"` or `"review"` when Step 5 begins |
 
 ### 4.2 Utility Workflows
 
