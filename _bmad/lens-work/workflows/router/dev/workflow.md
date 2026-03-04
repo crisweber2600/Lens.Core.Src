@@ -307,25 +307,33 @@ You're now working in: ${target_path}
 - Return to BMAD directory when ready for code review
 
 **Commands available:**
-- `@lens done` — Signal implementation complete, start code review
+- `@lens done` — Signal implementation complete, start code review (auto-signaled by agent after implementation; human can also invoke manually)
 - `@lens ST` — Check status
 - `@lens help` — Show available commands
 ```
 
-⛔ **MANDATORY HALT — Implementation Boundary**
-**The agent MUST stop here after displaying implementation guidance.**
-**Do NOT proceed to Step 5 until the user signals `@lens done`.**
-
 ```yaml
-# ⛔ MANDATORY HALT — Step 4 is complete
-halt: true
-wait_for: "@lens done"
-output: |
-  ⛔ IMPLEMENTATION COMPLETE — Awaiting @lens done
-  ├── All story tasks are ready for implementation
-  ├── Implement in the target repo, commit frequently
-  └── Signal @lens done when implementation is complete to proceed to code review (Step 5)
+# Conditional halt — only if unresolved enforced-mode gate failures exist (safety net)
+# Steps 2a/2b should have already caught these, but this guards against edge cases
+if article_gates and article_gates.failed_gates > 0 and enforcement_mode == "enforced":
+  halt: true
+  output: |
+    ⛔ BLOCKED — Unresolved enforced gate failures detected at Step 4
+    ├── ${article_gates.failed_gates} gate(s) still failing
+    ├── Resolve violations and re-run /dev
+    └── Implementation cannot proceed until all enforced gates pass
+else:
+  output: |
+    ✅ No blockers — proceeding with implementation
+    ├── All pre-implementation gates passed
+    ├── Agent will implement story tasks in the target repo
+    └── Agent will signal @lens done automatically when complete
 ```
+
+**Agent Implementation Flow:**
+The agent now proceeds to implement the story tasks in the target repo.
+After all story tasks are implemented and committed, the agent **automatically
+signals `@lens done`** and continues to Step 5 (code review).
 
 ### 5. Adversarial Code Review + Constitutional Gates (when signaled)
 
@@ -338,7 +346,7 @@ Code review and retrospective use YAML-based workflow.yaml files with the workfl
 - STOP and wait for user at decision points
 
 ```yaml
-# User signals: @lens done
+# Agent signals @lens done after implementation completes (or human invokes manually)
 
 # Pre-condition gate: verify story is ready for review
 story_check = load(${dev_story_path})
