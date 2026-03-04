@@ -47,12 +47,18 @@ async function copyDirContents(srcDir, destDir, { skipExisting = true, logger } 
  * - Setting up TargetProjects path
  * - Configuring docs output path
  * - IDE-specific configuration
+ *
+ * Options:
+ *   updateMode (boolean) - When true, overwrites existing prompts and
+ *     instructions instead of skipping them.  Used by the background
+ *     freshness preflight (step 4d) after pulling new module code.
  */
 async function install(options) {
-    const { projectRoot, config, installedIDEs, logger } = options;
+    const { projectRoot, config, installedIDEs, logger, updateMode = false } = options;
 
     try {
-        logger.log('Installing LENS Workbench (lens-work)...');
+        const modeLabel = updateMode ? 'Updating' : 'Installing';
+        logger.log(`${modeLabel} LENS Workbench (lens-work)...`);
 
         // Create lens-work output directory
         const outputDir = path.join(projectRoot, '_bmad-output', 'lens-work');
@@ -135,14 +141,18 @@ active_initiative: null
             await fsHelpers.ensureDir(githubDir);
 
             // Copy copilot instructions to .github folder
+            // Always overwrite in update mode; on fresh install the file won't exist yet
             const sourceInstructionsFile = path.join(__dirname, '..', 'docs', 'copilot-instructions.md');
             const targetInstructionsFile = path.join(githubDir, 'lens-work-instructions.md');
             try {
                 if (await fsHelpers.pathExists(sourceInstructionsFile)) {
-                    logger.log('Installing Copilot instructions to .github/');
-                    await fsHelpers.copy(sourceInstructionsFile, targetInstructionsFile);
-                    if (await fsHelpers.pathExists(targetInstructionsFile)) {
+                    const shouldCopy = updateMode || !(await fsHelpers.pathExists(targetInstructionsFile));
+                    if (shouldCopy) {
+                        logger.log(`${updateMode ? 'Refreshing' : 'Installing'} Copilot instructions to .github/`);
+                        await fsHelpers.copy(sourceInstructionsFile, targetInstructionsFile);
                         logger.log('✓ Copilot instructions installed');
+                    } else {
+                        logger.log('Copilot instructions already exist — skipping (use updateMode to refresh)');
                     }
                 } else {
                     logger.warn(`Warning: Copilot instructions source not found at ${sourceInstructionsFile}`);
@@ -152,16 +162,22 @@ active_initiative: null
             }
 
             // Deploy prompt files to .github/prompts/
+            // In update mode, overwrite existing prompts to pick up changes
             const promptsSource = path.join(__dirname, '..', 'prompts');
             const promptsDest = path.join(githubDir, 'prompts');
             try {
                 if (await fsHelpers.pathExists(promptsSource)) {
-                    logger.log('Installing Copilot prompt files to .github/prompts/');
+                    const skipExisting = !updateMode;
+                    logger.log(`${updateMode ? 'Refreshing' : 'Installing'} Copilot prompt files to .github/prompts/`);
                     const { copied, skipped } = await copyDirContents(promptsSource, promptsDest, {
-                        skipExisting: true,
+                        skipExisting,
                         logger
                     });
-                    logger.log(`✓ Copilot prompts: ${copied} installed, ${skipped} skipped (already exist)`);
+                    if (updateMode) {
+                        logger.log(`✓ Copilot prompts: ${copied} refreshed`);
+                    } else {
+                        logger.log(`✓ Copilot prompts: ${copied} installed, ${skipped} skipped (already exist)`);
+                    }
                 } else {
                     logger.warn(`Warning: Prompts source directory not found at ${promptsSource}`);
                 }
