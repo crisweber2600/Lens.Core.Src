@@ -296,6 +296,79 @@ ${completed_stories_list}" \
 echo "✅ Epic PR created: ${epic_branch} → ${integration_branch}"
 ```
 
+## Multi-Developer Parallel Development
+
+When multiple developers (human or AI agents) work on the same initiative simultaneously,
+the epic-branch topology provides structural isolation. This section documents the coordination
+patterns for safe parallel development.
+
+### Branch Isolation Model
+
+```
+develop (integration)
+├── feature/epic-1   ← Dev A
+│   ├── feature/epic-1-1-1-api-camelcase
+│   └── feature/epic-1-1-5-benchmark-selector
+├── feature/epic-2   ← Dev B
+│   ├── feature/epic-2-2-1-dataentry-autosave
+│   └── feature/epic-2-2-5-closeout-routes
+├── feature/epic-3   ← Dev C
+│   └── feature/epic-3-3-1-linegraph-recharts
+└── feature/epic-4   ← Dev D
+    ├── feature/epic-4-4-1-scoring-tests
+    └── feature/epic-4-4-5-interventiontoolkit
+```
+
+**Key principle:** Each developer works on their own epic branch. Story branches are children
+of the epic branch. Two developers on different epics have **zero branch overlap**.
+
+### Coordination Rules
+
+1. **One developer per epic** — Each epic should be assigned to a single developer at a time.
+   Multiple stories within the *same* epic should still be developed sequentially to avoid
+   merge conflicts within the epic branch.
+
+2. **Pull control repo before claiming** — Always `git pull` the control repo (where sprint-status.yaml lives)
+   before claiming a story. This ensures you see the latest assignments.
+
+3. **Commit and push sprint-status immediately** — After claiming a story (via `@lens next --claim`
+   or `create-story`), commit and push sprint-status.yaml so other developers see the claim.
+
+4. **Route-removal stories must merge sequentially** — Stories that remove routes from shared files
+   (e.g., `wwwroot/app/app.js`, `routes.tsx`) across multiple epics will cause merge conflicts if
+   merged simultaneously. These stories should be the LAST stories in each epic, and their epic-completion
+   PRs should be merged one at a time into the integration branch.
+
+5. **Shared file conflict zones** — When two epics both modify the same file (e.g., `print.css`),
+   add explicit Dev Notes to both stories documenting which sections/selectors each touches.
+   This helps developers avoid overlapping changes and simplifies merge conflict resolution.
+
+### Pull-Before-Work Convention
+
+```bash
+# Before starting any new story:
+cd "${control_repo_path}"
+git pull origin "$(git symbolic-ref --short HEAD)"
+
+# Check sprint-status for current assignments:
+cat _bmad-output/implementation-artifacts/sprint-status.yaml | grep -E "assigned_to|in-progress"
+
+# Then claim your story:
+# @lens next --claim
+```
+
+### Epic Branch Lifecycle for Parallel Dev
+
+```
+1. Sprint planning creates sprint-status.yaml with all stories (backlog)
+2. Dev A claims story in epic-1 → sprint-status updated, pushed
+3. Dev B claims story in epic-3 → sprint-status updated, pushed
+4. Each dev creates epic+story branches in target repo independently
+5. Story PRs merge into their respective epic branches (no cross-epic conflict)
+6. Epic completion PRs merge into develop one at a time
+7. Route-removal stories (last in each epic) are merged sequentially
+```
+
 ## State Fields Touched
 
 - `state.current_phase` (v2: named phase — preplan|businessplan|techplan|devproposal|sprintplan)

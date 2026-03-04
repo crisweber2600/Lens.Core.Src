@@ -152,6 +152,73 @@ sub_workflows:
 | `sub_workflow_skipped` | Optional sub-workflow deliberately skipped |
 | `phase_completion_triggered` | All required sub-workflows complete, phase-completion skill loaded |
 | `migrate_lifecycle` | v1→v2 lifecycle migration completes |
+| `story_claimed` | Developer claims a story via /next --claim or auto-discovery |
+| `claim_override` | Developer overrides another dev's claim on a story |
+
+## Multi-Developer Coordination (Sprint-Status Claims)
+
+Sprint-status.yaml supports an extended entry format for multi-developer parallel development.
+This enables multiple developers (human or AI agents) to work on different stories/epics simultaneously
+without accidentally picking the same story.
+
+### Extended Entry Format
+
+```yaml
+# Simple format (backward compatible):
+1-1-user-auth: ready-for-dev
+
+# Extended format (multi-dev coordination):
+1-1-user-auth: { status: ready-for-dev, assigned_to: "alice", claimed_at: "2026-03-04T10:00:00Z" }
+```
+
+### Field Semantics
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | Story status (backlog, ready-for-dev, in-progress, review, done) |
+| `assigned_to` | string | Developer name/handle who claimed this story (from profile.yaml → name) |
+| `claimed_at` | ISO8601 | Timestamp when the story was claimed |
+
+### Claim Rules
+
+1. **Advisory, not hard lock** — Claims prevent auto-discovery by other developers but can be overridden with confirmation
+2. **Pull before claim** — Developers MUST pull the control repo before claiming to see current assignments
+3. **Claim expiry** — Claims are considered stale after 48 hours of no commits on the story branch (no automated enforcement; honor-system)
+4. **Auto-claim on create/dev** — The `create-story` and `dev-story` workflows automatically set `assigned_to` to the current developer
+5. **Explicit claim** — Developers can claim stories without starting work via `@lens next --claim`
+6. **Conflict warning** — `dev-story` warns if a story is claimed by a different developer and requires confirmation to override
+
+### Reading Sprint-Status (Dual-Format)
+
+All workflows reading `sprint_status.development_status` entries MUST handle both formats:
+
+```yaml
+# Parse helper:
+for story_key, entry in sprint_status.development_status:
+  if typeof entry == "string":
+    status = entry
+    assigned_to = ""
+    claimed_at = ""
+  else:
+    status = entry.status
+    assigned_to = entry.assigned_to || ""
+    claimed_at = entry.claimed_at || ""
+```
+
+### Story File Front Matter
+
+Story files (`.md`) include an `Assigned To:` field in the front matter header:
+
+```markdown
+# Story 1.2: User Authentication
+
+Status: ready-for-dev
+Assigned To: alice
+Tracker: azure-devops
+Work Item ID: 12345
+```
+
+This field is set by `create-story` and can be updated by `dev-story` on claim override.
 
 ## Dual-Write Contract
 

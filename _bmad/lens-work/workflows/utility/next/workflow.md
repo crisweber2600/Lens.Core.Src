@@ -158,7 +158,9 @@ if current_phase == "dev":
 
   if sprint_status != null and sprint_status.development_status != null:
     for story_key, status in sprint_status.development_status:
-      if status == "review":
+      # Handle both simple string and extended object formats
+      story_status = (typeof status == "string") ? status : status.status
+      if story_status == "review":
         pending_review.push(story_key)
 
   if pending_review.length > 0:
@@ -174,6 +176,72 @@ if current_phase == "dev":
 
     invoke_command: "/dev"
     exit: 0
+
+  # Priority 3.26: Claim mode — claim next available story without starting dev
+  # Activated by: @lens next --claim or @lens claim
+  if user_args contains "--claim" or command == "claim":
+    # Load developer profile for identity
+    profile = load_if_exists("_bmad-output/lens-work/personal/profile.yaml")
+    current_dev_name = profile.name || profile.user_name || git_config("user.name") || "unknown"
+
+    if sprint_status != null and sprint_status.development_status != null:
+      # Find first unclaimed backlog story
+      claimable_story = null
+      for story_key, status in sprint_status.development_status:
+        if story_key matches /^\d+-\d+-/ and not story_key matches /^epic-/ and not story_key matches /-retrospective$/:
+          story_status = (typeof status == "string") ? status : status.status
+          assigned_to = (typeof status == "object") ? (status.assigned_to || "") : ""
+          if story_status == "backlog" and assigned_to == "":
+            claimable_story = story_key
+            break
+
+      if claimable_story != null:
+        # Update sprint-status with claim
+        sprint_status.development_status[claimable_story] = {
+          status: "backlog",
+          assigned_to: current_dev_name,
+          claimed_at: now_iso8601()
+        }
+        save("_bmad-output/implementation-artifacts/sprint-status.yaml", sprint_status)
+
+        # Commit and push so other developers see the claim
+        invoke: git-orchestration.commit-and-push
+        params:
+          paths: ["_bmad-output/implementation-artifacts/sprint-status.yaml"]
+          message: "claim(${claimable_story}): claimed by ${current_dev_name}"
+
+        output: |
+          ✅ Story claimed successfully!
+
+          📋 **${claimable_story}** → claimed by **${current_dev_name}**
+
+          Other developers will skip this story during auto-discovery.
+
+          Next steps:
+          ├── Run `create-story` to create the story file
+          └── Or run `/dev` to start implementation (if story file exists)
+        exit: 0
+      else:
+        # Show current assignments for visibility
+        output: |
+          📋 No unclaimed backlog stories available
+
+          **Current Assignments:**
+          ${for sk, sv in sprint_status.development_status}
+          ${if sk matches /^\d+-\d+-/}
+          - ${sk}: ${typeof sv == "string" ? sv : sv.status}${typeof sv == "object" && sv.assigned_to ? " (→ " + sv.assigned_to + ")" : ""}
+          ${endif}
+          ${endfor}
+
+          Options:
+          ├── Run `create-story` with a specific epic-story number
+          └── Or check if all stories are complete
+        exit: 0
+    else:
+      output: |
+        ⚠️ No sprint-status.yaml found — cannot claim stories
+        Run sprint-planning first to generate sprint tracking.
+      exit: 0
 
 # Priority 3.5: All sub-workflows complete but phase not yet finalized
 lifecycle = load("_bmad/lens-work/lifecycle.yaml")
