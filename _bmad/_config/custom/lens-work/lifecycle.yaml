@@ -36,25 +36,29 @@ lens_hierarchy:
 # -----------------------------------------------------------------------------
 # Audiences are the primary progression axis. Phases happen WITHIN audiences.
 # Promotion between audiences IS the review gate.
+#
+# Gate chain (full track):
+#   preplan(small) → businessplan(small) → techplan(small) → [small→medium]
+#   → devproposal(medium) → [medium→large] → sprintplan(large) → [large→base] → dev(base)
 audiences:
   small:
     role: "IC creation work"
-    description: "Where ALL 5 planning phases happen — individual contributor generates artifacts"
-    phases: [preplan, businessplan, techplan, devproposal, sprintplan]
+    description: "Where early planning phases happen — individual contributor generates artifacts"
+    phases: [preplan, businessplan, techplan]
   medium:
     role: "Lead review"
-    description: "Adversarial review gate using party mode — promotion carries planning artifacts"
-    phases: []
+    description: "Adversarial review gate — devproposal phase branches from here post-promotion"
+    phases: [devproposal]
     entry_gate: adversarial-review
     entry_gate_mode: party
   large:
     role: "Stakeholder approval"
-    description: "Stakeholder sign-off — promotion carries planning artifacts"
-    phases: []
+    description: "Stakeholder sign-off — sprintplan phase branches from here post-promotion"
+    phases: [sprintplan]
     entry_gate: stakeholder-approval
   base:
     role: "Ready for execution"
-    description: "Constitution-gated — @lens validates before promotion"
+    description: "Constitution-gated — dev execution happens outside this planning lifecycle; promotion to base hands off to implementation"
     phases: []
     entry_gate: constitution-gate
 
@@ -115,6 +119,7 @@ phases:
       - stories
       - implementation-readiness
     audience: small
+    branching_audience: medium  # devproposal branches from medium (post small→medium promotion)
     legacy_phase_number: 4
     legacy_gate_key: story_gen
 
@@ -128,6 +133,7 @@ phases:
       - sprint-status
       - story-files
     audience: small
+    branching_audience: large   # sprintplan branches from large (post medium→large promotion)
     legacy_phase_number: 5
     legacy_gate_key: review
 
@@ -238,22 +244,25 @@ planning_repo:
 # -----------------------------------------------------------------------------
 # BRANCH TOPOLOGY — TARGET PROJECTS (code execution)
 # -----------------------------------------------------------------------------
-# GitFlow with Jira-linked branch names.
+# GitFlow with epic-key/story-key branch names.
 # AI-speed execution (sprints in hours, not weeks).
 target_projects:
   branching_model: gitflow
   branch_patterns:
-    story: "feature/{jira-storyid}"
-    epic: "feature/{jira-epicid}"
+    # Epic branch: feature/{epic-key}  e.g., feature/epic-1
+    epic: "feature/{epic-key}"
+    # Story branch: feature/{epic-key}-{story-key}  e.g., feature/epic-1-1-1-user-auth
+    story: "feature/{epic-key}-{story-key}"
     integration: develop
     release: "release/{version}"
     production: main
   merge_chain:
-    - source: "feature/{jira-storyid}"
-      target: "feature/{jira-epicid}"
+    - source: "feature/{epic-key}-{story-key}"
+      target: "feature/{epic-key}"
       type: story-completion
       gate: code-review
-    - source: "feature/{jira-epicid}"
+      auto_pr: true
+    - source: "feature/{epic-key}"
       target: develop
       type: epic-completion
       gate: feature-complete-review
@@ -271,6 +280,13 @@ target_projects:
     "small → medium":      "epic → develop"
     "medium → large":      "develop → release"
     "large → base":        "release → main"
+  # Automation rules for target project branch management
+  auto_branch_management:
+    create_epic_branch_on: sprint-plan-start
+    create_story_branch_on: dev-story-start
+    auto_commit_on: task-completion
+    auto_pr_on: story-completion
+    epic_branch_parent: develop
 
 # -----------------------------------------------------------------------------
 # INITIATIVE CONFIGURATION

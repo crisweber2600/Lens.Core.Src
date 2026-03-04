@@ -48,38 +48,20 @@ imports: lifecycle.yaml
 ### 0. Pre-Flight [REQ-9]
 
 ```yaml
-# PRE-FLIGHT (mandatory, never skip) [REQ-9]
-# 1. Verify working directory is clean
-# 2. Load two-file state (state.yaml + initiative config)
-# 3. Check previous phase status (businessplan must be complete)
-# 4. Determine correct phase branch: {initiative_root}-{audience}-{phase_name}
-# 5. Create phase branch if it doesn't exist
-# 6. Checkout phase branch
-# 7. Confirm to user: "Now on branch: {branch_name}"
+# Standard pre-flight: clean state, two-file state load, lifecycle load
+# Post-conditions: state, initiative, lifecycle, size, domain_prefix, initiative_root
+invoke: shared.preflight
+# Fragment: _bmad/lens-work/workflows/shared/preflight.fragment.md
 # GATE: All steps must pass before proceeding to artifact work
 # NOTE: techplan is in the SAME audience (small) as businessplan — no cascade merge needed
 
-# Verify working directory is clean
-invoke: git-orchestration.verify-clean-state
-
-# Load two-file state
-state = load("_bmad-output/lens-work/state.yaml")
-initiative = load("_bmad-output/lens-work/initiatives/${state.active_initiative}.yaml")
-
-# Load lifecycle contract for phase → audience mapping
-lifecycle = load("lifecycle.yaml")
-
-# Read initiative config
-size = initiative.size
-domain_prefix = initiative.domain_prefix
-docs_path = initiative.docs.path
-output_path = docs_path
-ensure_directory(output_path)
+# Resolve docs_path, repo_docs_path, output_path; create output directory
+invoke: shared.resolve-docs-path
+# Fragment: _bmad/lens-work/workflows/shared/resolve-docs-path.fragment.md
 
 # Derive audience from lifecycle contract (techplan → small)
 current_phase = "techplan"
 audience = lifecycle.phases[current_phase].audience    # "small"
-initiative_root = initiative.initiative_root
 audience_branch = "${initiative_root}-${audience}"     # {initiative_root}-small
 
 # REQ-7/REQ-9: Validate previous phase PR merged [S1.5]

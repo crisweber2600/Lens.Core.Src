@@ -24,6 +24,7 @@ outputFile: '{output_folder}/[output-file-name]-{project_name}.md'
 # Task References (IF THE workflow uses and it makes sense in this step to have these )
 
 advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+batchModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/batch-mode/workflow.md'
 partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 
 # Template References (if this step uses a specific templates)
@@ -102,14 +103,16 @@ Example: "To analyze user requirements and document functional specifications th
 
 <!-- not ever step will include advanced elicitation or party mode, in which case generally will just have the C option -->
 <!-- for example an init step 1 that loads data, or step 1b continues a workflow would not need advanced elicitation or party mode - but any step where the user and the llm work together on content, thats where it makes sense to include them -->
+<!-- batch mode [B] follows the same eligibility as A/P - include it when A/P are included -->
 
 ### N. Present MENU OPTIONS
 
-Display: "**Select an Option:** [A] Advanced Elicitation [P] Party Mode [C] Continue"
+Display: "**Select an Option:** [A] Advanced Elicitation [B] Batch Mode [P] Party Mode [C] Continue"
 
 #### Menu Handling Logic:
 
 - IF A: Execute {advancedElicitationTask} # Or custom action
+- IF B: Save current content, then read fully and follow batch-mode protocol: {batchModeWorkflow} — execute all remaining steps continuously then present batch review
 - IF P: Execute {partyModeWorkflow} # Or custom action
 - IF C: Save content to {outputFile}, update frontmatter, then only then load, read entire file, then execute {nextStepFile}
 - IF Any other comments or queries: help user respond then [Redisplay Menu Options](#n-present-menu-options)
@@ -119,6 +122,7 @@ Display: "**Select an Option:** [A] Advanced Elicitation [P] Party Mode [C] Cont
 - ALWAYS halt and wait for user input after presenting menu
 - ONLY proceed to next step when user selects 'C'
 - After other menu items execution completes, redisplay the menu
+- IF B selected, do NOT return to this menu — batch mode takes over remaining steps
 - User can chat or ask questions - always respond when conversation ends, redisplay the menu
 
 ## CRITICAL STEP COMPLETION NOTE
@@ -160,11 +164,12 @@ Advanced elicitation is use to direct you to think of alternative outputs of a s
 ```markdown
 ### N. Present MENU OPTIONS
 
-Display: "**Select an Option:** [A] [Advanced Elicitation] [P] Party Mode [C] Continue"
+Display: "**Select an Option:** [A] [Advanced Elicitation] [B] Batch Mode [P] Party Mode [C] Continue"
 
 #### Menu Handling Logic:
 
 - IF A: Execute {advancedElicitationTask}
+- IF B: Save current content, then read fully and follow batch-mode protocol: {batchModeWorkflow} — execute all remaining steps continuously then present batch review
 - IF P: Execute {partyModeWorkflow}
 - IF C: Save content to {outputFile}, update frontmatter, then only then load, read entire file, then execute {nextStepFile}
 - IF Any other comments or queries: help user respond then [Redisplay Menu Options](#n-present-menu-options)
@@ -174,6 +179,7 @@ Display: "**Select an Option:** [A] [Advanced Elicitation] [P] Party Mode [C] Co
 - ALWAYS halt and wait for user input after presenting menu
 - ONLY proceed to next step when user selects 'C'
 - After other menu items execution, return to this menu
+- IF B selected, do NOT return to this menu — batch mode takes over remaining steps
 - User can chat or ask questions - always respond and then end with display again of the menu options
 ```
 
@@ -199,14 +205,17 @@ Display: "**Proceeding to [next action]...**"
 ```markdown
 ### N. Present MENU OPTIONS
 
-Display: "**Select an Option:** [A] [Custom Action 1] [B] [Custom Action 2] [C] Continue"
+Display: "**Select an Option:** [F] [Custom Action 1] [G] [Custom Action 2] [C] Continue"
 
 #### Menu Handling Logic:
 
-- IF A: [Custom handler route for option A]
-- IF B: [Custom handler route for option B]
+- IF F: [Custom handler route for option F]
+- IF G: [Custom handler route for option G]
 - IF C: Save content to {outputFile}, update frontmatter, then only then load, read entire file, then execute {nextStepFile}
 - IF Any other comments or queries: help user respond then [Redisplay Menu Options](#n-present-menu-options)
+```
+
+> **Note:** Avoid reserved letters (A, B, P, C, X) for custom options. Use F, G, L, N, R, etc. See `menu-handling-standards.md` for the full reserved letter table.
 
 #### EXECUTION RULES:
 

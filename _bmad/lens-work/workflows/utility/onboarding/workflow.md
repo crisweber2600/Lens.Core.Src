@@ -282,9 +282,21 @@ if tracker_input.strip() == "1":
 elif tracker_input.strip() == "2":
   tracker = "azure-devops"
   jira_base_url = null
+  output: |
+    Azure DevOps organization name (required for MCP sync):
+    Example: my-org
+  ado_org_input = prompt_user()
+  ado_organization = ado_org_input.strip() if ado_org_input.strip() else null
+  output: |
+    Azure DevOps project name (required for MCP sync):
+    Example: my-project
+  ado_proj_input = prompt_user()
+  ado_project = ado_proj_input.strip() if ado_proj_input.strip() else null
 else:
   tracker = "none"
   jira_base_url = null
+  ado_organization = null
+  ado_project = null
 
 profile = {
   name: name,
@@ -297,7 +309,9 @@ profile = {
     auto_fetch: true,
     question_mode: question_mode,  # REQ-2
     tracker: tracker,  # REQ-3
-    jira_base_url: jira_base_url if tracker == "jira" and jira_base_url else null  # REQ-3
+    jira_base_url: jira_base_url if tracker == "jira" and jira_base_url else null,  # REQ-3
+    ado_organization: ado_organization if tracker == "azure-devops" and ado_organization else null,  # ADO MCP
+    ado_project: ado_project if tracker == "azure-devops" and ado_project else null  # ADO MCP
   }
 }
 
@@ -469,6 +483,10 @@ preferences:
   question_mode: interactive  # REQ-2
   tracker: jira  # REQ-3
   jira_base_url: https://mycompany.atlassian.net  # REQ-3 (only if tracker is jira)
+  # — OR for Azure DevOps —
+  # tracker: azure-devops
+  # ado_organization: my-org      # ADO MCP (only if tracker is azure-devops)
+  # ado_project: my-project       # ADO MCP (only if tracker is azure-devops)
 ```
 
 ### GitHub PAT Environment Variables

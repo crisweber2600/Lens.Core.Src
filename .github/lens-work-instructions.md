@@ -366,13 +366,14 @@ main
 main
 └── {featureBranchRoot}                            ← Initiative root
     ├── {featureBranchRoot}-small                  ← Small review audience
-    │   └── {featureBranchRoot}-small-p1           ← Phase 1 (Analysis)
-    │       └── ...-small-p1-{workflow}            ← Workflow branch
+    │   ├── {featureBranchRoot}-small-preplan      ← Pre-Plan phase
+    │   ├── {featureBranchRoot}-small-businessplan ← Business Plan phase
+    │   └── {featureBranchRoot}-small-techplan     ← Tech Plan phase
     ├── {featureBranchRoot}-medium                 ← Medium review audience
-    │   └── {featureBranchRoot}-medium-p2          ← Phase 2 (Planning)
+    │   └── {featureBranchRoot}-medium-devproposal ← Dev Proposal phase
     └── {featureBranchRoot}-large                  ← Large review audience
-        ├── {featureBranchRoot}-large-p3           ← Phase 3 (Solutioning)
-        └── {featureBranchRoot}-large-p4           ← Phase 4 (Implementation)
+        ├── {featureBranchRoot}-large-sprintplan   ← Sprint Plan phase
+        └── {featureBranchRoot}-large-storyGen     ← Story Generation phase
 ```
 
 All branches use flat hyphen-separated naming (no `/` separators). All branches pushed to remote immediately on creation.

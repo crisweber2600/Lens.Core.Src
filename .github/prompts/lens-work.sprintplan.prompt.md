@@ -5,7 +5,9 @@ description: Launch SprintPlan phase — sprint backlog and dev-ready stories (B
 
 Activate @lens agent and execute /sprintplan:
 
-**⚠️ PATH CONTEXT:** All `_bmad/` paths in this prompt are relative to the `bmad.lens.release` control repository (where this prompt file lives). Do NOT copy `_bmad/` into or resolve these paths against the user's main project repo. The agent, workflows, and skills all execute from within `bmad.lens.release/`. Only `_bmad-output/` paths are written to the user's working context.
+**⚠️ PATH CONTEXT — TWO DIRECTORIES:** This prompt operates across two directories:
+- **`_bmad/` paths** → resolve inside the `bmad.lens.release/` subdirectory (read-only source of workflows, skills, agents)
+- **`_bmad-output/` paths, git branches, commits, and state files** → resolve in the **control repo root** (the parent directory that CONTAINS `bmad.lens.release/`). ALL git operations (checkout, branch, commit, push) happen here — NEVER inside `bmad.lens.release/`.
 
 **📊 VISUAL-FIRST DOCUMENTATION:** All documents generated in this phase MUST include Mermaid diagrams per the `visual_first_documentation` convention. Load `_bmad/lens-work/skills/visual-documentation.md` before creating any document. Stories documents require: story dependency graph (flowchart), sprint timeline (gantt), acceptance criteria workflow (flowchart).
 
@@ -29,6 +31,7 @@ Use `#think` before prioritizing stories or allocating sprint capacity.
 - Agent owner: Bob (Scrum Master) — `_bmad/bmm/agents/sm.md`
 - Branch pattern: `{initiative_root}-large-sprintplan`
 - Role gate: Scrum Master
+- Auto-advance: `/dev` (promote base→dev-ready first)
 
 **Prerequisites:**
 - `/devproposal` complete: `{initiative_root}-medium-devproposal` PR merged into `{initiative_root}-medium`
@@ -43,7 +46,7 @@ Use `#think` before prioritizing stories or allocating sprint capacity.
 
 **⚠️ CRITICAL — Workflow Engine Rules:**
 Sub-workflows [3] and [4] use YAML-based workflow.yaml files with the workflow engine.
-- Load `_bmad/core/tasks/workflow.xml` FIRST as the execution engine
+- Load `_bmad/core/tasks/workflow.yaml` FIRST as the execution engine
 - Pass the `workflow.yaml` path to the engine
 - Follow the engine instructions precisely — execute steps sequentially
 - Save outputs after completing EACH engine step (never batch)
@@ -57,13 +60,17 @@ Execute workflows in sequence:
 - [2] Constitutional Compliance Check — Continue as Bob (Scrum Master)
   → Constitution skill evaluates all artifacts against resolved constitutional rules
 - [3] Sprint Planning — Continue as Bob (Scrum Master)
-  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.xml`
+  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.yaml`
   → Pass to engine: `_bmad/bmm/workflows/4-implementation/sprint-planning/workflow.yaml`
 - [4] Dev Story Creation — Continue as Bob (Scrum Master)
-  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.xml`
+  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.yaml`
   → Pass to engine: `_bmad/bmm/workflows/4-implementation/create-story/workflow.yaml`
 
-⚠️ **Workflow Engine Rules for [3] and [4]:** Load workflow.xml FIRST, pass workflow.yaml, execute steps sequentially, save after EACH step, STOP at decision points.
+⚠️ **Workflow Engine Rules for [3] and [4]:** Load workflow.yaml FIRST, pass workflow.yaml, execute steps sequentially, save after EACH step, STOP at decision points.
+
+**Sub-workflow tracking:** After each sub-workflow completes successfully, immediately update
+`sub_workflows.sprintplan.{name}: complete` in the initiative config (dual-write to state.yaml).
+This tracking persists across context compaction.
 
 **Constitutional compliance gate:**
 - Constitution skill evaluates: `product-brief.md`, `prd.md`, `architecture.md`, `epics.md`, `stories.md`, `readiness-checklist.md`
@@ -75,26 +82,16 @@ Execute workflows in sequence:
 - WORK: Sprint backlog and dev stories created on this branch
 - END: PR from `{initiative_root}-large-sprintplan` → `{initiative_root}-large`; remain on phase branch
 
-**Phase completion:**
-- Verify PAT configured: Check for `GITHUB_PAT` or `GH_ENTERPRISE_TOKEN` environment variable, or `_bmad-output/lens-work/personal/profile.yaml` has `git_credentials` for current git host
-- If PAT missing: Direct user to set `GITHUB_PAT` env var (or `GH_ENTERPRISE_TOKEN` for enterprise) or run `store-github-pat.ps1`/`store-github-pat.sh` in separate terminal, then retry
-- Push artifacts to `{initiative_root}-large-sprintplan`
-- Create PR using promote-branch script: `_bmad/lens-work/scripts/promote-branch.sh -s {initiative_root}-large-sprintplan -t {initiative_root}-large` (or `.ps1` on Windows)
-- Update `phase_status.sprintplan: pr_pending` (or `passed_with_warnings`) and `audience_status.medium_to_large: complete`
-- Update `state.yaml`: `current_phase: sprintplan`, `workflow_status: pr_pending`
-- Append events to `event-log.jsonl` (sprintplan-start, sprintplan-checklist, sprintplan-compliance, sprintplan-complete)
-- Remain on phase branch (REQ-7: never auto-merge)
+**Phase completion & Auto-Advance:**
+When all required sub-workflows are complete, load and execute:
+`_bmad/lens-work/skills/phase-completion.md`
+This skill handles: sub-workflow verification, PR creation, state updates, event logging,
+and auto-advance to the next phase. It reads everything from persistent state — it does
+NOT depend on conversation context.
 
 **Output artifacts:**
 - `{initiative.docs.bmad_docs}/sprint-backlog.md` (required)
 - `{initiative.docs.bmad_docs}/dev-story-{id}.md` (required, one per selected story)
 
-**After SprintPlan:** Run `@lens next` (or `/dev`). If promotion is required, LENS auto-triggers it.
-
-**Next steps:**
-1. Merge sprintplan PR into `{initiative_root}-large`
-2. Run `@lens next` (or `/dev`) to continue flow
-3. Promotion gate checks execute automatically when required
-
-**Developer handoff:** Confirm story assignment and hand off dev story file to Amelia (Developer)
+**Developer handoff:** Story assignment and handoff to Amelia (Developer) happens automatically.
 ```

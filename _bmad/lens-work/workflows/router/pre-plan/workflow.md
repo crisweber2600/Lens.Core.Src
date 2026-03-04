@@ -228,17 +228,57 @@ params:
 assert: current_branch == phase_branch
 ```
 
-### 2a. Batch Mode (Single-File Questions)
+### 2a. Execution Mode Selection (Interactive or Batch)
 
 ```yaml
-if initiative.question_mode == "batch":
+# Allow per-phase override of global question_mode preference
+# Users can select [I]nteractive (step-by-step workflows) or [B]atch (single file)
+ask: |
+  📋 Execution Mode Selection
+  
+  How would you like to proceed with this phase?
+  
+  **[I] Interactive** — Choose workflows and answer step-by-step
+  **[B] Batch**     — Answer all questions at once in a single file
+  
+  Select mode: [I] or [B]
+  (Default: ${initiative.question_mode})
+
+raw_choice = user_input
+normalized_choice = null
+
+if raw_choice:
+  upper_choice = raw_choice.upper()
+  if upper_choice == "B" or upper_choice == "BATCH":
+    normalized_choice = "batch"
+  elif upper_choice == "I" or upper_choice == "INTERACTIVE":
+    normalized_choice = "interactive"
+
+session.execution_mode = normalized_choice || initiative.question_mode
+session.mode_switched = (session.execution_mode != initiative.question_mode) ? true : false
+session.mode_switch_point = "entry"
+
+# Log mode selection to compliance reports
+log_event:
+  type: "execution_mode_selected"
+  phase: "preplan"
+  mode: "${session.execution_mode}"
+  global_default: "${initiative.question_mode}"
+  override: ${session.mode_switched}
+  timestamp: "${ISO_TIMESTAMP}"
+
+# If batch mode selected: invoke batch-process and exit
+if session.execution_mode == "batch":
   invoke: lens-work.batch-process
   params:
     phase_name: "preplan"
     display_name: "PrePlan"
     template_path: "templates/preplan-questions.template.md"
     output_filename: "preplan-questions.md"
+    scope: "phase"
   exit: 0
+
+# Otherwise continue to Step 3 for interactive workflow selection
 ```
 
 ### 3. Offer Workflow Options
