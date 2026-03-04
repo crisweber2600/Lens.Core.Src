@@ -329,16 +329,17 @@ Which lifecycle track for this initiative?
 **[3] Tech-Change**  — Pure technical: techplan → sprintplan
 **[4] Hotfix**       — Urgent fix: techplan only (fast to execution)
 **[5] Spike**        — Research only: preplan (no implementation)
+**[6] QuickDev**     — Rapid execution: devproposal (small → base, parity verification)
 
 Default: full   (press Enter to keep)
-Select track: [1-5] (default: 1)
+Select track: [1-6] (default: 1)
 ```
 
 ```yaml
 # Load lifecycle.yaml to derive track-specific phases and audiences
 lifecycle = load("_bmad/_config/custom/lens-work/lifecycle.yaml")
 
-track_map = {1: "full", 2: "feature", 3: "tech-change", 4: "hotfix", 5: "spike"}
+track_map = {1: "full", 2: "feature", 3: "tech-change", 4: "hotfix", 5: "spike", 6: "quickdev"}
 track = track_map[selection] || "full"
 
 # Derive active phases and audiences from lifecycle contract

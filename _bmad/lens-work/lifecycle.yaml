@@ -79,26 +79,32 @@ audiences:
   #   - devproposal → branches from medium (requires small→medium promotion first)
   #   - sprintplan → branches from large (requires medium→large promotion first)
   #   - dev → branches from base (requires large→base promotion first)
-  # The `audience: small` field on each phase below indicates the IC work context,
-  # while the prompt/router `branch_pattern` determines the actual branching audience.
+  # The `audience` field on each phase indicates the IC work context (always small).
+  # The `branching_audience` field (when present) indicates the actual audience branch
+  # the phase branches FROM — this determines the real branch topology.
+  # When `branching_audience` is absent, the phase branches from its `audience` value.
+  #
+  # Gate chain (full track):
+  #   preplan(small) → businessplan(small) → techplan(small) → [small→medium]
+  #   → devproposal(medium) → [medium→large] → sprintplan(large) → [large→base] → dev(base)
   small:
     role: "IC creation work"
-    description: "Where ALL 5 planning phases happen — individual contributor generates artifacts"
-    phases: [preplan, businessplan, techplan, devproposal, sprintplan]
+    description: "Where early planning phases happen — individual contributor generates artifacts"
+    phases: [preplan, businessplan, techplan]
   medium:
     role: "Lead review"
-    description: "Adversarial review gate using party mode — promotion carries planning artifacts"
-    phases: []
+    description: "Adversarial review gate — devproposal phase branches from here post-promotion"
+    phases: [devproposal]
     entry_gate: adversarial-review
     entry_gate_mode: party
   large:
     role: "Stakeholder approval"
-    description: "Stakeholder sign-off — promotion carries planning artifacts"
-    phases: []
+    description: "Stakeholder sign-off — sprintplan phase branches from here post-promotion"
+    phases: [sprintplan]
     entry_gate: stakeholder-approval
   base:
     role: "Ready for execution"
-    description: "Constitution-gated — @lens validates before promotion"
+    description: "Constitution-gated — dev execution happens outside this planning lifecycle; promotion to base hands off to implementation"
     phases: []
     entry_gate: constitution-gate
 
@@ -146,7 +152,7 @@ phases:
       - ux-design
     audience: small
     auto_advance_to: /techplan
-    auto_advance_promote: true   # small → medium promotion before /techplan
+    auto_advance_promote: false  # same audience (small) — no promotion needed
     sub_workflows:
       - name: prd_creation
         required: true
@@ -170,7 +176,7 @@ phases:
       - architecture
     audience: small
     auto_advance_to: /devproposal
-    auto_advance_promote: true   # small → medium promotion before /devproposal
+    auto_advance_promote: true   # small → medium promotion before /devproposal (devproposal branches from medium)
     sub_workflows:
       - name: architecture_design
         required: true
@@ -192,8 +198,9 @@ phases:
       - stories
       - implementation-readiness
     audience: small
+    branching_audience: medium  # devproposal branches from medium (post small→medium promotion)
     auto_advance_to: /sprintplan
-    auto_advance_promote: true   # large → base promotion before /sprintplan
+    auto_advance_promote: true   # medium → large promotion before /sprintplan (sprintplan branches from large)
     sub_workflows:
       - name: epic_generation
         required: true
@@ -220,8 +227,9 @@ phases:
       - sprint-status
       - story-files
     audience: small
+    branching_audience: large   # sprintplan branches from large (post medium→large promotion)
     auto_advance_to: /dev
-    auto_advance_promote: true   # base → dev-ready promotion before /dev
+    auto_advance_promote: true   # large → base promotion before /dev (dev branches from base)
     sub_workflows:
       - name: readiness_recheck
         required: true
@@ -357,17 +365,24 @@ planning_repo:
 target_projects:
   branching_model: gitflow
   branch_patterns:
-    story: "feature/{jira-storyid}"
-    epic: "feature/{jira-epicid}"
+    # Epic branch: feature/{epic-key}  e.g., feature/epic-1
+    epic: "feature/{epic-key}"
+    # Story branch: feature/{epic-key}-{story-key}  e.g., feature/epic-1-1-1-user-auth
+    story: "feature/{epic-key}-{story-key}"
     integration: develop
     release: "release/{version}"
     production: main
+  # Pattern variables:
+  #   {epic-key}  — extracted from sprint-status epic key (e.g., "epic-1")
+  #   {story-key} — extracted from sprint-status story key (e.g., "1-1-user-auth")
+  #   Full story branch example: feature/epic-1-1-1-user-authentication
   merge_chain:
-    - source: "feature/{jira-storyid}"
-      target: "feature/{jira-epicid}"
+    - source: "feature/{epic-key}-{story-key}"
+      target: "feature/{epic-key}"
       type: story-completion
       gate: code-review
-    - source: "feature/{jira-epicid}"
+      auto_pr: true   # PR auto-created when all story tasks are complete
+    - source: "feature/{epic-key}"
       target: develop
       type: epic-completion
       gate: feature-complete-review
@@ -385,6 +400,13 @@ target_projects:
     "small → medium":      "epic → develop"
     "medium → large":      "develop → release"
     "large → base":        "release → main"
+  # Automation rules for target project branch management
+  auto_branch_management:
+    create_epic_branch_on: sprint-plan-start   # Create epic branches when sprint planning begins
+    create_story_branch_on: dev-story-start    # Create story branch from epic when dev starts
+    auto_commit_on: task-completion             # Commit + push after each task is marked complete
+    auto_pr_on: story-completion               # Create PR from story → epic when all tasks done
+    epic_branch_parent: develop                # Epic branches created from integration branch
 
 # -----------------------------------------------------------------------------
 # INITIATIVE CONFIGURATION

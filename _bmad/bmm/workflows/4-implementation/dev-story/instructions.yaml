@@ -219,6 +219,47 @@
       <output>ℹ️ No sprint status file exists - story progress will be tracked in story file only</output>
       <action>Set {{current_sprint_status}} = "no-sprint-tracking"</action>
     </check>
+
+    <!-- ADO MCP Sync: Update work item to Active when starting development -->
+    <action>Resolve ADO runtime context for BMM workflow execution:
+      - Set ado_profile_path = "_bmad-output/lens-work/personal/profile.yaml"
+      - Check story front matter for "Tracker" field and extract tracker_from_story if present
+      - If profile exists, load it and read profile.preferences.tracker, profile.preferences.ado_organization, profile.preferences.ado_project
+      - Normalize tracker = tracker || tracker_from_story || profile.preferences.tracker || profile.tracker || "none"
+      - Normalize ado_organization = profile.preferences.ado_organization || profile.ado_organization || ""
+      - Normalize ado_project = profile.preferences.ado_project || profile.ado_project || ""
+    </action>
+    <action>Check story front matter for "Work Item ID" field and extract {{ado_work_item_id}}</action>
+    <output>ℹ️ ADO dev-story context: tracker={{tracker}}, work_item_id={{ado_work_item_id}}, ado_org={{ado_organization}}, ado_project={{ado_project}}</output>
+
+    <check if="tracker != 'azure-devops'">
+      <output>ℹ️ ADO status sync skipped: tracker is '{{tracker}}' (requires 'azure-devops').</output>
+    </check>
+
+    <check if="tracker == 'azure-devops' AND ado_work_item_id is empty">
+      <output>⚠️ ADO status sync skipped: story front matter 'Work Item ID' is empty.</output>
+    </check>
+
+    <check if="tracker == 'azure-devops' AND (ado_organization is empty OR ado_project is empty)">
+      <output>ℹ️ ADO profile org/project not set; relying on MCP connection defaults.</output>
+    </check>
+
+    <check if="tracker == 'azure-devops' AND ado_work_item_id is not empty">
+      <action>Attempt ADO status sync via MCP (non-blocking):
+        mcp_microsoft_azu_wit_update_work_item(
+          organization: ado_organization (if set; otherwise MCP default),
+          project: ado_project (if set; otherwise MCP default),
+          id: {{ado_work_item_id}},
+          state: "Active"
+        )
+      </action>
+      <check if="ADO MCP call succeeds">
+        <output>✅ ADO work item #{{ado_work_item_id}} → Active</output>
+      </check>
+      <check if="ADO MCP call fails or MCP unavailable">
+        <output>⚠️ ADO status sync skipped (in-progress). Continue local development.</output>
+      </check>
+    </check>
   </step>
 
   <step n="5" goal="Implement task following red-green-refactor cycle">
@@ -298,6 +339,20 @@
       <action>ONLY THEN mark the task (and subtasks) checkbox with [x]</action>
       <action>Update File List section with ALL new, modified, or deleted files (paths relative to repo root)</action>
       <action>Add completion notes to Dev Agent Record summarizing what was ACTUALLY implemented and tested</action>
+
+      <!-- AUTO-COMMIT: Task completion triggers immediate commit + push in target repo -->
+      <critical>After marking task complete, auto-commit all changes to the target repo story branch</critical>
+      <action>Determine current task number (count of completed [x] tasks) and total task count</action>
+      <action>Execute in target repo:
+        git add -A
+        git commit -m "feat({{story_key}}): {{task_description}}
+
+        Story: {{story_key}}
+        Task: {{task_number}}/{{total_tasks}}
+        Epic: {{epic_key}}"
+        git push origin "{{story_branch}}"
+      </action>
+      <output>✅ Task {{task_number}}/{{total_tasks}} committed and pushed to {{story_branch}}</output>
     </check>
 
     <check if="ANY validation fails">
@@ -326,6 +381,19 @@
     <action>Confirm File List includes every changed file</action>
     <action>Execute enhanced definition-of-done validation</action>
     <action>Update the story Status to: "review"</action>
+
+    <!-- PR creation is deferred to /dev post-review gate -->
+    <critical>When all tasks are complete, ensure branch is pushed and hand off to /dev code-review gate before PR creation</critical>
+    <action>Ensure all changes are committed and pushed to the story branch in the target repo:
+      cd {{target_repo_path}}
+      git add -A
+      if any staged changes exist:
+        git commit -m "feat({{story_key}}): story complete — all tasks done"
+        git push origin "{{story_branch}}"
+    </action>
+    <output>✅ Story implementation complete and pushed: {{story_branch}}</output>
+    <output>⏭️ PR deferred until /dev code review passes with no unresolved follow-ups.</output>
+    <output>Run @lens done from /dev to execute review/fix loop and open PR after gate passes.</output>
 
     <!-- Enhanced Definition of Done Validation -->
     <action>Validate definition-of-done checklist with essential requirements:
@@ -401,6 +469,7 @@
     </action>
 
     <output>💡 **Tip:** For best results, run `code-review` using a **different** LLM than the one that implemented this story.</output>
+    <output>⛔ **MANDATORY:** If this story is being executed within a parent `/dev` workflow, the agent MUST halt after this step. Do NOT auto-advance to code review. Wait for the user to signal `@lens done`.</output>
     <check if="{sprint_status} file exists">
       <action>Suggest checking {sprint_status} to see project progress</action>
     </check>

@@ -152,10 +152,10 @@ For each sub_workflow defined in lifecycle.yaml:
 | Phase | auto_advance_to | auto_advance_promote | Effect |
 |-------|----------------|---------------------|--------|
 | preplan | `/businessplan` | `false` | Same audience — directly start businessplan |
-| businessplan | `/techplan` | `true` | Promote small→medium, then start techplan |
-| techplan | `/devproposal` | `true` | Promote medium→large, then start devproposal |
-| devproposal | `/sprintplan` | `true` | Promote large→base, then start sprintplan |
-| sprintplan | `/dev` | `true` | Promote base→dev, then start dev |
+| businessplan | `/techplan` | `false` | Same audience — directly start techplan |
+| techplan | `/devproposal` | `true` | Promote small→medium, then start devproposal |
+| devproposal | `/sprintplan` | `true` | Promote medium→large, then start sprintplan |
+| sprintplan | `/dev` | `true` | Promote large→base, then start dev |
 
 ### Edge Cases
 

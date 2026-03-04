@@ -44,7 +44,7 @@ Use `#think` before decomposing implementation tasks or selecting code patterns.
 
 **⚠️ CRITICAL — Workflow Engine Rules:**
 Sub-workflows [4], [5], and [7] use YAML-based workflow.yaml files with the workflow engine.
-- Load `_bmad/core/tasks/workflow.xml` FIRST as the execution engine
+- Load `_bmad/core/tasks/workflow.yaml` FIRST as the execution engine
 - Pass the `workflow.yaml` path to the engine
 - Follow the engine instructions precisely — execute steps sequentially
 - Save outputs after completing EACH engine step (never batch)
@@ -74,24 +74,35 @@ Sub-workflows [4], [5], and [7] use YAML-based workflow.yaml files with the work
 - Constitution skill runs compliance check on dev story
 - BLOCK if `fail_count > 0` — resolve story issues before implementation
 
-**[3] Checkout Target Repo**
+**[3] Checkout Target Repo — Epic & Story Branch Management**
 - Git-orchestration switches from BMAD control repo to `TargetProjects/{repo}/`
-- Checkout feature branch in target repo (creates if needed, pushes immediately)
+- Resolve epic key from story key (e.g., story `1-2-user-auth` → `epic-1`)
+- Ensure epic branch exists: `feature/{epic-key}` (created from `develop` or `main` if missing)
+- Create/checkout story branch: `feature/{epic-key}-{story-key}` (from epic branch, push immediately)
+- Store `epic_key`, `epic_branch`, `story_branch` in session for Steps 4-6
 
 **[4] Implementation Loop (repeating per task)** — Continue as Amelia (Developer)
-  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.xml`
+  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.yaml`
   → Pass to engine: `_bmad/bmm/workflows/4-implementation/dev-story/workflow.yaml`
   → Amelia implements task per dev story guidance and constitutional context
   → Engine executes steps sequentially — save outputs after EACH step
   → STOP and wait for user at decision points
-  → Push implementation commits to feature branch in target repo
+  → **Auto-commit:** After each task completion, `git add -A && commit && push` to story branch
+  → Commit format: `feat({story-key}): {task-description}`
+  → When ALL story tasks are complete: set story to `review` and hand off to code review (no PR yet)
 
 **[5] Code Review (per task, constitution-aware)** — Switch to Quinn (QA) persona: `_bmad/bmm/agents/qa.md`
-  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.xml`
+  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.yaml`
   → Pass to engine: `_bmad/bmm/workflows/4-implementation/code-review/workflow.yaml`
   → Adversarial review against: story acceptance criteria, constitutional rules, architecture decisions
+  → **Default mode:** auto-fix + auto-rerun review (no decision prompt)
+  → **Auto-fix severities:** `CRITICAL,HIGH,MEDIUM`
+  → **Max passes:** `2`; unresolved issues after max passes become `needs_manual` follow-ups
   → FAIL blocks the task (not the whole story)
   → WARN records in review-log but allows continuation
+  → **Hard gate:** PR opens only when review outcome is `passed`/`fixed` and no unresolved follow-ups remain
+  → If review returns `needs_manual`, fix items first and rerun review before PR
+  → If PR auto-create fails, emit manual `gh pr create` fallback command (no auto-merge)
   → After review: switch back to Amelia for next task
 
 **[6] Epic Completion Check**
@@ -101,7 +112,7 @@ Sub-workflows [4], [5], and [7] use YAML-based workflow.yaml files with the work
   → Epic teardown participants: Winston (Arch) `_bmad/bmm/agents/architect.md`, Mary (Analyst) `_bmad/bmm/agents/analyst.md`, Quinn (QA) `_bmad/bmm/agents/qa.md`
 
 **[7] Retrospective** — Switch to Bob (Scrum Master) persona: `_bmad/bmm/agents/sm.md`
-  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.xml`
+  → Load workflow engine FIRST: `_bmad/core/tasks/workflow.yaml`
   → Pass to engine: `_bmad/bmm/workflows/4-implementation/retrospective/workflow.yaml`
   → Bob conducts sprint retrospective
   → Output: `retro.md` documenting what worked, what didn't, action items
@@ -120,8 +131,12 @@ Sub-workflows [4], [5], and [7] use YAML-based workflow.yaml files with the work
 
 **Branch lifecycle:**
 - BMAD branch: `{initiative_root}-dev` (stays on this throughout the dev phase)
-- TARGET branch: `{repo-feature-branch}` in `TargetProjects/{repo}/` (implementation lives here)
-- END: PR from target feature branch → target repo main; dev phase branch updated with any BMAD artifacts
+- TARGET epic branch: `feature/{epic-key}` in `TargetProjects/{repo}/` (parent for all story branches)
+- TARGET story branch: `feature/{epic-key}-{story-key}` in `TargetProjects/{repo}/` (implementation lives here)
+- Task auto-commit: every completed task is committed+pushed to story branch immediately
+- Story auto-PR: only after code review passes and review follow-ups are resolved, PR from `feature/{epic-key}-{story-key}` → `feature/{epic-key}`
+- Epic auto-PR: when all stories done and merged, PR from `feature/{epic-key}` → `develop`
+- END: dev phase branch updated with any BMAD artifacts
 
 **Phase completion:**
 - All stories in sprint complete

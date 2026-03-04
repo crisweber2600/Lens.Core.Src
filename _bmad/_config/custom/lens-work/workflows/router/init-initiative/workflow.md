@@ -67,13 +67,44 @@ fi
 git fetch origin main
 ```
 
+### 0-pre. Batch Context Pre-Load (Parallel)
+
+```yaml
+# OPTIMIZATION: Load all context files in a single parallel batch BEFORE
+# the conditional Steps 0a/0b/0c. Each step then uses already-loaded data
+# instead of making separate sequential file-read tool calls.
+
+parallel:
+  - load_profile:
+      path: "_bmad-output/lens-work/personal/profile.yaml"
+      store: profile_raw           # Used by Step 0c — no separate load needed
+
+  - scan_domain_files:
+      glob: "_bmad-output/lens-work/initiatives/*/Domain.yaml"
+      store: domain_yaml_files     # Used by Step 0a (service-layer)
+
+  - scan_service_files:
+      glob: "_bmad-output/lens-work/initiatives/*/*/Service.yaml"
+      store: service_yaml_files    # Used by Step 0b (feature-layer)
+
+  - load_state:
+      path: "_bmad-output/lens-work/state.yaml"
+      store: state                 # Used by Steps 0a/0b for active_initiative check
+
+# All four results are now available in memory for Steps 0a, 0b, and 0c.
+# Steps proceed with cached values — no additional file reads are needed.
+```
+
+---
+
 ### 0a. Load Parent Domain Context (Service-Layer)
 
 ${if layer == "service"}
 ```yaml
 # Service-layer MUST have a parent domain initiative.
 # Strategy: try active_initiative first, then auto-discover, only error if zero domains exist.
-state = load("bmad.lens.release/_bmad-output/lens-work/state.yaml")
+# NOTE: state and domain_yaml_files are already loaded from Step 0-pre (Batch Context Pre-Load).
+# No additional file reads needed here.
 
 domain_config = null
 
@@ -85,9 +116,9 @@ if state.active_initiative != null:
     if candidate.layer == "domain":
       domain_config = candidate
 
-# Attempt 2: Auto-discover domains by scanning initiatives/*/Domain.yaml
+# Attempt 2: Auto-discover domains using pre-loaded domain_yaml_files scan
 if domain_config == null:
-  domain_yaml_files = glob("bmad.lens.release/_bmad-output/lens-work/initiatives/*/Domain.yaml")
+  # domain_yaml_files already populated by Step 0-pre parallel scan
   if domain_yaml_files.length == 0:
     error: "No domain found. Create a domain first with /new-domain."
     exit: 1
@@ -127,7 +158,8 @@ ${if layer == "feature"}
 ```yaml
 # Feature-layer: needs a parent context (service OR domain).
 # Strategy: check active_initiative, then auto-discover, only error if zero parents exist.
-state = load("bmad.lens.release/_bmad-output/lens-work/state.yaml")
+# NOTE: state, domain_yaml_files, and service_yaml_files are already loaded from Step 0-pre.
+# No additional file reads are needed for the initial discovery.
 
 parent_config = null
 parent_layer = null
@@ -151,10 +183,9 @@ if state.active_initiative != null:
         parent_config = candidate
         parent_layer = "domain"
 
-# Attempt 2: Auto-discover by scanning initiatives/
+# Attempt 2: Auto-discover using pre-loaded service_yaml_files and domain_yaml_files from Step 0-pre
 if parent_config == null:
-  service_yaml_files = glob("bmad.lens.release/_bmad-output/lens-work/initiatives/*/*/Service.yaml")
-  domain_yaml_files = glob("bmad.lens.release/_bmad-output/lens-work/initiatives/*/Domain.yaml")
+  # service_yaml_files and domain_yaml_files already populated by Step 0-pre parallel scan
 
   all_parents = []
   for file in service_yaml_files:
@@ -210,12 +241,11 @@ ${endif}
 ### 0c. Load User Profile Preferences  # REQ-2, REQ-3
 
 ```yaml
-# Load user profile to source default preferences.
-# Profile preferences act as defaults — can be overridden per-initiative.
-profile_path = "bmad.lens.release/_bmad-output/lens-work/personal/profile.yaml"
+# Use pre-loaded profile data from Step 0-pre (no additional file read needed).
+# profile_raw was already loaded in the parallel batch; extract preferences here.
 
-if exists(profile_path):
-  profile = load(profile_path)
+if profile_raw != null:
+  profile = profile_raw
   profile_question_mode = profile.preferences.question_mode || "interactive"   # REQ-2
   profile_tracker       = profile.preferences.tracker       || "none"          # REQ-3
 else:
@@ -329,16 +359,17 @@ Which lifecycle track for this initiative?
 **[3] Tech-Change**  — Pure technical: techplan → sprintplan
 **[4] Hotfix**       — Urgent fix: techplan only (fast to execution)
 **[5] Spike**        — Research only: preplan (no implementation)
+**[6] QuickDev**     — Rapid execution: devproposal (small → base, parity verification)
 
 Default: full   (press Enter to keep)
-Select track: [1-5] (default: 1)
+Select track: [1-6] (default: 1)
 ```
 
 ```yaml
 # Load lifecycle.yaml to derive track-specific phases and audiences
 lifecycle = load("_bmad/_config/custom/lens-work/lifecycle.yaml")
 
-track_map = {1: "full", 2: "feature", 3: "tech-change", 4: "hotfix", 5: "spike"}
+track_map = {1: "full", 2: "feature", 3: "tech-change", 4: "hotfix", 5: "spike", 6: "quickdev"}
 track = track_map[selection] || "full"
 
 # Derive active phases and audiences from lifecycle contract
@@ -413,13 +444,19 @@ elif response == "edit":
 ### 2. Generate Initiative ID
 
 ```bash
-# REQ-1, REQ-3: Jira ticket prompt for feature-layer when tracker=jira
-jira_ticket=""
-if [ "${layer}" == "feature" ] && [ "${tracker}" == "jira" ]; then
-  # REQ-3: Prompt for optional Jira ticket ID
-  ask: "Jira ticket (optional, e.g., BMAD-123):"
+# REQ-1, REQ-3: Work-item tracker prompt for feature-layer when tracker != "none"
+tracker_id=""
+if [ "${layer}" == "feature" ] && [ "${tracker}" != "none" ]; then
+  # REQ-3: Prompt for work-item ID from the configured tracker
+  if [ "${tracker}" == "jira" ]; then
+    ask: "Jira ticket ID (e.g., BMAD-123):"
+  elif [ "${tracker}" == "azure-devops" ]; then
+    ask: "Azure DevOps work item ID (e.g., 12345 or AB#12345):"
+  else
+    ask: "Work item ID from your tracker:"
+  fi
   if [ -n "${answer}" ]; then
-    jira_ticket="${answer}"  # REQ-3: Store raw Jira ticket ID
+    tracker_id="${answer}"  # REQ-3: Store raw work-item ID
   fi
 fi
 
@@ -436,9 +473,9 @@ elif [ "${layer}" == "service" ]; then
 elif [ "${layer}" == "feature" ]; then
   # REQ-1: Feature ID = sanitized name only (no random suffix)
   sanitized_name=$(echo "${initiative_name}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | sed 's/[^a-z0-9-]//g' | sed 's/-\+/-/g' | sed 's/^-//;s/-$//')
-  # REQ-1, REQ-3: Prepend Jira ticket ID if provided
-  if [ -n "${jira_ticket}" ]; then
-    initiative_id="${jira_ticket}-${sanitized_name}"  # e.g., BMAD-123-onboarding-enhancements
+  # REQ-1, REQ-3: Prepend work-item ID if provided (from any tracker)
+  if [ -n "${tracker_id}" ]; then
+    initiative_id="${tracker_id}-${sanitized_name}"  # e.g., BMAD-123-onboarding-enhancements or 12345-onboarding-enhancements
   else
     initiative_id="${sanitized_name}"
   fi
@@ -736,7 +773,7 @@ domain_prefix: ${domain_prefix}
 service: ${service}
 service_prefix: ${service_prefix}
 question_mode: ${question_mode}
-jira_ticket: ${jira_ticket || ""}          # REQ-1, REQ-3: Jira ticket ID (feature-layer, tracker=jira)
+tracker_id: ${tracker_id || ""}            # REQ-1, REQ-3: Work-item ID (feature-layer, any tracker)
 created_at: "${ISO_TIMESTAMP}"
 created_by: ${profile.name}  # From profile.yaml (loaded in Step 0c)
 target_repos:

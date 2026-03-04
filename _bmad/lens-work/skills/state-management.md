@@ -242,9 +242,9 @@ if state.current_phase not in canonical_phases:
     └── Legacy numbered phases (p1-p6) are not valid in v2
 
 # 5. Validate active_track is canonical
-canonical_tracks: [null, "full", "feature", "tech-change", "hotfix", "spike"]
+canonical_tracks: [null, "full", "feature", "tech-change", "hotfix", "spike", "quickdev"]
 if state.active_track not in canonical_tracks:
-  error: "Invalid track: '${state.active_track}'. Allowed: full, feature, tech-change, hotfix, spike"
+  error: "Invalid track: '${state.active_track}'. Allowed: full, feature, tech-change, hotfix, spike, quickdev"
 
 # 6. Validate workflow_status
 valid_statuses: ["idle", "running", "error", "in_progress", "ready", "complete", "pr_pending"]
@@ -588,7 +588,7 @@ if config.id != initiative_id:
   exit: 1
 
 # 6. Validate track is canonical
-canonical_tracks: ["full", "feature", "tech-change", "hotfix", "spike"]
+canonical_tracks: ["full", "feature", "tech-change", "hotfix", "spike", "quickdev"]
 if config.track not in canonical_tracks:
   error: "Invalid track in initiative config: '${config.track}'"
   exit: 1
