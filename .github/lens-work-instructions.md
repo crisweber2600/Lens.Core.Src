@@ -73,6 +73,18 @@ date: {today}
 
 A BMAD control repo orchestrates planning, discovery, and lifecycle management for multiple target projects using the BMAD Method v6 framework. The control repo dogfoods its own tooling through the lens-work module.
 
+**Three-repo deployment model:**
+
+| Local path | Source repo | Tracked branch | Purpose |
+|---|---|---|---|
+| `bmad.lens.release/` | bmad.lens.release | `release/*` (e.g. `release/4.5`) | Module source — workflows, agents, skills, lifecycle, installer |
+| `.github/` | bmad.lens.copilot | `main` | IDE integration — Copilot agents, prompts, instructions |
+| _(root)_ | _(control repo)_ | _(varies)_ | User workspace — state, initiatives, target projects |
+
+Both `bmad.lens.release/` and `.github/` are **gitignored local clones** (not committed to the control repo). The background preflight (step 4c) checks if they are behind their tracked remote branch and offers to update them. Branch tracking is configured in `_bmad-output/lens-work/governance-setup.yaml` under `source_repos:`.
+
+> **Updating source clones:** When the preflight detects new commits, it prompts `[U] Update now`. This runs `git merge --ff-only` on each clone and re-runs the module installer to refresh deployed prompts and instructions. The `SetupRepo.prompt.md` in each control repo should reference the governance-setup branch value rather than hardcoding a release branch.
+
 **Typical structure:**
 
 ```
@@ -88,7 +100,8 @@ A BMAD control repo orchestrates planning, discovery, and lifecycle management f
 │   ├── tea/                  ← Test Engineering Academy
 │   └── lens-work/            ← LENS Workbench (INSTALLED from source)
 ├── _bmad-output/             ← Runtime state, logs, planning artifacts
-├── .github/agents/           ← Copilot Chat agent stubs
+├── bmad.lens.release/        ← Gitignored clone of module source (see table above)
+├── .github/agents/           ← Copilot Chat agent stubs (from bmad.lens.copilot)
 ├── .github/prompts/          ← Reusable prompt files
 ├── TargetProjects/           ← Cloned repos managed by lens-work
 │   ├── {DOMAIN}/{SERVICE}/   ← Domain-organized projects

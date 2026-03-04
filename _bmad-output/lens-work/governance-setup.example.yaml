@@ -56,3 +56,51 @@ sync:
   # Set to 0 to disable automatic pulls (manual sync only).
   # Default: 900 (15 minutes)
   ttl: 900
+
+# ---------------------------------------------------------------
+# Source Repository Tracking
+# ---------------------------------------------------------------
+# Tracks the bmad.lens.release and bmad.lens.copilot clones that
+# provide module code and IDE integration to this control repo.
+# The background preflight uses these to detect when your local
+# clones are behind their remote branches and offers to update.
+#
+# Adjust the branch values to match your release channel.
+# Common branches:
+#   lens_release: release/4.5, release/5.0, main (bleeding edge)
+#   lens_copilot: main
+
+source_repos:
+  lens_release:
+    # Local clone path relative to control repo root
+    local_path: bmad.lens.release
+
+    # Git remote URL (HTTPS or SSH)
+    remote_url: https://github.com/my-org/bmad.lens.release
+
+    # Branch to track for updates
+    branch: release/4.5
+
+    # Must be "module-source"
+    role: module-source
+
+  lens_copilot:
+    # Local clone path — typically .github/ for Copilot integration
+    local_path: .github
+
+    # Git remote URL (HTTPS or SSH)
+    remote_url: https://github.com/my-org/bmad.lens.copilot
+
+    # Branch to track for updates
+    branch: main
+
+    # Must be "ide-integration"
+    role: ide-integration
+
+# Source sync settings
+source_sync:
+  # How often (seconds) to check source repos for updates.
+  # Less frequent than governance since module updates are rarer.
+  # Set to 0 to disable automatic checks (manual only).
+  # Default: 3600 (1 hour)
+  ttl: 3600
