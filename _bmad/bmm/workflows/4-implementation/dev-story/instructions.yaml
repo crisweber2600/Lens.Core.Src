@@ -27,10 +27,17 @@
       <action>Read ALL lines from beginning to end - do not skip any content</action>
       <action>Parse the development_status section completely to understand story order</action>
 
+      <!-- Multi-dev claim awareness: resolve current developer identity -->
+      <action>Load developer profile if exists: _bmad-output/lens-work/personal/profile.yaml</action>
+      <action>Set {{current_dev_name}} = profile.name || profile.user_name || git config user.name || "unknown"</action>
+
       <action>Find the FIRST story (by reading in order from top to bottom) where:
         - Key matches pattern: number-number-name (e.g., "1-2-user-auth")
         - NOT an epic key (epic-X) or retrospective (epic-X-retrospective)
-        - Status value equals "ready-for-dev"
+        - Status value equals "ready-for-dev" (simple string) or .status == "ready-for-dev" (extended object)
+        - AND (assigned_to is empty/not set, OR assigned_to matches {{current_dev_name}})
+        NOTE: Sprint-status entries may be simple strings or extended objects.
+        Handle both formats. Skip stories claimed by other developers.
       </action>
 
       <check if="no ready-for-dev or in-progress story found">
@@ -191,12 +198,35 @@
     <check if="{{sprint_status}} file exists">
       <action>Load the FULL file: {{sprint_status}}</action>
       <action>Read all development_status entries to find {{story_key}}</action>
-      <action>Get current status value for development_status[{{story_key}}]</action>
+      <action>Get current status value for development_status[{{story_key}}]
+        NOTE: Entry may be a simple string or extended object { status, assigned_to, claimed_at }.
+        Parse accordingly.
+      </action>
+
+      <!-- Multi-dev claim guard: warn if story is claimed by a different developer -->
+      <action>Extract assigned_to from the entry (empty if simple string or not set)</action>
+      <check if="assigned_to is not empty AND assigned_to != {{current_dev_name}}">
+        <output>⚠️ **Claim Conflict Detected**
+          Story {{story_key}} is claimed by **{{assigned_to}}** (claimed at {{claimed_at}}).
+          You are **{{current_dev_name}}**.
+
+          This may indicate another developer is already working on this story.
+          Starting work will reassign the story to you.
+        </output>
+        <ask>Override claim and proceed? [Y]es / [N]o</ask>
+        <check if="user chooses 'N'">
+          <output>⛔ Aborting — story {{story_key}} remains assigned to {{assigned_to}}</output>
+          <action>HALT</action>
+        </check>
+      </check>
 
       <check if="current status == 'ready-for-dev' OR review_continuation == true">
-        <action>Update the story in the sprint status report to = "in-progress"</action>
+        <action>Update the story in sprint-status to extended format:
+          { status: "in-progress", assigned_to: "{{current_dev_name}}", claimed_at: "{{ISO_TIMESTAMP}}" }
+        </action>
         <output>🚀 Starting work on story {{story_key}}
           Status updated: ready-for-dev → in-progress
+          Assigned to: {{current_dev_name}}
         </output>
       </check>
 
