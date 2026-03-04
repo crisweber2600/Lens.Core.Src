@@ -64,7 +64,7 @@ header metadata for bi-directional linkage:
 # Story {{epic_num}}.{{story_num}}: {{story_title}}
 
 Status: ready-for-dev
-ADO Work Item: {{ado_work_item_id}}
+Work Item ID: {{ado_work_item_id}}
 ```
 
 This ID enables:
@@ -175,11 +175,12 @@ if tracker == "azure-devops" AND ado_work_item_id is not empty AND story_pr_url:
 ADO integration requires the following fields in `profile.yaml` (set during onboarding):
 
 ```yaml
-tracker: azure-devops
-ado_organization: "my-org"        # ADO organization name
-ado_project: "my-project"        # ADO project name
-ado_area_path: ""                # Optional: area path for work items
-ado_iteration_path: ""           # Optional: iteration path for sprint mapping
+preferences:
+  tracker: azure-devops
+  ado_organization: "my-org"        # ADO organization name
+  ado_project: "my-project"        # ADO project name
+  ado_area_path: ""                # Optional: area path for work items
+  ado_iteration_path: ""           # Optional: iteration path for sprint mapping
 ```
 
 ---
