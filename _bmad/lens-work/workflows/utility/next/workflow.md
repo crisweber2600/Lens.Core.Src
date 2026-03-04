@@ -210,9 +210,10 @@ if phase_status == "pr_pending":
   run: git fetch origin ${audience_branch} ${phase_branch} 2>/dev/null || true
   
   # Check if phase branch is ancestor of audience branch (PR merged)
-  pr_merged = run: git merge-base --is-ancestor origin/${phase_branch} origin/${audience_branch} 2>/dev/null
+  pr_merge_check = git-orchestration.exec:
+    cmd: git merge-base --is-ancestor origin/${phase_branch} origin/${audience_branch} 2>/dev/null
   
-  if pr_merged == true:
+  if pr_merge_check.exit_code == 0:
     # PR was merged — update state and allow advancement
     initiative.phase_status[current_phase] = "complete"
     state.phase_status[current_phase] = "complete"
