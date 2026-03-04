@@ -41,7 +41,7 @@ Load config from `bmad.lens.release/_bmad/bmm/bmadconfig.yaml` and resolve:
 
 - `quick_spec_workflow` = `bmad.lens.release/_bmad/bmm/workflows/bmad-quick-flow/quick-spec/workflow.md`
 - `party_mode_exec` = `bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md`
-- `advanced_elicitation` = `bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.xml`
+- `advanced_elicitation` = `bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml`
 
 ---
 

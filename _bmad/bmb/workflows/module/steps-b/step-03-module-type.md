@@ -4,7 +4,7 @@ description: 'EARLY decision: Standalone, Extension, or Global module?'
 
 nextStepFile: './step-04-vision.md'
 moduleStandardsFile: '../data/module-standards.md'
-advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.xml'
+advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.yaml'
 partyModeWorkflow: '../../../../core/workflows/party-mode/workflow.md'
 ---
 

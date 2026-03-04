@@ -3,7 +3,7 @@ name: 'step-12-creative'
 description: 'Creative features — easter eggs, lore, delightful touches'
 
 nextStepFile: './step-13-review.md'
-advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.xml'
+advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.yaml'
 partyModeWorkflow: '../../../../core/workflows/party-mode/workflow.md'
 ---
 

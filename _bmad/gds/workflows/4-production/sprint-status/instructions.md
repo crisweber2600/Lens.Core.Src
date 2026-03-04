@@ -1,6 +1,6 @@
 # Sprint Status - Multi-Mode Service
 
-<critical>The workflow execution engine is governed by: bmad.lens.release/_bmad/core/tasks/workflow.xml</critical>
+<critical>The workflow execution engine is governed by: bmad.lens.release/_bmad/core/tasks/workflow.yaml</critical>
 <critical>You MUST have already loaded and processed: bmad.lens.release/_bmad/gds/workflows/4-production/sprint-status/workflow.yaml</critical>
 <critical>Modes: interactive (default), validate, data</critical>
 <critical>⚠️ ABSOLUTELY NO TIME ESTIMATES. Do NOT mention hours, days, weeks, or timelines.</critical>

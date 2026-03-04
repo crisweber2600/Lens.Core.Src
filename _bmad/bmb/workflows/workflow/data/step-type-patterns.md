@@ -119,7 +119,7 @@ workflowFile: '{workflow_path}/workflow.md'
 name: 'step-[N]-[name]'
 nextStepFile: './step-[N+1]-[name].md'
 outputFile: '{output_folder}/[output].md'
-advancedElicitationTask: '{project-root}/.../advanced-elicitation/workflow.xml'
+advancedElicitationTask: '{project-root}/.../advanced-elicitation/workflow.yaml'
 partyModeWorkflow: '{project-root}/.../party-mode/workflow.md'
 ---
 ```

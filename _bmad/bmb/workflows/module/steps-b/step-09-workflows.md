@@ -3,7 +3,7 @@ name: 'step-09-workflows'
 description: 'Workflow ecosystem — brainstorm what workflows could exist'
 
 nextStepFile: './step-10-tools.md'
-advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.xml'
+advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.yaml'
 partyModeWorkflow: '../../../../core/workflows/party-mode/workflow.md'
 ---
 

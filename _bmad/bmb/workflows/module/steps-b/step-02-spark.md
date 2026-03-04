@@ -4,7 +4,7 @@ description: 'Ignite the idea, explore problem space, what excites them'
 
 nextStepFile: './step-03-module-type.md'
 moduleStandardsFile: '../data/module-standards.md'
-advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.xml'
+advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.yaml'
 partyModeWorkflow: '../../../../core/workflows/party-mode/workflow.md'
 ---
 

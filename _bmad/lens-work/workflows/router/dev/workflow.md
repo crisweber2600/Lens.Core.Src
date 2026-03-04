@@ -331,7 +331,7 @@ output: |
 
 **⚠️ CRITICAL — Workflow Engine Rules:**
 Code review and retrospective use YAML-based workflow.yaml files with the workflow engine.
-- Load `_bmad/core/tasks/workflow.xml` FIRST as the execution engine
+- Load `_bmad/core/tasks/workflow.yaml` FIRST as the execution engine
 - Pass the `workflow.yaml` path to the engine
 - Follow engine instructions precisely — execute steps sequentially
 - Save outputs after completing EACH engine step (never batch)
@@ -353,14 +353,14 @@ params:
   workflow_name: code-review
 
 # RESOLVED: bmm.code-review → Load workflow engine then execute YAML workflow:
-#   1. Load engine: _bmad/core/tasks/workflow.xml
+#   1. Load engine: _bmad/core/tasks/workflow.yaml
 #   2. Pass config: _bmad/bmm/workflows/4-implementation/code-review/workflow.yaml
 # Agent persona: Quinn (QA) — load and adopt _bmad/bmm/agents/qa.md
 # BMM code-review is explicitly adversarial and must challenge implementation claims
 # Engine executes steps sequentially — save outputs after EACH step
 # STOP and wait for user at decision points
 agent_persona: "_bmad/bmm/agents/qa.md"
-load_engine: "_bmad/core/tasks/workflow.xml"
+load_engine: "_bmad/core/tasks/workflow.yaml"
 execute_workflow: "_bmad/bmm/workflows/4-implementation/code-review/workflow.yaml"
 params:
   target_repo: "${target_path}"
@@ -458,12 +458,12 @@ if yes:
     workflow_name: retro
 
   # RESOLVED: bmm.retrospective → Load workflow engine then execute YAML workflow:
-  #   1. Load engine: _bmad/core/tasks/workflow.xml
+  #   1. Load engine: _bmad/core/tasks/workflow.yaml
   #   2. Pass config: _bmad/bmm/workflows/4-implementation/retrospective/workflow.yaml
   # Agent persona: Switch to Bob (Scrum Master) — load and adopt _bmad/bmm/agents/sm.md
   # Engine executes steps sequentially — save outputs after EACH step
   agent_persona: "_bmad/bmm/agents/sm.md"
-  load_engine: "_bmad/core/tasks/workflow.xml"
+  load_engine: "_bmad/core/tasks/workflow.yaml"
   execute_workflow: "_bmad/bmm/workflows/4-implementation/retrospective/workflow.yaml"
   params:
     constitutional_context: ${constitutional_context}

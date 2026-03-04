@@ -5,7 +5,7 @@ main_config: 'bmad.lens.release/_bmad/gds/bmadconfig.yaml'
 web_bundle: true
 
 # Checkpoint handler paths
-advanced_elicitation: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.xml'
+advanced_elicitation: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
 party_mode_exec: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 quick_dev_workflow: 'bmad.lens.release/_bmad/gds/workflows/gds-quick-flow/quick-dev/workflow.md'
 ---
