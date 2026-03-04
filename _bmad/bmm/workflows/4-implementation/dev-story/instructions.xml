@@ -401,6 +401,7 @@
     </action>
 
     <output>💡 **Tip:** For best results, run `code-review` using a **different** LLM than the one that implemented this story.</output>
+    <output>⛔ **MANDATORY:** If this story is being executed within a parent `/dev` workflow, the agent MUST halt after this step. Do NOT auto-advance to code review. Wait for the user to signal `@lens done`.</output>
     <check if="{sprint_status} file exists">
       <action>Suggest checking {sprint_status} to see project progress</action>
     </check>

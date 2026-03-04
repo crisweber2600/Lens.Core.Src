@@ -312,6 +312,21 @@ You're now working in: ${target_path}
 - `@lens help` — Show available commands
 ```
 
+⛔ **MANDATORY HALT — Implementation Boundary**
+**The agent MUST stop here after displaying implementation guidance.**
+**Do NOT proceed to Step 5 until the user signals `@lens done`.**
+
+```yaml
+# ⛔ MANDATORY HALT — Step 4 is complete
+halt: true
+wait_for: "@lens done"
+output: |
+  ⛔ IMPLEMENTATION COMPLETE — Awaiting @lens done
+  ├── All story tasks are ready for implementation
+  ├── Implement in the target repo, commit frequently
+  └── Signal @lens done when implementation is complete to proceed to code review (Step 5)
+```
+
 ### 5. Adversarial Code Review + Constitutional Gates (when signaled)
 
 **⚠️ CRITICAL — Workflow Engine Rules:**
@@ -324,6 +339,15 @@ Code review and retrospective use YAML-based workflow.yaml files with the workfl
 
 ```yaml
 # User signals: @lens done
+
+# Pre-condition gate: verify story is ready for review
+story_check = load(${dev_story_path})
+story_status_check = story_check.status || story_check.Status || "unknown"
+if story_status_check not in ["review", "in-progress", "implementing"]:
+  error: |
+    ⛔ Code review blocked — story status is "${story_status_check}", not ready for review.
+    Complete implementation and signal @lens done before proceeding.
+  halt: true
 invoke: git-orchestration.start-workflow
 params:
   workflow_name: code-review
