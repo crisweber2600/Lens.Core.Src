@@ -29,12 +29,18 @@ This is a **productivity shortcut** that eliminates the two-step pattern of:
 | No active initiative | Prompt for `#new-domain`, `#new-service`, or `#new-feature` |
 | Phase in progress | Continue current phase workflow |
 | Dev phase with stories in `review` | Continue `/dev` to complete review/fix cycle before PR progression |
+| Phase PR pending (not merged) | **STOP** — require PR merge before advancing |
+| Phase PR merged (detected) | Update status to `complete`, continue to next action |
 | Phase complete, more phases in track | Start next phase in sequence |
-| All small-audience phases complete | Promote to medium (`@lens promote`) |
+| All small-audience phases complete | Promote to medium (`@lens promote`) — requires all phase PRs merged |
 | Medium audience approved | Promote to large |
 | Large audience approved | Promote to base |
 | Base approved, no blocks | Start development phase (`/dev`) |
 | Active blocks | Display blocks and suggest resolution |
+
+> **PR Gate:** When a phase completes, a PR is created and `/next` will NOT advance
+> until that PR is merged. This is a hard gate — no bypass. The workflow checks
+> `git merge-base --is-ancestor` on each `/next` invocation to detect merged PRs.
 
 **Example Flows:**
 
@@ -44,8 +50,11 @@ User: @lens next
 [No initiative]
 → Creates new initiative prompt
 
-[preplan complete, businessplan in track]
-→ Executes /businessplan
+[preplan complete, PR pending]
+→ 🔒 PR merge required — merge the preplan PR first
+
+[preplan PR merged]
+→ Updates status to complete, starts /businessplan
 
 [all small phases complete]
 → Executes @lens promote (small→medium)

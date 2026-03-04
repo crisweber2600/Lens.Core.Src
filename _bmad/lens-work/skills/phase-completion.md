@@ -128,41 +128,41 @@ For each sub_workflow defined in lifecycle.yaml:
 
 ---
 
-## Part 3: Auto-Advance
+## Part 3: Stop and Inform (PR Gate)
+
+> **Important:** This skill does NOT auto-advance to the next phase. The `/next` workflow
+> is the sole authority for phase transitions. After creating the PR and updating state,
+> this skill stops and instructs the user to merge the PR before running `/next` again.
 
 ### Procedure
 
-1. Read auto-advance configuration from `_bmad/lens-work/lifecycle.yaml`:
-   ```yaml
-   auto_advance_to = lifecycle.phases[current_phase].auto_advance_to
-   auto_advance_promote = lifecycle.phases[current_phase].auto_advance_promote
+1. After Parts 1-2 complete (PR created, state set to `pr_pending`), output the stop message:
+
+   ```
+   ✅ Phase {current_phase} complete — PR created!
+
+   🔒 A PR has been created to merge the phase branch into the audience branch.
+   You MUST merge this PR before /next will advance to the next phase.
+
+   Phase branch: {phase_branch}
+   Target branch: {audience_branch}
+
+   Next steps:
+   ├── Review and merge the PR
+   └── Then run @lens next to continue
+
+   To check PR status:
+   └── gh pr list --head {phase_branch}
    ```
 
-2. **If `auto_advance_promote` is `true`:**
-   - Execute audience promotion FIRST: `@lens promote`
-   - This merges the audience branch up to the next audience tier
-   - Wait for promotion to complete before proceeding
-
-3. **Execute the auto-advance command:**
-   - Run the `auto_advance_to` value as a lens command
-   - Example: if `auto_advance_to: /businessplan`, execute `/businessplan`
-
-### Auto-Advance Reference Table
-
-| Phase | auto_advance_to | auto_advance_promote | Effect |
-|-------|----------------|---------------------|--------|
-| preplan | `/businessplan` | `false` | Same audience — directly start businessplan |
-| businessplan | `/techplan` | `false` | Same audience — directly start techplan |
-| techplan | `/devproposal` | `true` | Promote small→medium, then start devproposal |
-| devproposal | `/sprintplan` | `true` | Promote medium→large, then start sprintplan |
-| sprintplan | `/dev` | `true` | Promote large→base, then start dev |
+2. **Exit the skill.** Do NOT invoke any further commands or auto-advance.
 
 ### Edge Cases
 
-- **PR creation failed (no PAT):** Still update state to `pr_pending`, inform user to create PR manually, but proceed with auto-advance since artifacts are pushed
-- **Phase already `passed`:** Skip Parts 1-2, go directly to auto-advance
-- **Phase already `pr_pending`:** Check if PR is merged. If merged, update to `passed` and proceed to auto-advance. If not merged, inform user and wait.
-- **No `auto_advance_to` defined:** Phase is terminal — just inform user "Phase complete. Use /next to continue."
+- **PR creation failed (no PAT):** Update state to `pr_pending`, inform user to create PR manually. **Do NOT proceed** to next phase — the PR merge gate in `/next` will enforce this.
+- **Phase already `passed`:** Skip Parts 1-2. Output: "Phase already passed. Run `/next` to continue." Exit.
+- **Phase already `pr_pending`:** Skip Parts 1-2. Output: "Phase PR is still pending. Merge the PR, then run `/next` to continue." Exit.
+- **No `auto_advance_to` defined:** Phase is terminal — inform user "Phase complete. Use /next to continue."
 
 ---
 
