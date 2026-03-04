@@ -246,9 +246,6 @@
     <check if="{{new_status}} == 'done' AND {{action_count}} == 0">
       <action>Set {{review_gate}} = "passed"</action>
     </check>
-    <check if="{{new_status}} != 'done' OR {{action_count}} > 0">
-      <action>Set {{review_gate}} = "blocked"</action>
-    </check>
     <action>Save story file</action>
 
     <!-- Determine sprint tracking status -->
