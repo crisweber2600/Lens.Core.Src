@@ -282,9 +282,104 @@ if tracker_input.strip() == "1":
 elif tracker_input.strip() == "2":
   tracker = "azure-devops"
   jira_base_url = null
+  output: |
+    Azure DevOps organization name (required for MCP sync):
+    Example: my-org
+  ado_org_input = prompt_user()
+  ado_organization = ado_org_input.strip() if ado_org_input.strip() else null
+  output: |
+    Azure DevOps project name (required for MCP sync):
+    Example: my-project
+  ado_proj_input = prompt_user()
+  ado_project = ado_proj_input.strip() if ado_proj_input.strip() else null
 else:
   tracker = "none"
   jira_base_url = null
+  ado_organization = null
+  ado_project = null
+
+# REQ-SOURCE: Source repo branch configuration
+# Populate source_repos in governance-setup.yaml so the background
+# freshness preflight (step 4c) knows which branches to track.
+gov_setup_path = "_bmad-output/lens-work/governance-setup.yaml"
+if file_exists(gov_setup_path):
+  gov_setup = load_yaml(gov_setup_path)
+
+  # Only prompt if source_repos section is missing (first-time or pre-upgrade)
+  if not gov_setup.get("source_repos"):
+    output: |
+
+      **Source Repository Branches**
+
+      The BMAD system checks whether your local clones of bmad.lens.release
+      and bmad.lens.copilot (.github) are up to date.  Confirm the branches
+      you want to track for updates:
+
+    # Detect current branch from clone if it exists
+    default_release_branch = "release/4.5"
+    if dir_exists("bmad.lens.release") and is_git_repo("bmad.lens.release"):
+```
+
+```bash
+      detected=$(git -C bmad.lens.release rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+```
+
+```yaml
+      if detected:
+        default_release_branch = detected
+
+    release_branch_input = prompt_user("bmad.lens.release branch [${default_release_branch}]: ")
+    release_branch = release_branch_input.strip() if release_branch_input.strip() else default_release_branch
+
+    copilot_branch_input = prompt_user(".github (bmad.lens.copilot) branch [main]: ")
+    copilot_branch = copilot_branch_input.strip() if copilot_branch_input.strip() else "main"
+
+    # Detect remote URLs from existing clones
+    release_url = "https://github.com/crisweber2600/bmad.lens.release"
+    copilot_url = "https://github.com/crisweber2600/bmad.lens.copilot"
+    if dir_exists("bmad.lens.release") and is_git_repo("bmad.lens.release"):
+```
+
+```bash
+      detected_url=$(git -C bmad.lens.release remote get-url origin 2>/dev/null || echo "")
+```
+
+```yaml
+      if detected_url:
+        release_url = detected_url
+    if dir_exists(".github") and is_git_repo(".github"):
+```
+
+```bash
+      detected_url=$(git -C .github remote get-url origin 2>/dev/null || echo "")
+```
+
+```yaml
+      if detected_url:
+        copilot_url = detected_url
+
+    # Write source_repos and source_sync to governance-setup.yaml
+    gov_setup.source_repos = {
+      lens_release: {
+        local_path: "bmad.lens.release",
+        remote_url: release_url,
+        branch: release_branch,
+        role: "module-source"
+      },
+      lens_copilot: {
+        local_path: ".github",
+        remote_url: copilot_url,
+        branch: copilot_branch,
+        role: "ide-integration"
+      }
+    }
+    gov_setup.source_sync = { ttl: 3600 }
+    save(gov_setup, gov_setup_path)
+
+    output: |
+      ✅ Source repo tracking configured:
+        bmad.lens.release → origin/${release_branch}
+        .github (copilot)  → origin/${copilot_branch}
 
 profile = {
   name: name,
@@ -297,7 +392,9 @@ profile = {
     auto_fetch: true,
     question_mode: question_mode,  # REQ-2
     tracker: tracker,  # REQ-3
-    jira_base_url: jira_base_url if tracker == "jira" and jira_base_url else null  # REQ-3
+    jira_base_url: jira_base_url if tracker == "jira" and jira_base_url else null,  # REQ-3
+    ado_organization: ado_organization if tracker == "azure-devops" and ado_organization else null,  # ADO MCP
+    ado_project: ado_project if tracker == "azure-devops" and ado_project else null  # ADO MCP
   }
 }
 
@@ -469,6 +566,10 @@ preferences:
   question_mode: interactive  # REQ-2
   tracker: jira  # REQ-3
   jira_base_url: https://mycompany.atlassian.net  # REQ-3 (only if tracker is jira)
+  # — OR for Azure DevOps —
+  # tracker: azure-devops
+  # ado_organization: my-org      # ADO MCP (only if tracker is azure-devops)
+  # ado_project: my-project       # ADO MCP (only if tracker is azure-devops)
 ```
 
 ### GitHub PAT Environment Variables

@@ -14,44 +14,13 @@ category: utility
 
 ## Execution Sequence
 
-### 1. Load State (Two-File Architecture)
+### 1. Load State
 
 ```yaml
-# Load personal state
-state = load("_bmad-output/lens-work/state.yaml")
-
-if state == null:
-  output: |
-    📍 lens-work Status
-    
-    No active initiative.
-    
-    To start:
-    └── Run #new-domain, #new-service, or #new-feature
-  exit: 0
-
-# Detect state format (legacy single-file vs two-file)
-if state.active_initiative != null:
-  # NEW two-file format — load initiative config separately
-  initiative = load("_bmad-output/lens-work/initiatives/${state.active_initiative}.yaml")
-  if initiative == null:
-    error: "Initiative config not found: initiatives/${state.active_initiative}.yaml"
-    hint: "Run @lens migrate to convert legacy state, or check initiatives/ directory."
-    exit: 1
-else if state.initiative != null:
-  # LEGACY single-file format — use inline initiative data
-  initiative = state.initiative
-  legacy_warning: true
-  hint: "Run @lens migrate to upgrade to two-file state architecture."
-else:
-  output: |
-    📍 lens-work Status
-    
-    No active initiative found in state.
-    
-    To start:
-    └── Run #new-domain, #new-service, or #new-feature
-  exit: 0
+# Load personal state + initiative config (two-file architecture with legacy fallback)
+# Post-conditions: state, initiative, legacy_warning populated; exits cleanly if no state
+invoke: shared.load-state
+# Fragment: _bmad/lens-work/workflows/shared/load-state.fragment.md
 ```
 
 ### 2. Load Recent Events

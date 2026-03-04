@@ -5,7 +5,9 @@ description: Create new service-level initiative with service-only branch and fo
 
 Activate @lens agent and execute /new-service:
 
-**⚠️ PATH CONTEXT:** All `_bmad/` paths in this prompt are relative to the `bmad.lens.release` control repository (where this prompt file lives). Do NOT copy `_bmad/` into or resolve these paths against the user's main project repo. The agent, workflows, and skills all execute from within `bmad.lens.release/`. Only `_bmad-output/` paths are written to the user's working context.
+**⚠️ PATH CONTEXT — TWO DIRECTORIES:** This prompt operates across two directories:
+- **`_bmad/` paths** → resolve inside the `bmad.lens.release/` subdirectory (read-only source of workflows, skills, agents)
+- **`_bmad-output/` paths, git branches, commits, and state files** → resolve in the **control repo root** (the parent directory that CONTAINS `bmad.lens.release/`). ALL git operations (checkout, branch, commit, push) happen here — NEVER inside `bmad.lens.release/`.
 
 1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/new-service` command to create service initiative
@@ -24,8 +26,18 @@ Activate @lens agent and execute /new-service:
 
 **Minimal user input required:**
 - Service name (the command argument)
-- Confirm target repos (default: inherit all from Domain.yaml)
+- Target repos: inherited from Domain.yaml by default (no confirmation needed)
 - That's it — everything else is derived
+
+**No-Confirm — Show & Go:**
+After resolving service name and parent domain, display a brief summary and
+proceed immediately. Do NOT ask "Confirm?" or wait for approval.
+```
+📋 Creating service: {service_name} under {domain_name}
+   Repos: {inherited_repo_list}
+   Proceeding... (reply "edit" to change)
+```
+If the user replies "edit", pause and let them adjust repos or service name, then resume.
 
 **Process mirrors /new-domain:**
 1. Git-orchestration creates service branch ONLY (no audience/phase branches) and pushes immediately
@@ -53,14 +65,29 @@ Use `#think` before defining service boundaries or naming.
 **In-Scope Repos:** Inherited from parent Domain.yaml (or subset if specified)
 
 **Repo Onboarding:**
-After service creation, instruct the user to clone each target repo into the service folder:
+After service creation, clone each target repo into the service folder:
 ```
 git clone <repo-url> TargetProjects/{domain_prefix}/{service_prefix}/{repo_name}
 ```
 Repos must be cloned into the service's TargetProjects folder to be onboarded for discovery and planning.
 
+**Auto-Documentation (after service creation):**
+After cloning target repos, automatically generate project documentation:
+1. Load and follow `_bmad/bmm/workflows/document-project/instructions.md`
+   - Scan depth: **deep** (default — adjust if user specifies quick or exhaustive)
+   - Project root = `TargetProjects/{domain_prefix}/{service_prefix}/{repo_name}`
+   - Output to = `docs/{domain_prefix}/{service_prefix}/`
+2. Load and follow `_bmad/bmm/workflows/generate-project-context/workflow.md`
+   - Output `project-context.md` to `docs/{domain_prefix}/{service_prefix}/`
+- If `docs/{domain_prefix}/{service_prefix}/project-context.md` already exists → skip (offer re-scan only if user explicitly asks)
+- Do NOT pause or ask the user to run a separate command — execute docs inline
+
 **Note:** Service-layer does NOT create audience/phase branches.
 Feature initiatives within this service will create their own branch topology.
+
+**Auto-Advance:** After service creation and documentation, automatically execute
+`/new-feature` within this service. Load and execute `lens-work.new-feature.prompt.md`.
+Do NOT display "Run /new-feature" — just execute it.
 
 **CRITICAL — User Input Anchoring:**
 If the user provided text alongside this prompt invocation, that text IS the

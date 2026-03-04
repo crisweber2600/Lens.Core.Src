@@ -54,16 +54,21 @@ if state == null:
     error: "Invalid choice. Run @lens next again."
     exit: 1
 
-# Load initiative config
+# Load initiative config from state (two-file architecture with legacy fallback)
+# NOTE: /next has a unique null-state branch above (prompts to create initiative).
+# The initiative loading below mirrors shared.load-state.
+# Fragment: _bmad/lens-work/workflows/shared/load-state.fragment.md
 if state.active_initiative != null:
   initiative = load("_bmad-output/lens-work/initiatives/${state.active_initiative}.yaml")
   if initiative == null:
     error: "Initiative config not found: initiatives/${state.active_initiative}.yaml"
     hint: "Run @lens migrate to convert legacy state, or check initiatives/ directory."
     exit: 1
+  legacy_warning: false
 else if state.initiative != null:
   # LEGACY single-file format
   initiative = state.initiative
+  legacy_warning: true
   output: "⚠️  Legacy state detected. Consider running @lens migrate."
 else:
   # Malformed state
@@ -85,7 +90,7 @@ audiences = lifecycle.audiences  # {small, medium, large, base}
 ```yaml
 current_phase = state.current.phase_name
 current_workflow_status = state.current.workflow_status
-current_audience = determine_audience(initiative.branches.active)  # e.g., "small"
+current_audience = determine_audience(initiative.branches.active, current_phase, lifecycle)  # e.g., "small", "medium", "large", "base"
 
 # Load track to determine which phases are active
 track = initiative.track
@@ -146,6 +151,169 @@ if current_workflow_status == "in_progress":
   # Don't auto-continue — user is mid-workflow
   exit: 0
 
+# Priority 3.25: In dev phase, force review/fix cycle before broader progression
+if current_phase == "dev":
+  sprint_status = load_if_exists("_bmad-output/implementation-artifacts/sprint-status.yaml")
+  pending_review = []
+
+  if sprint_status != null and sprint_status.development_status != null:
+    for story_key, status in sprint_status.development_status:
+      # Handle both simple string and extended object formats
+      story_status = (typeof status == "string") ? status : status.status
+      if story_status == "review":
+        pending_review.push(story_key)
+
+  if pending_review.length > 0:
+    output: |
+      🔒 Review cycle required before next progression
+
+      Stories awaiting review/fix completion:
+      ${for story in pending_review}
+      - ${story}
+      ${endfor}
+
+      ▶️  Continuing /dev to complete review fixes before PR progression
+
+    invoke_command: "/dev"
+    exit: 0
+
+  # Priority 3.26: Claim mode — claim next available story without starting dev
+  # Activated by: @lens next --claim or @lens claim
+  if user_args contains "--claim" or command == "claim":
+    # Load developer profile for identity
+    profile = load_if_exists("_bmad-output/lens-work/personal/profile.yaml")
+    current_dev_name = profile.name || profile.user_name || git_config("user.name") || "unknown"
+
+    if sprint_status != null and sprint_status.development_status != null:
+      # Find first unclaimed backlog story
+      claimable_story = null
+      for story_key, status in sprint_status.development_status:
+        if story_key matches /^\d+-\d+-/ and not story_key matches /^epic-/ and not story_key matches /-retrospective$/:
+          story_status = (typeof status == "string") ? status : status.status
+          assigned_to = (typeof status == "object") ? (status.assigned_to || "") : ""
+          if story_status == "backlog" and assigned_to == "":
+            claimable_story = story_key
+            break
+
+      if claimable_story != null:
+        # Update sprint-status with claim
+        sprint_status.development_status[claimable_story] = {
+          status: "backlog",
+          assigned_to: current_dev_name,
+          claimed_at: now_iso8601()
+        }
+        save("_bmad-output/implementation-artifacts/sprint-status.yaml", sprint_status)
+
+        # Commit and push so other developers see the claim
+        invoke: git-orchestration.commit-and-push
+        params:
+          paths: ["_bmad-output/implementation-artifacts/sprint-status.yaml"]
+          message: "claim(${claimable_story}): claimed by ${current_dev_name}"
+
+        output: |
+          ✅ Story claimed successfully!
+
+          📋 **${claimable_story}** → claimed by **${current_dev_name}**
+
+          Other developers will skip this story during auto-discovery.
+
+          Next steps:
+          ├── Run `create-story` to create the story file
+          └── Or run `/dev` to start implementation (if story file exists)
+        exit: 0
+      else:
+        # Show current assignments for visibility
+        output: |
+          📋 No unclaimed backlog stories available
+
+          **Current Assignments:**
+          ${for sk, sv in sprint_status.development_status}
+          ${if sk matches /^\d+-\d+-/}
+          - ${sk}: ${typeof sv == "string" ? sv : sv.status}${typeof sv == "object" && sv.assigned_to ? " (→ " + sv.assigned_to + ")" : ""}
+          ${endif}
+          ${endfor}
+
+          Options:
+          ├── Run `create-story` with a specific epic-story number
+          └── Or check if all stories are complete
+        exit: 0
+    else:
+      output: |
+        ⚠️ No sprint-status.yaml found — cannot claim stories
+        Run sprint-planning first to generate sprint tracking.
+      exit: 0
+
+# Priority 3.5: All sub-workflows complete but phase not yet finalized
+lifecycle = load("_bmad/lens-work/lifecycle.yaml")
+sub_workflow_defs = lifecycle.phases[current_phase].sub_workflows || []
+sub_workflow_status = initiative.sub_workflows[current_phase] || {}
+all_required_done = true
+for sw in sub_workflow_defs:
+  if sw.required == true && sub_workflow_status[sw.name] != "complete":
+    all_required_done = false
+    break
+
+phase_status = initiative.phase_status[current_phase]
+if all_required_done && phase_status not in ["pr_pending", "passed", "complete"]:
+  output: |
+    ✅ All required sub-workflows for ${current_phase} are complete!
+    
+    ▶️  Loading phase-completion skill to finalize phase...
+  
+  # Load and execute phase-completion.md which handles PR, state, and stop
+  load_skill: "_bmad/lens-work/skills/phase-completion.md"
+  exit: 0
+
+# Priority 3.75: PR Merge Hard Gate
+# If the current phase has a pending PR, the user MUST merge it before /next
+# will advance to the next phase or workflow. This is a HARD gate — no bypass.
+phase_status = initiative.phase_status[current_phase]
+if phase_status == "pr_pending":
+  # Check if the PR has actually been merged by verifying branch ancestry
+  audience = determine_audience(initiative.branches.active, current_phase, lifecycle)
+  audience_branch = "${initiative.branches.root}-${audience}"
+  phase_branch = "${initiative.branches.root}-${audience}-${current_phase}"
+  
+  # Fetch latest remote state
+  run: git fetch origin ${audience_branch} ${phase_branch} 2>/dev/null || true
+  
+  # Check if phase branch is ancestor of audience branch (PR merged)
+  pr_merge_check = git-orchestration.exec:
+    cmd: git merge-base --is-ancestor origin/${phase_branch} origin/${audience_branch} 2>/dev/null
+  
+  if pr_merge_check.exit_code == 0:
+    # PR was merged — update state and allow advancement
+    initiative.phase_status[current_phase] = "complete"
+    state.phase_status[current_phase] = "complete"
+    invoke: state-management.update-initiative
+    append_event: {"ts":"ISO8601","event":"phase_pr_merged","initiative":"{id}","details":{"phase":"{current_phase}"}}
+    
+    output: |
+      ✅ PR for ${current_phase} has been merged!
+      
+      Phase status updated to complete.
+      Continuing to next action...
+    
+    # Fall through to Priority 4+ to determine next action
+  else:
+    # PR not yet merged — HARD STOP
+    output: |
+      🔒 PR Merge Required
+      
+      Phase ${current_phase} has a pending PR that must be merged before
+      /next will advance to the next phase.
+      
+      Current phase branch: ${phase_branch}
+      Target branch: ${audience_branch}
+      
+      Next steps:
+      ├── Review and merge the PR for ${current_phase}
+      └── Then run @lens next again
+      
+      To check PR status:
+      └── gh pr list --head ${phase_branch}
+    exit: 0
+
 # Priority 4: Current phase incomplete
 current_phase_index = phase_order.indexOf(current_phase)
 if current_phase_index >= 0:
@@ -170,13 +338,30 @@ if next_phase != null:
   exit: 0
 
 # Priority 6: All phases in current audience complete → promote
+# HARD GATE: All phase PRs must be merged (status == "complete") before promotion.
+# If any phase is still "pr_pending", stop and require the PR merge first.
 if current_audience == "small":
-  # Check if all active phases are complete
+  # Check if all active phases are complete (not pr_pending)
   all_complete = true
+  pr_pending_phases = []
   for phase in active_phases:
-    if state.phase_status[phase] != "complete":
+    if state.phase_status[phase] == "pr_pending":
+      pr_pending_phases.push(phase)
       all_complete = false
-      break
+    else if state.phase_status[phase] != "complete":
+      all_complete = false
+  
+  if pr_pending_phases.length > 0:
+    output: |
+      🔒 PR Merge Required Before Promotion
+      
+      The following phases have pending PRs that must be merged first:
+      ${for phase in pr_pending_phases}
+      - ${phase}
+      ${endfor}
+      
+      Merge all pending PRs, then run @lens next again.
+    exit: 0
   
   if all_complete:
     output: |
@@ -274,15 +459,27 @@ exit: 0
 ### 5. Helper Functions
 
 ```yaml
-# Determine audience from branch name
-function determine_audience(branch_name):
+# Determine audience for current phase using lifecycle contract
+# Primary: use branching_audience from lifecycle (authoritative)
+# Fallback: parse from branch name (handles legacy/manual scenarios)
+function determine_audience(branch_name, current_phase, lifecycle):
+  # 1. Check lifecycle for authoritative branching_audience
+  if current_phase != null and lifecycle != null:
+    phase_config = lifecycle.phases[current_phase]
+    if phase_config != null:
+      if phase_config.branching_audience != null:
+        return phase_config.branching_audience  # e.g., "medium" for devproposal, "large" for sprintplan
+      return phase_config.audience  # e.g., "small" for preplan/businessplan/techplan
+  
+  # 2. Fallback: parse audience from branch name
   if branch_name.includes("-small"):
     return "small"
   if branch_name.includes("-medium"):
     return "medium"
   if branch_name.includes("-large"):
     return "large"
-  if not branch_name.includes("-"):
+  # Dev phase or initiative root branch → base
+  if branch_name.endsWith("-dev") or not branch_name.includes("-"):
     return "base"
   return "unknown"
 
@@ -322,11 +519,22 @@ function find_next_phase_in_track(current_phase, active_phases, phase_order):
 1. Blocks (stop)
 2. Failed gates (stop)
 3. In-progress workflow (pause)
+3.5. All sub-workflows complete — finalize phase (phase-completion skill)
+3.75. PR merge hard gate — phase `pr_pending` blocks advancement until merged
 4. Incomplete current phase (continue)
 5. Next phase in track (advance)
-6. Audience promotion (advance)
+6. Audience promotion (advance) — also gates on all phase PRs merged
 7. Start dev (advance)
 8. Unclear state (report & exit)
+
+**PR Gate Enforcement:**
+- When a phase completes, a PR is created and `phase_status` is set to `pr_pending`
+- `/next` will NOT advance to the next phase until the PR is merged
+- On each `/next` call, Priority 3.75 checks if the PR has been merged via `git merge-base --is-ancestor`
+- If merged, status is updated to `complete` and the workflow falls through to the next priority
+- If not merged, the workflow stops with a hard gate message
+- Audience promotion (Priority 6) also requires all phase PRs to be merged
+- This prevents work on a new branch/phase without the prior PR being reviewed and merged
 
 **When NOT to Use Next:**
 - Exploring options (use `@lens ST` instead)

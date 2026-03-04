@@ -10,6 +10,34 @@ description: "Unified agent orchestrating the lens-work lifecycle engine with fi
 icon: "🔬"
 version: "2.0.0"
 
+# Auto-Advance Convention
+# When a command or phase completes successfully and the next step is deterministic,
+# auto-execute it immediately. Do NOT display "Run /X" or "Suggested next step" —
+# load and execute the target prompt.
+#
+# Exceptions (pause and wait for user):
+#  1. PR-merge gates: After @lens promote creates a PR, pause until the PR is merged.
+#     On the user's next message after merge, auto-execute the next phase.
+#  2. Interactive Q&A: When the current step requires user decisions (e.g., batch prompt
+#     in /new-initiative), collect input first, then auto-execute remaining steps.
+#  3. Ambiguous state: Multiple active initiatives, errors, or unresolvable conflicts.
+#  4. User requests stop: "just do X" or "stop after this step" — honor the boundary.
+#
+# This convention applies to ALL commands and phases. Individual prompts reinforce it
+# with specific auto-advance instructions at their end.
+auto_advance: true
+
+# No-Confirm Convention (Show & Go)
+# After collecting user input or resolving defaults, proceed immediately.
+# Do NOT ask "Confirm?" or block on approval. Instead:
+#  - Display a brief summary of resolved choices
+#  - Proceed with execution
+#  - Include "(reply 'edit' to change choices)" so the user CAN intervene if needed
+# This applies to all /new-* commands and cascade steps. Defaults (inherited repos,
+# scan depth, etc.) are used as-is without confirmation. Only pause for genuinely
+# ambiguous decisions (e.g., multiple parent domains to choose from).
+no_confirm: true
+
 # Agent Skills
 skills:
   - name: "git-orchestration"
@@ -119,12 +147,24 @@ menu:
         subPrompt: "./.github/prompts/lens-work.constitution.prompt.md"
         args: ["action"]
 
+  - groupName: "Utility"
+    commands:
+      - trigger: "adjust"
+        label: "Lightweight post-dev tweak (abbreviated review)"
+        subPrompt: "./.github/prompts/lens-work.adjust.prompt.md"
+        args: ["initiative_id"]
+
+      - trigger: "fix-story"
+        label: "Quick correction loop (Quick-Spec → Review → Quick-Dev)"
+        subPrompt: "./.github/prompts/lens-work.fix-story.prompt.md"
+        args: ["initiative_id"]
+
 # SubPrompt Registry (each references external prompt file)
 subPrompts:
   # CORE COMMANDS
   - id: "onboard"
-    title: "Implement /onboard flow (4-step)"
-    description: "Four-step onboarding: existing initiatives, concept teaching, Tier 1 commands, choose action"
+    title: "Implement /onboard flow"
+    description: "Create user profile, set up GitHub PAT, and bootstrap TargetProjects (interactive setup)"
     file: "./.github/prompts/lens-work.onboard.prompt.md"
     deprecated: false
     readFrom: "bmad.lens.release/.github/prompts/lens-work.onboard.md"
@@ -208,6 +248,21 @@ subPrompts:
     file: "./.github/prompts/lens-work.constitution.prompt.md"
     deprecated: false
     readFrom: "bmad.lens.release/.github/prompts/lens-work.constitution.md"
+
+  # UTILITY COMMANDS
+  - id: "adjust"
+    title: "Lightweight post-dev adjustment"
+    description: "Make small tweaks after dev without full ceremony (abbreviated review, advisory constitution)"
+    file: "./.github/prompts/lens-work.adjust.prompt.md"
+    deprecated: false
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.adjust.md"
+
+  - id: "fix-story"
+    title: "Quick correction loop"
+    description: "Fix a story that failed review or has defects (Quick-Spec, Review, Quick-Dev)"
+    file: "./.github/prompts/lens-work.fix-story.prompt.md"
+    deprecated: false
+    readFrom: "bmad.lens.release/.github/prompts/lens-work.fix-story.md"
 
   # FOUNDATION STORIES (Implementation Tasks)
   - id: "impl-safety-audit"

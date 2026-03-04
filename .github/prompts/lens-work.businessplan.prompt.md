@@ -5,7 +5,9 @@ description: Launch BusinessPlan phase — PRD, UX design, and architecture (Joh
 
 Activate @lens agent and execute /businessplan:
 
-**⚠️ PATH CONTEXT:** All `_bmad/` paths in this prompt are relative to the `bmad.lens.release` control repository (where this prompt file lives). Do NOT copy `_bmad/` into or resolve these paths against the user's main project repo. The agent, workflows, and skills all execute from within `bmad.lens.release/`. Only `_bmad-output/` paths are written to the user's working context.
+**⚠️ PATH CONTEXT — TWO DIRECTORIES:** This prompt operates across two directories:
+- **`_bmad/` paths** → resolve inside the `bmad.lens.release/` subdirectory (read-only source of workflows, skills, agents)
+- **`_bmad-output/` paths, git branches, commits, and state files** → resolve in the **control repo root** (the parent directory that CONTAINS `bmad.lens.release/`). ALL git operations (checkout, branch, commit, push) happen here — NEVER inside `bmad.lens.release/`.
 
 **📊 VISUAL-FIRST DOCUMENTATION:** All documents generated in this phase MUST include Mermaid diagrams per the `visual_first_documentation` convention. Load `_bmad/lens-work/skills/visual-documentation.md` before creating any document. PRD requires: user journey flow (flowchart), feature relationship diagram (flowchart or mindmap). UX Design requires: user journey flows (flowchart), component hierarchy (flowchart).
 
@@ -26,6 +28,7 @@ Use `#think` before defining product requirements or UX scope.
 - Supporting: Sally (UX Designer) — `_bmad/bmm/agents/ux-designer.md`
 - Supporting: Winston (Architect) — `_bmad/bmm/agents/architect.md`
 - Branch pattern: `{initiative_root}-small-businessplan`
+- Auto-advance: `/techplan` (promote small→medium first)
 
 **Prerequisites:**
 - `/preplan` complete: `{initiative_root}-small-preplan` PR merged into `{initiative_root}-small`
@@ -65,6 +68,10 @@ After receiving user input, execute workflows in sequence:
 
 Each workflow uses step-file architecture — halt at each step within the workflow, wait for user input.
 
+**Sub-workflow tracking:** After each sub-workflow completes successfully, immediately update
+`sub_workflows.businessplan.{name}: complete` in the initiative config (dual-write to state.yaml).
+Mark skipped optional workflows as `skipped`. This tracking persists across context compaction.
+
 **User interaction keywords:**
 - `defaults` / `best defaults` → apply defaults to current step only
 - `yolo` / `keep rolling` → auto-complete all remaining steps
@@ -82,19 +89,14 @@ Each workflow uses step-file architecture — halt at each step within the workf
 - WORK: All sub-workflow branches created from `{initiative_root}-small-businessplan`
 - END: PR from `{initiative_root}-small-businessplan` → `{initiative_root}-small`; remain on phase branch
 
-**Phase completion:**
-- Verify PAT configured: Check for `GITHUB_PAT` or `GH_ENTERPRISE_TOKEN` environment variable, or `_bmad-output/lens-work/personal/profile.yaml` has `git_credentials` for current git host
-- If PAT missing: Direct user to set `GITHUB_PAT` env var (or `GH_ENTERPRISE_TOKEN` for enterprise) or run `store-github-pat.ps1`/`store-github-pat.sh` in separate terminal, then retry
-- Push artifacts to `{initiative_root}-small-businessplan`
-- Create PR using promote-branch script: `_bmad/lens-work/scripts/promote-branch.sh -s {initiative_root}-small-businessplan -t {initiative_root}-small` (or `.ps1` on Windows)
-- Update `phase_status.businessplan: pr_pending` and `phase_status.preplan: complete` in initiative config
-- Update `state.yaml`: `current_phase: businessplan`, `workflow_status: pr_pending`
-- Append event to `event-log.jsonl`
-- Remain on phase branch (REQ-7: never auto-merge)
+**Phase completion & Auto-Advance:**
+When all required sub-workflows are complete, load and execute:
+`_bmad/lens-work/skills/phase-completion.md`
+This skill handles: sub-workflow verification, PR creation, state updates, event logging,
+and auto-advance to the next phase. It reads everything from persistent state — it does
+NOT depend on conversation context.
 
 **Output artifacts** (written to `{docs_path}/`):
 - `prd.md` (required)
 - `ux-design.md` (if UX workflow was run)
-
-**Next phase:** `/techplan` — runs after businessplan PR is merged into `{initiative_root}-small`
 ```

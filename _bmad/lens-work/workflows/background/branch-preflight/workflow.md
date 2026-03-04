@@ -196,6 +196,234 @@ if pending_write_targets_path(governance_root):
   log: "Governance repo on valid branch: ${governance_branch}"
 ```
 
+### 4c. Module Source Freshness Check
+
+Before any workflow runs, check whether the `bmad.lens.release` and `.github`
+(bmad.lens.copilot) clones are up to date with their tracked remote branches.
+This uses a TTL-based marker file (same pattern as step 4a) so the check only
+runs periodically, not on every single invocation.
+
+```yaml
+# Load source repo config from governance-setup.yaml
+gov_setup = load_yaml("_bmad-output/lens-work/governance-setup.yaml")
+source_repos = gov_setup.source_repos || null
+source_ttl = (gov_setup.source_sync || {}).ttl || 3600  # default 1 hour
+
+# Skip entirely if source_repos not configured (pre-upgrade control repos)
+if source_repos == null:
+  log: "source_repos not configured in governance-setup.yaml — skipping freshness check"
+  continue: true
+```
+
+```yaml
+# TTL gate — use a shared marker file in the control repo root
+marker_file = ".last-source-check"
+last_check_epoch = 0
+
+if file_exists(marker_file):
+  last_check_epoch = int(read_file(marker_file).strip())
+
+now_epoch = unix_timestamp()
+seconds_since_check = now_epoch - last_check_epoch
+
+# Also skip if suppressed for this session (user chose [I] earlier)
+if session_var("source_check_suppressed") == true:
+  log: "Source freshness check suppressed for this session"
+  continue: true
+
+if seconds_since_check < source_ttl and source_ttl > 0:
+  log: "Source freshness check skipped (${seconds_since_check}s < ${source_ttl}s TTL)"
+  continue: true
+
+log: "Source freshness TTL exceeded (${seconds_since_check}s >= ${source_ttl}s) — checking clones"
+```
+
+```yaml
+# Fetch and compare each source repo
+behind_repos = []
+
+for repo_key, repo_config in source_repos.items():
+  local_path = repo_config.local_path
+  branch = repo_config.branch
+  role = repo_config.role
+
+  # Skip if clone doesn't exist (not yet set up)
+  if not dir_exists(local_path) or not is_git_repo(local_path):
+    log: "Source repo ${repo_key} not found at ${local_path} — skipping"
+    continue
+```
+
+```bash
+  # Fetch the tracked branch
+  git -C "${local_path}" fetch origin "${branch}" --quiet 2>&1
+```
+
+```yaml
+  if fetch_failed:
+    # Non-fatal: network may be unavailable
+    warn: "⚠️  Could not fetch ${repo_key} from origin/${branch}. Network may be unavailable."
+    continue
+```
+
+```bash
+  # Count commits behind
+  behind_count=$(git -C "${local_path}" rev-list HEAD..origin/"${branch}" --count 2>/dev/null || echo "0")
+```
+
+```yaml
+  if int(behind_count) > 0:
+    behind_repos.append({
+      key: repo_key,
+      local_path: local_path,
+      branch: branch,
+      role: role,
+      behind: int(behind_count)
+    })
+    log: "${repo_key}: ${behind_count} commits behind origin/${branch}"
+  else:
+    log: "${repo_key}: up to date with origin/${branch}"
+```
+
+```yaml
+# If everything is current, record the check and move on
+if len(behind_repos) == 0:
+  write_file(marker_file, str(unix_timestamp()))
+  log: "All source repos up to date"
+  continue: true
+
+# Build notification message
+update_lines = []
+for repo in behind_repos:
+  label = repo.local_path
+  if repo.role == "ide-integration":
+    label = "${repo.local_path} (copilot)"
+  update_lines.append("  ${label}: ${repo.behind} commits behind origin/${repo.branch}")
+
+notify: |
+  ⚠️  Module source update available
+
+  ${join(update_lines, "\n")}
+
+  [U] Update now  [S] Skip (re-check after TTL)  [I] Ignore for this session
+
+choice = prompt_user("[U/S/I]", default="S")
+
+if choice == "U":
+  # Fall through to step 4d
+  pass
+
+elif choice == "I":
+  set_session_var("source_check_suppressed", true)
+  log: "Source freshness check suppressed for this session"
+  continue: true
+
+else:
+  # [S] or default — write marker, skip update
+  write_file(marker_file, str(unix_timestamp()))
+  log: "Source update skipped — will re-check after TTL"
+  continue: true
+```
+
+---
+
+### 4d. Module Source Update
+
+Triggered when the user selects **[U]** in step 4c. Pulls the latest changes
+for each behind repo via fast-forward merge, then re-runs the module installer
+to refresh deployed files (stubs, instructions, prompts).
+
+```yaml
+update_results = []
+
+for repo in behind_repos:
+  local_path = repo.local_path
+  branch = repo.branch
+  repo_key = repo.key
+
+  log: "Updating ${repo_key} — merging origin/${branch}..."
+```
+
+```bash
+  # Fast-forward only — diverged clones need manual intervention
+  git -C "${local_path}" merge --ff-only origin/"${branch}" --quiet 2>&1
+```
+
+```yaml
+  if merge_succeeded:
+```
+
+```bash
+    new_sha=$(git -C "${local_path}" rev-parse --short HEAD)
+```
+
+```yaml
+    log: "✓ ${repo_key} updated to ${new_sha}"
+    update_results.append({ key: repo_key, status: "updated", sha: new_sha })
+
+  else:
+    warn: |
+      ⚠️  Could not fast-forward ${repo_key} from origin/${branch}.
+      The local clone may have diverged.
+
+      To resolve manually:
+        cd ${local_path}
+        git status
+        git log --oneline HEAD..origin/${branch}
+
+      The update for this repo was skipped.  Other repos will still be updated.
+    update_results.append({ key: repo_key, status: "failed" })
+```
+
+```yaml
+# Re-run installer if bmad.lens.release was updated
+lens_release_updated = any(r.key == "lens_release" and r.status == "updated" for r in update_results)
+
+if lens_release_updated:
+  log: "Re-running module installer to refresh deployed files..."
+
+  installer_path = "bmad.lens.release/_bmad/lens-work/_module-installer/installer.js"
+
+  if file_exists(installer_path):
+```
+
+```bash
+    # Run installer in update mode — refreshes prompts and instructions
+    # even if they already exist (unlike initial install which skips existing)
+    node -e "
+      const {install} = require('./${installer_path}');
+      install({
+        projectRoot: process.cwd(),
+        config: {},
+        installedIDEs: ['github-copilot'],
+        updateMode: true,
+        logger: { log: console.log, warn: console.warn, error: console.error }
+      });
+    "
+```
+
+```yaml
+    if install_succeeded:
+      log: "✓ Module installer completed — deployed files refreshed"
+    else:
+      warn: "⚠️  Module installer encountered errors. Deployed files may be stale."
+  else:
+    warn: "⚠️  Installer not found at ${installer_path}. Deployed files were not refreshed."
+```
+
+```yaml
+# Write marker file after update attempt
+write_file(marker_file, str(unix_timestamp()))
+
+# Summary
+successful = [r for r in update_results if r.status == "updated"]
+failed = [r for r in update_results if r.status == "failed"]
+
+if len(successful) > 0:
+  log: "✓ Updated: ${', '.join(r.key for r in successful)}"
+if len(failed) > 0:
+  warn: "⚠️  Failed: ${', '.join(r.key for r in failed)} — see warnings above"
+```
+
 ### 5. Check for Uncommitted Changes
 
 ```yaml

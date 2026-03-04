@@ -210,7 +210,7 @@ Developer (post-sprintplan only)
 
 1. Validate audience promotion (large → base) complete — constitution gate passed
 2. git-orchestration: checkout TargetProjects repo (not BMAD branches)
-3. Developer implements in actual repo (GitFlow: feature/{jira-storyid})
+3. Developer implements in actual repo (GitFlow: feature/{epic-key}-{story-key})
 4. Return to BMAD directory for code review
 5. Route to code-review workflow
 6. Optional: route to retro workflow

@@ -34,12 +34,14 @@ active_track: "{full|feature|tech-change|hotfix|spike}"
 workflow_status: "{idle|running|error}"
 
 # Phase status (v2: named phases, dual-written to initiative config)
+# Values: null (not started), in_progress (phase active), pr_pending (PR created awaiting merge),
+#         passed (complete), blocked (gate failed)
 phase_status:
-  preplan: "{null|passed|blocked}"
-  businessplan: "{null|passed|blocked}"
-  techplan: "{null|passed|blocked}"
-  devproposal: "{null|passed|blocked}"
-  sprintplan: "{null|passed|blocked}"
+  preplan: "{null|in_progress|pr_pending|passed|blocked}"
+  businessplan: "{null|in_progress|pr_pending|passed|blocked}"
+  techplan: "{null|in_progress|pr_pending|passed|blocked}"
+  devproposal: "{null|in_progress|pr_pending|passed|blocked}"
+  sprintplan: "{null|in_progress|pr_pending|passed|blocked}"
 
 # Audience promotion status (v2)
 audience_status:
@@ -84,14 +86,41 @@ active_phases: [preplan, businessplan, ...]  # From lifecycle.yaml tracks[track]
 audiences: [small, medium, large, base]      # From lifecycle.yaml tracks[track].audiences
 
 # Phase status (dual-written from state.yaml)
+# Values: null | in_progress | pr_pending | passed | blocked
 phase_status:
-  preplan: "{null|passed|blocked}"
-  businessplan: "{null|passed|blocked}"
-  techplan: "{null|passed|blocked}"
-  devproposal: "{null|passed|blocked}"
-  sprintplan: "{null|passed|blocked}"
+  preplan: "{null|in_progress|pr_pending|passed|blocked}"
+  businessplan: "{null|in_progress|pr_pending|passed|blocked}"
+  techplan: "{null|in_progress|pr_pending|passed|blocked}"
+  devproposal: "{null|in_progress|pr_pending|passed|blocked}"
+  sprintplan: "{null|in_progress|pr_pending|passed|blocked}"
 
 current_phase: "{named_phase}"
+
+# Sub-workflow progress tracking (persisted per phase, dual-written)
+# Values per sub-workflow: null (not started) | skipped | in_progress | complete
+# Required sub-workflows defined in lifecycle.yaml phases.{phase}.sub_workflows
+sub_workflows:
+  preplan:
+    brainstorming: "{null|skipped|complete}"
+    research: "{null|skipped|complete}"
+    product_brief: "{null|in_progress|complete}"
+  businessplan:
+    prd_creation: "{null|in_progress|complete}"
+    prd_validation: "{null|in_progress|complete}"
+    ux_design: "{null|skipped|complete}"
+  techplan:
+    architecture_design: "{null|in_progress|complete}"
+    architecture_validation: "{null|in_progress|complete}"
+  devproposal:
+    epic_generation: "{null|in_progress|complete}"
+    epic_stress_gate: "{null|in_progress|complete}"
+    story_generation: "{null|in_progress|complete}"
+    readiness_checklist: "{null|in_progress|complete}"
+  sprintplan:
+    readiness_recheck: "{null|in_progress|complete}"
+    constitutional_compliance: "{null|in_progress|complete}"
+    sprint_planning: "{null|in_progress|complete}"
+    dev_story_creation: "{null|in_progress|complete}"
 ```
 
 ## Event Log Schema (event-log.jsonl)
@@ -118,11 +147,82 @@ current_phase: "{named_phase}"
 | `initiative_archived` | /archive runs |
 | `constitution_violation` | Governance check fails |
 | `constitution_passed` | Governance check passes |
+| `sub_workflow_start` | Sub-workflow begins within a phase |
+| `sub_workflow_complete` | Sub-workflow finishes within a phase |
+| `sub_workflow_skipped` | Optional sub-workflow deliberately skipped |
+| `phase_completion_triggered` | All required sub-workflows complete, phase-completion skill loaded |
 | `migrate_lifecycle` | v1→v2 lifecycle migration completes |
+| `story_claimed` | Developer claims a story via /next --claim or auto-discovery |
+| `claim_override` | Developer overrides another dev's claim on a story |
+
+## Multi-Developer Coordination (Sprint-Status Claims)
+
+Sprint-status.yaml supports an extended entry format for multi-developer parallel development.
+This enables multiple developers (human or AI agents) to work on different stories/epics simultaneously
+without accidentally picking the same story.
+
+### Extended Entry Format
+
+```yaml
+# Simple format (backward compatible):
+1-1-user-auth: ready-for-dev
+
+# Extended format (multi-dev coordination):
+1-1-user-auth: { status: ready-for-dev, assigned_to: "alice", claimed_at: "2026-03-04T10:00:00Z" }
+```
+
+### Field Semantics
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | Story status (backlog, ready-for-dev, in-progress, review, done) |
+| `assigned_to` | string | Developer name/handle who claimed this story (from profile.yaml → name) |
+| `claimed_at` | ISO8601 | Timestamp when the story was claimed |
+
+### Claim Rules
+
+1. **Advisory, not hard lock** — Claims prevent auto-discovery by other developers but can be overridden with confirmation
+2. **Pull before claim** — Developers MUST pull the control repo before claiming to see current assignments
+3. **Claim expiry** — Claims are considered stale after 48 hours of no commits on the story branch (no automated enforcement; honor-system)
+4. **Auto-claim on create/dev** — The `create-story` and `dev-story` workflows automatically set `assigned_to` to the current developer
+5. **Explicit claim** — Developers can claim stories without starting work via `@lens next --claim`
+6. **Conflict warning** — `dev-story` warns if a story is claimed by a different developer and requires confirmation to override
+
+### Reading Sprint-Status (Dual-Format)
+
+All workflows reading `sprint_status.development_status` entries MUST handle both formats:
+
+```yaml
+# Parse helper:
+for story_key, entry in sprint_status.development_status:
+  if typeof entry == "string":
+    status = entry
+    assigned_to = ""
+    claimed_at = ""
+  else:
+    status = entry.status
+    assigned_to = entry.assigned_to || ""
+    claimed_at = entry.claimed_at || ""
+```
+
+### Story File Front Matter
+
+Story files (`.md`) include an `Assigned To:` field in the front matter header:
+
+```markdown
+# Story 1.2: User Authentication
+
+Status: ready-for-dev
+Assigned To: alice
+Tracker: azure-devops
+Work Item ID: 12345
+```
+
+This field is set by `create-story` and can be updated by `dev-story` on claim override.
 
 ## Dual-Write Contract
 
-When `phase_status`, `current_phase`, or `audience_status` changes in state.yaml:
+When `phase_status`, `current_phase`, `audience_status`, or `sub_workflows` changes in state.yaml:
 1. Write to `_bmad-output/lens-work/state.yaml`
 2. Also write to the initiative config file:
    - Domain: `initiatives/{id}/Domain.yaml`
@@ -209,9 +309,9 @@ if state.current_phase not in canonical_phases:
     └── Legacy numbered phases (p1-p6) are not valid in v2
 
 # 5. Validate active_track is canonical
-canonical_tracks: [null, "full", "feature", "tech-change", "hotfix", "spike"]
+canonical_tracks: [null, "full", "feature", "tech-change", "hotfix", "spike", "quickdev"]
 if state.active_track not in canonical_tracks:
-  error: "Invalid track: '${state.active_track}'. Allowed: full, feature, tech-change, hotfix, spike"
+  error: "Invalid track: '${state.active_track}'. Allowed: full, feature, tech-change, hotfix, spike, quickdev"
 
 # 6. Validate workflow_status
 valid_statuses: ["idle", "running", "error", "in_progress", "ready", "complete", "pr_pending"]
@@ -555,7 +655,7 @@ if config.id != initiative_id:
   exit: 1
 
 # 6. Validate track is canonical
-canonical_tracks: ["full", "feature", "tech-change", "hotfix", "spike"]
+canonical_tracks: ["full", "feature", "tech-change", "hotfix", "spike", "quickdev"]
 if config.track not in canonical_tracks:
   error: "Invalid track in initiative config: '${config.track}'"
   exit: 1

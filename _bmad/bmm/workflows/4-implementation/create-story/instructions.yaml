@@ -63,10 +63,20 @@
       <action>Read ALL lines from beginning to end - do not skip any content</action>
       <action>Parse the development_status section completely</action>
 
+      <!-- Multi-dev claim awareness: resolve current developer identity -->
+      <action>Load developer profile if exists: _bmad-output/lens-work/personal/profile.yaml</action>
+      <action>Set {{current_dev_name}} = profile.name || profile.user_name || git config user.name || "unknown"</action>
+
       <action>Find the FIRST story (by reading in order from top to bottom) where:
         - Key matches pattern: number-number-name (e.g., "1-2-user-auth")
         - NOT an epic key (epic-X) or retrospective (epic-X-retrospective)
-        - Status value equals "backlog"
+        - Status value equals "backlog" (for simple string entries)
+        - OR status object has .status == "backlog" (for extended entries)
+        - AND assigned_to is empty or not set (skip claimed stories)
+        NOTE: Sprint-status entries may be simple strings (e.g., "backlog") or extended
+        objects (e.g., { status: backlog, assigned_to: "alice", claimed_at: "..." }).
+        Handle both formats: if value is a string, treat as status with no assignment.
+        If value is an object, read .status and .assigned_to fields.
       </action>
 
       <check if="no backlog story found">
@@ -120,10 +130,20 @@
     <action>Read ALL lines from beginning to end - do not skip any content</action>
     <action>Parse the development_status section completely</action>
 
+    <!-- Multi-dev claim awareness: resolve current developer identity -->
+    <action>Load developer profile if exists: _bmad-output/lens-work/personal/profile.yaml</action>
+    <action>Set {{current_dev_name}} = profile.name || profile.user_name || git config user.name || "unknown"</action>
+
     <action>Find the FIRST story (by reading in order from top to bottom) where:
       - Key matches pattern: number-number-name (e.g., "1-2-user-auth")
       - NOT an epic key (epic-X) or retrospective (epic-X-retrospective)
-      - Status value equals "backlog"
+      - Status value equals "backlog" (for simple string entries)
+      - OR status object has .status == "backlog" (for extended entries)
+      - AND assigned_to is empty or not set (skip claimed stories)
+      NOTE: Sprint-status entries may be simple strings (e.g., "backlog") or extended
+      objects (e.g., { status: backlog, assigned_to: "alice", claimed_at: "..." }).
+      Handle both formats: if value is a string, treat as status with no assignment.
+      If value is an object, read .status and .assigned_to fields.
     </action>
 
     <check if="no backlog story found">
@@ -306,6 +326,7 @@
 
     <!-- CRITICAL: Set status to ready-for-dev -->
     <action>Set story Status to: "ready-for-dev"</action>
+    <action>Set story Assigned To: "{{current_dev_name}}" (from profile or git config)</action>
     <action>Add completion note: "Ultimate
     context engine analysis completed - comprehensive developer guide created"</action>
   </step>
@@ -314,14 +335,58 @@
     <invoke-task>Validate against checklist at {installed_path}/checklist.md using _bmad/core/tasks/validate-workflow.yaml</invoke-task>
     <action>Save story document unconditionally</action>
 
-    <!-- Update sprint status -->
+    <!-- Update sprint status with claim data for multi-dev coordination -->
     <check if="sprint status file exists">
       <action>Update {{sprint_status}}</action>
       <action>Load the FULL file and read all development_status entries</action>
       <action>Find development_status key matching {{story_key}}</action>
       <action>Verify current status is "backlog" (expected previous state)</action>
-      <action>Update development_status[{{story_key}}] = "ready-for-dev"</action>
+      <action>Update development_status[{{story_key}}] to extended format:
+        { status: "ready-for-dev", assigned_to: "{{current_dev_name}}", claimed_at: "{{ISO_TIMESTAMP}}" }
+        NOTE: If the existing entry is a simple string, convert to extended object format.
+        The assigned_to field prevents other developers from auto-discovering this story.
+      </action>
       <action>Save file, preserving ALL comments and structure including STATUS DEFINITIONS</action>
+    </check>
+
+    <!-- ADO MCP Sync: Create work item in Azure DevOps when tracker is azure-devops -->
+    <action>Resolve ADO runtime context for BMM workflow execution:
+      - Set ado_profile_path = "_bmad-output/lens-work/personal/profile.yaml"
+      - If profile exists, load it and read profile.preferences.tracker, profile.preferences.ado_organization, profile.preferences.ado_project
+      - Normalize tracker = tracker || profile.preferences.tracker || profile.tracker || "none"
+      - Normalize ado_organization = profile.preferences.ado_organization || profile.ado_organization || ""
+      - Normalize ado_project = profile.preferences.ado_project || profile.ado_project || ""
+    </action>
+    <output>ℹ️ ADO create-story context: tracker={{tracker}}, ado_org={{ado_organization}}, ado_project={{ado_project}}</output>
+
+    <check if="tracker != 'azure-devops'">
+      <output>ℹ️ ADO work item creation skipped: tracker is '{{tracker}}' (requires 'azure-devops').</output>
+    </check>
+
+    <check if="tracker == 'azure-devops' AND (ado_organization is empty OR ado_project is empty)">
+      <output>ℹ️ ADO profile org/project not set; relying on MCP connection defaults.</output>
+    </check>
+
+    <check if="tracker == 'azure-devops'">
+      <action>Attempt to create ADO work item via MCP (non-blocking)</action>
+      <action>Call mcp_microsoft_azu_wit_create_work_item with:
+        - organization: ado_organization (if set; otherwise MCP default)
+        - project: ado_project (if set; otherwise MCP default)
+        - type: "User Story"
+        - title: "Story ${story_id}: ${story_title}"
+        - description: "Initiative: ${initiative_id}\nEpic: ${epic_num}\nStory Key: ${story_key}\nPlanning artifacts: ${docs_path}/"
+        - parentId: initiative.tracker_id (if set, to link as child of parent work item)
+      </action>
+      <check if="ADO MCP call succeeds">
+        <action>Store returned work item ID as {{ado_work_item_id}}</action>
+        <action>Update story front matter: set "Work Item ID" to {{ado_work_item_id}}</action>
+        <action>Save story file with updated front matter</action>
+        <output>✅ ADO work item created: #{{ado_work_item_id}}</output>
+      </check>
+      <check if="ADO MCP call fails or MCP unavailable">
+        <output>⚠️ ADO work item sync skipped (MCP unavailable or call failed). Story created locally.</output>
+        <action>Continue without blocking — local story file is source of truth</action>
+      </check>
     </check>
 
     <action>Report completion</action>

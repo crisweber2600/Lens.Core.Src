@@ -67,50 +67,21 @@ Full documentation: [User Interaction Keywords](../../docs/user-interaction-keyw
 ### 0. Pre-Flight [REQ-9]
 
 ```yaml
-# PRE-FLIGHT (mandatory, never skip) [REQ-9]
-# 1. Verify working directory is clean
-# 2. Load two-file state (state.yaml + initiative config)
-# 3. Check previous phase status (if applicable — preplan is first phase, no predecessor)
-# 4. Determine correct phase branch: {initiative_root}-{audience}-{phase_name}
-# 5. Create phase branch if it doesn't exist
-# 6. Checkout phase branch
-# 7. Confirm to user: "Now on branch: {branch_name}"
+# Standard pre-flight: clean state, two-file state load, lifecycle load
+# Post-conditions: state, initiative, lifecycle, size, domain_prefix, initiative_root
+invoke: shared.preflight
+# Fragment: _bmad/lens-work/workflows/shared/preflight.fragment.md
 # GATE: All steps must pass before proceeding to artifact work
-
-# Verify working directory is clean
-invoke: git-orchestration.verify-clean-state
-
-# Load two-file state
-state = load("_bmad-output/lens-work/state.yaml")
-initiative = load("_bmad-output/lens-work/initiatives/${state.active_initiative}.yaml")
-
-# Load lifecycle contract for phase → audience mapping
-lifecycle = load("lifecycle.yaml")
 
 # Derive audience from lifecycle contract (preplan → small)
 current_phase = "preplan"
 audience = lifecycle.phases[current_phase].audience    # "small"
-initiative_root = initiative.initiative_root
-domain_prefix = initiative.domain_prefix
+audience_branch = "${initiative_root}-${audience}"               # {initiative_root}-small
+phase_branch    = "${initiative_root}-${audience}-${current_phase}" # {initiative_root}-small-preplan
 
-# Compute branch names for this phase
-audience_branch = "${initiative_root}-${audience}"              # {initiative_root}-small
-phase_branch = "${initiative_root}-${audience}-${current_phase}" # {initiative_root}-small-preplan
-
-# === Path Resolver (S01-S06: Context Enhancement) ===
-docs_path = initiative.docs.path    # e.g., "docs/BMAD/LENS/BMAD.Lens/context-enhancement-9bfe4e"
-repo_docs_path = "docs/${initiative.docs.domain}/${initiative.docs.service}/${initiative.docs.repo}"
-
-if docs_path == null or docs_path == "":
-  # Fallback for older initiatives without docs block
-  docs_path = "_bmad-output/planning-artifacts/"
-  repo_docs_path = null
-  warning: "⚠️ DEPRECATED: Initiative missing docs.path configuration."
-  warning: "  → Run: /lens migrate <initiative-id> to add docs.path"
-  warning: "  → This fallback will be removed in a future version."
-
-output_path = docs_path
-ensure_directory(output_path)
+# Resolve docs_path, repo_docs_path, output_path; create output directory
+invoke: shared.resolve-docs-path
+# Fragment: _bmad/lens-work/workflows/shared/resolve-docs-path.fragment.md
 
 # === Context Loader (S08: Context Enhancement) ===
 # PrePlan has no prior artifacts to load — this is the first phase
