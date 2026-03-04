@@ -192,9 +192,58 @@ if all_required_done && phase_status not in ["pr_pending", "passed", "complete"]
     
     ▶️  Loading phase-completion skill to finalize phase...
   
-  # Load and execute phase-completion.md which handles PR, state, and auto-advance
+  # Load and execute phase-completion.md which handles PR, state, and stop
   load_skill: "_bmad/lens-work/skills/phase-completion.md"
   exit: 0
+
+# Priority 3.75: PR Merge Hard Gate
+# If the current phase has a pending PR, the user MUST merge it before /next
+# will advance to the next phase or workflow. This is a HARD gate — no bypass.
+phase_status = initiative.phase_status[current_phase]
+if phase_status == "pr_pending":
+  # Check if the PR has actually been merged by verifying branch ancestry
+  audience = determine_audience(initiative.branches.active, current_phase, lifecycle)
+  audience_branch = "${initiative.branches.root}-${audience}"
+  phase_branch = "${initiative.branches.root}-${audience}-${current_phase}"
+  
+  # Fetch latest remote state
+  run: git fetch origin ${audience_branch} ${phase_branch} 2>/dev/null || true
+  
+  # Check if phase branch is ancestor of audience branch (PR merged)
+  pr_merged = run: git merge-base --is-ancestor origin/${phase_branch} origin/${audience_branch} 2>/dev/null
+  
+  if pr_merged == true:
+    # PR was merged — update state and allow advancement
+    initiative.phase_status[current_phase] = "complete"
+    state.phase_status[current_phase] = "complete"
+    dual_write(state, initiative)
+    append_event: {"ts":"ISO8601","event":"phase_pr_merged","initiative":"{id}","details":{"phase":"{current_phase}"}}
+    
+    output: |
+      ✅ PR for ${current_phase} has been merged!
+      
+      Phase status updated to complete.
+      Continuing to next action...
+    
+    # Fall through to Priority 4+ to determine next action
+  else:
+    # PR not yet merged — HARD STOP
+    output: |
+      🔒 PR Merge Required
+      
+      Phase ${current_phase} has a pending PR that must be merged before
+      /next will advance to the next phase.
+      
+      Current phase branch: ${phase_branch}
+      Target branch: ${audience_branch}
+      
+      Next steps:
+      ├── Review and merge the PR for ${current_phase}
+      └── Then run @lens next again
+      
+      To check PR status:
+      └── gh pr list --head ${phase_branch}
+    exit: 0
 
 # Priority 4: Current phase incomplete
 current_phase_index = phase_order.indexOf(current_phase)
@@ -220,13 +269,30 @@ if next_phase != null:
   exit: 0
 
 # Priority 6: All phases in current audience complete → promote
+# HARD GATE: All phase PRs must be merged (status == "complete") before promotion.
+# If any phase is still "pr_pending", stop and require the PR merge first.
 if current_audience == "small":
-  # Check if all active phases are complete
+  # Check if all active phases are complete (not pr_pending)
   all_complete = true
+  pr_pending_phases = []
   for phase in active_phases:
-    if state.phase_status[phase] != "complete":
+    if state.phase_status[phase] == "pr_pending":
+      pr_pending_phases.push(phase)
       all_complete = false
-      break
+    else if state.phase_status[phase] != "complete":
+      all_complete = false
+  
+  if pr_pending_phases.length > 0:
+    output: |
+      🔒 PR Merge Required Before Promotion
+      
+      The following phases have pending PRs that must be merged first:
+      ${for phase in pr_pending_phases}
+      - ${phase}
+      ${endfor}
+      
+      Merge all pending PRs, then run @lens next again.
+    exit: 0
   
   if all_complete:
     output: |
@@ -385,11 +451,21 @@ function find_next_phase_in_track(current_phase, active_phases, phase_order):
 2. Failed gates (stop)
 3. In-progress workflow (pause)
 3.5. All sub-workflows complete — finalize phase (phase-completion skill)
+3.75. PR merge hard gate — phase `pr_pending` blocks advancement until merged
 4. Incomplete current phase (continue)
 5. Next phase in track (advance)
-6. Audience promotion (advance)
+6. Audience promotion (advance) — also gates on all phase PRs merged
 7. Start dev (advance)
 8. Unclear state (report & exit)
+
+**PR Gate Enforcement:**
+- When a phase completes, a PR is created and `phase_status` is set to `pr_pending`
+- `/next` will NOT advance to the next phase until the PR is merged
+- On each `/next` call, Priority 3.75 checks if the PR has been merged via `git merge-base --is-ancestor`
+- If merged, status is updated to `complete` and the workflow falls through to the next priority
+- If not merged, the workflow stops with a hard gate message
+- Audience promotion (Priority 6) also requires all phase PRs to be merged
+- This prevents work on a new branch/phase without the prior PR being reviewed and merged
 
 **When NOT to Use Next:**
 - Exploring options (use `@lens ST` instead)
