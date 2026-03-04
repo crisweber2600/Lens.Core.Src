@@ -28,6 +28,7 @@ This is a **productivity shortcut** that eliminates the two-step pattern of:
 |---------------|-------------|
 | No active initiative | Prompt for `#new-domain`, `#new-service`, or `#new-feature` |
 | Phase in progress | Continue current phase workflow |
+| Dev phase with stories in `review` | Continue `/dev` to complete review/fix cycle before PR progression |
 | Phase complete, more phases in track | Start next phase in sequence |
 | All small-audience phases complete | Promote to medium (`@lens promote`) |
 | Medium audience approved | Promote to large |

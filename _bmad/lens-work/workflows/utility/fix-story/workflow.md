@@ -124,6 +124,15 @@ params:
   auto_fix_severities: "CRITICAL,HIGH,MEDIUM"
   max_review_passes: 2
   on_max_passes: "needs_manual"
+
+# Hard gate: PR creation allowed only after review/fix loop resolves
+fix_review_outcome = code_review.review_outcome || review_outcome || "needs_manual"
+if fix_review_outcome not in ["passed", "fixed"]:
+  output: |
+    ⛔ Fix PR blocked
+    ├── Review outcome: ${fix_review_outcome}
+    └── Resolve review follow-ups and re-run code review before opening PR
+  exit: 1
 ```
 
 ### 9. Merge Fix

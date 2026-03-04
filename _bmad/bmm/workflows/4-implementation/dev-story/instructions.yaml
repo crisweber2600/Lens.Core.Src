@@ -382,8 +382,8 @@
     <action>Execute enhanced definition-of-done validation</action>
     <action>Update the story Status to: "review"</action>
 
-    <!-- AUTO-PR: Create PR from story branch to epic branch in target repo -->
-    <critical>When all tasks are complete, auto-create a PR from story branch to epic branch</critical>
+    <!-- PR creation is deferred to /dev post-review gate -->
+    <critical>When all tasks are complete, ensure branch is pushed and hand off to /dev code-review gate before PR creation</critical>
     <action>Ensure all changes are committed and pushed to the story branch in the target repo:
       cd {{target_repo_path}}
       git add -A
@@ -391,34 +391,9 @@
         git commit -m "feat({{story_key}}): story complete — all tasks done"
         git push origin "{{story_branch}}"
     </action>
-    <action>Create PR from story branch to epic branch:
-      gh pr create \
-        --base "{{epic_branch}}" \
-        --head "{{story_branch}}" \
-        --title "feat({{epic_key}}): {{story_title}} [{{story_key}}]" \
-        --body "## Story Complete: {{story_key}}
-
-      ### {{story_title}}
-
-      All tasks completed. Ready for code review.
-
-      **Epic:** {{epic_key}}
-      **Story Branch:** {{story_branch}}
-      **Target Branch:** {{epic_branch}}
-
-      ### Acceptance Criteria
-      {{acceptance_criteria_summary}}
-
-      ### Tasks Completed
-      {{completed_tasks_list}}
-
-      ### Files Changed
-      {{file_list}}"
-    </action>
-    <action>Capture PR URL and store as {{story_pr_url}}</action>
-    <output>✅ PR auto-created: {{story_branch}} → {{epic_branch}}
-      PR URL: {{story_pr_url}}
-    </output>
+    <output>✅ Story implementation complete and pushed: {{story_branch}}</output>
+    <output>⏭️ PR deferred until /dev code review passes with no unresolved follow-ups.</output>
+    <output>Run @lens done from /dev to execute review/fix loop and open PR after gate passes.</output>
 
     <!-- Enhanced Definition of Done Validation -->
     <action>Validate definition-of-done checklist with essential requirements:

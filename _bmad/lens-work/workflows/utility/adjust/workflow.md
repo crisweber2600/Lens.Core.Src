@@ -213,6 +213,14 @@ output: |
     💡 ${s}
   ${endfor}
   ${endif}
+
+# Hard gate: no PR if abbreviated review requires unresolved fixes
+if review_result.status in ["fail", "failed", "blocked", "needs_manual", "in-progress"]:
+  output: |
+    ⛔ Adjust PR blocked
+    ├── Review status: ${review_result.status}
+    └── Resolve review findings, then re-run /adjust or move to /dev for full review cycle
+  goto: cleanup
 ```
 
 ### 6. Commit, Push, and PR

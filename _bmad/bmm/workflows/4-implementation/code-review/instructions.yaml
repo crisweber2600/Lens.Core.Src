@@ -230,6 +230,7 @@
   <step n="5" goal="Update story status and sync sprint tracking">
     <!-- Determine new status based on review outcome -->
     <action>Set {{new_status}} = "in-progress"</action>
+    <action>Set {{review_gate}} = "blocked"</action>
     <check if="{{review_outcome}} == 'passed'">
       <action>Set {{new_status}} = "done"</action>
       <action>Update story Status field to "done"</action>
@@ -241,6 +242,12 @@
     <check if="{{review_outcome}} == 'needs_manual' OR {{review_outcome}} == 'max_passes_exceeded' OR HIGH or MEDIUM issues remain OR ACs not fully implemented">
       <action>Set {{new_status}} = "in-progress"</action>
       <action>Update story Status field to "in-progress"</action>
+    </check>
+    <check if="{{new_status}} == 'done' AND {{action_count}} == 0">
+      <action>Set {{review_gate}} = "passed"</action>
+    </check>
+    <check if="{{new_status}} != 'done' OR {{action_count}} > 0">
+      <action>Set {{review_gate}} = "blocked"</action>
     </check>
     <action>Save story file</action>
 
@@ -336,10 +343,12 @@
     <output>**✅ Review Complete!**
 
       **Story Status:** {{new_status}}
+      **Review Gate:** {{review_gate}}
+      **Review Outcome:** {{review_outcome}}
       **Issues Fixed:** {{fixed_count}}
       **Action Items Created:** {{action_count}}
 
-      {{#if new_status == "done"}}Code review complete!{{else}}Address the action items and continue development.{{/if}}
+      {{#if review_gate == "passed"}}Code review complete. PR may be opened.{{else}}Address follow-ups and re-run code review before opening PR.{{/if}}
     </output>
   </step>
 
