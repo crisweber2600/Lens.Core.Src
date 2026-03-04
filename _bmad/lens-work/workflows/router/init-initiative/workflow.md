@@ -329,16 +329,17 @@ Which lifecycle track for this initiative?
 **[3] Tech-Change**  — Pure technical: techplan → sprintplan
 **[4] Hotfix**       — Urgent fix: techplan only (fast to execution)
 **[5] Spike**        — Research only: preplan (no implementation)
+**[6] QuickDev**     — Rapid execution: devproposal (small → base, parity verification)
 
 Default: full   (press Enter to keep)
-Select track: [1-5] (default: 1)
+Select track: [1-6] (default: 1)
 ```
 
 ```yaml
 # Load lifecycle.yaml to derive track-specific phases and audiences
 lifecycle = load("_bmad/_config/custom/lens-work/lifecycle.yaml")
 
-track_map = {1: "full", 2: "feature", 3: "tech-change", 4: "hotfix", 5: "spike"}
+track_map = {1: "full", 2: "feature", 3: "tech-change", 4: "hotfix", 5: "spike", 6: "quickdev"}
 track = track_map[selection] || "full"
 
 # Derive active phases and audiences from lifecycle contract
@@ -1001,7 +1002,7 @@ git checkout "${domain_prefix}"
 # Stage domain scaffolding and event log (NO separate initiative config — Domain.yaml IS the config)
 git add "_bmad-output/lens-work/initiatives/${domain_prefix}/Domain.yaml"
 git add "_bmad-output/lens-work/initiatives/${domain_prefix}/.gitkeep"
-git add "TargetProjects/${domain_prefix}/.gitkeep"
+git add -f "TargetProjects/${domain_prefix}/.gitkeep"   # -f required: TargetProjects/ is gitignored
 git add "Docs/${domain_prefix}/.gitkeep"
 git add "_bmad-output/lens-work/event-log.jsonl"
 
@@ -1031,7 +1032,7 @@ git checkout "${domain_prefix}-${service_prefix}"
 # Stage service scaffolding and event log (NO separate initiative config — Service.yaml IS the config)
 git add "_bmad-output/lens-work/initiatives/${domain_prefix}/${service_prefix}/Service.yaml"
 git add "_bmad-output/lens-work/initiatives/${domain_prefix}/${service_prefix}/.gitkeep"
-git add "TargetProjects/${domain_prefix}/${service_prefix}/.gitkeep"
+git add -f "TargetProjects/${domain_prefix}/${service_prefix}/.gitkeep"   # -f required: TargetProjects/ is gitignored
 git add "Docs/${domain_prefix}/${service_prefix}/.gitkeep"
 git add "_bmad-output/lens-work/event-log.jsonl"
 

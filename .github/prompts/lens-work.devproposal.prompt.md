@@ -5,7 +5,9 @@ description: Launch DevProposal phase — epics, stories, and readiness (John/PM
 
 Activate @lens agent and execute /devproposal:
 
-**⚠️ PATH CONTEXT:** All `_bmad/` paths in this prompt are relative to the `bmad.lens.release` control repository (where this prompt file lives). Do NOT copy `_bmad/` into or resolve these paths against the user's main project repo. The agent, workflows, and skills all execute from within `bmad.lens.release/`. Only `_bmad-output/` paths are written to the user's working context.
+**⚠️ PATH CONTEXT — TWO DIRECTORIES:** This prompt operates across two directories:
+- **`_bmad/` paths** → resolve inside the `bmad.lens.release/` subdirectory (read-only source of workflows, skills, agents)
+- **`_bmad-output/` paths, git branches, commits, and state files** → resolve in the **control repo root** (the parent directory that CONTAINS `bmad.lens.release/`). ALL git operations (checkout, branch, commit, push) happen here — NEVER inside `bmad.lens.release/`.
 
 **📊 VISUAL-FIRST DOCUMENTATION:** All documents generated in this phase MUST include Mermaid diagrams per the `visual_first_documentation` convention. Load `_bmad/lens-work/skills/visual-documentation.md` before creating any document. Epics documents require: epic dependency graph (flowchart), feature timeline (gantt). Stories documents require: story dependency graph (flowchart), acceptance criteria workflow (flowchart).
 
@@ -31,6 +33,7 @@ Use `#think` before decomposing architecture into epics or estimating scope.
 - Branch pattern: `{initiative_root}-medium-devproposal`
 - Aliases: `/plan`
 - Role gate: PO, Architect, Tech Lead
+- Auto-advance: `/sprintplan` (promote large→base first)
 
 **Prerequisites:**
 - All small-audience phases complete: `preplan`, `businessplan`, `techplan` PRs merged into `{initiative_root}-small`
@@ -86,6 +89,10 @@ After receiving confirmation, execute workflows in sequence:
 
 Each workflow uses step-file architecture — halt at each step within the workflow, wait for user input.
 
+**Sub-workflow tracking:** After each sub-workflow completes successfully, immediately update
+`sub_workflows.devproposal.{name}: complete` in the initiative config (dual-write to state.yaml).
+This tracking persists across context compaction.
+
 **Epic Stress Gate (mandatory — runs per epic):**
 - Run `_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md` in adversarial mode for each epic
 - Run `_bmad/core/workflows/party-mode/workflow.md` review focused on each epic
@@ -107,23 +114,16 @@ Each workflow uses step-file architecture — halt at each step within the workf
 - WORK: Epic/story generation on this branch
 - END: PR from `{initiative_root}-medium-devproposal` → `{initiative_root}-medium`; remain on phase branch
 
-**Phase completion:**
-- Verify PAT configured: Check for `GITHUB_PAT` or `GH_ENTERPRISE_TOKEN` environment variable, or `_bmad-output/lens-work/personal/profile.yaml` has `git_credentials` for current git host
-- If PAT missing: Direct user to set `GITHUB_PAT` env var (or `GH_ENTERPRISE_TOKEN` for enterprise) or run `store-github-pat.ps1`/`store-github-pat.sh` in separate terminal, then retry
-- Push artifacts to `{initiative_root}-medium-devproposal`
-- Create PR using promote-branch script: `_bmad/lens-work/scripts/promote-branch.sh -s {initiative_root}-medium-devproposal -t {initiative_root}-medium` (or `.ps1` on Windows)
-- Update `phase_status.devproposal: pr_pending` and `audience_status.small_to_medium: complete` in initiative config
-- Update `state.yaml`: `current_phase: devproposal`, `workflow_status: pr_pending`
-- Append event to `event-log.jsonl`
-- Remain on phase branch (REQ-7: never auto-merge)
+**Phase completion & Auto-Advance:**
+When all required sub-workflows are complete, load and execute:
+`_bmad/lens-work/skills/phase-completion.md`
+This skill handles: sub-workflow verification, PR creation, state updates, event logging,
+and auto-advance to the next phase. It reads everything from persistent state — it does
+NOT depend on conversation context.
 
 **Output artifacts** (written to `{docs_path}/`):
 - `epics.md` (required)
 - `epic-{id}-party-mode-review.md` (per epic, written alongside)
 - `stories.md` (required)
 - `readiness-checklist.md` (required)
-
-**After DevProposal:** Run `@lens next` (or `/sprintplan`). If promotion is required, LENS auto-triggers it.
-
-**Next phase:** `/sprintplan` — runs after medium→large promotion complete
 ```

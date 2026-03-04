@@ -44,6 +44,7 @@ This uses **step-file architecture** for disciplined execution:
 - ALWAYS halt at menus and wait for user input
 - NEVER create mental todo lists from future steps
 - NEVER mention time estimates
+- **BATCH MODE**: If user selects `[B]` at any step menu, or profile has `question_mode: batch`, read fully and follow `_bmad/core/workflows/batch-mode/workflow.md` to generate all remaining content continuously, then present batch review
 
 ---
 

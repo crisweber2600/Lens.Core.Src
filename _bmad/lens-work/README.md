@@ -142,10 +142,11 @@ Tracks control which phases are required (defined in `lifecycle.yaml`):
 | Track | Phases | Use Case |
 |-------|--------|----------|
 | `full` | preplan → businessplan → techplan → devproposal → sprintplan | New product/major initiative |
-| `feature` | businessplan → devproposal | Feature addition |
-| `tech-change` | techplan → devproposal | Technical migration/upgrade |
-| `hotfix` | devproposal only | Critical bug fix |
+| `feature` | businessplan → techplan → devproposal → sprintplan | Feature addition |
+| `tech-change` | techplan → sprintplan | Technical migration/upgrade |
+| `hotfix` | techplan only | Critical bug fix |
 | `spike` | preplan only | Research/exploration |
+| `quickdev` | techplan → devproposal | Rapid execution with parity verification (small → medium) |
 
 ### Audience Promotion Gates
 

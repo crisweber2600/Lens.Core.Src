@@ -5,7 +5,9 @@ description: Create new feature-level initiative with full branch topology
 
 Activate @lens agent and execute /new-feature:
 
-**⚠️ PATH CONTEXT:** All `_bmad/` paths in this prompt are relative to the `bmad.lens.release` control repository (where this prompt file lives). Do NOT copy `_bmad/` into or resolve these paths against the user's main project repo. The agent, workflows, and skills all execute from within `bmad.lens.release/`. Only `_bmad-output/` paths are written to the user's working context.
+**⚠️ PATH CONTEXT — TWO DIRECTORIES:** This prompt operates across two directories:
+- **`_bmad/` paths** → resolve inside the `bmad.lens.release/` subdirectory (read-only source of workflows, skills, agents)
+- **`_bmad-output/` paths, git branches, commits, and state files** → resolve in the **control repo root** (the parent directory that CONTAINS `bmad.lens.release/`). ALL git operations (checkout, branch, commit, push) happen here — NEVER inside `bmad.lens.release/`.
 
 1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Execute `/new-feature` command to create feature initiative
@@ -30,23 +32,36 @@ Activate @lens agent and execute /new-feature:
 
 **Minimal user input required (ask in single batch prompt):**
 
-Present all questions together:
+Present all questions together — use defaults for everything possible:
 ```
 🚀 New Feature Setup
 
 1. Feature name: {provided_or_prompt}
-2. Target repos: [Confirm inherited repos / Add / Remove]
-   Inherited: {list_inherited_repos}
-3. Work item ID {if_tracker_configured}:
+2. Work item ID {if_tracker_configured}:
    {Jira ticket ID (e.g., BMAD-123) OR Azure DevOps ID (e.g., 12345)}
    [Enter ID / Skip]
-4. Branch changes needed?
+3. Branch changes needed?
    Current branches across repos:
    {list_repos_with_current_branches}
    [No changes / Specify: repo=branch]
 
-Enter as: "feature-name | inherited | BMAD-123 | no"
+Enter as: "feature-name | BMAD-123 | no"
 ```
+
+Target repos are inherited from the parent (service or domain) by default.
+Do NOT ask the user to confirm inherited repos — use them as-is.
+
+**No-Confirm — Show & Go:**
+After receiving input, display a brief summary and proceed immediately.
+Do NOT ask "Confirm?" or wait for approval.
+```
+📋 Creating feature: {feature_name}
+   Parent: {domain}/{service} | Repos: {inherited_repo_list}
+   Tracker: {tracker_id or "none"} | Branches: {changes or "no changes"}
+   Proceeding... (reply "edit" to change choices)
+```
+If the user replies "edit", pause and let them adjust specific fields, then resume.
+Otherwise continue executing without waiting.
 
 Parse user response and proceed with initiative creation.
 
@@ -63,7 +78,7 @@ Parse user response and proceed with initiative creation.
   - `{featureBranchRoot}-small` AKA `{smallGroupBranchRoot}` (review audience: small)
   - `{featureBranchRoot}-medium` AKA `{mediumGroupBranchRoot}` (review audience: medium)
   - `{featureBranchRoot}-large` AKA `{largeGroupBranchRoot}` (review audience: large)
-- NOTE: No phase branches at init. Phase branches (e.g., `-small-p1`) created by phase routers.
+- NOTE: No phase branches at init. Phase branches (e.g., `-small-preplan`) created by phase routers.
 - Two-file state:
   - `_bmad-output/lens-work/state.yaml` (active initiative = initiative_id)
   - `_bmad-output/lens-work/initiatives/{initiative_id}.yaml` (initiative config with parent lineage and tracker_id)
@@ -111,6 +126,11 @@ git -C "$repo_path" checkout -b ${NEW_BRANCH_NAME} main
 - p1 (Analysis) → small | p2 (Planning) → medium | p3/p4 (Solutioning/Implementation) → large
 
 Use `#think` before defining feature scope or dependencies.
+
+**Auto-Advance:** After feature creation completes (branches pushed, state updated),
+automatically execute `/start` to run preflight and begin the first lifecycle phase.
+Load and execute `lens-work.start.prompt.md`. Do NOT display "Run /start" or
+"Run /next" — just execute it.
 
 **CRITICAL — User Input Anchoring:**
 If the user provided text alongside this prompt invocation, that text IS the

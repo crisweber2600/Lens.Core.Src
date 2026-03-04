@@ -5,6 +5,10 @@ description: Run LENS Workbench preflight check and activate @lens for lifecycle
 
 Activate @lens agent and run preflight check:
 
+**⚠️ PATH CONTEXT — TWO DIRECTORIES:** This prompt operates across two directories:
+- **`_bmad/` paths** → resolve inside the `bmad.lens.release/` subdirectory (read-only source of workflows, skills, agents)
+- **`_bmad-output/` paths, git branches, commits, and state files** → resolve in the **control repo root** (the parent directory that CONTAINS `bmad.lens.release/`). ALL git operations (checkout, branch, commit, push) happen here — NEVER inside `bmad.lens.release/`.
+
 1. Load `@lens` agent: `_bmad/_config/custom/lens-work/lens.agent.yaml`
 2. Load lifecycle contract: `_bmad/lens-work/lifecycle.yaml`
 3. Load module config: `_bmad/lens-work/bmadconfig.yaml`
@@ -41,19 +45,20 @@ Lifecycle Progress:
 
 **Routing logic (present in order of relevance):**
 
-1. **No profile** → "Run `/onboard` to set up your profile and repositories."
-2. **No active initiative** → "Run `/new-initiative` to start a new feature, service, or domain."
-3. **Active initiative, workflow_status = `in_progress`** → "Resume: `/resume` to continue `{current_phase}`."
-4. **Active initiative, phase complete, promotion pending** → "Run `@lens next` (or the target phase command). Promotion is auto-triggered when required."
-5. **Active initiative, promotion complete, next phase ready** → "Run `/{next_phase_prompt}` to start the next phase."
-6. **All phases complete** → "Initiative `{name}` is complete. Run `/archive` or `/new-initiative`."
+1. **No profile** → Auto-execute `/onboard`. Load and execute `lens-work.onboard.prompt.md`.
+2. **No active initiative** → Auto-execute `/new-initiative`. Load and execute `lens-work.new-initiative.prompt.md`.
+3. **Active initiative, workflow_status = `in_progress`** → Auto-execute `/resume` to continue `{current_phase}`.
+4. **Active initiative, phase complete, promotion pending** → Auto-execute `@lens promote`. Load and execute `lens-work.promote.prompt.md`. After promote PR: pause for merge, then auto-advance to next phase.
+5. **Active initiative, promotion complete, next phase ready** → Auto-execute `/{next_phase_prompt}` — load and execute the target phase prompt.
+6. **All phases complete** → Display completion summary. Do NOT auto-advance — ask user whether to archive or start new initiative.
 
-**Next step block (always shown at end):**
-```
-Suggested next step: {single most relevant action}
+**Auto-Advance (always):**
+After showing the orientation report, immediately auto-execute the most relevant
+action from the routing logic above. Do NOT display "Suggested next step" or ask
+the user to manually run a command. Just execute it.
 
-Type /help for the full command reference.
-```
+Exception: If the situation is ambiguous (multiple active initiatives, errors in
+state), present the orientation report and ask the user to choose.
 
 **If no arguments provided:** Run full orientation as described above.
 

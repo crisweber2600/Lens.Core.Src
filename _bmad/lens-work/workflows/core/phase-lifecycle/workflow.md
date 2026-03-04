@@ -122,6 +122,10 @@ initiative_id: string
 
 **Purpose:** Push phase branch and create PR to audience branch after all workflows complete.
 
+> **Note:** Phase prompts now delegate completion to `_bmad/lens-work/skills/phase-completion.md`.
+> This workflow section documents the underlying procedure; the skill loads this JIT and
+> adds sub-workflow verification + auto-advance logic on top.
+
 ### Sequence
 
 0. **Verify Git State**
@@ -136,11 +140,30 @@ initiative_id: string
    ```
 
 1. **Validate All Workflows Complete**
-   ```bash
-   if ! all_workflows_merged ${phase_name}; then
-     echo "⚠️ Not all workflows merged. Complete remaining workflows."
-     exit 1
-   fi
+   ```yaml
+   # Load sub-workflow definitions from lifecycle.yaml
+   lifecycle = load("_bmad/lens-work/lifecycle.yaml")
+   sub_workflow_defs = lifecycle.phases[phase_name].sub_workflows
+   
+   # Load actual sub-workflow statuses from initiative config
+   initiative = load("_bmad-output/lens-work/initiatives/${initiative_id}.yaml")
+   sub_workflow_status = initiative.sub_workflows[phase_name] || {}
+   
+   # Check each required sub-workflow
+   for sw in sub_workflow_defs:
+     if sw.required == true:
+       status = sub_workflow_status[sw.name]
+       if status != "complete":
+         echo "⚠️ Required sub-workflow '${sw.name}' not complete (status: ${status || 'not started'})"
+         echo "└── Complete it before finishing phase ${phase_name}."
+         exit 1
+   
+   # Mark optional sub-workflows that were never started as 'skipped'
+   for sw in sub_workflow_defs:
+     if sw.required == false && sub_workflow_status[sw.name] == null:
+       sub_workflow_status[sw.name] = "skipped"
+   
+   echo "✅ All required sub-workflows for ${phase_name} are complete."
    ```
 
 2. **Push Phase Branch**
