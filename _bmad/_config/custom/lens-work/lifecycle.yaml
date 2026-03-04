@@ -179,6 +179,13 @@ tracks:
     audiences: [small]
     start_phase: preplan
 
+  quickdev:
+    description: "Rapid execution — delegates to target-project agents for implementation with parity verification"
+    phases: [devproposal]
+    audiences: [small, base]
+    constitution_controlled_gates: [adversarial-review]
+    start_phase: devproposal
+
 # -----------------------------------------------------------------------------
 # ADVERSARIAL REVIEW (party mode)
 # -----------------------------------------------------------------------------
