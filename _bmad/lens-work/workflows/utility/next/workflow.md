@@ -151,6 +151,30 @@ if current_workflow_status == "in_progress":
   # Don't auto-continue — user is mid-workflow
   exit: 0
 
+# Priority 3.25: In dev phase, force review/fix cycle before broader progression
+if current_phase == "dev":
+  sprint_status = load_if_exists("_bmad-output/implementation-artifacts/sprint-status.yaml")
+  pending_review = []
+
+  if sprint_status != null and sprint_status.development_status != null:
+    for story_key, status in sprint_status.development_status:
+      if status == "review":
+        pending_review.push(story_key)
+
+  if pending_review.length > 0:
+    output: |
+      🔒 Review cycle required before next progression
+
+      Stories awaiting review/fix completion:
+      ${for story in pending_review}
+      - ${story}
+      ${endfor}
+
+      ▶️  Continuing /dev to complete review fixes before PR progression
+
+    invoke_command: "/dev"
+    exit: 0
+
 # Priority 3.5: All sub-workflows complete but phase not yet finalized
 lifecycle = load("_bmad/lens-work/lifecycle.yaml")
 sub_workflow_defs = lifecycle.phases[current_phase].sub_workflows || []

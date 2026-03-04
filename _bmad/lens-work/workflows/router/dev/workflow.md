@@ -478,7 +478,7 @@ output: |
   ├── Story Branch: ${story_branch} (checked out)
   ├── Branch Chain: ${story_branch} → ${epic_branch} → develop
   └── Auto-commit: ON (tasks auto-committed after completion)
-  └── Auto-PR: ON (PR created when all tasks complete)
+  └── Auto-PR: ON (PR created only after code review gate passes)
 ```
 
 ### 4. Implementation Guidance + Constitutional Context
@@ -712,7 +712,22 @@ if current_epic_id:
         Epic party-mode teardown found unresolved issues for ${current_epic_id}.
         Address _bmad-output/implementation-artifacts/epic-${current_epic_id}-party-mode-review.md and re-run @lens done.
 
-# Auto-create story PR in target repo after successful review gates
+# Hard gate: review/fix loop must complete before PR creation
+reviewed_story = load(${dev_story_path})
+reviewed_story_status = reviewed_story.status || reviewed_story.Status || reviewed_story.story_status || "unknown"
+
+if reviewed_story_status != "done":
+  output: |
+    ⛔ PR blocked for ${story_id}
+    ├── Post-review story status: ${reviewed_story_status}
+    ├── Meaning: review follow-ups or unresolved fixes remain
+    └── Action: resolve review items and re-run @lens done
+
+  # End review workflow without opening PR
+  invoke: git-orchestration.finish-workflow
+  halt: true
+
+# Auto-create story PR in target repo only after review gate passes
 invoke: git-orchestration.create-pr
 params:
   repo_path: ${target_path}
@@ -720,12 +735,12 @@ params:
   base: ${session.epic_branch}
   title: "feat(${session.epic_key}): ${story_id}"
   body: |
-    Story ${story_id} completed and passed automated review flow.
+    Story ${story_id} completed and passed the dev → review → fix gate.
 
     Source branch: ${session.story_branch}
     Target branch: ${session.epic_branch}
 
-    This PR was auto-created by /dev after adversarial code review and constitutional gates.
+    This PR was auto-created by /dev only after review fixes were resolved.
 capture: story_pr_result
 
 if story_pr_result.fallback:

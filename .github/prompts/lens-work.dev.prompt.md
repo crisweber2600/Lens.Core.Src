@@ -89,8 +89,7 @@ Sub-workflows [4], [5], and [7] use YAML-based workflow.yaml files with the work
   → STOP and wait for user at decision points
   → **Auto-commit:** After each task completion, `git add -A && commit && push` to story branch
   → Commit format: `feat({story-key}): {task-description}`
-  → **Auto-PR:** When ALL story tasks are complete, auto-create PR: story branch → epic branch
-  → PR title format: `feat({epic-key}): {story-title} [{story-key}]`
+  → When ALL story tasks are complete: set story to `review` and hand off to code review (no PR yet)
 
 **[5] Code Review (per task, constitution-aware)** — Switch to Quinn (QA) persona: `_bmad/bmm/agents/qa.md`
   → Load workflow engine FIRST: `_bmad/core/tasks/workflow.yaml`
@@ -101,7 +100,8 @@ Sub-workflows [4], [5], and [7] use YAML-based workflow.yaml files with the work
   → **Max passes:** `2`; unresolved issues after max passes become `needs_manual` follow-ups
   → FAIL blocks the task (not the whole story)
   → WARN records in review-log but allows continuation
-  → **Auto-PR:** after successful review gates, create PR from story branch → epic branch automatically
+  → **Hard gate:** PR opens only when review outcome is `passed`/`fixed` and no unresolved follow-ups remain
+  → If review returns `needs_manual`, fix items first and rerun review before PR
   → If PR auto-create fails, emit manual `gh pr create` fallback command (no auto-merge)
   → After review: switch back to Amelia for next task
 
@@ -134,7 +134,7 @@ Sub-workflows [4], [5], and [7] use YAML-based workflow.yaml files with the work
 - TARGET epic branch: `feature/{epic-key}` in `TargetProjects/{repo}/` (parent for all story branches)
 - TARGET story branch: `feature/{epic-key}-{story-key}` in `TargetProjects/{repo}/` (implementation lives here)
 - Task auto-commit: every completed task is committed+pushed to story branch immediately
-- Story auto-PR: when all tasks done, PR from `feature/{epic-key}-{story-key}` → `feature/{epic-key}`
+- Story auto-PR: only after code review passes and review follow-ups are resolved, PR from `feature/{epic-key}-{story-key}` → `feature/{epic-key}`
 - Epic auto-PR: when all stories done and merged, PR from `feature/{epic-key}` → `develop`
 - END: dev phase branch updated with any BMAD artifacts
 

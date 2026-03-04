@@ -436,6 +436,7 @@ output: |
   Next steps:
   ├── Review report at ${report_file}
   ├── Run /quickdev again for another page
+  ├── Use /dev for implementation + required review/fix cycle before any PR flow
   ├── Run /status to see initiative progress
   └── When all pages pass, proceed to route removal
 
