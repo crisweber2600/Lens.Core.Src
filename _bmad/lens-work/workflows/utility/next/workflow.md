@@ -217,7 +217,7 @@ if phase_status == "pr_pending":
     # PR was merged — update state and allow advancement
     initiative.phase_status[current_phase] = "complete"
     state.phase_status[current_phase] = "complete"
-    dual_write(state, initiative)
+    invoke: state-management.update-initiative
     append_event: {"ts":"ISO8601","event":"phase_pr_merged","initiative":"{id}","details":{"phase":"{current_phase}"}}
     
     output: |
