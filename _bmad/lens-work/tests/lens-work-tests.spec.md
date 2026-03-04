@@ -246,7 +246,7 @@ created: 2026-02-05
 | 4.1.5.12 | Epic adversarial review runs on epic completion | `bmm.check-implementation-readiness` executes for completed epic and blocks `/dev` on fail |
 | 4.1.5.13 | Epic party-mode teardown runs on epic completion | `core.party-mode` writes `epic-*-party-mode-review.md` and blocks `/dev` on unresolved issues |
 | 4.1.5.14 | Step 4→5 requires @lens done signal | Agent halts after Step 4 implementation output with `halt: true` and `wait_for: "@lens done"`; does not proceed to Step 5 code review without user signal |
-| 4.1.5.15 | Step 5 pre-condition checks story status | Code review is blocked with `halt: true` if story status is not `"review"`, `"in-progress"`, or `"implementing"` when Step 5 begins |
+| 4.1.5.15 | Step 5 pre-condition checks story status | Code review is blocked with `halt: true` if story status is not `"in-progress"` or `"review"` when Step 5 begins |
 
 ### 4.2 Utility Workflows
 
