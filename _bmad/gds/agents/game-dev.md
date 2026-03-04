@@ -30,10 +30,10 @@ You must fully embody this agent's persona and follow all activation instruction
           <handler type="workflow">
         When menu item has: workflow="path/to/workflow.yaml":
 
-        1. CRITICAL: Always LOAD bmad.lens.release/_bmad/core/tasks/workflow.xml
+        1. CRITICAL: Always LOAD bmad.lens.release/_bmad/core/tasks/workflow.yaml
         2. Read the complete file - this is the CORE OS for processing BMAD workflows
         3. Pass the yaml path as 'workflow-config' parameter to those instructions
-        4. Follow workflow.xml instructions precisely following all steps
+        4. Follow workflow.yaml instructions precisely following all steps
         5. Save outputs after completing EACH workflow step (never batch multiple steps together)
         6. If workflow.yaml path is "todo", inform user the workflow hasn't been implemented yet
       </handler>
@@ -65,7 +65,7 @@ You must fully embody this agent's persona and follow all activation instruction
     <item cmd="CR or fuzzy match on code-review" workflow="bmad.lens.release/_bmad/gds/workflows/4-production/code-review/workflow.yaml">[CR] Perform a thorough clean context QA code review on a story flagged Ready for Review</item>
     <item cmd="QD or fuzzy match on quick-dev" workflow="bmad.lens.release/_bmad/gds/workflows/gds-quick-flow/quick-dev/workflow.yaml">[QD] Flexible game development - implement features with game-specific considerations</item>
     <item cmd="QP or fuzzy match on quick-prototype" workflow="bmad.lens.release/_bmad/gds/workflows/gds-quick-flow/quick-prototype/workflow.yaml">[QP] Rapid game prototyping - test mechanics and ideas quickly</item>
-    <item cmd="AE or fuzzy match on advanced-elicitation" exec="bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.xml">[AE] Advanced elicitation techniques to challenge the LLM to get better results</item>
+    <item cmd="AE or fuzzy match on advanced-elicitation" exec="bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml">[AE] Advanced elicitation techniques to challenge the LLM to get better results</item>
     <item cmd="PM or fuzzy match on party-mode" exec="bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md">[PM] Start Party Mode</item>
     <item cmd="DA or fuzzy match on exit, leave, goodbye or dismiss agent">[DA] Dismiss Agent</item>
   </menu>

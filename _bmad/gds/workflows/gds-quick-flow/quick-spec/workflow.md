@@ -5,7 +5,7 @@ main_config: 'bmad.lens.release/_bmad/gds/bmadconfig.yaml'
 web_bundle: true
 
 # Checkpoint handler paths
-advanced_elicitation: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.xml'
+advanced_elicitation: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
 party_mode_exec: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 quick_dev_workflow: 'bmad.lens.release/_bmad/gds/workflows/gds-quick-flow/quick-dev/workflow.md'
 ---
@@ -60,6 +60,7 @@ This uses **step-file architecture** for disciplined execution:
 - **ALWAYS** follow the exact instructions in the step file
 - **ALWAYS** halt at menus and wait for user input
 - **NEVER** create mental todo lists from future steps
+- **BATCH MODE**: If user selects `[B]` at any step menu, or profile has `question_mode: batch`, read fully and follow `_bmad/core/workflows/batch-mode/workflow.md` to generate all remaining content continuously, then present batch review
 
 ---
 

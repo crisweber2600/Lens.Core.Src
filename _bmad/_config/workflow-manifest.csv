@@ -111,6 +111,7 @@ name,description,module,path
 "bootstrap","Setup TargetProjects from service map","lens-work","_bmad/lens-work/workflows/utility/bootstrap/workflow.md"
 "check-repos","Validate repository health and sync status","lens-work","_bmad/lens-work/workflows/utility/check-repos/workflow.md"
 "fix-state","Reconstruct state from event log or git scan","lens-work","_bmad/lens-work/workflows/utility/fix-state/workflow.md"
+"adjust","Lightweight post-dev adjustment (abbreviated review, no adversarial/party mode)","lens-work","_bmad/lens-work/workflows/utility/adjust/workflow.md"
 "fix-story","Quick correction loop (Quick-Spec → Adversarial Review → Quick-Dev)","lens-work","_bmad/lens-work/workflows/utility/fix-story/workflow.md"
 "manage-credentials","Add, update, remove, or view git host credentials (PATs) in user profile","lens-work","_bmad/lens-work/workflows/utility/manage-credentials/workflow.md"
 "migrate-lifecycle","Migrate initiative from legacy p1-p6 phase model to lifecycle contract v2 (named phases + tracks)","lens-work","_bmad/lens-work/workflows/utility/migrate-lifecycle/workflow.md"

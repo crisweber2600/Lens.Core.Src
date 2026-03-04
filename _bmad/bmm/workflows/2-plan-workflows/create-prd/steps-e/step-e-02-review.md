@@ -7,7 +7,7 @@ nextStepFile: './step-e-03-edit.md'
 prdFile: '{prd_file_path}'
 validationReport: '{validation_report_path}'  # If provided
 prdPurpose: 'bmad.lens.release/_bmad/bmm/workflows/2-plan-workflows/create-prd/data/prd-purpose.md'
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.xml'
+advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
 ---
 
 # Step E-2: Deep Review & Analysis

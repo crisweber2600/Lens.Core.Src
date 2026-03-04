@@ -400,22 +400,108 @@ Based on selection:
 For Add/Modify: run same inheritance validation as create path.
 For Clarify/Deprecate: skip validation.
 
+### Step 5.5A: Determine Version Change Level
+
+Enforce semantic versioning based on amendment type:
+
+```
+Version Format: MAJOR.MINOR.PATCH
+
+| Amendment Type | Version Bump | Criteria |
+|----------------|-------------|----------|
+| Remove article or weaken principle | MAJOR | Incompatible change — existing compliance may break |
+| Add new article | MINOR | New constraint — backward-compatible but additive |
+| Modify existing article | MINOR | Substance change — may affect existing artifacts |
+| Deprecate article | MINOR | Signals removal intent — still enforced until removed |
+| Clarify existing article | PATCH | No substance change — adds detail/examples only |
+
+version_change_level = determine_level(amendment_type)
+old_version = current_constitution.version
+new_version = bump(old_version, version_change_level)
+```
+
+### Step 5.6A: Generate Sync Impact Report
+
+Before presenting the amendment for ratification, generate a sync impact report
+using **constitution skill Part 15** to show the blast radius of this change.
+
+```yaml
+sync_impact = invoke("constitution.generate-sync-impact-report")
+params:
+  layer_type: ${layer_type}
+  constitution_name: ${constitution_name}
+  version_change: { old: ${old_version}, new: ${new_version}, level: ${version_change_level} }
+  changed_articles: ${list_of_changed_article_titles}
+  amendment_type: ${amendment_type}
+```
+
+Display the sync impact report to the user:
+
+```
+═══ Constitution Sync Impact Report ═══
+
+Amendment: {layer_type} constitution "{constitution_name}"
+Version: {old_version} → {new_version} ({version_change_level})
+Change Type: {amendment_type}
+Changed Articles: {changed_articles}
+
+── Blast Radius ──
+
+{sync_impact.governed_scopes}
+{sync_impact.active_initiatives_table}
+
+── Version Change Impact ──
+
+{sync_impact.version_impact_table}
+
+── Recommended Actions ──
+
+{sync_impact.recommended_actions}
+
+── Template Propagation ──
+
+{sync_impact.template_list}
+```
+
+### Step 5.7A: Consistency Propagation Check
+
+```yaml
+# Suggest re-running /analyze on affected initiatives after ratification
+if version_change_level in ["MAJOR", "MINOR"]:
+  output: |
+    ℹ️  After ratification, consider running /analyze on affected initiatives:
+    ${for initiative in sync_impact.affected_initiatives}
+      /analyze ${initiative.id} — ${initiative.name} (currently in ${initiative.phase})
+    ${endfor}
+```
+
 ### Step 6A: Preview and Ratify Amendment
 
-Show amendment preview with version increment:
+Show amendment preview with version increment and sync impact acknowledgment:
 - Add/Modify/Deprecate: minor version bump
 - Clarify: patch version bump
+- Remove/weaken: MAJOR version bump
 
 ```
 📜 Amendment Preview
 
 Constitution: {name}
 Type: {amendment_type}
-Version: {old} → {new}
+Version: {old} → {new} ({version_change_level})
 
 {show changes}
 
-Ratify amendment? [Y/N/Edit]
+{if version_change_level == "MAJOR"}
+⚠️  MAJOR change — this affects {sync_impact.affected_initiative_count} active initiative(s).
+    All affected initiatives will require /compliance re-validation.
+    Ratify? [Y/N/Edit]
+{else if version_change_level == "MINOR"}
+ℹ️  MINOR change — {sync_impact.affected_initiative_count} in-progress initiative(s) should re-run /compliance.
+    Ratify? [Y/N/Edit]
+{else}
+✅ PATCH change — no downstream re-validation required.
+    Ratify? [Y/N/Edit]
+{endif}
 ```
 
 ### Step 7A: Apply and Commit

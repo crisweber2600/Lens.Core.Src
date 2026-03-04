@@ -44,29 +44,15 @@ phase_name: Story Generation
 ### 0. Pre-Flight [REQ-9]
 
 ```yaml
-# PRE-FLIGHT (mandatory, never skip) [REQ-9]
-# 1. Verify working directory is clean
-# 2. Load two-file state (state.yaml + initiative config)
-# 3. Check previous phase status (if applicable)
-# 4. Determine correct phase branch: {featureBranchRoot}-{audience}-p{N}
-# 5. Create phase branch if it doesn't exist
-# 6. Checkout phase branch
-# 7. Confirm to user: "Now on branch: {branch_name}"
+# Standard pre-flight: clean state, two-file state load, lifecycle load
+# Post-conditions: state, initiative, lifecycle, size, domain_prefix, initiative_root
+invoke: shared.preflight
+# Fragment: _bmad/lens-work/workflows/shared/preflight.fragment.md
 # GATE: All steps must pass before proceeding to artifact work
 
-# Verify working directory is clean
-invoke: git-orchestration.verify-clean-state
-
-# Load two-file state
-state = load("_bmad-output/lens-work/state.yaml")
-initiative = load_initiative_config(state.active_initiative)
-
-# Read initiative config
-size = initiative.size
-domain_prefix = initiative.domain_prefix
-docs_path = initiative.docs.path
-output_path = docs_path
-ensure_directory(output_path)
+# Resolve docs_path, repo_docs_path, output_path; create output directory
+invoke: shared.resolve-docs-path
+# Fragment: _bmad/lens-work/workflows/shared/resolve-docs-path.fragment.md
 
 # REQ-7/REQ-9: Validate previous phase PR merged [S1.5]
 prev_phase = "techplan"
@@ -75,35 +61,56 @@ prev_audience_branch = "${initiative.featureBranchRoot}-small"
 
 if initiative.phases[prev_phase] exists:
   if initiative.phases[prev_phase].status == "pr_pending":
-    # Check if the audience branch contains the phase commits (merged via PR)
-    result = git-orchestration.exec("git merge-base --is-ancestor origin/${prev_phase_branch} origin/${prev_audience_branch}")
+    # Check if the audience branch still exists remotely (may be deleted after PR merge)
+    prev_branch_exists = git-orchestration.exec("git ls-remote --heads origin ${prev_audience_branch}").stdout != ""
     
-    if result.exit_code == 0:
-      # PR was merged! Auto-update status
-      invoke: state-management.update-initiative
-      params:
-        initiative_id: ${initiative.id}
-        updates:
-          phases:
-            techplan:
-              status: "complete"
-              completed_at: "${ISO_TIMESTAMP}"
-      output: "✅ Previous phase (techplan) PR merged — status updated to complete"
-    else:
-      # PR not merged yet — warn but allow proceeding
-      pr_url = initiative.phases[prev_phase].pr_url || "(no PR URL recorded)"
-      output: |
-        ⚠️  Previous phase (techplan) PR not yet merged
-        ├── Status: pr_pending
-        ├── PR: ${pr_url}
-        └── You may continue, but phase artifacts may not be on the audience branch
+    if prev_branch_exists:
+      # Check if the audience branch contains the phase commits (merged via PR)
+      result = git-orchestration.exec("git merge-base --is-ancestor origin/${prev_phase_branch} origin/${prev_audience_branch}")
       
-      ask: "Continue anyway? [Y]es / [N]o"
-      if no:
-        exit: 0  # User chose to wait for merge
+      if result.exit_code == 0:
+        # PR was merged! Auto-update status
+        invoke: state-management.update-initiative
+        params:
+          initiative_id: ${initiative.id}
+          updates:
+            phases:
+              techplan:
+                status: "complete"
+                completed_at: "${ISO_TIMESTAMP}"
+        output: "✅ Previous phase (techplan) PR merged — status updated to complete"
+      else:
+        # PR not merged yet — warn but allow proceeding
+        pr_url = initiative.phases[prev_phase].pr_url || "(no PR URL recorded)"
+        output: |
+          ⚠️  Previous phase (techplan) PR not yet merged
+          ├── Status: pr_pending
+          ├── PR: ${pr_url}
+          └── You may continue, but phase artifacts may not be on the audience branch
+        
+        ask: "Continue anyway? [Y]es / [N]o"
+        if no:
+          exit: 0  # User chose to wait for merge
+    else:
+      # Audience branch deleted post-merge — check promotion status
+      if initiative.audience_status.small_to_medium in ["complete", "passed", "passed_with_warnings"]:
+        invoke: state-management.update-initiative
+        params:
+          initiative_id: ${initiative.id}
+          updates:
+            phases:
+              techplan:
+                status: "complete"
+        output: "✅ Previous phase (techplan) complete — audience branch merged and deleted (small→medium promotion passed)"
+      else:
+        output: |
+          ⚠️  Audience branch ${prev_audience_branch} not found remotely
+          └── Proceeding — verify manually if needed
 
 # Derive audience for story-gen (medium for devproposal) [REQ-9]
-audience = "medium"
+# Uses lifecycle branching_audience (authoritative), falls back to hardcoded
+current_phase = "devproposal"
+audience = lifecycle.phases[current_phase].branching_audience || lifecycle.phases[current_phase].audience || "medium"
 featureBranchRoot = initiative.featureBranchRoot
 audience_branch = "${featureBranchRoot}-medium"
 

@@ -15,7 +15,7 @@ outputFile: '{output_folder}/brainstorming-session-{date}.md'
 coreBrainstorming: 'bmad.lens.release/_bmad/core/workflows/brainstorming/workflow.md'
 
 # Task References
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.xml'
+advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
 partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 ---
 

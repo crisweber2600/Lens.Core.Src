@@ -81,8 +81,10 @@ size = initiative.size
 domain_prefix = initiative.domain_prefix
 
 # Derive audience from lifecycle contract (sprintplan → large)
+# Uses branching_audience (the audience branch this phase branches FROM)
+# Falls back to audience field for backward compatibility
 current_phase = "sprintplan"
-audience = lifecycle.phases[current_phase].audience    # "large"
+audience = lifecycle.phases[current_phase].branching_audience || lifecycle.phases[current_phase].audience    # "large"
 initiative_root = initiative.initiative_root
 audience_branch = "${initiative_root}-${audience}"     # {initiative_root}-large
 
@@ -314,7 +316,7 @@ if compliance_failures.length > 0:
 
 **⚠️ CRITICAL — Workflow Engine Rules:**
 Sub-workflows [3] and [4] use YAML-based workflow.yaml files with the workflow engine.
-- Load `_bmad/core/tasks/workflow.xml` FIRST as the execution engine
+- Load `_bmad/core/tasks/workflow.yaml` FIRST as the execution engine
 - Pass the `workflow.yaml` path to the engine
 - Follow engine instructions precisely — execute steps sequentially
 - Save outputs after completing EACH engine step (never batch)
@@ -328,13 +330,13 @@ params:
   workflow_name: sprint-planning
 
 # RESOLVED: bmm.sprint-planning → Load workflow engine then execute YAML workflow:
-#   1. Load engine: _bmad/core/tasks/workflow.xml
+#   1. Load engine: _bmad/core/tasks/workflow.yaml
 #   2. Pass config: _bmad/bmm/workflows/4-implementation/sprint-planning/workflow.yaml
 # Agent persona: Bob (Scrum Master) — _bmad/bmm/agents/sm.md
 # Engine executes steps sequentially — save outputs after EACH step
 # STOP and wait for user at decision points
 agent_persona: "_bmad/bmm/agents/sm.md"
-load_engine: "_bmad/core/tasks/workflow.xml"
+load_engine: "_bmad/core/tasks/workflow.yaml"
 execute_workflow: "_bmad/bmm/workflows/4-implementation/sprint-planning/workflow.yaml"
 params:
   stories: "${docs_path}/stories.md"
@@ -359,12 +361,12 @@ params:
   workflow_name: dev-story
 
 # RESOLVED: bmm.create-dev-story → Load workflow engine then execute YAML workflow:
-#   1. Load engine: _bmad/core/tasks/workflow.xml
+#   1. Load engine: _bmad/core/tasks/workflow.yaml
 #   2. Pass config: _bmad/bmm/workflows/4-implementation/create-story/workflow.yaml
 # Agent persona: Bob (Scrum Master) — _bmad/bmm/agents/sm.md
 # Engine executes steps sequentially — save outputs after EACH step
 # STOP and wait for user at decision points
-load_engine: "_bmad/core/tasks/workflow.xml"
+load_engine: "_bmad/core/tasks/workflow.yaml"
 execute_workflow: "_bmad/bmm/workflows/4-implementation/create-story/workflow.yaml"
 params:
   story_id: "${selected_story}"

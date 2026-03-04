@@ -1,4 +1,4 @@
-<task id="_bmad/core/tasks/workflow.xml" name="Execute Workflow" internal="true">
+<task id="_bmad/core/tasks/workflow.yaml" name="Execute Workflow" internal="true">
   <objective>Execute given workflow by loading its configuration, following instructions, and producing output</objective>
 
   <llm critical="true">
@@ -60,7 +60,7 @@
           <tag>action xml tag → Perform the action</tag>
           <tag>check if="condition" xml tag → Conditional block wrapping actions (requires closing &lt;/check&gt;)</tag>
           <tag>ask xml tag → Prompt user and WAIT for response</tag>
-          <tag>invoke-workflow xml tag → Execute another workflow with given inputs and the workflow.xml runner</tag>
+          <tag>invoke-workflow xml tag → Execute another workflow with given inputs and the workflow.yaml runner</tag>
           <tag>invoke-task xml tag → Execute specified task</tag>
           <tag>invoke-protocol name="protocol_name" xml tag → Execute reusable protocol from protocols section</tag>
           <tag>goto step="x" → Jump to specified step</tag>
@@ -72,9 +72,12 @@
           <mandate>Generate content for this section</mandate>
           <mandate>Save to file (Write first time, Edit subsequent)</mandate>
           <action>Display generated content</action>
-          <ask> [a] Advanced Elicitation, [c] Continue, [p] Party-Mode, [y] YOLO the rest of this document only. WAIT for response. <if
+          <ask> [a] Advanced Elicitation, [b] Batch Mode, [c] Continue, [p] Party-Mode, [y] YOLO the rest of this document only. WAIT for response. <if
               response="a">
-              <action>Start the advanced elicitation workflow bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.xml</action>
+              <action>Start the advanced elicitation workflow bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml</action>
+            </if>
+            <if response="b">
+              <action>Save current section content, then read fully and follow the batch-mode protocol: bmad.lens.release/_bmad/core/workflows/batch-mode/workflow.md — execute all remaining steps continuously, then present batch review</action>
             </if>
             <if
               response="c">
@@ -104,9 +107,10 @@
   </flow>
 
   <execution-modes>
-    <mode name="normal">Full user interaction and confirmation of EVERY step at EVERY template output - NO EXCEPTIONS except yolo MODE</mode>
+    <mode name="normal">Full user interaction and confirmation of EVERY step at EVERY template output - NO EXCEPTIONS except yolo or batch MODE</mode>
     <mode name="yolo">Skip all confirmations and elicitation, minimize prompts and try to produce all of the workflow automatically by
       simulating the remaining discussions with an simulated expert user</mode>
+    <mode name="batch">Generate all remaining content continuously (like yolo) but with full quality and a mandatory review phase at the end — read and follow bmad.lens.release/_bmad/core/workflows/batch-mode/workflow.md for the complete protocol</mode>
   </execution-modes>
 
   <supported-tags desc="Instructions can use these tags">
@@ -225,7 +229,7 @@
     <critical-rules>
       • This is the complete workflow execution engine
       • You MUST Follow instructions exactly as written
-      • The workflow execution engine is governed by: bmad.lens.release/_bmad/core/tasks/workflow.xml
+      • The workflow execution engine is governed by: bmad.lens.release/_bmad/core/tasks/workflow.yaml
       • You MUST have already loaded and processed: {installed_path}/workflow.yaml
       • This workflow uses INTENT-DRIVEN PLANNING - adapt organically to product type and context
       • YOU ARE FACILITATING A CONVERSATION With a user to produce a final document step by step. The whole process is meant to be

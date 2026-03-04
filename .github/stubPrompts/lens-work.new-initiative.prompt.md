@@ -1,6 +1,6 @@
 ````prompt
 ---
-description: 'Create a new initiative — routes to /new-domain, /new-service, or /new-feature based on context'
+description: 'Create a new initiative — cascades through domain → service → docs → feature in one session'
 ---
 
 # lens-work.new-initiative (Stub)

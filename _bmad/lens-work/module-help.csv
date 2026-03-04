@@ -22,6 +22,7 @@ lens-work,anytime,Repo Status,RP,,workflows/discovery/repo-status/workflow.md,le
 lens-work,anytime,Domain Map,DM,,workflows/discovery/domain-map/workflow.md,lens-work-domain-map,false,@lens,,"View or edit domain architecture map",,domain map,
 lens-work,anytime,Impact Analysis,IA,,workflows/discovery/impact-analysis/workflow.md,lens-work-impact,false,@lens,,"Cross-boundary impact analysis",,impact report,
 lens-work,anytime,Recreate Branches,RB,,workflows/utility/recreate-branches/workflow.md,lens-work-recreate-branches,false,@lens,,"Recreate missing git branches (recovery)",,branch recovery,
+lens-work,anytime,Adjust,ADJ,,workflows/utility/adjust/workflow.md,lens-work-adjust,false,@lens,,"Lightweight post-dev tweaks (abbreviated review, no adversarial/party mode)",,adjustment tweak,
 lens-work,anytime,Fix Story,FS,,workflows/utility/fix-story/workflow.md,lens-work-fix-story,false,@lens,,"Correction loop (Quick-Spec → Review → Quick-Dev)",,story fix,
 lens-work,anytime,Help,H,,,lens-work-help,false,@lens,,"Display full command reference with context and next step",,help display,
 lens-work,preplan,Pre-Plan,PP,10,workflows/router/pre-plan/workflow.md,lens-work-preplan,true,@lens,,"Launch PrePlan phase (brainstorm research product brief) — small audience",planning_artifacts,product brief,

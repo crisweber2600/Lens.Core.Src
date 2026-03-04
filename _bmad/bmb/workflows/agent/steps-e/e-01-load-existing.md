@@ -10,7 +10,7 @@ editPlan: '{bmb_creations_output_folder}/edit-plan-{agent-name}.md'
 agentMetadata: ../data/agent-metadata.md
 agentMenuPatterns: ../data/agent-menu-patterns.md
 
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.xml'
+advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
 partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 ---
 

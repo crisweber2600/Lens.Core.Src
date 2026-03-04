@@ -3,7 +3,7 @@ name: 'step-05-identity'
 description: 'Module code, name, and personality/theme'
 
 nextStepFile: './step-06-users.md'
-advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.xml'
+advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.yaml'
 partyModeWorkflow: '../../../../core/workflows/party-mode/workflow.md'
 ---
 

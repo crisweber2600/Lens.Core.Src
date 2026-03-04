@@ -371,8 +371,8 @@ git:
     workflow: "{initiative_root}-{audience}-{phase_name}-{workflow_name}"
   # Target project GitFlow patterns (defined in lifecycle.yaml)
   target_project_patterns:
-    story: "feature/{jira-storyid}"
-    epic: "feature/{jira-epicid}"
+    epic: "feature/{epic-key}"
+    story: "feature/{epic-key}-{story-key}"
     integration: develop
     release: "release/{version}"
     production: main

@@ -3,7 +3,7 @@ name: 'step-10-tools'
 description: 'MCP tools, integrations, external services the module might need'
 
 nextStepFile: './step-11-scenarios.md'
-advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.xml'
+advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.yaml'
 partyModeWorkflow: '../../../../core/workflows/party-mode/workflow.md'
 ---
 

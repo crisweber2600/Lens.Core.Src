@@ -4,7 +4,7 @@ description: 'Display complete validation report and offer next steps'
 
 validationReport: '{bmb_creations_output_folder}/validation-report-{agent-name}.md'
 
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.xml'
+advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
 partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
 ---
 

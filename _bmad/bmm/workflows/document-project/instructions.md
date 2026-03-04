@@ -1,6 +1,6 @@
 # Document Project Workflow Router
 
-<critical>The workflow execution engine is governed by: bmad.lens.release/_bmad/core/tasks/workflow.xml</critical>
+<critical>The workflow execution engine is governed by: bmad.lens.release/_bmad/core/tasks/workflow.yaml</critical>
 <critical>You MUST have already loaded and processed: bmad.lens.release/_bmad/bmm/workflows/document-project/workflow.yaml</critical>
 <critical>Communicate all responses in {communication_language}</critical>
 

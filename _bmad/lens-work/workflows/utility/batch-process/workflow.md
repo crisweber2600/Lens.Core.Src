@@ -15,11 +15,29 @@ category: utility
 ## Input Parameters
 
 ```yaml
-phase_number: string      # "1", "2", "3", "4"
+phase_number: string      # REQUIRED: "1", "2", "3", "4"
 phase_name: string        # Analysis | Planning | Solutioning | Implementation
 template_path: string     # Module template path
 output_filename: string   # File name for generated batch file
+scope: string             # OPTIONAL: "phase" (default) | "workflows" | "workflow"
+                          # NOTE: Only "phase" scope is currently implemented.
+                          # "workflows" and "workflow" scopes are reserved for future use.
+workflows: [string]       # FUTURE: list of workflow names to batch (when scope="workflows")
+workflow_name: string     # FUTURE: specific workflow when scope="workflow"
+steps: [object]           # FUTURE: remaining steps if switching within workflow (when scope="workflow")
 ```
+
+---
+
+## Scope-Based Execution (FUTURE)
+
+> **NOTE:** The `scope` parameter infrastructure is reserved for future enhancements. Currently only `scope="phase"` (the default) is implemented. Passing `scope="workflows"` or `scope="workflow"` will behave identically to `scope="phase"` until the execution sequence is updated in a future release.
+
+| Scope | Use Case | Requires | Behavior |
+|-------|----------|----------|----------|
+| **phase** (default) | User selects batch at phase entry | phase_name, template_path | Batch all workflows in the phase |
+| **workflows** *(future)* | User switches to batch after first workflow | phase_name, workflows list | Batch only specified workflows |
+| **workflow** *(future)* | User switches to batch within a workflow's steps | workflow_name, steps | Batch remaining steps of current workflow only |
 
 ---
 

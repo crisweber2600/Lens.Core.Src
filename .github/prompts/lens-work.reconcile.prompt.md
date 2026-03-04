@@ -3,6 +3,10 @@
 description: 'Reconcile repo inventory with service map'
 ---
 
+**⚠️ PATH CONTEXT — TWO DIRECTORIES:** This prompt operates across two directories:
+- **`_bmad/` paths** → resolve inside the `bmad.lens.release/` subdirectory (read-only source of workflows, skills, agents)
+- **`_bmad-output/` paths, git branches, commits, and state files** → resolve in the **control repo root** (the parent directory that CONTAINS `bmad.lens.release/`). ALL git operations (checkout, branch, commit, push) happen here — NEVER inside `bmad.lens.release/`.
+
 # lens-work.reconcile (Stub)
 
 > **This is a stub.** Load and execute the full prompt from the bmad.lens.release control repository.

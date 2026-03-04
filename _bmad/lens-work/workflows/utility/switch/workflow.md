@@ -65,37 +65,10 @@ git fetch origin
 ### Step 1: Load Current Context
 
 ```yaml
-# Load personal state
-state = load("_bmad-output/lens-work/state.yaml")
-
-if state == null:
-  output: |
-    📍 No active context found.
-    
-    No lens-work state exists yet.
-    
-    To get started:
-    └── Run /new-domain, /new-service, or /new-feature to create an initiative
-  exit: 0
-
-# Load active initiative config (two-file architecture)
-if state.active_initiative != null:
-  initiative = load("_bmad-output/lens-work/initiatives/${state.active_initiative}.yaml")
-  if initiative == null:
-    error: "Initiative config not found: initiatives/${state.active_initiative}.yaml"
-    hint: "Run @lens migrate or check initiatives/ directory."
-    exit: 1
-else if state.initiative != null:
-  # Legacy single-file format
-  initiative = state.initiative
-  legacy_warning: true
-else:
-  output: |
-    📍 No active initiative in state.
-    
-    To start:
-    └── Run /new-domain, /new-service, or /new-feature
-  exit: 0
+# Load personal state + initiative config (two-file architecture with legacy fallback)
+# Post-conditions: state, initiative, legacy_warning populated; exits cleanly if no state
+invoke: shared.load-state
+# Fragment: _bmad/lens-work/workflows/shared/load-state.fragment.md
 
 # Capture current position
 current_branch = exec("git branch --show-current")

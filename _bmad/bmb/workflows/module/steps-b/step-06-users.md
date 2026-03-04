@@ -3,7 +3,7 @@ name: 'step-06-users'
 description: 'Who + How — personas AND user journey combined'
 
 nextStepFile: './step-07-value.md'
-advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.xml'
+advancedElicitationTask: '../../../../core/workflows/advanced-elicitation/workflow.yaml'
 partyModeWorkflow: '../../../../core/workflows/party-mode/workflow.md'
 ---
 
