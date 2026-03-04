@@ -557,9 +557,9 @@ output: |
 # User signals: @lens done
 
 # Pre-condition gate: verify story is ready for review
-story_check = load(${dev_story_path})
+story_check = load("${dev_story_path}")
 story_status_check = story_check.status || story_check.Status || "unknown"
-if story_status_check not in ["review", "in-progress", "implementing"]:
+if story_status_check not in ["review", "in-progress"]:
   error: |
     ⛔ Code review blocked — story status is "${story_status_check}", not ready for review.
     Complete implementation and signal @lens done before proceeding.

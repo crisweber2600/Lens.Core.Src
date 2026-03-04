@@ -250,7 +250,7 @@ created: 2026-02-05
 | 4.1.5.16 | Epic completion gate uses `halt: true` on failure | Both `bmm.check-implementation-readiness` and `core.party-mode` epic gates use `halt: true` — workflow cannot proceed past Step 5a on failure |
 | 4.1.5.17 | Story-status hard gate blocks PR when status ≠ done | `reviewed_story_status != "done"` check fires `halt: true` before `git-orchestration.create-pr` — PR is never created if review fixes are unresolved |
 | 4.1.5.18 | Step 4→5 requires @lens done signal | Agent halts after Step 4 implementation output with `halt: true` and `wait_for: "@lens done"`; does not proceed to Step 5 code review without user signal |
-| 4.1.5.19 | Step 5 pre-condition checks story status | Code review is blocked with `halt: true` if story status is not `"review"`, `"in-progress"`, or `"implementing"` when Step 5 begins |
+| 4.1.5.19 | Step 5 pre-condition checks story status | Code review is blocked with `halt: true` if story status is not `"in-progress"` or `"review"` when Step 5 begins |
 
 ### 4.2 Utility Workflows
 
