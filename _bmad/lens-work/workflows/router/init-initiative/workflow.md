@@ -67,6 +67,62 @@ fi
 git fetch origin main
 ```
 
+### 0-reconcile. Branch-Wins State Reconciliation
+
+```yaml
+# BRANCH-WINS RULE: If the current git branch corresponds to a known
+# initiative whose active_initiative value differs from state.yaml,
+# trust the branch and update state to match git reality.
+# Convention: follows the state-sync background workflow's "auto-correct
+# state.yaml to match git reality" pattern.
+
+current_branch = exec("git branch --show-current")
+
+# Skip reconciliation on default branch — no initiative branch to match
+if current_branch == "main":
+  # No reconciliation needed on default branch
+  pass
+else:
+  state = load("bmad.lens.release/_bmad-output/lens-work/state.yaml")
+
+  if state != null:
+    # Scan all initiative configs for one whose branch: field matches current_branch
+    domain_yaml_files = glob("bmad.lens.release/_bmad-output/lens-work/initiatives/*/Domain.yaml")
+    service_yaml_files = glob("bmad.lens.release/_bmad-output/lens-work/initiatives/*/*/Service.yaml")
+
+    matched_initiative = null
+
+    # Check service configs first (more specific match)
+    for file in service_yaml_files:
+      config = load(file)
+      if config.branch == current_branch:
+        matched_initiative = "${config.domain_prefix}/${config.service_prefix}"
+        break
+
+    # Fall back to domain configs
+    if matched_initiative == null:
+      for file in domain_yaml_files:
+        config = load(file)
+        if config.branch == current_branch:
+          matched_initiative = config.domain_prefix
+          break
+
+    # If a match was found and it differs from current state, reconcile
+    if matched_initiative != null && matched_initiative != state.active_initiative:
+      old_initiative = state.active_initiative
+      state.active_initiative = matched_initiative
+      save("bmad.lens.release/_bmad-output/lens-work/state.yaml", state)
+
+      info: "Branch drift detected: updated state from '${old_initiative}' to '${matched_initiative}' to match current branch '${current_branch}'."
+
+      # Log drift correction to event-log.jsonl for traceability
+      append("bmad.lens.release/_bmad-output/lens-work/event-log.jsonl",
+        {"ts": "${ISO_TIMESTAMP}", "event": "branch-drift-reconcile", "old_initiative": "${old_initiative}", "new_initiative": "${matched_initiative}", "branch": "${current_branch}", "trigger": "init-initiative"})
+
+    # If no matching initiative config found for this branch, proceed silently.
+    # The branch may be new (the whole point of /new-*).
+```
+
 ### 0a. Load Parent Domain Context (Service-Layer)
 
 ${if layer == "service"}
