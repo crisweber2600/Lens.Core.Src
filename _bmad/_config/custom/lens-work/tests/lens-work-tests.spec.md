@@ -247,6 +247,8 @@ created: 2026-02-05
 | 4.1.5.13 | Epic party-mode teardown runs on epic completion | `core.party-mode` writes `epic-*-party-mode-review.md` and blocks `/dev` on unresolved issues |
 | 4.1.5.14 | Code review auto-fix/rerun loop is default | `bmm.code-review` runs with `auto_fix_rerun=true`, fixes `CRITICAL/HIGH/MEDIUM`, and reruns up to 2 passes without prompting |
 | 4.1.5.15 | Story PR auto-created after successful `/dev` review gates | `git-orchestration.create-pr` is invoked with story branch → epic branch; fallback emits manual `gh pr create` command |
+| 4.1.5.16 | Epic completion gate uses `halt: true` on failure | Both `bmm.check-implementation-readiness` and `core.party-mode` epic gates use `halt: true` — workflow cannot proceed past Step 5a on failure |
+| 4.1.5.17 | Story-status hard gate blocks PR when status ≠ done | `reviewed_story_status != "done"` check fires `halt: true` before `git-orchestration.create-pr` — PR is never created if review fixes are unresolved |
 
 ### 4.2 Utility Workflows
 

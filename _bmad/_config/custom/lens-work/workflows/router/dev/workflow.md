@@ -623,7 +623,16 @@ if party_mode.status not in ["pass", "complete"]:
   error: |
     Party mode teardown found unresolved issues.
     Address _bmad-output/implementation-artifacts/party-mode-review-${story_id}.md and re-run @lens done.
+  halt: true
+```
 
+### 5a. Epic Completion Gate (Mandatory)
+
+**⚠️ MANDATORY — Epic Completion Gate: Do NOT skip this section. Test specs 4.1.5.11-13 require this gate.**
+**This step MUST execute when the current story completes its parent epic.**
+**Both the adversarial review and party-mode teardown are hard gates — failure halts the workflow.**
+
+```yaml
 # Epic-level teardown is mandatory when this story completes its parent epic
 current_epic_id = resolve_story_epic_id(
   "${story_id}",
@@ -649,8 +658,9 @@ if current_epic_id:
 
     if epic_adversarial.status in ["blocked", "fail", "failed"]:
       error: |
-        Epic adversarial review failed for ${current_epic_id}.
+        ⛔ MANDATORY GATE — Epic adversarial review failed for ${current_epic_id}.
         Resolve implementation-readiness findings and re-run @lens done.
+      halt: true
 
     invoke: core.party-mode
     params:
@@ -662,10 +672,27 @@ if current_epic_id:
 
     if party_mode.status not in ["pass", "complete"]:
       error: |
-        Epic party-mode teardown found unresolved issues for ${current_epic_id}.
+        ⛔ MANDATORY GATE — Epic party-mode teardown found unresolved issues for ${current_epic_id}.
         Address _bmad-output/implementation-artifacts/epic-${current_epic_id}-party-mode-review.md and re-run @lens done.
+      halt: true
 
-# Auto-create story PR in target repo after successful review gates
+# ⚠️ MANDATORY — Review Fix Gate: Story must be status "done" before PR creation.
+# Hard gate: review/fix loop must complete before PR creation
+reviewed_story = load(${dev_story_path})
+reviewed_story_status = reviewed_story.status || reviewed_story.Status || reviewed_story.story_status || "unknown"
+
+if reviewed_story_status != "done":
+  output: |
+    ⛔ PR blocked for ${story_id}
+    ├── Post-review story status: ${reviewed_story_status}
+    ├── Meaning: review follow-ups or unresolved fixes remain
+    └── Action: resolve review items and re-run @lens done
+
+  # End review workflow without opening PR
+  invoke: git-orchestration.finish-workflow
+  halt: true
+
+# Auto-create story PR in target repo only after all review gates pass
 invoke: git-orchestration.create-pr
 params:
   repo_path: ${target_path}
