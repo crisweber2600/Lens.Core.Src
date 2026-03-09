@@ -529,8 +529,9 @@ elif layer == "service":
   # REQ-1: Service — check nested path: initiatives/{domain_prefix}/{service_prefix}/Service.yaml
   initiative_path = "${initiatives_root}/${domain_prefix}/${service_prefix}/Service.yaml"
 elif layer == "feature":
-  # REQ-1: Feature — check flat path: initiatives/{initiative_id}.yaml
-  initiative_path = "${initiatives_root}/${initiative_id}.yaml"
+  # REQ-1: Feature — check nested path: initiatives/{domain_prefix}/{service_prefix}/{feature_name}/service.yaml
+  feature_name = $(echo "${initiative_name}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | sed 's/[^a-z0-9-]//g' | sed 's/-\+/-/g' | sed 's/^-//;s/-$//')
+  initiative_path = "${initiatives_root}/${domain_prefix}/${service_prefix}/${feature_name}/service.yaml"
 else:
   # REQ-1: Microservice/other — check flat path: initiatives/{initiative_id}.yaml
   initiative_path = "${initiatives_root}/${initiative_id}.yaml"
@@ -559,8 +560,9 @@ if file_exists(initiative_path):
       initiative_path = "${initiatives_root}/${domain_prefix}/${service_prefix}/Service.yaml"
     elif layer == "feature":
       initiative_name = name
-      initiative_id = $(echo "${name}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | sed 's/[^a-z0-9-]//g' | sed 's/-\+/-/g' | sed 's/^-//;s/-$//')
-      initiative_path = "${initiatives_root}/${initiative_id}.yaml"
+      feature_name = $(echo "${name}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | sed 's/[^a-z0-9-]//g' | sed 's/-\+/-/g' | sed 's/^-//;s/-$//')
+      initiative_id = "${domain_prefix}/${service_prefix}/${feature_name}"
+      initiative_path = "${initiatives_root}/${domain_prefix}/${service_prefix}/${feature_name}/service.yaml"
     else:
       initiative_name = name
       initiative_id = $(echo "${name}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | sed 's/[^a-z0-9-]//g' | cut -c1-20)-$(openssl rand -hex 3)
@@ -784,8 +786,10 @@ ${elif layer == "service"}
 **Service-layer: SKIP this step.** Service.yaml (created in Step 6a) serves as
 both the service descriptor AND the initiative config. No separate
 `{initiative_id}.yaml` file is created for service-layer.
-${else}
-Create directory and file at `bmad.lens.release/_bmad-output/lens-work/initiatives/${initiative_id}.yaml`:
+${elif layer == "feature"}
+**Feature-layer:** Create nested folder structure and service.yaml config file.
+
+Create directory and file at `bmad.lens.release/_bmad-output/lens-work/initiatives/${domain_prefix}/${service_prefix}/${feature_name}/service.yaml`:
 
 ```yaml
 # v2 — Lifecycle Contract initiative config
@@ -800,6 +804,73 @@ service: ${service}
 service_prefix: ${service_prefix}
 question_mode: ${question_mode}
 tracker_id: ${tracker_id || ""}            # REQ-1, REQ-3: Work-item ID (feature-layer, any tracker)
+created_at: "${ISO_TIMESTAMP}"
+created_by: ${git_user}
+target_repos:
+${for repo in target_repos}
+  - ${repo}
+${endfor}
+docs:
+  root: "docs"
+  domain: "${docs_domain}"
+  service: "${docs_service}"
+  repo: "${docs_repo}"
+  feature: "${docs_feature}"
+  path: "${docs_path}"
+  bmad_docs: "${bmad_docs}"   # REQ-10: BmadDocs co-located output path
+
+# v2: Track & Phases (from lifecycle.yaml)
+track: ${track}                            # full|feature|tech-change|hotfix|spike
+active_phases:                             # Derived from track via lifecycle.yaml
+${for phase in active_phases}
+  - ${phase}
+${endfor}
+audiences:                                 # Derived from track via lifecycle.yaml
+${for aud in track_audiences}
+  - ${aud}
+${endfor}
+
+# v2: Named phase status
+phase_status:
+${for phase in ["preplan", "businessplan", "techplan", "devproposal", "sprintplan"]}
+  ${phase}: null
+${endfor}
+current_phase: null                        # Set when first phase starts
+
+# v2: Initiative root (replaces featureBranchRoot)
+initiative_root: "${initiative_root}"
+
+# Governance
+constitution_mode: advisory                # advisory|enforced
+scope: ${target_repos.length > 1 ? "service" : "repo"}
+coupling: none
+
+# Lifecycle v2 fields populated above:
+# - lifecycle_version: 2
+# - track: ${track}
+# - active_phases: [...] (derived from track)
+# - phase_status: {...} (named phases)
+```
+
+> **Note:** This file is committed to the repo and shared across collaborators. It holds the canonical initiative definition with the v2 lifecycle contract fields: **track** (determines which phases are active), **active_phases** (derived from track), and **initiative_root** (branch name root). The `initiative_root` is computed from parent context: `{domain_prefix}-{service_prefix}-{initiative_id}` (service parent) or `{domain_prefix}-{initiative_id}` (domain parent). Phase branches (e.g., `-small-preplan`) are created by phase router workflows, NOT at init.
+${else}
+**Microservice-layer:** Create flat initiative config file.
+
+Create directory and file at `bmad.lens.release/_bmad-output/lens-work/initiatives/${initiative_id}.yaml`:
+
+```yaml
+# v2 — Lifecycle Contract initiative config
+lifecycle_version: 2
+
+id: ${initiative_id}
+name: "${initiative_name}"
+layer: ${layer}
+domain: ${domain}
+domain_prefix: ${domain_prefix}
+service: ${service}
+service_prefix: ${service_prefix}
+question_mode: ${question_mode}
+tracker_id: ${tracker_id || ""}            # REQ-1, REQ-3: Work-item ID (any tracker)
 created_at: "${ISO_TIMESTAMP}"
 created_by: ${git_user}
 target_repos:
