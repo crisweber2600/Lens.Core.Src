@@ -42,6 +42,7 @@ imports: lifecycle.yaml
 
 ```yaml
 # PRE-FLIGHT (mandatory, never skip) [REQ-9]
+# 0. Execute shared preflight include (authority sync + constitution enforcement)
 # 1. Verify working directory is clean
 # 2. Load initiative config (git-derived state)
 # 3. Validate audience promotion (small → medium must be complete)
@@ -51,6 +52,10 @@ imports: lifecycle.yaml
 # 7. Confirm to user: "Now on branch: {branch_name}"
 # GATE: All steps must pass before proceeding to artifact work
 # NOTE: devproposal is the FIRST phase in medium audience — requires small→medium promotion
+
+# Shared preflight include (includes constitutional context bootstrap)
+invoke: include
+path: "_bmad/lens-work/workflows/includes/preflight.md"
 
 # Verify working directory is clean
 invoke: git-orchestration.verify-clean-state

@@ -1,6 +1,6 @@
 ---
 name: gds-test-automate
-description: Automated test scenario generator. Use when the user says "I want to create automated game tests" or "Generate test scenarios for Unity Unreal or Godot"
+description: 'Generate automated game tests for gameplay systems. Use when the user says "automate tests" or "generate tests"'
 ---
 
-IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL {project-root}/_bmad/gds/workflows/gametest/automate/workflow.md, READ its entire contents and follow its directions exactly!
+Follow the instructions in [workflow.md](workflow.md).

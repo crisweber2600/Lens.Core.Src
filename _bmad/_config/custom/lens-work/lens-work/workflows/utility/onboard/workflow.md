@@ -15,7 +15,8 @@
 Run preflight before executing this workflow:
 
 1. Execute shared preflight from `_bmad/lens-work/workflows/includes/preflight.md`.
-2. If preflight reports missing authority repos, continue onboarding so this workflow can clone or repair required repos.
+2. Shared preflight MUST resolve and enforce constitutional context before continuing.
+3. If preflight reports missing authority repos, continue onboarding so this workflow can clone or repair required repos.
 
 ### Step 1: Detect PR Provider
 

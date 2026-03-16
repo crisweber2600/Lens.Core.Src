@@ -54,7 +54,8 @@ This workflow supports special keywords to control prompting behavior:
 Run preflight before executing this workflow:
 
 1. Execute shared preflight from `_bmad/lens-work/workflows/includes/preflight.md`.
-2. If preflight reports missing authority repos, stop and direct the user to run `/onboard` first.
+2. Shared preflight MUST resolve and enforce constitutional context before continuing.
+3. If preflight reports missing authority repos, stop and direct the user to run `/onboard` first.
 
 ### Step 1: Phase Router Validation + Branch
 

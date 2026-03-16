@@ -1,6 +1,6 @@
 ---
 name: gds-test-design
-description: Game test scenario creator. Use when the user says "lets create game test scenarios"
+description: 'Create comprehensive game test scenarios. Use when the user says "test design" or "design tests"'
 ---
 
-IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL {project-root}/_bmad/gds/workflows/gametest/test-design/workflow.md, READ its entire contents and follow its directions exactly!
+Follow the instructions in [workflow.md](workflow.md).

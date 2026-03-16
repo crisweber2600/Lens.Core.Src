@@ -1,6 +1,6 @@
 ---
 name: gds-document-project
-description: Document brownfield projects for AI context. Use when the user says "document this project" or "generate project docs"
+description: 'Analyze existing game projects to produce useful documentation. Use when the user says "document project" or "generate docs"'
 ---
 
-IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL {project-root}/_bmad/gds/workflows/document-project/workflow.md, READ its entire contents and follow its directions exactly!
+Follow the instructions in [workflow.md](workflow.md).

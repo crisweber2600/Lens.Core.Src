@@ -1,6 +1,6 @@
 ---
 name: gds-create-narrative
-description: Comprehensive narrative design for story-driven games. Use when the user says "lets create a narrative design document" or "I want to design the narrative for my game"
+description: 'Create comprehensive narrative documentation with story structure and world-building. Use when the user says "narrative design" or "create narrative"'
 ---
 
-IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL {project-root}/_bmad/gds/workflows/2-design/narrative/workflow.md, READ its entire contents and follow its directions exactly!
+Follow the instructions in [workflow.md](workflow.md).

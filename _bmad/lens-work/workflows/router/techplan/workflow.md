@@ -48,6 +48,7 @@ imports: lifecycle.yaml
 
 ```yaml
 # PRE-FLIGHT (mandatory, never skip) [REQ-9]
+# 0. Execute shared preflight include (authority sync + constitution enforcement)
 # 1. Verify working directory is clean
 # 2. Derive initiative state from git branch (v2: git-state skill)
 # 3. Check previous phase status (businessplan must be complete)
@@ -57,6 +58,10 @@ imports: lifecycle.yaml
 # 7. Confirm to user: "Now on branch: {branch_name}"
 # GATE: All steps must pass before proceeding to artifact work
 # NOTE: techplan is in the SAME audience (small) as businessplan — no cascade merge needed
+
+# Shared preflight include (includes constitutional context bootstrap)
+invoke: include
+path: "_bmad/lens-work/workflows/includes/preflight.md"
 
 # Verify working directory is clean
 invoke: git-orchestration.verify-clean-state
@@ -163,6 +168,20 @@ required_artifacts:
 for artifact in required_artifacts:
   if not file_exists(artifact):
     warning: "Required artifact not found: ${artifact}. Proceeding but techplan quality may suffer."
+```
+
+### 1a. Constitutional Context Injection (Required)
+
+```yaml
+constitutional_context = invoke("constitution.resolve-context")
+
+if constitutional_context.status == "parse_error":
+  error: |
+    Constitutional context parse error:
+    ${constitutional_context.error_details.file}
+    ${constitutional_context.error_details.error}
+
+session.constitutional_context = constitutional_context
 ```
 
 ### 2. Branch Verification (consolidated into Pre-Flight)

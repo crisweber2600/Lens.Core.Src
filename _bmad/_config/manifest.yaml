@@ -1,47 +1,47 @@
 installation:
   version: 6.2.0
-  installDate: 2026-03-16T19:35:32.580Z
-  lastUpdated: 2026-03-16T19:35:32.580Z
+  installDate: 2026-03-16T20:53:32.473Z
+  lastUpdated: 2026-03-16T20:53:32.473Z
 modules:
   - name: core
     version: 6.2.0
-    installDate: 2026-03-16T19:35:30.871Z
-    lastUpdated: 2026-03-16T19:35:30.871Z
+    installDate: 2026-03-16T20:53:31.074Z
+    lastUpdated: 2026-03-16T20:53:31.074Z
     source: built-in
     npmPackage: null
     repoUrl: null
   - name: bmm
     version: 6.2.0
-    installDate: 2026-03-16T19:35:24.906Z
-    lastUpdated: 2026-03-16T19:35:30.871Z
+    installDate: 2026-03-16T20:53:25.986Z
+    lastUpdated: 2026-03-16T20:53:31.074Z
     source: built-in
     npmPackage: null
     repoUrl: null
   - name: cis
     version: 0.1.8
-    installDate: 2026-03-16T19:35:25.980Z
-    lastUpdated: 2026-03-16T19:35:31.286Z
+    installDate: 2026-03-16T20:53:26.949Z
+    lastUpdated: 2026-03-16T20:53:31.422Z
     source: external
     npmPackage: bmad-creative-intelligence-suite
     repoUrl: https://github.com/bmad-code-org/bmad-module-creative-intelligence-suite
   - name: gds
-    version: 0.2.1
-    installDate: 2026-03-16T19:35:27.380Z
-    lastUpdated: 2026-03-16T19:35:31.708Z
+    version: 0.2.2
+    installDate: 2026-03-16T20:53:28.127Z
+    lastUpdated: 2026-03-16T20:53:31.777Z
     source: external
     npmPackage: bmad-game-dev-studio
     repoUrl: https://github.com/bmad-code-org/bmad-module-game-dev-studio.git
   - name: tea
     version: 1.7.0
-    installDate: 2026-03-16T19:35:28.637Z
-    lastUpdated: 2026-03-16T19:35:32.148Z
+    installDate: 2026-03-16T20:53:29.165Z
+    lastUpdated: 2026-03-16T20:53:32.131Z
     source: external
     npmPackage: bmad-method-test-architecture-enterprise
     repoUrl: https://github.com/bmad-code-org/bmad-method-test-architecture-enterprise
   - name: bmb
     version: 1.0.2
-    installDate: 2026-03-16T19:35:29.158Z
-    lastUpdated: 2026-03-16T19:35:32.580Z
+    installDate: 2026-03-16T20:53:29.576Z
+    lastUpdated: 2026-03-16T20:53:32.473Z
     source: external
     npmPackage: bmad-builder
     repoUrl: https://github.com/bmad-code-org/bmad-builder
@@ -52,8 +52,8 @@ ides:
 
   - name: lens-work
     version: "2.0.0"
-    installDate: "2026-03-16T19:35:34.000Z"
-    lastUpdated: "2026-03-16T19:35:34.000Z"
+    installDate: "2026-03-16T20:53:34.000Z"
+    lastUpdated: "2026-03-16T20:53:34.000Z"
     source: custom
     npmPackage: null
     repoUrl: null

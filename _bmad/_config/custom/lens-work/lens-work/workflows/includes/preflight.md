@@ -2,7 +2,7 @@
 
 **Include with:** Reference this file from any prompt that needs preflight.
 
-**Purpose:** Ensures all authority repos are synchronized before workflow execution.
+**Purpose:** Ensures all authority repos are synchronized and constitutional governance is resolved before workflow execution.
 
 ---
 
@@ -103,15 +103,45 @@ if [ -d ".github/prompts" ]; then
 fi
 ```
 
-### 4. Update Timestamp
-
-After a successful full preflight, write the current UTC timestamp (ISO 8601 datetime) to `_bmad-output/lens-work/personal/.preflight-timestamp`.
-
-### 5. Verify Authority Repos
+### 4. Verify Authority Repos
 
 If any authority repo directory is missing, stop and report the failure.
 
 **Exception for /onboard:** If missing repos are reported during onboarding, continue so the workflow can bootstrap/repair those repos.
+
+### 5. Resolve and Enforce Constitution
+
+Resolve constitutional governance before any workflow-specific logic runs.
+
+```yaml
+# Resolve constitutional context (initiative-aware when available, global fallback otherwise)
+constitutional_context = invoke("constitution.resolve-context")
+
+if constitutional_context.status == "parse_error":
+        # Bootstrap workflows (for example /onboard, /new-domain) may not have
+        # initiative-level context yet. Downgrade to advisory in that case.
+        if constitutional_context.context_available == false:
+                warning: "⚠️ Constitutional context unavailable during bootstrap. Continuing in advisory mode."
+                constitutional_context.gate_mode = "advisory"
+        else:
+                FAIL("❌ Constitutional context parse error. Fix governance files before continuing.")
+
+session.constitutional_context = constitutional_context
+
+# Enforce hard-gate mode immediately when constitution requires it
+if constitutional_context.gate_mode == "hard" and constitutional_context.preflight_status == "FAIL":
+        FAIL("❌ Constitution hard gate failed during preflight. Resolve compliance issues before running this workflow.")
+
+# Advisory mode never blocks, but must be surfaced to the user
+if constitutional_context.gate_mode == "advisory" and constitutional_context.preflight_status == "WARN":
+        warning: "⚠️ Constitution advisory warnings detected. Continue with care and address warnings in phase outputs."
+```
+
+All downstream workflow decisions MUST follow `session.constitutional_context`.
+
+### 6. Update Timestamp
+
+After a successful full preflight, write the current UTC timestamp (ISO 8601 datetime) to `_bmad-output/lens-work/personal/.preflight-timestamp`.
 
 ---
 

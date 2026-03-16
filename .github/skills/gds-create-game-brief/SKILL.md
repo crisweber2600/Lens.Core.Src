@@ -1,6 +1,6 @@
 ---
 name: gds-create-game-brief
-description: Game vision definition workflow through collaborative step-by-step discovery. Use when the user says "lets create a game brief" or "I want to define my game vision"
+description: 'Interactive game brief creation guiding users through defining their game vision. Use when the user says "game brief" or "create brief"'
 ---
 
-IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL {project-root}/_bmad/gds/workflows/1-preproduction/game-brief/workflow.md, READ its entire contents and follow its directions exactly!
+Follow the instructions in [workflow.md](workflow.md).

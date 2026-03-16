@@ -1,6 +1,6 @@
 ---
 name: gds-test-review
-description: Game test coverage reviewer. Use when the user says "lets review game tests" or "I want to evaluate test coverage"
+description: 'Review test quality and coverage. Use when the user says "test review" or "review tests"'
 ---
 
-IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL {project-root}/_bmad/gds/workflows/gametest/test-review/workflow.md, READ its entire contents and follow its directions exactly!
+Follow the instructions in [workflow.md](workflow.md).

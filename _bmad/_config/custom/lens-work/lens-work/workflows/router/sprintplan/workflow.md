@@ -41,6 +41,7 @@ imports: lifecycle.yaml
 
 ```yaml
 # PRE-FLIGHT (mandatory, never skip) [REQ-9]
+# 0. Execute shared preflight include (authority sync + constitution enforcement)
 # 1. Verify working directory is clean
 # 2. Derive initiative state from git branch (v2: git-state skill)
 # 3. Validate audience promotion (medium → large must be complete)
@@ -50,6 +51,10 @@ imports: lifecycle.yaml
 # 7. Confirm to user: "Now on branch: {branch_name}"
 # GATE: All steps must pass before proceeding to sprint planning
 # NOTE: sprintplan is the FIRST phase in large audience — requires medium→large promotion
+
+# Shared preflight include (includes constitutional context bootstrap)
+invoke: include
+path: "_bmad/lens-work/workflows/includes/preflight.md"
 
 # Verify working directory is clean
 invoke: git-orchestration.verify-clean-state

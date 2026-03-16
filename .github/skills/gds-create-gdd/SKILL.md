@@ -1,6 +1,6 @@
 ---
 name: gds-create-gdd
-description: Comprehensive game design document creator through collaborative discovery. Use when the user says "lets create a game design document" or "I want to create a comprehensive GDD"
+description: 'Create Game Design Documents with mechanics and implementation guidance. Use when the user says "create GDD" or "game design document"'
 ---
 
-IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL {project-root}/_bmad/gds/workflows/2-design/gdd/workflow.md, READ its entire contents and follow its directions exactly!
+Follow the instructions in [workflow.md](workflow.md).

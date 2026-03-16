@@ -1,6 +1,6 @@
 ---
 name: gds-playtest-plan
-description: Playtest session planner. Use when the user says "lets create a playtest plan" or "I want to schedule gameplay testing"
+description: 'Create structured playtesting plans for user feedback. Use when the user says "playtest plan" or "playtesting"'
 ---
 
-IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL {project-root}/_bmad/gds/workflows/gametest/playtest-plan/workflow.md, READ its entire contents and follow its directions exactly!
+Follow the instructions in [workflow.md](workflow.md).
