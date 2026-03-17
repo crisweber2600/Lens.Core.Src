@@ -309,13 +309,13 @@ params:
   workflow_name: prd
 
 # RESOLVED: bmm.create-prd → Read fully and follow this workflow file:
-#   _bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-create-prd.md
+#   _bmad/core/tasks/bmad-create-prd/workflow.md
 # Agent persona: John (PM) — load and adopt _bmad/bmm/agents/pm.md
 # Uses step-file architecture with steps-c/ folder
 # Load steps one at a time (JIT) — NEVER load multiple step files simultaneously
 # ALWAYS halt at menus and wait for user input before proceeding
 agent_persona: "_bmad/bmm/agents/pm.md"
-read_and_follow: "_bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-create-prd.md"
+read_and_follow: "_bmad/core/tasks/bmad-create-prd/workflow.md"
 params:
   product_brief: "${docs_path}/product-brief.md"
   output_path: "${docs_path}/"
@@ -323,9 +323,9 @@ params:
 
 # After PRD creation, run PRD validation:
 # RESOLVED: Read fully and follow:
-#   _bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-validate-prd.md
+#   _bmad/bmm/workflows/2-plan-workflows/bmad-validate-prd/workflow.md
 # Continue as John (PM) — adversarial review of PRD for completeness and buildability
-read_and_follow: "_bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-validate-prd.md"
+read_and_follow: "_bmad/bmm/workflows/2-plan-workflows/bmad-validate-prd/workflow.md"
 params:
   prd_path: "${docs_path}/prd.md"
 
@@ -339,13 +339,13 @@ params:
   workflow_name: ux-design
 
 # RESOLVED: bmm.create-ux-design → Read fully and follow this workflow file:
-#   _bmad/bmm/workflows/2-plan-workflows/create-ux-design/workflow.md
+#   _bmad/bmm/workflows/2-plan-workflows/bmad-create-ux-design/workflow.md
 # Agent persona: Switch to Sally (UX Designer) — load and adopt _bmad/bmm/agents/ux-designer.md
 # Uses step-file architecture with steps/ folder
 # Load steps one at a time (JIT) — NEVER load multiple step files simultaneously
 # ALWAYS halt at menus and wait for user input before proceeding
 agent_persona: "_bmad/bmm/agents/ux-designer.md"
-read_and_follow: "_bmad/bmm/workflows/2-plan-workflows/create-ux-design/workflow.md"
+read_and_follow: "_bmad/bmm/workflows/2-plan-workflows/bmad-create-ux-design/workflow.md"
 params:
   prd: "${docs_path}/prd.md"
   product_brief: "${docs_path}/product-brief.md"
@@ -362,13 +362,13 @@ params:
   workflow_name: architecture
 
 # RESOLVED: bmm.create-architecture → Read fully and follow this workflow file:
-#   _bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md
+#   _bmad/bmm/workflows/3-solutioning/bmad-create-architecture/workflow.md
 # Agent persona: Switch to Winston (Architect) — load and adopt _bmad/bmm/agents/architect.md
 # Uses step-file architecture with steps/ folder
 # Load steps one at a time (JIT) — NEVER load multiple step files simultaneously
 # ALWAYS halt at menus and wait for user input before proceeding
 agent_persona: "_bmad/bmm/agents/architect.md"
-read_and_follow: "_bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md"
+read_and_follow: "_bmad/bmm/workflows/3-solutioning/bmad-create-architecture/workflow.md"
 params:
   prd: "${docs_path}/prd.md"
   product_brief: "${docs_path}/product-brief.md"

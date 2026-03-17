@@ -273,14 +273,14 @@ output: |
   4. Data model specification (if applicable)
 
 # RESOLVED: workflow-step architecture-design → Read fully and follow:
-#   _bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md
+#   _bmad/bmm/workflows/3-solutioning/bmad-create-architecture/workflow.md
 # Agent persona: Winston (Architect) — _bmad/bmm/agents/architect.md
 # Context: pass existing architecture.md as baseline for refinement
 # Uses step-file architecture with steps/ folder — load steps one at a time
 # NEVER load multiple step files simultaneously
 # ALWAYS halt at menus and wait for user input before proceeding
 agent_persona: "_bmad/bmm/agents/architect.md"
-read_and_follow: "_bmad/bmm/workflows/3-solutioning/create-architecture/workflow.md"
+read_and_follow: "_bmad/bmm/workflows/3-solutioning/bmad-create-architecture/workflow.md"
 params:
   context: { product_brief, prd, epics }
   output_file: "${docs_path}/architecture.md"
@@ -302,9 +302,9 @@ if answer == "Y":
     output_file: "${docs_path}/api-contracts.md"
 
 # RESOLVED: Implementation readiness check → Read fully and follow:
-#   _bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md
+#   _bmad/bmm/workflows/3-solutioning/bmad-check-implementation-readiness/workflow.md
 # Validate architecture is buildable and stories can be derived from it
-read_and_follow: "_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md"
+read_and_follow: "_bmad/bmm/workflows/3-solutioning/bmad-check-implementation-readiness/workflow.md"
 params:
   architecture: "${docs_path}/architecture.md"
   prd: "${docs_path}/prd.md"

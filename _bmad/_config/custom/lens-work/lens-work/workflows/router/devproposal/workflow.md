@@ -347,13 +347,13 @@ params:
   workflow_name: epics
 
 # RESOLVED: bmm.create-epics → Read fully and follow this workflow file:
-#   _bmad/bmm/workflows/3-solutioning/create-epics-and-stories/workflow.md
+#   _bmad/bmm/workflows/3-solutioning/bmad-create-epics-and-stories/workflow.md
 # Agent persona: John (PM) — _bmad/bmm/agents/pm.md
 # Uses step-file architecture with steps/ folder
 # Load steps one at a time (JIT) — NEVER load multiple step files simultaneously
 # ALWAYS halt at menus and wait for user input before proceeding
 agent_persona: "_bmad/bmm/agents/pm.md"
-read_and_follow: "_bmad/bmm/workflows/3-solutioning/create-epics-and-stories/workflow.md"
+read_and_follow: "_bmad/bmm/workflows/3-solutioning/bmad-create-epics-and-stories/workflow.md"
 params:
   architecture: "${docs_path}/architecture.md"
   prd: "${docs_path}/prd.md"
@@ -370,8 +370,8 @@ epic_ids = extract_epic_ids("${docs_path}/epics.md")
 
 for epic_id in epic_ids:
   # RESOLVED: bmm.check-implementation-readiness → Read fully and follow:
-  #   _bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md
-  read_and_follow: "_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md"
+  #   _bmad/bmm/workflows/3-solutioning/bmad-check-implementation-readiness/workflow.md
+  read_and_follow: "_bmad/bmm/workflows/3-solutioning/bmad-check-implementation-readiness/workflow.md"
   params:
     mode: "adversarial"
     scope: "epic"
@@ -387,8 +387,8 @@ for epic_id in epic_ids:
       Resolve implementation-readiness findings before continuing.
 
   # RESOLVED: core.party-mode → Read fully and follow:
-  #   _bmad/core/workflows/party-mode/workflow.md
-  read_and_follow: "_bmad/core/workflows/party-mode/workflow.md"
+  #   _bmad/core/skills/bmad-party-mode/workflow.md
+  read_and_follow: "_bmad/core/skills/bmad-party-mode/workflow.md"
   params:
     input_file: "${docs_path}/epics.md"
     focus_epic: ${epic_id}
@@ -409,10 +409,10 @@ params:
   workflow_name: stories
 
 # RESOLVED: bmm.create-stories → Continue the epics-and-stories workflow:
-#   _bmad/bmm/workflows/3-solutioning/create-epics-and-stories/workflow.md
+#   _bmad/bmm/workflows/3-solutioning/bmad-create-epics-and-stories/workflow.md
 # Story generation portion — continues from epic output
 agent_persona: "_bmad/bmm/agents/pm.md"
-read_and_follow: "_bmad/bmm/workflows/3-solutioning/create-epics-and-stories/workflow.md"
+read_and_follow: "_bmad/bmm/workflows/3-solutioning/bmad-create-epics-and-stories/workflow.md"
 params:
   mode: "stories"
   epics: "${docs_path}/epics.md"
@@ -430,8 +430,8 @@ params:
   workflow_name: readiness
 
 # RESOLVED: bmm.readiness-checklist → Read fully and follow:
-#   _bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md
-read_and_follow: "_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md"
+#   _bmad/bmm/workflows/3-solutioning/bmad-check-implementation-readiness/workflow.md
+read_and_follow: "_bmad/bmm/workflows/3-solutioning/bmad-check-implementation-readiness/workflow.md"
 params:
   artifacts:
     - product-brief.md

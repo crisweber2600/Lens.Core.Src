@@ -230,10 +230,10 @@ session.constitutional_context = constitutional_context
 
 ```yaml
 # RESOLVED: bmm.readiness-checklist → Read fully and follow:
-#   _bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md
+#   _bmad/bmm/workflows/3-solutioning/bmad-check-implementation-readiness/workflow.md
 # Run in validate mode (check existing artifacts, don't create new ones)
 # Agent persona: Bob (Scrum Master) — _bmad/bmm/agents/sm.md
-read_and_follow: "_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md"
+read_and_follow: "_bmad/bmm/workflows/3-solutioning/bmad-check-implementation-readiness/workflow.md"
 params:
   mode: "validate"
   constitutional_context: ${constitutional_context}
@@ -295,12 +295,11 @@ if compliance_failures.length > 0:
 
 ### 3. Sprint Planning
 
-**⚠️ CRITICAL — Workflow Engine Rules:**
-Sub-workflows [3] and [4] use YAML-based workflow.yaml files with the workflow engine.
-- Load `_bmad/core/tasks/workflow.yaml` FIRST as the execution engine
-- Pass the `workflow.yaml` path to the engine
-- Follow engine instructions precisely — execute steps sequentially
-- Save outputs after completing EACH engine step (never batch)
+**⚠️ CRITICAL — Workflow Rules:**
+Sub-workflows [3] and [4] use skill-based workflow.md files.
+- Read and follow the workflow.md file directly
+- Follow instructions precisely — execute steps sequentially
+- Save outputs after completing EACH step (never batch)
 - STOP and wait for user at decision points
 
 **Agent:** Adopt Bob (Scrum Master) persona — load `_bmad/bmm/agents/sm.md`
@@ -310,15 +309,13 @@ invoke: git-orchestration.start-workflow
 params:
   workflow_name: sprint-planning
 
-# RESOLVED: bmm.sprint-planning → Load workflow engine then execute YAML workflow:
-#   1. Load engine: _bmad/core/tasks/workflow.yaml
-#   2. Pass config: _bmad/bmm/workflows/4-implementation/sprint-planning/workflow.yaml
+# RESOLVED: bmm.sprint-planning → Read fully and follow this workflow file:
+#   _bmad/bmm/workflows/4-implementation/bmad-sprint-planning/workflow.md
 # Agent persona: Bob (Scrum Master) — _bmad/bmm/agents/sm.md
-# Engine executes steps sequentially — save outputs after EACH step
+# Execute steps sequentially — save outputs after EACH step
 # STOP and wait for user at decision points
 agent_persona: "_bmad/bmm/agents/sm.md"
-load_engine: "_bmad/core/tasks/workflow.yaml"
-execute_workflow: "_bmad/bmm/workflows/4-implementation/sprint-planning/workflow.yaml"
+read_and_follow: "_bmad/bmm/workflows/4-implementation/bmad-sprint-planning/workflow.md"
 params:
   stories: "${docs_path}/stories.md"
   output_path: "${bmad_docs}"
@@ -341,14 +338,12 @@ invoke: git-orchestration.start-workflow
 params:
   workflow_name: dev-story
 
-# RESOLVED: bmm.create-dev-story → Load workflow engine then execute YAML workflow:
-#   1. Load engine: _bmad/core/tasks/workflow.yaml
-#   2. Pass config: _bmad/bmm/workflows/4-implementation/create-story/workflow.yaml
+# RESOLVED: bmm.create-dev-story → Read fully and follow this workflow file:
+#   _bmad/bmm/workflows/4-implementation/bmad-create-story/workflow.md
 # Agent persona: Bob (Scrum Master) — _bmad/bmm/agents/sm.md
-# Engine executes steps sequentially — save outputs after EACH step
+# Execute steps sequentially — save outputs after EACH step
 # STOP and wait for user at decision points
-load_engine: "_bmad/core/tasks/workflow.yaml"
-execute_workflow: "_bmad/bmm/workflows/4-implementation/create-story/workflow.yaml"
+read_and_follow: "_bmad/bmm/workflows/4-implementation/bmad-create-story/workflow.md"
 params:
   story_id: "${selected_story}"
   output_path: "${bmad_docs}"

@@ -792,12 +792,11 @@ After ALL tasks are implemented and committed, proceed automatically to Step 5.N
 
 #### 5.N. Adversarial Code Review + Fix Loop (Per Story)
 
-**⚠️ CRITICAL — Workflow Engine Rules:**
-Code review and retrospective use YAML-based workflow.yaml files with the workflow engine.
-- Load `_bmad/core/tasks/workflow.yaml` FIRST as the execution engine
-- Pass the `workflow.yaml` path to the engine
-- Follow engine instructions precisely — execute steps sequentially
-- Save outputs after completing EACH engine step (never batch)
+**⚠️ CRITICAL — Workflow Rules:**
+Code review and retrospective use skill-based workflow.md files.
+- Read and follow the workflow.md file directly
+- Follow instructions precisely — execute steps sequentially
+- Save outputs after completing EACH step (never batch)
 - STOP and wait for user at decision points
 
 ```yaml
@@ -814,13 +813,11 @@ invoke: git-orchestration.start-workflow
 params:
   workflow_name: code-review
 
-# RESOLVED: bmm.code-review → Load workflow engine then execute YAML workflow:
-#   1. Load engine: _bmad/core/tasks/workflow.yaml
-#   2. Pass config: _bmad/bmm/workflows/4-implementation/code-review/workflow.yaml
+# RESOLVED: bmm.code-review → Read fully and follow this workflow file:
+#   _bmad/bmm/workflows/4-implementation/bmad-code-review/workflow.md
 # Agent persona: Quinn (QA) — load and adopt _bmad/bmm/agents/qa.md
 agent_persona: "_bmad/bmm/agents/qa.md"
-load_engine: "_bmad/core/tasks/workflow.yaml"
-execute_workflow: "_bmad/bmm/workflows/4-implementation/code-review/workflow.yaml"
+read_and_follow: "_bmad/bmm/workflows/4-implementation/bmad-code-review/workflow.md"
 params:
   target_repo: "${target_path}"
   branch: "${session.story_branch}"
@@ -881,8 +878,8 @@ if code_review_compliance.fail_count > 0 and enforcement_mode == "enforced":
   halt: true
 
 # RESOLVED: core.party-mode → Read fully and follow:
-#   _bmad/core/workflows/party-mode/workflow.md
-read_and_follow: "_bmad/core/workflows/party-mode/workflow.md"
+#   _bmad/core/skills/bmad-party-mode/workflow.md
+read_and_follow: "_bmad/core/skills/bmad-party-mode/workflow.md"
 params:
   input_file: ${code_review_path}
   artifacts_path: ${target_path}
@@ -991,8 +988,8 @@ current_epic_id = "epic-${session.epic_number}"
 
 # All stories complete — run epic-level adversarial review
 # RESOLVED: bmm.check-implementation-readiness → Read fully and follow:
-#   _bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md
-read_and_follow: "_bmad/bmm/workflows/3-solutioning/check-implementation-readiness/workflow.md"
+#   _bmad/bmm/workflows/3-solutioning/bmad-check-implementation-readiness/workflow.md
+read_and_follow: "_bmad/bmm/workflows/3-solutioning/bmad-check-implementation-readiness/workflow.md"
 params:
   scope: "epic"
   epic_id: ${current_epic_id}
@@ -1007,8 +1004,8 @@ if epic_adversarial.status in ["blocked", "fail", "failed"]:
   halt: true
 
 # RESOLVED: core.party-mode → Read fully and follow:
-#   _bmad/core/workflows/party-mode/workflow.md
-read_and_follow: "_bmad/core/workflows/party-mode/workflow.md"
+#   _bmad/core/skills/bmad-party-mode/workflow.md
+read_and_follow: "_bmad/core/skills/bmad-party-mode/workflow.md"
 params:
   input_file: "${docs_path}/epics.md"
   focus_epic: ${current_epic_id}
@@ -1114,13 +1111,11 @@ if yes:
   params:
     workflow_name: retro
 
-  # RESOLVED: bmm.retrospective → Load workflow engine then execute YAML workflow:
-  #   1. Load engine: _bmad/core/tasks/workflow.yaml
-  #   2. Pass config: _bmad/bmm/workflows/4-implementation/retrospective/workflow.yaml
+  # RESOLVED: bmm.retrospective → Read fully and follow this workflow file:
+  #   _bmad/bmm/workflows/4-implementation/bmad-retrospective/workflow.md
   # Agent persona: Switch to Bob (Scrum Master) — load and adopt _bmad/bmm/agents/sm.md
   agent_persona: "_bmad/bmm/agents/sm.md"
-  load_engine: "_bmad/core/tasks/workflow.yaml"
-  execute_workflow: "_bmad/bmm/workflows/4-implementation/retrospective/workflow.yaml"
+  read_and_follow: "_bmad/bmm/workflows/4-implementation/bmad-retrospective/workflow.md"
   params:
     constitutional_context: ${constitutional_context}
   invoke: git-orchestration.finish-workflow

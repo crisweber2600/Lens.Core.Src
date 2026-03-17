@@ -132,10 +132,10 @@ then switch to batch for the remaining workflows.
 
 ```yaml
 # Read fully and follow this workflow file:
-#   _bmad/core/workflows/brainstorming/workflow.md
+#   _bmad/core/skills/bmad-brainstorming/workflow.md
 # Uses step-file architecture with steps/ folder — load step-01-session-setup.md first
 # STOP and wait for user at each step — do NOT auto-generate brainstorm content
-read_and_follow: "_bmad/core/workflows/brainstorming/workflow.md"
+read_and_follow: "_bmad/core/skills/bmad-brainstorming/workflow.md"
 params:
   context: "${initiative.name} at ${initiative.layer} layer"
 ```
@@ -144,24 +144,24 @@ params:
 
 ```yaml
 # Ask user for research type, then follow the correct workflow:
-#   Market:    _bmad/bmm/workflows/1-analysis/research/workflow-market-research.md
-#   Domain:    _bmad/bmm/workflows/1-analysis/research/workflow-domain-research.md
-#   Technical: _bmad/bmm/workflows/1-analysis/research/workflow-technical-research.md
+#   Market:    _bmad/bmm/workflows/1-analysis/research/bmad-market-research/workflow.md
+#   Domain:    _bmad/bmm/workflows/1-analysis/research/bmad-domain-research/workflow.md
+#   Technical: _bmad/bmm/workflows/1-analysis/research/bmad-technical-research/workflow.md
 # Each uses step-file architecture — load steps one at a time, wait for user at each step
 prompt_user: "Which type of research? [M]arket / [D]omain / [T]echnical"
 if research_type == "market":
-  read_and_follow: "_bmad/bmm/workflows/1-analysis/research/workflow-market-research.md"
+  read_and_follow: "_bmad/bmm/workflows/1-analysis/research/bmad-market-research/workflow.md"
 elif research_type == "domain":
-  read_and_follow: "_bmad/bmm/workflows/1-analysis/research/workflow-domain-research.md"
+  read_and_follow: "_bmad/bmm/workflows/1-analysis/research/bmad-domain-research/workflow.md"
 elif research_type == "technical":
-  read_and_follow: "_bmad/bmm/workflows/1-analysis/research/workflow-technical-research.md"
+  read_and_follow: "_bmad/bmm/workflows/1-analysis/research/bmad-technical-research/workflow.md"
 ```
 
 #### Product Brief (always):
 
 ```yaml
 # Read fully and follow this workflow file:
-#   _bmad/bmm/workflows/1-analysis/create-product-brief/workflow.md
+#   _bmad/bmm/workflows/1-analysis/bmad-create-product-brief/workflow.md
 # Uses JIT step-file architecture:
 #   1. Load step-01-init.md first
 #   2. Only load next step when directed by the current step
@@ -169,7 +169,7 @@ elif research_type == "technical":
 #   4. ALWAYS halt at menus and wait for user input
 #   5. Output goes to: ${output_path}/product-brief.md
 # Agent persona: Mary (Analyst) — _bmad/bmm/agents/analyst.md
-read_and_follow: "_bmad/bmm/workflows/1-analysis/create-product-brief/workflow.md"
+read_and_follow: "_bmad/bmm/workflows/1-analysis/bmad-create-product-brief/workflow.md"
 params:
   output_path: "${output_path}/"
   context:
