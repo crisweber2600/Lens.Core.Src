@@ -1,9 +1,6 @@
 # Story {{epic_num}}.{{story_num}}: {{story_title}}
 
 Status: ready-for-dev
-Assigned To: {{assigned_to || ""}}
-Tracker: {{tracker || ""}}
-Work Item ID: {{ado_work_item_id || jira_ticket || ""}}
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 

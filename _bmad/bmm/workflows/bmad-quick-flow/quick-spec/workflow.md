@@ -1,12 +1,12 @@
 ---
 name: quick-spec
 description: 'Very quick process to create implementation-ready quick specs for small changes or features. Use when the user says "create a quick spec" or "generate a quick tech spec"'
-main_config: 'bmad.lens.release/_bmad/bmm/bmadconfig.yaml'
+main_config: '{project-root}/_bmad/bmm/bmadconfig.yaml'
 
 # Checkpoint handler paths
-advanced_elicitation: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-party_mode_exec: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
-quick_dev_workflow: 'bmad.lens.release/_bmad/bmm/workflows/bmad-quick-flow/quick-dev/workflow.md'
+advanced_elicitation: '{project-root}/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+party_mode_exec: '{project-root}/_bmad/core/workflows/party-mode/workflow.md'
+quick_dev_workflow: '{project-root}/_bmad/bmm/workflows/bmad-quick-flow/quick-dev/workflow.md'
 ---
 
 # Quick-Spec Workflow
@@ -59,7 +59,6 @@ This uses **step-file architecture** for disciplined execution:
 - **ALWAYS** follow the exact instructions in the step file
 - **ALWAYS** halt at menus and wait for user input
 - **NEVER** create mental todo lists from future steps
-- **BATCH MODE**: If user selects `[B]` at any step menu, or profile has `question_mode: batch`, read fully and follow `_bmad/core/workflows/batch-mode/workflow.md` to generate all remaining content continuously, then present batch review
 
 ---
 
@@ -77,4 +76,4 @@ Load and read full config from `{main_config}` and resolve:
 
 ### 2. First Step Execution
 
-Read fully and follow: `bmad.lens.release/_bmad/bmm/workflows/bmad-quick-flow/quick-spec/steps/step-01-understand.md` to begin the workflow.
+Read fully and follow: `{project-root}/_bmad/bmm/workflows/bmad-quick-flow/quick-spec/steps/step-01-understand.md` to begin the workflow.

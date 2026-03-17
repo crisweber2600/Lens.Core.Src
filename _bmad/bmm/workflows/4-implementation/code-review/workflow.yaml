@@ -3,7 +3,7 @@ name: code-review
 description: 'Perform adversarial code review finding specific issues. Use when the user says "run code review" or "review this code"'
 
 # Critical variables from config
-config_source: "bmad.lens.release/_bmad/bmm/bmadconfig.yaml"
+config_source: "{project-root}/_bmad/bmm/bmadconfig.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
 user_skill_level: "{config_source}:user_skill_level"
@@ -12,16 +12,9 @@ date: system-generated
 planning_artifacts: "{config_source}:planning_artifacts"
 implementation_artifacts: "{config_source}:implementation_artifacts"
 sprint_status: "{implementation_artifacts}/sprint-status.yaml"
-auto_fix_rerun: true
-auto_fix_severities:
-  - CRITICAL
-  - HIGH
-  - MEDIUM
-max_review_passes: 2
-on_max_passes: "needs_manual"
 
 # Workflow components
-installed_path: "bmad.lens.release/_bmad/bmm/workflows/4-implementation/code-review"
+installed_path: "{project-root}/_bmad/bmm/workflows/4-implementation/code-review"
 instructions: "{installed_path}/instructions.yaml"
 validation: "{installed_path}/checklist.md"
 template: false

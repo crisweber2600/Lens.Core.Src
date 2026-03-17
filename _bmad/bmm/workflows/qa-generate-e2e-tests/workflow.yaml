@@ -2,7 +2,7 @@ name: qa-generate-e2e-tests
 description: 'Generate end to end automated tests for existing features. Use when the user says "create qa automated tests for [feature]"'
 
 # Critical variables from config
-config_source: "bmad.lens.release/_bmad/bmm/bmadconfig.yaml"
+config_source: "{project-root}/_bmad/bmm/bmadconfig.yaml"
 implementation_artifacts: "{config_source}:implementation_artifacts"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
@@ -10,7 +10,7 @@ document_output_language: "{config_source}:document_output_language"
 date: system-generated
 
 # Workflow components
-installed_path: "bmad.lens.release/_bmad/bmm/workflows/qa-generate-e2e-tests"
+installed_path: "{project-root}/_bmad/bmm/workflows/qa-generate-e2e-tests"
 instructions: "{installed_path}/instructions.md"
 validation: "{installed_path}/checklist.md"
 template: false

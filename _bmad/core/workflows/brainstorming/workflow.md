@@ -1,6 +1,6 @@
 ---
 name: brainstorming
-description: 'Facilitate interactive brainstorming sessions using diverse creative techniques and ideation methods. Use when the user says "help me brainstorm" or "help me ideate".'
+description: 'Facilitate interactive brainstorming sessions using diverse creative techniques and ideation methods. Use when the user says help me brainstorm or help me ideate.'
 context_file: '' # Optional context file path for project-specific guidance
 ---
 
@@ -34,7 +34,7 @@ This uses **micro-file architecture** for disciplined execution:
 
 ### Configuration Loading
 
-Load config from `bmad.lens.release/_bmad/core/bmadconfig.yaml` and resolve:
+Load config from `{project-root}/_bmad/core/bmadconfig.yaml` and resolve:
 
 - `project_name`, `output_folder`, `user_name`
 - `communication_language`, `document_output_language`, `user_skill_level`
@@ -42,12 +42,14 @@ Load config from `bmad.lens.release/_bmad/core/bmadconfig.yaml` and resolve:
 
 ### Paths
 
-- `installed_path` = `bmad.lens.release/_bmad/core/workflows/brainstorming`
+- `installed_path` = `{project-root}/_bmad/core/workflows/brainstorming`
 - `template_path` = `{installed_path}/template.md`
 - `brain_techniques_path` = `{installed_path}/brain-methods.csv`
-- `default_output_file` = `{output_folder}/brainstorming/brainstorming-session-{{date}}.md`
+- `brainstorming_session_output_file` = `{output_folder}/brainstorming/brainstorming-session-{{date}}-{{time}}.md` (evaluated once at workflow start)
+
+All steps MUST reference `{brainstorming_session_output_file}` instead of the full path pattern.
 - `context_file` = Optional context file path from workflow invocation for project-specific guidance
-- `advancedElicitationTask` = `bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml`
+- `advancedElicitationTask` = `{project-root}/_bmad/core/workflows/advanced-elicitation/workflow.yaml`
 
 ---
 

@@ -3,12 +3,12 @@ name: 'step-03-users'
 description: 'Define target users with rich personas and map their key interactions with the product'
 
 # File References
-nextStepFile: 'bmad.lens.release/_bmad/bmm/workflows/1-analysis/create-product-brief/steps/step-04-metrics.md'
+nextStepFile: '{project-root}/_bmad/bmm/workflows/1-analysis/create-product-brief/steps/step-04-metrics.md'
 outputFile: '{planning_artifacts}/product-brief-{{project_name}}-{{date}}.md'
 
 # Task References
-advancedElicitationTask: 'bmad.lens.release/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
-partyModeWorkflow: 'bmad.lens.release/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: '{project-root}/_bmad/core/workflows/advanced-elicitation/workflow.yaml'
+partyModeWorkflow: '{project-root}/_bmad/core/workflows/party-mode/workflow.md'
 ---
 
 # Step 3: Target Users Discovery

@@ -2,7 +2,7 @@
 name: "correct-course"
 description: 'Manage significant changes during sprint execution. Use when the user says "correct course" or "propose sprint change"'
 
-config_source: "bmad.lens.release/_bmad/bmm/bmadconfig.yaml"
+config_source: "{project-root}/_bmad/bmm/bmadconfig.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
 user_skill_level: "{config_source}:user_skill_level"
@@ -46,7 +46,7 @@ input_file_patterns:
     sharded: "{project_knowledge}/index.md"
     load_strategy: "INDEX_GUIDED"
 
-installed_path: "bmad.lens.release/_bmad/bmm/workflows/4-implementation/correct-course"
+installed_path: "{project-root}/_bmad/bmm/workflows/4-implementation/correct-course"
 template: false
 instructions: "{installed_path}/instructions.md"
 checklist: "{installed_path}/checklist.md"
