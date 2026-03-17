@@ -375,7 +375,7 @@ function Ensure-GitIgnoreEntries {
 # =============================================================================
 
 Write-Host ""
-Write-Host "LENS Workbench v2 — Control Repo Setup" -ForegroundColor White -NoNewline
+Write-Host "LENS Workbench v2 - Control Repo Setup" -ForegroundColor White -NoNewline
 Write-Host ""
 Write-Host "Base URL: $BaseUrl" -ForegroundColor DarkGray
 Write-Host "Root:     $ProjectRoot" -ForegroundColor DarkGray
@@ -427,7 +427,7 @@ Write-Host ""
 Write-Host "Setup Complete" -ForegroundColor White
 Write-Host ""
 Write-Host "  $ReleaseOrg/$ReleaseRepo -> $ReleaseRepo\    (branch: $ReleaseBranch)" -ForegroundColor Green
-Write-Host "  .github <- $ReleaseRepo\.github" -ForegroundColor Green
+Write-Host "  .github  ``<--  $ReleaseRepo\.github" -ForegroundColor Green
 Write-Host "  $GovernanceOrg/$GovernanceRepo -> $GovernancePath\  (branch: $GovernanceCloneBranch)" -ForegroundColor Green
 Write-Host ""
 Write-Host "GitHub Copilot adapter is installed from bmad.lens.release/.github."
