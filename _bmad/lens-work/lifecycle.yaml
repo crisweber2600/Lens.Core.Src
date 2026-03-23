@@ -259,7 +259,7 @@ planning_repo:
       gate: constitution-gate
   # v2: Lazy audience branch creation
   audience_branch_creation: lazy
-  # Audience branches created on-demand at promotion time, not at init
+  # Create `{root}` and `{root}-small` at init; higher audience branches are created on-demand at promotion time
 
 # -----------------------------------------------------------------------------
 # BRANCH TOPOLOGY — TARGET PROJECTS (code repos)

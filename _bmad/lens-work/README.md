@@ -20,10 +20,11 @@ LENS Workbench v2 provides guided lifecycle routing with git-orchestrated discip
 
 ```
 lens-work/
+├── bmadconfig.yaml        # BMAD agent activation config + source defaults
 ├── lifecycle.yaml         # THE contract — phases, audiences, tracks, branches
 ├── module.yaml            # Module identity, skills, workflow manifest
 ├── module-help.csv        # Help entries for all commands
-├── agents/                # @lens agent definition
+├── agents/                # Runtime BMAD agent definitions
 ├── skills/                # git-state, git-orchestration, constitution, sensing, checklist
 ├── workflows/             # core, router, utility, governance, includes
 ├── prompts/               # User-facing prompt entry points
@@ -87,27 +88,51 @@ See `module.yaml` `install_questions` for configuration options (target projects
 4. **Begin planning** — use `/preplan` to start the lifecycle
 5. **Check status** — use `/status` at any time to see git-derived state
 
+## Components
+
+### Agent
+
+- `LENS` — lifecycle router and control-plane orchestrator
+- Runtime source: `agents/lens.agent.md`
+- Structured companion for validation and tooling: `agents/lens.agent.yaml`
+
+### Workflow Sets
+
+- **Core:** `phase-lifecycle`, `audience-promotion`
+- **Router:** `init-initiative`, `preplan`, `businessplan`, `techplan`, `devproposal`, `sprintplan`, `dev`, `discover`
+- **Utility:** `onboard`, `status`, `next`, `switch`, `help`, `module-management`
+- **Governance:** `compliance-check`, `resolve-constitution`, `cross-initiative`
+
 ## Commands
 
-`/onboard`, `/new-domain`, `/new-service`, `/new-feature`, `/preplan`, `/businessplan`, `/techplan`, `/devproposal`, `/sprintplan`, `/dev`, `/status`, `/next`, `/switch`, `/promote`, `/sense`, `/help`
+`/onboard`, `/new-domain`, `/new-service`, `/new-feature`, `/preplan`, `/businessplan`, `/techplan`, `/devproposal`, `/sprintplan`, `/dev`, `/status`, `/next`, `/switch`, `/promote`, `/sense`, `/constitution`, `/discover`, `/module-management`, `/help`
 
 ## Configuration
 
-Configuration is managed through `module.yaml` install questions:
+Configuration is carried in `bmadconfig.yaml`.
+
+- In source, `bmadconfig.yaml` acts as the template for BMAD agent activation and module defaults.
+- In installed control repos, `bmadconfig.yaml` is the runtime materialized config file.
+
+Install-time values are sourced from `module.yaml` install questions:
 
 | Variable | Purpose | Default |
 |----------|---------|---------|
-| `target_projects_path` | Where repos are cloned | `../TargetProjects` |
-| `default_git_remote` | Git provider (GitHub, GitLab, Azure DevOps) | `github` |
+| `target-projects-path` | Where repos are cloned | `../TargetProjects` |
+| `default-git-remote` | Git provider (GitHub, GitLab, Azure DevOps) | `github` |
 | `ides` | IDE adapters to install | `github-copilot` |
+
+The install-question keys use validator-friendly kebab-case. During installation, the module installer maps them into the existing runtime `bmadconfig.yaml` keys `target_projects_path` and `default_git_remote` so agent and workflow compatibility stays intact.
 
 ## Documentation
 
 See the [docs/](docs/) folder for detailed reference:
 
 - [Lifecycle Reference](docs/lifecycle-reference.md) — Phases, audiences, tracks
+- [Lex Persona](docs/lex-persona.md) — Governance voice used by `@lens`
 - [Copilot Adapter Reference](docs/copilot-adapter-reference.md) — Agent stub architecture
 - [Copilot Adapter Templates](docs/copilot-adapter-templates.md) — Template patterns
+- [Script Integration Summary](docs/script-integration.md) — PAT-based PR and promotion script integration notes
 - [Pipeline: Source to Release](docs/pipeline-source-to-release.md) — CI/CD promotion
 
 ## Dependencies

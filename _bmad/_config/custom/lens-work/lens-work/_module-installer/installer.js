@@ -20,6 +20,53 @@ const fsHelpers = {
     }
 };
 
+function readScalarYamlValue(content, key) {
+    const match = content.match(new RegExp(`^${key}:\\s*(.+)$`, 'm'));
+    if (!match) return undefined;
+    const rawValue = match[1].trim();
+    if ((rawValue.startsWith('"') && rawValue.endsWith('"')) || (rawValue.startsWith("'") && rawValue.endsWith("'"))) {
+        return rawValue.slice(1, -1);
+    }
+    return rawValue;
+}
+
+function toYamlString(value) {
+    return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+function getConfigValue(config, keys, fallback) {
+    for (const key of keys) {
+        if (Object.prototype.hasOwnProperty.call(config, key) && config[key] !== undefined && config[key] !== null && config[key] !== '') {
+            return config[key];
+        }
+    }
+    return fallback;
+}
+
+async function readInstalledCoreConfig(projectRoot) {
+    const candidatePaths = [
+        path.join(projectRoot, '_bmad', 'core', 'bmadconfig.yaml'),
+        path.join(projectRoot, '_bmad', 'bmb', 'bmadconfig.yaml'),
+        path.join(projectRoot, '_bmad', 'bmm', 'bmadconfig.yaml'),
+        path.join(projectRoot, '_bmad', 'cis', 'bmadconfig.yaml'),
+        path.join(projectRoot, '_bmad', 'gds', 'bmadconfig.yaml'),
+        path.join(projectRoot, '_bmad', 'tea', 'bmadconfig.yaml'),
+    ];
+
+    for (const candidatePath of candidatePaths) {
+        if (!(await fsHelpers.pathExists(candidatePath))) continue;
+        const content = await fsHelpers.readFile(candidatePath);
+        return {
+            user_name: readScalarYamlValue(content, 'user_name'),
+            communication_language: readScalarYamlValue(content, 'communication_language'),
+            document_output_language: readScalarYamlValue(content, 'document_output_language'),
+            output_folder: readScalarYamlValue(content, 'output_folder'),
+        };
+    }
+
+    return {};
+}
+
 /**
  * Copy all files from srcDir to destDir, optionally skipping existing files.
  * Only copies files (not subdirectories).
@@ -182,6 +229,7 @@ const STUB_PROMPTS = [
     { file: 'lens-work.discover.prompt.md', name: 'lens-work.discover', desc: 'Discover repos under TargetProjects and update governance inventory', target: 'lens-work.discover.prompt.md' },
     { file: 'lens-work.switch.prompt.md', name: 'lens-work.switch', desc: 'Switch to a different initiative via git checkout', target: 'lens-work.switch.prompt.md' },
     { file: 'lens-work.promote.prompt.md', name: 'lens-work.promote', desc: 'Promote current audience to next level with gate checks', target: 'lens-work.promote.prompt.md' },
+    { file: 'lens-work.sense.prompt.md', name: 'lens-work.sense', desc: 'Run cross-initiative overlap detection on demand', target: 'lens-work.sense.prompt.md' },
     { file: 'lens-work.constitution.prompt.md', name: 'lens-work.constitution', desc: 'Resolve and display constitutional governance', target: 'lens-work.constitution.prompt.md' },
     { file: 'lens-work.help.prompt.md', name: 'lens-work.help', desc: 'Show available commands and usage', target: 'lens-work.help.prompt.md' },
 ];
@@ -199,7 +247,7 @@ const IDE_COMMANDS = [
     { file: 'bmad-lens-work-next.md', name: 'next', desc: 'Recommend next action based on lifecycle state', wf: 'workflows/utility/next/workflow.md' },
     { file: 'bmad-lens-work-switch.md', name: 'switch', desc: 'Switch to different initiative branch', wf: 'workflows/utility/switch/workflow.md' },
     { file: 'bmad-lens-work-help.md', name: 'help', desc: 'Show available commands and usage reference', wf: 'workflows/utility/help/workflow.md' },
-    { file: 'bmad-lens-work-promote.md', name: 'promote', desc: 'Promote current audience to next tier with gate checks', wf: 'workflows/core/audience-promotion/workflow.md' },
+    { file: 'bmad-lens-work-promote.md', name: 'promote', desc: 'Promote current audience to next tier with gate checks', wf: 'workflows/utility/promote/workflow.md' },
     { file: 'bmad-lens-work-constitution.md', name: 'constitution', desc: 'Resolve and display constitutional governance', wf: 'workflows/governance/resolve-constitution/workflow.md' },
     { file: 'bmad-lens-work-compliance.md', name: 'compliance', desc: 'Run constitution compliance check on current initiative', wf: 'workflows/governance/compliance-check/workflow.md' },
     { file: 'bmad-lens-work-sense.md', name: 'sense', desc: 'Cross-initiative overlap detection on demand', wf: 'workflows/governance/cross-initiative/workflow.md' },
@@ -355,6 +403,7 @@ async function install(options) {
     try {
         const modeLabel = updateMode ? 'Updating' : 'Installing';
         logger.log(`${modeLabel} LENS Workbench (lens-work)...`);
+        const coreConfig = await readInstalledCoreConfig(projectRoot);
 
         // ── Phase 1: Output directories ─────────────────────────────────
         const outputDir = path.join(projectRoot, '_bmad-output', 'lens-work');
@@ -370,18 +419,33 @@ async function install(options) {
         const configDir = path.join(projectRoot, '_bmad', 'lens-work');
         await fsHelpers.ensureDir(configDir);
 
+        const targetProjectsPath = getConfigValue(config, ['target-projects-path', 'target_projects_path'], '../TargetProjects');
+        const defaultGitRemote = getConfigValue(config, ['default-git-remote', 'default_git_remote'], 'github');
+
         const configFile = path.join(configDir, 'bmadconfig.yaml');
         if (!(await fsHelpers.pathExists(configFile))) {
             const configContent = [
                 '# LENS Workbench Configuration',
                 '# Generated during installation',
                 '',
-                '# TargetProjects path (where repos are cloned)',
-                `target_projects_path: "${config.target_projects_path || '../TargetProjects'}"`,
+                `project_name: ${toYamlString(path.basename(projectRoot))}`,
+                'user_skill_level: intermediate',
+                'planning_artifacts: "{project-root}/_bmad-output/planning-artifacts"',
+                'implementation_artifacts: "{project-root}/_bmad-output/implementation-artifacts"',
+                'project_knowledge: "{project-root}/docs"',
                 '',
-                '# Git settings',
-                'git:',
-                `  default_remote: ${config.default_git_remote || 'github'}`,
+                '# Lens-work module defaults',
+                `target_projects_path: ${toYamlString(targetProjectsPath)}`,
+                `default_git_remote: ${toYamlString(defaultGitRemote)}`,
+                'lifecycle_contract: "{project-root}/_bmad/lens-work/lifecycle.yaml"',
+                'initiative_output_folder: "{project-root}/_bmad-output/lens-work/initiatives"',
+                'personal_output_folder: "{project-root}/_bmad-output/lens-work/personal"',
+                '',
+                '# Core Configuration Values',
+                `user_name: ${toYamlString(coreConfig.user_name || config.user_name || 'User')}`,
+                `communication_language: ${toYamlString(coreConfig.communication_language || config.communication_language || 'English')}`,
+                `document_output_language: ${toYamlString(coreConfig.document_output_language || config.document_output_language || 'English')}`,
+                `output_folder: ${toYamlString(coreConfig.output_folder || config.output_folder || '{project-root}/_bmad-output')}`,
                 '',
             ].join('\n');
             await fsHelpers.writeFile(configFile, configContent);

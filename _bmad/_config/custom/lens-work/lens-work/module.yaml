@@ -131,11 +131,11 @@ scripts:
 
 # Installation Questions
 install_questions:
-  target_projects_path:
+  target-projects-path:
     prompt: "Path to TargetProjects folder (where repos are cloned)"
     default: "../TargetProjects"
-    result: "{value}"
-  default_git_remote:
+    result: "{project-root}/{value}"
+  default-git-remote:
     prompt: "Default git remote provider"
     default: "github"
     result: "{value}"
