@@ -2,7 +2,7 @@
 
 **Module Code:** `lens-work`
 **Type:** Standalone BMAD Module
-**Schema Version:** 2
+**Schema Version:** 3
 
 ## Overview
 
@@ -32,6 +32,7 @@ lens-work/
 ├── docs/                  # Human-readable reference documentation
 └── tests/contracts/       # Slim contract tests
 ```
+
 
 ## Skills (5)
 
@@ -103,9 +104,15 @@ See `module.yaml` `install_questions` for configuration options (target projects
 - **Utility:** `onboard`, `status`, `next`, `switch`, `help`, `module-management`
 - **Governance:** `compliance-check`, `resolve-constitution`, `cross-initiative`
 
+
 ## Commands
 
-`/onboard`, `/new-domain`, `/new-service`, `/new-feature`, `/preplan`, `/businessplan`, `/techplan`, `/devproposal`, `/sprintplan`, `/dev`, `/status`, `/next`, `/switch`, `/promote`, `/sense`, `/constitution`, `/discover`, `/module-management`, `/help`
+All commands are available via the LENS agent menu. Initiative creation is now consolidated under a single `[NI] Create Initiative` entry (domain, service, or feature). New commands:
+- `[CL] Close Initiative` — formally complete, abandon, or supersede the current initiative
+- `[UG] Lens Upgrade` — migrate control repo to latest schema version
+
+Menu/command triggers:
+`/onboard`, `/create-initiative` (`/new-domain`, `/new-service`, `/new-feature`), `/preplan`, `/businessplan`, `/techplan`, `/devproposal`, `/sprintplan`, `/dev`, `/status`, `/next`, `/switch`, `/promote`, `/sense`, `/constitution`, `/discover`, `/module-management`, `/help`, `/close`, `/upgrade`
 
 ## Configuration
 
@@ -124,6 +131,7 @@ Install-time values are sourced from `module.yaml` install questions:
 
 The install-question keys use validator-friendly kebab-case. During installation, the module installer maps them into the existing runtime `bmadconfig.yaml` keys `target_projects_path` and `default_git_remote` so agent and workflow compatibility stays intact.
 
+
 ## Documentation
 
 See the [docs/](docs/) folder for detailed reference:
@@ -134,6 +142,8 @@ See the [docs/](docs/) folder for detailed reference:
 - [Copilot Adapter Templates](docs/copilot-adapter-templates.md) — Template patterns
 - [Script Integration Summary](docs/script-integration.md) — PAT-based PR and promotion script integration notes
 - [Pipeline: Source to Release](docs/pipeline-source-to-release.md) — CI/CD promotion
+- [copilot-instructions.md](docs/copilot-instructions.md) — Copilot agent instructions
+- [copilot-repo-instructions.md](docs/copilot-repo-instructions.md) — Repo-specific Copilot instructions
 
 ## Dependencies
 
@@ -145,7 +155,19 @@ See the [docs/](docs/) folder for detailed reference:
 LENS Workbench is part of the BMad Method ecosystem. See the [BMad Method](https://github.com/bmad-code-org/BMAD-METHOD) for more information.
 
 
-# Updated: Mon, Mar  9, 2026  2:07:59 PM
+
+## Known Issues & Next Steps
+
+- Token efficiency: Some workflow prompts and instructions could be compressed for lower token usage.
+- Menu categorization: Opportunity to group menu items by lifecycle phase for clarity.
+- First-run detection: Logic could be refined for more robust onboarding.
+- Sensing workflow: Prompt and step consolidation for efficiency.
+- Workflow validation: Deep validation and migration to step-driven execution is planned (see TODO.md).
+- Dual agent representation: `.md` runtime source and `.yaml` structured companion pattern to be documented.
+
+See [TODO.md](TODO.md) for the full checklist and next steps.
+
+# Updated: Mar 31, 2026
 
 
 

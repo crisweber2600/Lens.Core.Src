@@ -1,63 +1,46 @@
 ---
 name: 'step-04-closeout'
-description: 'Commit preplan artifacts, create the phase PR, update state, and report the next command'
-promotionCheckInclude: '../../../includes/promotion-check.md'
-createPrScript: '../../../../scripts/create-pr.ps1'
+description: 'Commit preplan artifacts, update initiative state, and report the next command'
 ---
 
 # Step 4: Close Out The PrePlan Phase
 
-**Goal:** Commit the generated preplan artifacts, create the phase PR, update initiative state, and surface the next lifecycle command.
+**Goal:** Commit the generated preplan artifacts with a phase-complete marker, update initiative state, and surface the next lifecycle command.
 
 ---
 
 ## EXECUTION SEQUENCE
 
-### 1. Commit, PR, And State Update
+### 1. Commit Artifacts And Mark Phase Complete
 
 ```yaml
+# Commit preplan artifacts with phase-complete marker
+# The commit body includes an inline artifact list per Decision OD-2
+artifact_list = list_files(output_path)
+
+# Update initiative-state.yaml: phase complete, record artifacts
+invoke: git-orchestration.update-phase-complete
+params:
+  phase: preplan
+  artifacts: ${artifact_list}
+
 invoke: git-orchestration.commit-artifacts
 params:
   file_paths:
     - ${output_path}
-  phase: PREPLAN
+    - ${initiative_state.state_path}
+  phase: "PHASE:PREPLAN:COMPLETE"
   initiative: ${initiative.initiative_root}
   description: "preplan artifacts complete"
+  commit_body: |
+    Artifacts:
+    ${artifact_list.join('\n    - ')}
 
 invoke: git-orchestration.push
-params:
-  branch: ${phase_branch}
-
-pr_result = invoke: script
-script: "{createPrScript}"
-params:
-  SourceBranch: ${phase_branch}
-  TargetBranch: ${audience_branch}
-  Title: "[PHASE] ${initiative.initiative_root} - PrePlan complete"
-  Body: "PrePlan complete for ${initiative.initiative_root}. Review the generated product brief and any optional brainstorm/research artifacts."
-
-invoke: state-management.update-initiative
-params:
-  initiative_id: ${initiative.id || initiative.initiative_root}
-  updates:
-    current_phase: "preplan"
-    phase_status:
-      preplan:
-        status: "pr_pending"
-        pr_url: ${pr_result.Url || pr_result.url || null}
-        pr_number: ${pr_result.Number || pr_result.number || null}
-
-invoke: include
-path: "{promotionCheckInclude}"
-params:
-  current_phase: "preplan"
-  initiative_root: ${initiative.initiative_root}
-  current_audience: "small"
-  lifecycle_contract: ${lifecycle}
 
 output: |
   ✅ /preplan complete
-  ├── Branch: ${phase_branch}
-  ├── PR: ${pr_result.Url || pr_result.url || "manual creation required"}
-  └── Next: Run `/businessplan` after the phase PR is merged.
+  ├── Branch: ${initiative.initiative_root} (initiative root)
+  ├── Artifacts committed with [PHASE:PREPLAN:COMPLETE] marker
+  └── Next: Run `/businessplan` to continue planning.
 ```

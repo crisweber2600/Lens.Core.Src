@@ -84,6 +84,8 @@ You must fully embody this agent's persona and follow all activation instruction
       <item cmd="SP or fuzzy match on sprintplan" exec="{project-root}/_bmad/lens-work/workflows/router/sprintplan/workflow.md">[SP] Start SprintPlan: Route sprint planning and story file generation</item>
       <item cmd="DV or fuzzy match on dev" exec="{project-root}/_bmad/lens-work/workflows/router/dev/workflow.md">[DV] Delegate Dev: Route implementation execution to target project agents</item>
       <item cmd="DS or fuzzy match on discover" exec="{project-root}/_bmad/lens-work/workflows/router/discover/workflow.md">[DS] Discover Target Repos: Inspect TargetProjects and prepare governance-aware repo context</item>
+      <item cmd="CL or fuzzy match on close or abandon or complete" exec="{project-root}/_bmad/lens-work/workflows/router/close/workflow.md">[CL] Close Initiative: Formally complete, abandon, or supersede the current initiative</item>
+      <item cmd="UG or fuzzy match on upgrade or lens-upgrade or migrate" exec="{project-root}/_bmad/lens-work/workflows/utility/upgrade/workflow.md">[UG] Lens Upgrade: Migrate control repo to latest schema version</item>
       <item cmd="PM or fuzzy match on party-mode" exec="{project-root}/_bmad/core/workflows/party-mode/workflow.md">[PM] Start Party Mode</item>
       <item cmd="DA or fuzzy match on exit, leave, goodbye or dismiss agent">[DA] Dismiss Agent</item>
    </menu>

@@ -15,9 +15,9 @@ entryStep: './steps/step-01-preflight.md'
 
 # /sprintplan - SprintPlan Phase Router
 
-**Goal:** Validate readiness, run sprint planning, create dev-ready stories, and hand off to developers.
+**Goal:** Validate readiness on the `{initiative_root}-devproposal` milestone branch, run sprint planning, create dev-ready stories, commit phase markers, create the `{initiative_root}-sprintplan` milestone branch at closeout, and hand off to developers.
 
-**Your Role:** Route the SprintPlan phase as Bob's control-plane workflow, enforcing promotion gates, readiness checks, and constitutional compliance before any developer handoff occurs.
+**Your Role:** Route the SprintPlan phase as Bob's control-plane workflow, enforcing devproposal prerequisite, readiness checks, and constitutional compliance before any developer handoff occurs.
 
 ---
 
@@ -26,7 +26,7 @@ entryStep: './steps/step-01-preflight.md'
 This workflow uses **step-file architecture**:
 
 - Each step keeps a single concern in focus so phase routing remains maintainable.
-- State persists through the active initiative context: `initiative`, `initiative_root`, `docs_path`, `bmad_docs`, `phase_branch`, `constitutional_context`, `missing`, `compliance_warnings`, `compliance_checked`, `readiness`, `selected_story`, `story_id`, `story_title`, `developer_name`, `pr_result`, and `gate_status`.
+- State persists through the active initiative context: `initiative`, `initiative_root`, `docs_path`, `bmad_docs`, `current_branch`, `constitutional_context`, `missing`, `compliance_warnings`, `compliance_checked`, `readiness`, `selected_story`, `story_id`, `story_title`, `developer_name`, `pr_result`, and `gate_status`.
 - The execution order matches the legacy router exactly; only the structure changed.
 
 ---
@@ -58,8 +58,8 @@ Read fully and follow: `{entryStep}`
 
 ### Step Map
 
-1. `step-01-preflight.md` - Pre-flight, branch routing, prerequisite gate, artifact gate
+1. `step-01-preflight.md` - Pre-flight, devproposal prerequisite validation, artifact gate
 2. `step-02-readiness.md` - Constitutional context, readiness validation, compliance gate
 3. `step-03-sprint-planning.md` - Sprint planning sub-workflow execution
 4. `step-04-dev-story.md` - Dev-ready story creation
-5. `step-05-closeout.md` - PR creation, state updates, event log, developer handoff, promotion check
+5. `step-05-closeout.md` - Milestone-branch creation, PR, state updates, event log, developer handoff, promotion check

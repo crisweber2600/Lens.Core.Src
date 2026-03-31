@@ -1,6 +1,6 @@
 ---
 name: 'step-01-preflight'
-description: 'Run pre-flight, branch routing, prerequisite validation, and artifact checklist gating'
+description: 'Run pre-flight, validate devproposal prerequisite via initiative-state.yaml, and artifact checklist gating'
 nextStepFile: './step-02-readiness.md'
 preflightInclude: '../../includes/preflight.md'
 lifecycleContract: '{project-root}/_bmad/lens-work/lifecycle.yaml'
@@ -10,7 +10,7 @@ lifecycleContract: '{project-root}/_bmad/lens-work/lifecycle.yaml'
 
 ## STEP GOAL:
 
-Establish the correct SprintPlan branch context, confirm promotion prerequisites, and detect missing required artifacts before deeper validation.
+Confirm the devproposal prerequisite is met via `initiative-state.yaml`, detect missing required artifacts, and commit the phase start marker.
 
 ## MANDATORY EXECUTION RULES:
 
@@ -21,21 +21,21 @@ Establish the correct SprintPlan branch context, confirm promotion prerequisites
 
 ### Role Reinforcement:
 - You are the LENS control-plane router.
-- Protect audience progression, branch discipline, and planning gate integrity.
+- Protect milestone progression, branch discipline, and planning gate integrity.
 
 ### Step-Specific Rules:
 - Load `{preflightInclude}` before SprintPlan-specific gating.
-- Use `{lifecycleContract}` to derive the large-audience SprintPlan branch.
+- Use `{lifecycleContract}` for lifecycle contract validation.
 - Treat missing required artifacts as a warning gate that needs an explicit user decision.
 
 ## EXECUTION PROTOCOLS:
 - Follow the numbered sequence exactly.
-- Carry forward `initiative`, `initiative_root`, `docs_path`, `bmad_docs`, `phase_branch`, `audience_branch`, and `missing`.
+- Carry forward `initiative`, `initiative_root`, `docs_path`, `bmad_docs`, `current_branch`, and `missing`.
 - Preserve any artifact-warning decision so later steps can mark `passed_with_warnings` when necessary.
 
 ## CONTEXT BOUNDARIES:
 - Available context: active branch, initiative config, `{preflightInclude}`, and `{lifecycleContract}`.
-- Focus: branch setup, prerequisite validation, promotion checks, and artifact gating.
+- Focus: prerequisite validation, artifact gating, and phase start marker.
 - Limits: do not run readiness validation or sprint planning in this step.
 - Dependencies: clean working tree and resolvable initiative state.
 
@@ -47,23 +47,36 @@ Establish the correct SprintPlan branch context, confirm promotion prerequisites
 
 Load and execute `{preflightInclude}` first so authority-repo sync and constitutional bootstrap happen before SprintPlan routing logic.
 
-Verify the working directory is clean, derive initiative state from the active branch, and load `{lifecycleContract}` to determine the SprintPlan audience.
+Verify the working directory is clean, derive initiative state from the active branch, and load `{lifecycleContract}`.
 
-Set `current_phase = sprintplan`, derive the large-audience branch from the lifecycle contract, resolve `initiative_root`, `audience_branch`, `docs_path`, `repo_docs_path`, `output_path`, and `bmad_docs`, and preserve the existing docs-path deprecation warning when initiative metadata is incomplete.
+Set `current_phase = sprintplan`, resolve `initiative_root`, `current_branch`, `docs_path`, `repo_docs_path`, `output_path`, and `bmad_docs`, and preserve the existing docs-path deprecation warning when initiative metadata is incomplete.
 
-Validate the medium-to-large audience promotion gate. If promotion is already complete, update initiative state accordingly. If it is not complete, surface the gate failure and auto-trigger `@lens promote`, then stop this workflow.
+### 2. Validate Prerequisites Via Initiative State
 
-Derive `phase_branch = {initiative_root}-{audience}-sprintplan`, ensure it exists through `git-orchestration.start-phase` when required, check it out, pull the latest state, and confirm the active branch to the user.
+Load `initiative-state.yaml` and verify devproposal phase is complete:
 
-### 2. Validate Prerequisites And Gate Check
+```yaml
+state_yaml = load("initiative-state.yaml")
+if state_yaml.phase_status.devproposal != "complete":
+  FAIL("❌ DevProposal phase is not complete. Run `/devproposal` first.")
+```
 
-Verify that the medium-audience `devproposal` branch has been merged into the medium audience branch.
+If DevProposal is not complete, stop with guidance to finish `/devproposal`.
 
-If DevProposal is not complete, stop with guidance to finish `/devproposal` or merge pending PRs.
+### 3. Phase Start Marker
 
-If the medium-to-large audience promotion is still incomplete after the prerequisite check, auto-trigger `@lens promote` and stop.
+Commit the phase start marker on the current branch:
 
-### 3. Checklist Enforcement - Verify Required Artifacts
+```yaml
+invoke: git-orchestration.update-phase-start
+params:
+  initiative_id: ${initiative.id || initiative_root}
+  phase: "sprintplan"
+  branch: ${current_branch}
+  commit_message: "[PHASE:SPRINTPLAN:START] Begin sprintplan on ${current_branch}"
+```
+
+### 4. Checklist Enforcement - Verify Required Artifacts
 
 Verify the required planning artifacts exist at `{docs_path}`:
 - Product Brief
@@ -77,7 +90,7 @@ Collect missing artifacts into `missing`.
 
 If any required artifacts are missing, display the list and ask whether to continue in warning mode. If the user declines, stop. If the user accepts, preserve that choice so later SprintPlan state can be marked `passed_with_warnings`.
 
-### 4. Auto-Proceed
+### 5. Auto-Proceed
 
 Display: "**Proceeding to readiness validation...**"
 
@@ -91,15 +104,13 @@ Display: "**Proceeding to readiness validation...**"
 ## SYSTEM SUCCESS/FAILURE METRICS:
 
 ### SUCCESS:
-- The large-audience SprintPlan phase branch is ready and checked out.
-- Medium-to-large promotion prerequisites are validated.
+- DevProposal prerequisite is validated via initiative-state.yaml.
+- `[PHASE:SPRINTPLAN:START]` marker is committed.
 - Required planning artifacts are checked and any warning-mode decision is explicit.
 
 ### SYSTEM FAILURE:
 - The working tree is dirty.
 - DevProposal is incomplete.
-- Audience promotion is not complete.
-- The SprintPlan branch cannot be created or checked out.
 - The user declines to continue with missing required artifacts.
 
 **Master Rule:** Skipping steps is FORBIDDEN.

@@ -80,3 +80,9 @@ agent:
     - trigger: DS or fuzzy match on discover
       exec: "{project-root}/_bmad/lens-work/workflows/router/discover/workflow.md"
       description: "[DS] Discover Target Repos: Inspect TargetProjects and prepare governance-aware repo context"
+    - trigger: CL or fuzzy match on close or abandon or complete
+      exec: "{project-root}/_bmad/lens-work/workflows/router/close/workflow.md"
+      description: "[CL] Close Initiative: Formally complete, abandon, or supersede the current initiative"
+    - trigger: UG or fuzzy match on upgrade or lens-upgrade or migrate
+      exec: "{project-root}/_bmad/lens-work/workflows/utility/upgrade/workflow.md"
+      description: "[UG] Lens Upgrade: Migrate control repo to latest schema version"

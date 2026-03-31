@@ -1,14 +1,14 @@
 ---
 name: 'step-01-preflight'
-description: 'Run shared preflight, validate preplan eligibility, and prepare the phase branch'
+description: 'Run shared preflight, validate preplan eligibility, and mark phase start on initiative root branch'
 nextStepFile: './step-02-select-workflows.md'
 preflightInclude: '../../../includes/preflight.md'
 lifecycleContract: '../../../../lifecycle.yaml'
 ---
 
-# Step 1: Preflight And Phase Branch Setup
+# Step 1: Preflight And Phase Start
 
-**Goal:** Confirm the active initiative can run preplan, then resolve and prepare the small-audience preplan branch and artifact output path.
+**Goal:** Confirm the active initiative can run preplan, then mark the phase start on the initiative root branch with a commit marker and initiative-state update.
 
 ---
 
@@ -30,26 +30,32 @@ enabled_phases = lifecycle.tracks[initiative.track].phases || lifecycle.phase_or
 if not contains(enabled_phases, "preplan"):
   FAIL("❌ Track `${initiative.track}` does not include preplan.")
 
-audience = "small"
 initiative_root = initiative.initiative_root
-audience_branch = "${initiative_root}-${audience}"
-phase_branch = "${initiative_root}-${audience}-preplan"
 output_path = initiative.docs.path || "{output_folder}/planning-artifacts"
 
-if not branch_exists(phase_branch):
-  invoke: git-orchestration.start-phase
+# v3: Work directly on the initiative root branch — no phase branch creation
+current_branch = invoke_command("git symbolic-ref --short HEAD")
+if current_branch != initiative_root:
+  invoke: git-orchestration.checkout-branch
   params:
-    phase_name: "preplan"
-    initiative_id: ${initiative.id || initiative_root}
-    audience: ${audience}
-    initiative_root: ${initiative_root}
-    parent_branch: ${audience_branch}
+    branch: ${initiative_root}
 
-invoke: git-orchestration.checkout-branch
-params:
-  branch: ${phase_branch}
+invoke: git-orchestration.pull-latest
 
 ensure_directory(output_path)
+
+# Mark phase start in initiative-state.yaml and commit the marker
+invoke: git-orchestration.update-phase-start
+params:
+  phase: preplan
+
+invoke: git-orchestration.commit-artifacts
+params:
+  file_paths:
+    - ${initiative_state.state_path}
+  phase: "PHASE:PREPLAN:START"
+  initiative: ${initiative_root}
+  description: "preplan phase started"
 ```
 
 ---
