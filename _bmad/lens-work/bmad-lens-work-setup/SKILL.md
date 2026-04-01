@@ -20,7 +20,7 @@ This skill registers the lens-work module into the host BMAD configuration. Run 
 Run the config merge script to register lens-work in the host BMAD configuration:
 
 ```bash
-python _bmad/lens-work/_module-installer/merge-config.py --module-yaml _bmad/lens-work/bmad-lens-work-setup/assets/module.yaml --target-config _bmad/_config/manifest.yaml
+python _bmad/lens-work/bmad-lens-work-setup/scripts/merge-config.py --module-yaml _bmad/lens-work/bmad-lens-work-setup/assets/module.yaml --target-config _bmad/_config/manifest.yaml
 ```
 
 This uses the **anti-zombie pattern**: removes any existing `lens-work` section first, then writes the current values. This ensures clean upgrades without leftover stale entries.
@@ -30,7 +30,7 @@ This uses the **anti-zombie pattern**: removes any existing `lens-work` section 
 Run the help CSV merge script to register lens-work capabilities in the host help system:
 
 ```bash
-python _bmad/lens-work/_module-installer/merge-help-csv.py --module-csv _bmad/lens-work/bmad-lens-work-setup/assets/module-help.csv --target-csv _bmad/_config/bmad-help.csv
+python _bmad/lens-work/bmad-lens-work-setup/scripts/merge-help-csv.py --module-csv _bmad/lens-work/bmad-lens-work-setup/assets/module-help.csv --target-csv _bmad/_config/bmad-help.csv
 ```
 
 This also uses the anti-zombie pattern: removes all existing `lens-work` rows, then appends the current rows.
@@ -48,7 +48,7 @@ After merging, verify the installation:
 If upgrading from a previous version, run the cleanup script to remove legacy artifacts:
 
 ```bash
-python _bmad/lens-work/_module-installer/cleanup-legacy.py --module-dir _bmad/lens-work
+python _bmad/lens-work/bmad-lens-work-setup/scripts/cleanup-legacy.py --module-dir _bmad/lens-work
 ```
 
 This safely removes:
