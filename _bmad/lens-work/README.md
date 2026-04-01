@@ -1,8 +1,8 @@
-# LENS Workbench Module — v3.0.0
+# LENS Workbench Module — v3.1.0
 
 **Module Code:** `lens-work`
 **Type:** Standalone BMAD Module
-**Schema Version:** 3
+**Schema Version:** 3.1
 
 ## Overview
 

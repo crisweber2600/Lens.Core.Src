@@ -12,6 +12,7 @@ lens-work,lens-work-module-management,Module Management,MM,"Check module version
 lens-work,lens-work-discover,Discover,DS,"Discover repos under TargetProjects — inspect for BMAD config update governance inventory create switch branches",,,anytime,,,,_bmad-output/lens-work/initiatives,discovery-report
 lens-work,lens-work-close,Close Initiative,CL,"Formally complete abandon or supersede the current initiative",,,anytime,,,,,
 lens-work,lens-work-upgrade,Lens Upgrade,UG,"Migrate control repo to latest schema version",,,anytime,,,,,
+lens-work,lens-work-dashboard,Dashboard,DB,"Multi-initiative status overview with Mermaid visualization and blocking PR detection",,,anytime,,,,,
 lens-work,lens-work-preplan,PrePlan,PP,"Start PrePlan phase — brainstorm research product brief",,,phase-1,,,false,_bmad-output/lens-work/initiatives,"product-brief research brainstorm"
 lens-work,lens-work-businessplan,BusinessPlan,BP,"Start BusinessPlan phase — PRD creation UX design",,,phase-2,PP,,false,_bmad-output/lens-work/initiatives,"prd ux-design"
 lens-work,lens-work-techplan,TechPlan,TP,"Start TechPlan phase — architecture document technical decisions",,,phase-3,BP,,false,_bmad-output/lens-work/initiatives,architecture

@@ -1,5 +1,5 @@
 # =============================================================================
-# Lens-Work Lifecycle Contract v3.0
+# Lens-Work Lifecycle Contract v3.1
 # =============================================================================
 # The single source of truth for lens-work lifecycle behavior.
 # The @lens agent (with 5 skills) and all workflows import
@@ -9,7 +9,7 @@
 # Branch existence + PR metadata + committed artifacts = state.
 # =============================================================================
 
-schema_version: 3
+schema_version: 3.1
 close_states: [completed, abandoned, superseded]
 initiative_state_schema: initiative-state.yaml
 artifact_publication:
@@ -88,6 +88,16 @@ milestones:
     description: "Constitution-gated — dev execution happens after sprintplan completes"
     phases: []
     entry_gate: constitution-gate
+  dev-complete:
+    role: "Execution complete"
+    description: "All planned epics merged to develop in target repos — tracks implementation completion"
+    phases: []
+    entry_gate: dev-complete-validation
+    optional: true
+    tracked_state:
+      stories_terminal: true          # All stories must be merged or explicitly deferred
+      epics_merged_to_develop: true   # All epic branches merged to develop
+      close_validation: true          # /close validates dev-complete before allowing 'completed' state
 
 # -----------------------------------------------------------------------------
 # PHASES
@@ -197,6 +207,16 @@ tracks:
     constitution_controlled_gates: [adversarial-review]
     start_phase: techplan
 
+  hotfix-express:
+    description: "Emergency fix — single promotion, constitution gate informational-only"
+    phases: [techplan]
+    milestones: [techplan, dev-ready]
+    constitution_controlled_gates: [adversarial-review]
+    gate_mode: informational         # Gates produce reports but do not block
+    bypass_constitution_gate: true   # Constitution gate is advisory, not blocking
+    start_phase: techplan
+    requires_constitution_permission: true  # Must be explicitly allowed in constitution
+
   spike:
     description: "Research only — no implementation"
     phases: [preplan]
@@ -209,6 +229,188 @@ tracks:
     milestones: [devproposal, dev-ready]
     constitution_controlled_gates: [adversarial-review]
     start_phase: devproposal
+
+# -----------------------------------------------------------------------------
+# PROMOTE SEMANTICS (v3.1 — approval-only model)
+# -----------------------------------------------------------------------------
+# In the happy path, all promotion PRs are auto-created by auto_advance_promote.
+# /promote is an approval + verification action, not a creation action.
+# The PR already exists when the user runs /promote.
+promote:
+  behavior: approval-only
+  description: >
+    /promote verifies that the auto-created promotion PR has been approved
+    and merged, then transitions the initiative to the next milestone.
+    If the PR does not yet exist (edge case), /promote creates it.
+  actions:
+    - verify_pr_merged
+    - run_sensing_check
+    - transition_milestone
+  auto_create_fallback: true  # Create PR if somehow missing
+
+# -----------------------------------------------------------------------------
+# ARTIFACT VALIDATION HOOKS (v3.1)
+# -----------------------------------------------------------------------------
+# Per-artifact structural validation that runs before commit acceptance.
+# Constitution can add, remove, or override validators per domain/service.
+artifact_validation:
+  enabled: true
+  mode: pre-commit       # Validate before artifact commit
+  constitution_controlled: true    # Constitution can override per artifact
+  validators:
+    product-brief:
+      required_sections: [Vision, Target Audience, Success Criteria]
+      min_word_count: 200
+    prd:
+      required_sections: [Overview, Requirements, Non-Functional Requirements, Success Metrics]
+      must_reference: []   # Constitution can populate
+      min_word_count: 500
+    ux-design:
+      required_sections: [User Flows, Component Specifications]
+      min_word_count: 300
+    architecture:
+      required_sections: [Overview, System Design, Data Model, API Design]
+      must_reference: [prd]     # Must reference the PRD artifact
+      min_word_count: 500
+    epics:
+      required_sections: [Epic List]
+      must_reference: [architecture]
+      min_word_count: 200
+    stories:
+      required_sections: [Story List]
+      each_story_requires: [Acceptance Criteria, Story Points]
+      must_reference: [epics]
+      min_word_count: 300
+    implementation-readiness:
+      required_sections: [Readiness Assessment, Risk Assessment]
+      min_word_count: 100
+    sprint-status:
+      format: yaml
+      required_fields: [sprint_number, stories, status]
+
+# -----------------------------------------------------------------------------
+# PARALLEL PHASE EXECUTION (v3.1)
+# -----------------------------------------------------------------------------
+# Within the same milestone, phases can run concurrently when dependencies allow.
+# Constitution can enable/disable per domain.
+parallel_phases:
+  enabled: false                    # Disabled by default — opt-in via constitution
+  constitution_controlled: true
+  allowed_parallels:
+    techplan_milestone:
+      # UX design (businessplan/Sally) can overlap with architecture (techplan/Winston)
+      # once the PRD is committed. PRD is the shared dependency.
+      - phases: [businessplan, techplan]
+        dependency: prd             # businessplan must commit prd before techplan starts
+        description: "UX design and architecture can proceed in parallel after PRD"
+  merge_strategy: last-writer-wins  # If parallel phases modify the same artifact (shouldn't happen)
+  completion_rule: all-complete     # Milestone promotion requires ALL parallel phases done
+
+# -----------------------------------------------------------------------------
+# CONTENT-AWARE SENSING (v3.1)
+# -----------------------------------------------------------------------------
+# Extends sensing beyond scope-name overlap to artifact content comparison.
+sensing:
+  scope_overlap:
+    same_feature: high
+    same_service: medium
+    same_domain: low
+  content_overlap:
+    enabled: true
+    artifacts_to_compare: [epics, stories, architecture]
+    similarity_threshold: 0.7       # Cosine similarity for section comparison
+    diff_strategy: section-headers  # Compare by section heading + content blocks
+    description: >
+      Two initiatives in the same service with overlapping epic or story
+      content generates a stronger signal than just sharing a service scope.
+      Content-aware sensing reduces false positives (low-value domain alerts)
+      and catches true conflicts.
+  output_format: sensing-report     # Uses sensing-report include for PR body
+
+# -----------------------------------------------------------------------------
+# GATE COLLAPSING (v3.1)
+# -----------------------------------------------------------------------------
+# Constitution-controlled gate collapsing for smaller-scope features.
+# Reduces the 3-PR promotion chain to fewer PRs when appropriate.
+gate_collapsing:
+  enabled: false                    # Disabled by default — constitution opt-in
+  constitution_controlled: true
+  description: >
+    For features under a configured threshold, constitutions may collapse
+    multiple gates into a single combined promotion PR. No global bypass.
+  rules:
+    - name: small-feature
+      max_stories: 3
+      collapsed_gates: [adversarial-review, stakeholder-approval]
+      result: single-promotion-pr   # techplan → dev-ready in one PR
+      combined_reviewers: true      # All gate reviewers on the single PR
+    - name: medium-feature
+      max_stories: 8
+      collapsed_gates: [stakeholder-approval]
+      result: two-promotion-prs     # techplan → devproposal, devproposal → dev-ready
+      combined_reviewers: false
+
+# -----------------------------------------------------------------------------
+# BRANCH CLEANUP (v3.1)
+# -----------------------------------------------------------------------------
+# Post-promotion branch lifecycle management.
+branch_cleanup:
+  strategy: squash-and-delete
+  description: >
+    After a promotion PR is merged, the source milestone branch is
+    squash-merged and deleted. This keeps the branch topology clean
+    and avoids stale long-lived branches.
+  behavior:
+    post_merge: delete-source-branch
+    squash_commits: true            # Squash milestone commits into single merge commit
+    preserve_dev_ready: true        # Never delete dev-ready (execution baseline)
+    preserve_initiative_root: true  # Never delete the initiative root branch
+  exceptions:
+    - branch: "{initiative-root}"
+    - branch: "{initiative-root}-dev-ready"
+
+# -----------------------------------------------------------------------------
+# DASHBOARD (v3.1)
+# -----------------------------------------------------------------------------
+# Multi-initiative status visualization command.
+dashboard:
+  command: /dashboard
+  code: DB
+  description: >
+    Generate a consolidated view of all active initiatives across domains,
+    showing current phase, milestone, blocking PRs, and sensing alerts.
+    Replaces the need to /switch + /status repeatedly.
+  output_format: mermaid
+  data_sources:
+    - git_branch_list               # All initiative branches
+    - provider_adapter_pr           # Open/blocking PRs
+    - committed_artifacts           # Artifact completion state
+    - sensing                       # Cross-initiative alerts
+  grouping: [domain, service]
+  display:
+    columns: [initiative, track, phase, milestone, blocking_prs, sensing_alerts, last_activity]
+    sort_by: last_activity
+    filter_closed: true             # Hide closed initiatives by default
+
+# -----------------------------------------------------------------------------
+# ARTIFACT TEMPLATES (v3.1)
+# -----------------------------------------------------------------------------
+# Per-artifact starter templates that agents load as scaffolds.
+# Templates ensure consistent structure and speed up adversarial review.
+# Constitution can override templates per domain.
+artifact_templates:
+  enabled: true
+  location: assets/templates/       # Relative to module root
+  constitution_controlled: true     # Constitution can override per domain
+  templates:
+    product-brief: product-brief-template.md
+    prd: prd-template.md
+    ux-design: ux-design-template.md
+    architecture: architecture-template.md
+    epics: epics-template.md
+    stories: stories-template.md
+    implementation-readiness: implementation-readiness-template.md
+    sprint-status: sprint-status-template.yaml
 
 # -----------------------------------------------------------------------------
 # ADVERSARIAL REVIEW (party mode)
@@ -341,6 +543,13 @@ constitution:
     - additional_review_participants
     - required_artifacts
     - enforce_stories
+    # v3.1 capabilities
+    - permit_hotfix_express          # Allow hotfix-express track (bypass_constitution_gate)
+    - enable_parallel_phases         # Allow parallel phase execution within milestones
+    - collapse_gates                 # Allow gate collapsing for small features
+    - artifact_validator_overrides   # Override per-artifact validation rules
+    - template_overrides             # Override artifact templates per domain
+    - content_sensing_mode           # Override content-aware sensing (informational | hard-gate)
 
 # -----------------------------------------------------------------------------
 # GIT STATE MODEL (v3 — git-derived)

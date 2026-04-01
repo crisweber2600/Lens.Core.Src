@@ -1,9 +1,9 @@
-# LENS Workbench Module Configuration v3.0
+# LENS Workbench Module Configuration v3.1
 # Source repo — CI/CD promotes to bmad.lens.release
 
 code: lens-work
 name: "LENS Workbench"
-module_version: "3.0.0"
+module_version: "3.1.0"
 description: "Guided lifecycle router with git-orchestrated discipline. Phase-aware orchestration for BMAD workflows with automated branch topology."
 header: "Guided lifecycle router with git-orchestrated discipline"
 subheader: "Phase-aware orchestration for BMAD workflows with automated branch topology"
@@ -19,7 +19,7 @@ global: false
 # Lifecycle Contract
 lifecycle:
   file: lifecycle.yaml
-  schema_version: 3
+  schema_version: 3.1
 
 # Dependencies
 dependencies:
@@ -47,6 +47,9 @@ skills:
   - id: checklist
     file: skills/checklist/SKILL.md
     description: "Phase gate checklists with progressive validation"
+  - id: dashboard
+    file: workflows/utility/dashboard/SKILL.md
+    description: "Cross-initiative status overview with Gantt timeline"
 
 # Workflows
 workflows:

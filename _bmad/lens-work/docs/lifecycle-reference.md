@@ -1,6 +1,7 @@
 # LENS Workbench — Lifecycle Reference Guide
 
-**Module:** lens-work v3.0  
+**Module:** lens-work v3.1  
+**Schema:** 3.1  
 **Purpose:** Human-readable reference for the lens-work lifecycle system
 
 ---
@@ -43,6 +44,9 @@ Audiences represent levels of review and approval. Initiatives start at `small` 
 | medium | Lead review | Adversarial review (party mode) | devproposal |
 | large | Stakeholder approval | Stakeholder approval | sprintplan |
 | base | Ready for execution | Constitution gate | — (dev happens in target projects) |
+| dev-complete | Execution complete | Dev-completion review | — (signals dev work finished) |
+
+> **v3.1:** The `dev-complete` milestone closes the gap between `base` (dev-ready) and the close workflow. It confirms all target-project dev work is finished and triggers the `/close` flow.
 
 > **Note:** Domains never have audience branches. Audiences apply only to service-level and feature-level initiatives. A domain branch is the bare root (e.g., `test`), with no `-small` suffix.
 
@@ -56,8 +60,11 @@ Tracks are predefined lifecycle profiles that determine which phases apply.
 | feature | businessplan → techplan → devproposal → sprintplan | Known business context |
 | tech-change | techplan → sprintplan | Pure technical change |
 | hotfix | techplan | Urgent fix |
+| hotfix-express | techplan | Critical fix — bypasses constitution gate and adversarial review |
 | spike | preplan | Research only |
 | quickdev | devproposal | Rapid execution |
+
+> **v3.1:** The `hotfix-express` track is an expedited path for critical production fixes. It skips the constitution gate and adversarial review while still requiring a technical plan. The constitution controls which teams/repos may use this track.
 
 ## Branch Topology
 
@@ -114,12 +121,13 @@ Only `{root}` and `{root}-small` are created at init. Higher audience branches a
 | `/module-management` | Manage installed BMAD modules |
 | `/close` | Formally complete, abandon, or supersede the current initiative |
 | `/lens-upgrade` | Migrate control repo to latest lifecycle schema version |
+| `/dashboard` | Cross-initiative status overview with Gantt timeline |
 
 ### Governance Commands
 
 | Command | Purpose |
 |---------|---------|
-| `/promote` | Promote current audience to next tier with gate checks |
+| `/promote` | Promote current audience to next tier (approval-only mode by default) |
 | `/sense` | On-demand cross-initiative overlap detection |
 | `/constitution` | Resolve and display constitutional governance for current initiative |
 
@@ -134,6 +142,24 @@ Only `{root}` and `{root}-small` are created at init. Higher audience branches a
 
 Cross-authority writes are **hard errors**, not warnings.
 
+## Promote Semantics (v3.1)
+
+Promotion defaults to **approval-only** mode:
+
+- **Auto-advance drives the happy path** — when the last phase PR in a tier merges, the initiative automatically advances to the next audience.
+- **Explicit `/promote`** is only required for `first-promotion` (small → medium), where human review is intentional.
+- **Squash-merge + branch cleanup** — promotion merges use squash-merge and the source milestone branch is deleted after merge. The initiative root branch is preserved.
+
+This removes the ceremony of manually promoting at every tier while keeping human gates where they matter.
+
+## Parallel Phase Execution (v3.1)
+
+Phases without data dependencies may execute concurrently. For example, `preplan` and `businessplan` can run in parallel when neither depends on the other's artifacts.
+
+- Parallel groups are declared in `lifecycle.yaml` under `parallel_phases.groups`.
+- Each group lists phases and specifies `requires_no_data_dependency: true`.
+- Phase branches are created simultaneously; both PRs must merge before the next sequential phase begins.
+
 ## Constitution Governance
 
 ### 4-Level Hierarchy
@@ -146,6 +172,26 @@ org/constitution.md              ← Level 1: universal defaults
 ```
 
 Resolution uses **additive inheritance** — lower levels add requirements, never remove them.
+
+### Constitution Capabilities (v3.1)
+
+The constitution now controls additional lifecycle behaviors:
+
+| Capability | Description |
+|-----------|-------------|
+| `gate_collapsing` | Allow merging adjacent gates for small features |
+| `parallel_phases` | Allow concurrent phase execution |
+| `bypass_gates` | Allow express tracks to skip specific gates |
+| `dev_completion_requirements` | Define what constitutes dev-complete |
+
+### Gate Collapsing (v3.1)
+
+For small features, adjacent gates can be merged to reduce ceremony:
+
+- Controlled by the constitution (`gate_collapsing.enabled: true`)
+- Collapsible gates: `adversarial-review`, `stakeholder-approval`
+- The constitution defines which initiative scopes qualify
+- Gate requirements are still met — they are combined, not skipped
 
 ### Compliance Checks
 
@@ -164,3 +210,42 @@ Sensing detects overlapping initiatives at lifecycle gates:
 | Same domain | 🟢 Low |
 
 Sensing runs automatically at `/new-*` (pre-creation) and `/promote` (pre-PR). Available on-demand via `/sense`. Default gate mode is informational; constitution can upgrade to hard gate.
+
+### Content-Aware Sensing (v3.1)
+
+Sensing now includes file-level diff analysis beyond branch-name overlap:
+
+| Analysis | Description |
+|----------|-------------|
+| File overlap | Detects when branches modify the same files |
+| Dependency conflicts | Identifies shared dependency version conflicts |
+| API surface conflicts | Flags overlapping API endpoint or contract changes |
+| Shared infrastructure | Detects concurrent changes to shared config/infra |
+
+The constitution can upgrade content-aware sensing from informational to a hard gate.
+
+## Artifact Templates (v3.1)
+
+Template starters are provided in `assets/templates/` and are auto-populated when a phase branch is created. Templates provide the required structure (headings, tables, sections) that artifact validation checks.
+
+| Template | Artifact |
+|----------|----------|
+| `product-brief-template.md` | Product brief |
+| `prd-template.md` | PRD |
+| `ux-design-template.md` | UX design |
+| `architecture-template.md` | Architecture |
+| `epics-template.md` | Epics |
+| `stories-template.md` | Stories |
+| `implementation-readiness-template.md` | Implementation readiness |
+| `sprint-status-template.yaml` | Sprint status |
+
+### Per-Artifact Validation (v3.1)
+
+Artifact validation now checks structural requirements per type:
+
+- **Required headings** — each artifact type has mandatory section headings
+- **Required tables** — PRD, architecture, and epics must contain tables
+- **YAML schema** — sprint-status must validate against expected keys
+- **Template diff** — artifacts with <20% change from template trigger a warning
+
+Validation runs at phase PR creation and blocks merge if structural requirements are missing.
