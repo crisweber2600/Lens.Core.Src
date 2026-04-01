@@ -1,4 +1,4 @@
-# What's New in LENS Workbench — v2.0 to v3.2
+# What's New in LENS Workbench — v2.0 to v3.2.1
 
 **Date:** April 1, 2026
 **Audience:** New and existing LENS users, module developers
@@ -14,6 +14,7 @@ This guide summarizes every significant change from the initial v2.0 release thr
 - [v2.x → v3.0 — Milestone Architecture](#v2x--v30--milestone-architecture-mar-31-2026)
 - [v3.0 → v3.1 — Lifecycle Improvements](#v30--v31--lifecycle-improvements-apr-1-2026)
 - [v3.1 → v3.2 — Express Track & Feature Mobility](#v31--v32--express-track--feature-mobility-apr-1-2026)
+- [v3.2 → v3.2.1 — Quality & Documentation Hardening](#v32--v321--quality--documentation-hardening-apr-1-2026)
 - [Migration Guide](#migration-guide)
 - [Commit Reference](#commit-reference)
 
@@ -28,6 +29,7 @@ This guide summarizes every significant change from the initial v2.0 release thr
 | **3.0** | 3 | Mar 31 | Milestone model — milestones replace audiences as promotion backbone, initiative-state.yaml, LENS_VERSION guard | ~20 |
 | **3.1** | 3.1 | Apr 1 | 10 lifecycle improvements — dashboard, templates, gate collapsing, sensing, branch cleanup | 1 (batch) |
 | **3.2** | 3.2 | Apr 1 | Express track, retrospective, feature mobility, onboarding docs | 2 |
+| **3.2.1** | 3.2 | Apr 1 | Quality scan remediation — i18n, efficiency, docs, path correctness | 1 |
 
 ---
 
@@ -415,6 +417,59 @@ Four new documentation files for first-time users:
 
 ---
 
+## v3.2 → v3.2.1 — Quality & Documentation Hardening (Apr 1, 2026)
+
+A comprehensive quality scan identified 379 issues (4 critical, 62 high, 293 medium, 20 low) across the module. This patch resolves all actionable findings across 6 remediation phases. No schema changes — fully backward compatible.
+
+### Critical & High Fixes
+
+- **Path convention enforcement** — `{project-root}` now used exclusively for `_bmad/` paths; release module references use literal `bmad.lens.release/` prefix; `_bmad-output/` is workspace-relative
+- **Bare `_bmad` references** — Fixed 20+ documentation references that omitted the required repo prefix (`bmad.lens.release/` or `bmad.lens.src/`)
+- **Shell lint** — Fixed SC2034 (`export SKIP_CONSTITUTION` for cross-script consumption), SC2043 (shellcheck directive for intentional single-item loop), SC2168 (`local` outside function scope)
+
+### Internationalization
+
+- All 26 prompt files now include `communication_language` and `document_output_language` frontmatter variables, enabling non-English agent interaction
+
+### Efficiency Improvements
+
+- **Lifecycle caching** — Documented session cache convention for `lifecycle.yaml` reads
+- **Parallel execution** — Independent reads in init-initiative step-03 can now run concurrently
+- **Constitution caching** — Preflight Step 5 checks session cache before resolving
+- **Check-dirty reorder** — Moved from step-04 to step-01 for earlier git state detection
+- **Output contracts** — Added explicit `OUTPUT CONTRACT` sections to preflight steps
+- **Batch initiative loading** — Status workflow step-03 uses `git-state.load-initiative-configs` for batch loading
+
+### Clarity Improvements
+
+- **Dev prompt consolidation** — 3 redundant write-scope warnings collapsed to single `WRITE-SCOPE INVARIANT` callout
+- **Preflight strategy extraction** — Verbose pull strategy rationale moved to `docs/preflight-strategy.md`
+- **Constitution substeps** — Deep 3-level nesting in preflight Step 5 refactored into linear substeps 5a–5d
+- **Minor prompt improvements** — Enhanced discover, init-initiative, move-feature, sprintplan, expressplan, help, and lens.agent.md
+
+### Documentation
+
+- **Core workflow details** — `docs/architecture.md` now documents the 3 core workflows (phase-lifecycle, audience-promotion, milestone-promotion) with trigger and purpose
+- **Branching strategy reference** — `docs/configuration-examples.md` now includes a branching strategy comparison table (trunk-based, pr-per-milestone, pr-per-epic)
+- **Help/bmad-help distinction** — help SKILL.md now clarifies that `/help` is LENS-specific while `/bmad-help` is a cross-module meta-command
+- **Governance-aware discover** — discover workflow.md documents that Step 4 accesses the governance repo via sibling clone
+- **Prompt naming guide** — New `prompts/README.md` documents the `lens-work.{command}.prompt.md` naming convention and menu trigger mapping
+- **Skill archetypes** — README.md documents internal delegation vs workflow skill patterns with CIS/TEA dependency descriptions
+- **Deferred items backlog** — TODO.md updated with new workflows, script extraction candidates, and enhancement roadmap
+
+### New & Modified Files (v3.2.1)
+
+| Category | Changes |
+|----------|--------|
+| Prompts | All 26 updated (i18n headers); `prompts/README.md` added |
+| Workflows | 8 updated (preflight, init-initiative, expressplan, sprintplan, discover, help, status, dashboard) |
+| Documentation | 7 updated (architecture, configuration-examples, GETTING-STARTED, onboarding-checklist, pipeline-source-to-release, copilot-repo-instructions, README); 1 added (preflight-strategy.md) |
+| Agents | lens.agent.md, lens.agent.yaml updated |
+| Scripts | preflight.sh, promote-branch.sh fixed |
+| Meta | TODO.md updated with deferred items backlog |
+
+---
+
 ## Migration Guide
 
 ### v2.x → v3.0 (Breaking)
@@ -438,6 +493,10 @@ Four new documentation files for first-time users:
 3. Feature-only naming: create `features.yaml` at control-repo root when ready
 4. Gate collapsing now fully functional — enable via `collapse_gates` constitution capability
 
+### v3.2 → v3.2.1 (Non-breaking)
+
+No migration needed. All changes are additive documentation, i18n headers, and internal quality fixes. Prompt frontmatter additions (`communication_language`, `document_output_language`) are ignored if not configured in `bmadconfig.yaml`.
+
 ---
 
 ## Commit Reference
@@ -451,6 +510,7 @@ Four new documentation files for first-time users:
 | v3.0 docs | `d907562` | Apr 1 | Update all docs to v3.0 |
 | v3.1 | `1d18af4` | Apr 1 | v3.1 — implement all 10 lifecycle improvements |
 | v3.2 | `cc57679` | Apr 1 | Express track, retrospective, feature mobility |
+| v3.2.1 | `53aff78` | Apr 1 | Quality scan remediation — 65 files, 6 phases |
 
 ### Total Commits by Phase
 
@@ -461,7 +521,8 @@ Four new documentation files for first-time users:
 | v3.0 milestone model | ~20 | Cris Weber |
 | v3.1 improvements | 3 | Cris Weber |
 | v3.2 express & mobility | 2 | Cris Weber |
-| **Total** | **~96** | |
+| v3.2.1 quality hardening | 1 | Cris Weber |
+| **Total** | **~97** | |
 
 ### Stats at a Glance
 
@@ -477,6 +538,6 @@ Four new documentation files for first-time users:
 | Milestones | — | 5 |
 | Scripts | 5 | 5 |
 | IDE adapters | 4 | 4 |
-| Documentation files | 5 | 15+ |
+| Documentation files | 5 | 17+ |
 | Template assets | 0 | 8 |
 | Constitution capabilities | 0 | 9 |
