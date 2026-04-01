@@ -151,6 +151,16 @@ The LENS Workbench agent is the single entry point for all user interaction. It 
 |----------|-------|---------|
 | **Core** | 3 | Infrastructure — phase lifecycle, audience promotion, milestone promotion |
 | **Router** | 11 | User-facing phase flows — init, preplan, businessplan, techplan, devproposal, sprintplan, dev, discover, close, expressplan, retrospective |
+
+#### Core Workflow Details
+
+Core workflows are **internal infrastructure** — never invoked directly by users.
+
+| Workflow | Trigger | Purpose |
+|----------|---------|--------|
+| `phase-lifecycle` | Called by router workflows after phase artifacts are committed | Detect phase completion, create/report phase PR, surface promotion readiness, clean up merged phase branches |
+| `audience-promotion` | Called by `/promote` when the next promotion step is an audience tier change | Validate gates (artifact, constitution, sensing), create next-audience branch, open promotion PR |
+| `milestone-promotion` | Called by `/promote` when the next promotion step is a milestone boundary | Validate gates (phase, artifact, constitution, sensing), create next-milestone branch, open promotion PR |
 | **Utility** | 12 | Operational — onboard, status, next, switch, help, promote, module-management, upgrade, dashboard, log-problem, move-feature, split-feature |
 | **Governance** | 3 | Compliance — compliance-check, cross-initiative, resolve-constitution |
 
@@ -245,7 +255,7 @@ All references are by **PATH** (not duplicated content), updated on module versi
 
 ```
 Source (bmad.lens.src)
-    ↓ [push to master changing _bmad/lens-work/**]
+    ↓ [push to master changing bmad.lens.src/_bmad/lens-work/**]
 CI/CD Pipeline (promote-to-release.yml)
     ↓ [build → overlay → package → installer.js]
 Release (bmad.lens.release) alpha branch

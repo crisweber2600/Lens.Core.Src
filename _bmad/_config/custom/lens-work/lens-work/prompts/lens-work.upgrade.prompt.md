@@ -1,5 +1,7 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
+model: "{default_model}"
+communication_language: "{communication_language}"
+document_output_language: "{document_output_language}"
 description: "Migrate a v2 control repo to v3: rename audience branches, write LENS_VERSION"
 ---
 

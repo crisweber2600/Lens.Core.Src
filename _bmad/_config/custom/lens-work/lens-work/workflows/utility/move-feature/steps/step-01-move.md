@@ -147,6 +147,16 @@ Branch name and initiative root are unchanged.
 
 ---
 
+## Error Handling
+
+| Error | Cause | Action |
+|-------|-------|--------|
+| No active initiative | Not on a feature initiative branch | Show: "Switch to a feature initiative first. Run `/switch`." |
+| Current scope is not feature | On a domain or service branch | Show: "Only feature initiatives can be moved. Domains and services are structural." |
+| Target already exists | Feature name collision at destination | Show the conflict path and suggest renaming. |
+| `git mv` fails | Uncommitted changes or path conflict | Show: "Resolve uncommitted changes first: `git status`." |
+| features.yaml missing | Registry not initialized | Skip registry update and warn: "No features.yaml found — registry update skipped." |
+
 ## WORKFLOW COMPLETE
 
 This is a single-step utility workflow. No further steps.

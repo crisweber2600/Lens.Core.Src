@@ -59,7 +59,41 @@ Deduplicate the results by story id, sort them into implementation order, and fa
 
 Present the discovered story set, including special instructions when present.
 
-### 3. Confirm The Story Set
+### 3. Check For Resumable Session
+
+Before confirming the story set, check for an existing `dev-session.yaml` in the initiative docs path:
+
+```yaml
+dev_session_path = "${initiative.docs_path}/dev-session.yaml"
+if file_exists(dev_session_path):
+  prior_session = load(dev_session_path)
+  if prior_session.status == "in-progress" and prior_session.epic_number == session.epic_number:
+    completed_ids = prior_session.stories_completed || []
+    if completed_ids.length > 0:
+      output: |
+        ⚡ Resumable session detected
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        Epic:             ${session.epic_number}
+        Stories completed: ${completed_ids.join(', ')}
+        Last checkpoint:  ${prior_session.last_checkpoint}
+        Special instructions: ${prior_session.special_instructions || "(none)"}
+        
+        Remaining stories will start from the next incomplete story.
+
+      ask: "[R] Resume from checkpoint  [F] Start fresh  [X] Stop"
+      if R:
+        session.stories_completed = completed_ids
+        session.stories_failed = prior_session.stories_failed || []
+        session.special_instructions = prior_session.special_instructions || session.special_instructions
+        session.story_files = filter(session.story_files, story -> story.id not in completed_ids)
+        # Skip to step 3 confirmation with filtered set
+      if F:
+        # Continue to normal confirmation below
+      if X:
+        STOP
+```
+
+### 4. Confirm The Story Set
 
 Display: "**Select:** [C] Continue with the discovered stories [X] Stop"
 

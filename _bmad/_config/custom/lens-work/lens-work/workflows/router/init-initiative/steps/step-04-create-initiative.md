@@ -15,16 +15,8 @@ nextStepFile: './step-05-respond.md'
 ### 1. Create Config And Local Scaffold
 
 ```yaml
-dirty_state = invoke: git-orchestration.check-dirty
-
-if dirty_state.status == "dirty":
-  output: |
-    ❌ Working tree is not clean.
-    ├── Files changed: ${dirty_state.files_changed || 0}
-    └── Files: ${(dirty_state.files || []).join(', ')}
-
-    Commit or stash the pending work, then rerun the initiative creation command.
-  FAIL("❌ Initiative creation stopped to avoid mixing uncommitted work with new branch setup.")
+# Dirty-state check moved to step-01-preflight for early fail.
+# If execution reaches here, the working tree was clean at preflight time.
 
 target_projects_path = (profile != null and profile.target_projects_path != null and profile.target_projects_path != "") ? profile.target_projects_path : (module_config.target_projects_path || "TargetProjects")
 commit_description = scope + " created"

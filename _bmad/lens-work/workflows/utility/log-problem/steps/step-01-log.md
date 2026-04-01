@@ -114,6 +114,15 @@ Log another? Type /log-problem or continue your work.
 
 ---
 
+## Error Handling
+
+| Error | Cause | Action |
+|-------|-------|--------|
+| No active initiative | User not on an initiative branch | Show: "Switch to an initiative branch first. Run `/switch` to select one." |
+| initiative-state.yaml missing | Branch exists but config absent | Show: "Initiative config not found. Run `/status` to diagnose." |
+| problem_logging not in lifecycle.yaml | Schema mismatch | Show: "Problem logging schema not found in lifecycle.yaml. Run `/lens-upgrade`." |
+| Commit fails | Dirty working tree or conflict | Show the git error and suggest: "Resolve conflicts, then retry `/log-problem`." |
+
 ## WORKFLOW COMPLETE
 
 This is a single-step utility workflow. No further steps.

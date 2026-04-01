@@ -38,6 +38,23 @@ lifecycle = load("{lifecycleContract}")
 module_config = load("{moduleConfigPath}")
 profile = load_if_exists("{personal_output_folder}/profile.yaml")
 current_context = invoke: git-state.current-initiative
+```
+
+### 2. Early Dirty-State Check
+
+Fail immediately if uncommitted work would interfere with branch creation in later steps.
+
+```yaml
+dirty_state = invoke: git-orchestration.check-dirty
+
+if dirty_state.status == "dirty":
+  output: |
+    ❌ Working tree is not clean.
+    ├── Files changed: ${dirty_state.files_changed || 0}
+    └── Files: ${(dirty_state.files || []).join(', ')}
+
+    Commit or stash the pending work, then rerun the initiative creation command.
+  FAIL("❌ Initiative creation stopped to avoid mixing uncommitted work with new branch setup.")
 
 output: |
   🌱 Initiative creation initialized

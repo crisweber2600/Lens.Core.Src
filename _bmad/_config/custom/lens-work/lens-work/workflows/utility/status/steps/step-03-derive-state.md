@@ -20,17 +20,24 @@ lifecycleContract: '../../../../lifecycle.yaml'
 
 ### 1. Build Status Rows
 
+> **Batch optimization:** Pre-load all initiative configs in a single pass before iterating. This avoids N sequential `git-state.initiative-config` calls.
+
 ```yaml
 status_rows = []
 detail_rows = []
 lifecycle = load("{lifecycleContract}")
 
+# Batch-load all initiative configs upfront
+initiative_configs = {}
+for root in initiative_roots:
+  initiative_configs[root] = invoke: git-state.initiative-config
+  params:
+    root: ${root}
+
 default_audience_order = ["small", "medium", "large", "base"]
 
 for root in initiative_roots:
-  initiative_config = invoke: git-state.initiative-config
-  params:
-    root: ${root}
+  initiative_config = initiative_configs[root]
 
   if initiative_config == null:
     initiative_config = {}

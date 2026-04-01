@@ -1,5 +1,7 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
+model: "{default_model}"
+communication_language: "{communication_language}"
+document_output_language: "{document_output_language}"
 description: "Discover repos under TargetProjects, inspect for BMAD config, update governance inventory, create switch branches"
 ---
 
@@ -13,11 +15,9 @@ Routes the `/discover` command to the discover workflow, which scans `TargetProj
 
 ## Steps
 
-### Step 0: Run Preflight
+### Step 0: Preflight
 
-Execute shared preflight from `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`.
-
-If preflight reports missing authority repos, stop and direct the user to run `/onboard` first.
+Execute `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`. Halt if authority repos missing — direct user to `/onboard`.
 
 ### Step 1: Execute Workflow
 
@@ -35,16 +35,7 @@ The workflow handles:
 
 ## Documentation Output Convention
 
-**All documentation generated during `/discover` — from any workflow step, including `document-project` and `generate-project-context` — MUST be written to:**
-
-```
-docs/{domain}/{service}/{repo_name}/
-```
-
-Examples:
-- `docs/bmad/lens/bmad.lens.src/` — documentation for the `bmad.lens.src` repo
-- `docs/bmad/lens/bmad.lens.bmad/` — documentation for the `bmad.lens.bmad` repo
-This path is constructed from the initiative's resolved `domain` and `service` fields plus the repo's directory basename. Every output file from every documentation workflow — including `project-context.md`, project scans, architecture overviews, source trees, and deep-dive docs — is placed **inside** this folder rather than at the repo root or in `_bmad-output/`.
+All generated documentation (project context, architecture, source trees) goes to `docs/{domain}/{service}/{repo_name}/` — e.g., `docs/bmad/lens/bmad.lens.src/`.
 
 ## Prerequisites
 

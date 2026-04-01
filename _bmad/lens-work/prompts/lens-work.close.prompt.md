@@ -1,5 +1,7 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
+model: "{default_model}"
+communication_language: "{communication_language}"
+document_output_language: "{document_output_language}"
 description: "Formally close an initiative as completed, abandoned, or superseded"
 ---
 
@@ -13,11 +15,9 @@ Formally ends an initiative lifecycle by validating close eligibility, collectin
 
 ## Steps
 
-### Step 0: Run Preflight
+### Step 0: Preflight
 
-Execute shared preflight from `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`.
-
-If preflight reports missing authority repos, stop and direct the user to run `/onboard` first.
+Execute `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`. Halt if authority repos missing — direct user to `/onboard`.
 
 ### Step 1: Capture Close Variant
 

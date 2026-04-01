@@ -22,9 +22,9 @@ The top-level workspace. This is an **operational workspace**, not a code repo. 
 
 A **git submodule** containing the BMAD framework release payload. This is the **authority** for all module definitions.
 
-- `_bmad/lens-work/` — The lens-work module: lifecycle contract, skills, workflows, prompts, scripts, agents, docs
-- `_bmad/bmm/`, `_bmad/core/`, `_bmad/cis/`, etc. — Other BMAD modules
-- `_bmad/_config/` — Global manifests (agent, workflow, task, tool, files)
+- `bmad.lens.release/_bmad/lens-work/` — The lens-work module: lifecycle contract, skills, workflows, prompts, scripts, agents, docs
+- `bmad.lens.release/_bmad/bmm/`, `bmad.lens.release/_bmad/core/`, `bmad.lens.release/_bmad/cis/`, etc. — Other BMAD modules
+- `bmad.lens.release/_bmad/_config/` — Global manifests (agent, workflow, task, tool, files)
 
 **Write rules:** NEVER modify files in `bmad.lens.release/`. It is read-only reference material. All `_bmad/` path references in prompts and workflows resolve relative to `bmad.lens.release/`, NOT the workspace root.
 

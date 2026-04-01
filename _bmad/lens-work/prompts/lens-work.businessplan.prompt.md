@@ -1,5 +1,7 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
+model: "{default_model}"
+communication_language: "{communication_language}"
+document_output_language: "{document_output_language}"
 description: "Start BusinessPlan phase — PRD creation and UX design"
 ---
 
@@ -7,12 +9,10 @@ description: "Start BusinessPlan phase — PRD creation and UX design"
 
 Route to the businessplan phase workflow via the @lens phase router.
 
-1. Run preflight before routing:
-   1. Execute shared preflight from `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`.
-   2. If preflight reports missing authority repos, stop and direct the user to run `/onboard` first.
+1. **Preflight**: Execute `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`. Halt if authority repos missing — direct user to `/onboard`.
 2. Load `lifecycle.yaml` from the lens-work module
 3. Invoke phase routing for `businessplan`:
-   - Validate predecessor `preplan` PR is merged
+   - Validate predecessor `preplan` phase is complete
    - Check current track includes `businessplan` in its phases
-   - Create phase branch `{initiative-root}-small-businessplan`
+   - Work proceeds on the initiative root branch (within techplan milestone); milestone branch is created lazily at promotion per lifecycle.yaml
 4. Execute `workflows/router/businessplan/workflow.md`

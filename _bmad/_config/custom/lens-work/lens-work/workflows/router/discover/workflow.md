@@ -8,6 +8,7 @@ category: router
 phase_name: discover
 display_name: Discover
 imports: lifecycle.yaml
+inputs: []
 entryStep: './steps/step-01-preflight.md'
 ---
 
@@ -26,7 +27,7 @@ This workflow uses **step-file architecture**:
 - Step 1 resolves the initiative, scan path, and governance repo.
 - Step 2 discovers repos and syncs each repo to its most recent branch.
 - Step 3 inspects each repo for BMAD config and detects its primary language.
-- Step 4 updates governance inventory and creates control-repo `/switch` branches.
+- Step 4 updates governance inventory and creates control-repo `/switch` branches. (**Governance-aware:** reads/writes the governance repo's `repo-inventory.yaml` via the sibling clone at `governance_repo_path`, NOT via a git remote.)
 - Step 5 handles optional context/documentation generation, updates initiative language, and reports results.
 
 State persists through `resolver_result`, `discovered_repos`, `repo_results`, `governance_summary`, and `branch_summary`.

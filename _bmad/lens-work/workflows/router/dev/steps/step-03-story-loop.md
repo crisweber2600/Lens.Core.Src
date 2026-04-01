@@ -81,6 +81,39 @@ Load and apply the following references inside the active story iteration, in or
 - `{implementationGuidanceData}` for constitutional implementation guidance and per-task commit rules
 - `{reviewLoopData}` for code review, party-mode teardown, story PR creation, and BMAD control-plane completion updates
 
+### 4a. Checkpoint Session Progress
+
+After each story completes review and PR creation, write a `dev-session.yaml` checkpoint to the BMAD control-plane repo. This enables resuming the epic loop if the session is interrupted by context compaction or session loss.
+
+```yaml
+dev_session = {
+  epic_number: session.epic_number,
+  initiative_root: initiative.initiative_root,
+  started_at: session.dev_started_at || current_timestamp(),
+  last_checkpoint: current_timestamp(),
+  special_instructions: session.special_instructions || "",
+  total_stories: count(session.story_files),
+  stories_completed: session.stories_completed,
+  stories_failed: session.stories_failed || [],
+  current_story_index: current_loop_index + 1,
+  status: "in-progress"
+}
+
+write_yaml("${initiative.docs_path}/dev-session.yaml", dev_session)
+
+invoke: git-orchestration.commit-artifacts
+params:
+  file_paths:
+    - "${initiative.docs_path}/dev-session.yaml"
+  phase: "DEV:CHECKPOINT"
+  initiative: ${initiative.initiative_root}
+  description: "[dev] checkpoint after story ${story_id}"
+```
+
+When `/dev` starts, check for an existing `dev-session.yaml`:
+- If found with `status: in-progress` and `stories_completed` is non-empty, offer to **resume** from the next incomplete story instead of restarting. Display completed stories and confirm continuation.
+- If found with `status: completed`, ignore and start fresh.
+
 ### 5. End-Of-Loop Summary
 
 After the final story finishes, display the completed story list and confirm how many stories were successfully implemented in the epic.

@@ -1,5 +1,7 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
+model: "{default_model}"
+communication_language: "{communication_language}"
+document_output_language: "{document_output_language}"
 description: "Start DevProposal phase — epics, stories, and readiness check"
 ---
 
@@ -7,12 +9,9 @@ description: "Start DevProposal phase — epics, stories, and readiness check"
 
 Route to the devproposal phase workflow via the @lens phase router.
 
-1. Run preflight before routing:
-   1. Execute shared preflight from `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`.
-   2. If preflight reports missing authority repos, stop and direct the user to run `/onboard` first.
+1. **Preflight**: Execute `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`. Halt if authority repos missing — direct user to `/onboard`.
 2. Load `lifecycle.yaml` from the lens-work module
 3. Invoke phase routing for `devproposal`:
-   - Validate predecessor `techplan` PR is merged
-   - Validate audience level is `medium` (promotion from small required)
-   - Create phase branch `{initiative-root}-medium-devproposal`
+   - Validate techplan milestone promotion is complete
+   - Work proceeds on the `{initiative-root}-devproposal` milestone branch (created by prior promotion)
 4. Execute `workflows/router/devproposal/workflow.md`

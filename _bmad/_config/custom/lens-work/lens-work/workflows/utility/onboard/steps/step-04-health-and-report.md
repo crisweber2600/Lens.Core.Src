@@ -34,5 +34,9 @@ output: |
   ├── Provider: ${provider}
   ├── Governance repo: ${governance_repo_path}
   ├── TargetProjects bootstrap: ${cloned_count} cloned, ${existing_count} already present, ${failed_count} attention items
-  └── Next: Run `/next`, `/status`, or `/new-domain`
+  │
+  ├── 🚀 Quick start: Run `/expressplan` to create all planning docs in one quick session.
+  │   Perfect for solo projects, spikes, or your first initiative.
+  │
+  └── Other options: `/new-domain` (start domain hierarchy), `/status`, or `/next`
 ```

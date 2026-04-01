@@ -1,5 +1,7 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
+model: "{default_model}"
+communication_language: "{communication_language}"
+document_output_language: "{document_output_language}"
 description: "Delegate implementation to target project agents via story routing"
 ---
 
@@ -12,7 +14,7 @@ Orchestrates the full implementation cycle for an epic: iterates all stories, im
 
 **⚠️ CRITICAL:** `bmad.lens.release` is a **READ-ONLY authority repo**. It contains BMAD framework code (agents, workflows, lifecycle definitions). It is **NEVER** the implementation target.
 
-The implementation target is the **TargetProject repo** — resolved from `initiative.target_repos[0].local_path` in the initiative config. All code changes, file creation, commits, and PRs go to the TargetProject repo. If you find yourself writing files inside `bmad.lens.release/`, STOP — you are in the wrong repo.
+The implementation target is the **TargetProject repo** — resolved from `initiative.target_repos[0].local_path` in the initiative config. ALL writes (file creation, modification, commits) go to the TargetProject repo. The agent MUST NOT modify `bmad.lens.release/`, the control repo (except `_bmad-output/`), the governance repo, or `.github/`. The dev workflow enforces this via a hard gate (Step 3.Nc) that blocks implementation when the working directory resolves outside the TargetProject.
 
 ## Inputs
 
@@ -21,27 +23,14 @@ The implementation target is the **TargetProject repo** — resolved from `initi
 
 ## Execution
 
-1. **Authority Repo Health Check** (read-only — NO writes to these repos):
-   1. Execute shared preflight from `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`. This is a health check only — `bmad.lens.release` is NOT the implementation target.
-   2. If preflight reports missing authority repos, stop and direct the user to run `/onboard` first.
+1. **Preflight** (health check only — `bmad.lens.release` is NOT the implementation target): Execute `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`. Halt if authority repos missing — direct user to `/onboard`.
 2. Load `lifecycle.yaml` from the lens-work module (read from `bmad.lens.release` — read-only)
 3. Invoke phase routing for `dev`:
-   - Validate predecessor `sprintplan` PR is merged
-   - Validate audience level is `base` (promotion from large required)
-   - Create phase branch `{initiative-root}-dev`
+   - Validate dev-ready milestone has been reached (sprintplan completed and promoted)
+   - Dev is a delegation command, not a lifecycle phase — no initiative branch is created
 4. Execute `workflows/router/dev/workflow.md` with parameters:
    - `epic_number`: the epic number provided by the user
    - `special_instructions`: the optional special instructions provided by the user (empty string if none)
-
-## Write Scope — Target Repo Only (NOT bmad.lens.release)
-
-During `/dev`, ALL implementation writes (file creation, modification, commits) are **strictly scoped to the TargetProject repo folder** resolved from `initiative.target_repos[0].local_path`. The agent MUST NOT modify files in:
-- `bmad.lens.release/` (read-only framework — NEVER an implementation target)
-- The control repo (bmad.lens.bmad) except `_bmad-output/` state tracking
-- The governance repo
-- `.github/` adapter layer
-
-**Dev Write Guard:** Before implementing any task, the workflow runs a hard gate (Step 3.Nc) that verifies the working directory is inside the TargetProject repo. If the working directory resolves to `bmad.lens.release/` or any other non-target path, implementation is **BLOCKED**. The guard also rejects any `target_path` that contains `bmad.lens.release`.
 
 ## Epic-Level Story Loop
 

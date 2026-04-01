@@ -11,6 +11,7 @@ agent:
     - "Store {user_name}, {communication_language}, {output_folder}, {target_projects_path}, {default_git_remote}, {lifecycle_contract}, {initiative_output_folder}, and {personal_output_folder} from {project-root}/_bmad/lens-work/bmadconfig.yaml as session variables."
     - "Load COMPLETE file {project-root}/_bmad/lens-work/lifecycle.yaml before routing any lifecycle command."
     - "Use the three-part response structure Context Header, Primary Content, and Next Step for task results."
+    - "Detect first-run state by checking if _bmad-output/lens-work/personal/profile.yaml exists. If first-run: show condensed 5-item starter menu (OB, EP, NI, HP, CH) with a note that /bmad-help is available. If returning user: show the full menu."
   menu:
     - trigger: OB or fuzzy match on onboard
       exec: "{project-root}/_bmad/lens-work/workflows/utility/onboard/workflow.md"
@@ -39,12 +40,21 @@ agent:
     - trigger: CN or fuzzy match on constitution
       exec: "{project-root}/_bmad/lens-work/workflows/governance/resolve-constitution/workflow.md"
       description: "[CN] Resolve Constitution: Show applicable constitutional rules and compliance context"
+    - trigger: CC or fuzzy match on compliance or compliance-check
+      exec: "{project-root}/_bmad/lens-work/workflows/governance/compliance-check/workflow.md"
+      description: "[CC] Compliance Check: Run compliance validation against constitutional rules"
+    - trigger: DB or fuzzy match on dashboard
+      exec: "{project-root}/_bmad/lens-work/workflows/utility/dashboard/workflow.md"
+      description: "[DB] Dashboard: Show multi-initiative portfolio overview and status"
     - trigger: MM or fuzzy match on module-management
       exec: "{project-root}/_bmad/lens-work/workflows/utility/module-management/workflow.md"
       description: "[MM] Module Management: Check module version and update guidance"
     - trigger: PP or fuzzy match on preplan
       exec: "{project-root}/_bmad/lens-work/workflows/router/preplan/workflow.md"
-      description: "[PP] Start PrePlan: Research and product-brief routing for small audience work"
+      description: "[PP] Start PrePlan: Research and product-brief routing"
+    - trigger: EP or fuzzy match on expressplan or express
+      exec: "{project-root}/_bmad/lens-work/workflows/router/expressplan/workflow.md"
+      description: "[EP] Start ExpressPlan: All planning artifacts in one session — no branches, no PRs"
     - trigger: BP or fuzzy match on businessplan
       exec: "{project-root}/_bmad/lens-work/workflows/router/businessplan/workflow.md"
       description: "[BP] Start BusinessPlan: Route PRD and UX planning work"
@@ -66,6 +76,18 @@ agent:
     - trigger: CL or fuzzy match on close or abandon or complete
       exec: "{project-root}/_bmad/lens-work/workflows/router/close/workflow.md"
       description: "[CL] Close Initiative: Formally complete, abandon, or supersede the current initiative"
+    - trigger: RT or fuzzy match on retrospective or retro
+      exec: "{project-root}/_bmad/lens-work/workflows/router/retrospective/workflow.md"
+      description: "[RT] Retrospective: Review what happened during an initiative — what worked, what broke, lessons learned"
+    - trigger: LP or fuzzy match on log-problem or log problem
+      exec: "{project-root}/_bmad/lens-work/workflows/utility/log-problem/workflow.md"
+      description: "[LP] Log Problem: Record an issue or friction point for the active initiative"
+    - trigger: MV or fuzzy match on move-feature or move feature
+      exec: "{project-root}/_bmad/lens-work/workflows/utility/move-feature/workflow.md"
+      description: "[MV] Move Feature: Reclassify a feature to a different domain/service"
+    - trigger: SF or fuzzy match on split-feature or split feature
+      exec: "{project-root}/_bmad/lens-work/workflows/utility/split-feature/workflow.md"
+      description: "[SF] Split Feature: Split a feature into multiple initiatives"
     - trigger: UG or fuzzy match on upgrade or lens-upgrade or migrate
       exec: "{project-root}/_bmad/lens-work/workflows/utility/upgrade/workflow.md"
       description: "[UG] Lens Upgrade: Migrate control repo to latest schema version"

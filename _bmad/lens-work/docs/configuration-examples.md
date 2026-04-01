@@ -159,3 +159,17 @@ communication_language: "german"
 ```
 
 All agent responses, menu items, and workflow guidance will be in German. Artifact structure and git operations remain in English (branch names, commit messages, YAML keys).
+
+---
+
+## Branching Strategy Reference
+
+The `branching_strategy` constitution setting controls how promotion PRs are created:
+
+| Strategy | PR Behavior | Best For |
+|----------|-------------|----------|
+| `trunk-based` | All promotion PRs merge to the trunk branch (main/master). No milestone branches. | Solo developers, express track |
+| `pr-per-milestone` | Each milestone gets its own long-lived branch. Promotion PRs merge the current milestone into the next. | Small-to-medium teams with structured review |
+| `pr-per-epic` | Like `pr-per-milestone` but scoped to epics rather than milestones. | Enterprise teams with epic-level governance |
+
+These strategies interact with `collapse_gates` — when gate collapsing is enabled with `trunk-based`, intermediate milestone PRs are skipped entirely (the initiative advances directly to the target milestone).

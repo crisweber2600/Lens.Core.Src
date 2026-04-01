@@ -48,6 +48,11 @@ lens-work/
 
 ## Skills (5)
 
+Skills fall into two archetypes:
+
+- **Internal delegation skills** (`git-state`, `git-orchestration`, `constitution`, `sensing`, `checklist`) — invoked by workflows for specific operations. Not directly user-facing.
+- **Workflow skills** (`dashboard`) — thin SKILL.md wrappers that redirect to a workflow. These appear as Copilot skills but execute a full workflow.
+
 | Skill | Purpose |
 |-------|---------|
 | `git-state` | Derive initiative state from git primitives (read-only) |
@@ -159,8 +164,8 @@ See the [docs/](docs/) folder for detailed reference:
 
 ## Dependencies
 
-- **Required:** `core` — BMAD core infrastructure
-- **Optional:** `cis` — Creative Innovation Suite, `tea` — Test Engineering Academy
+- **Required:** `core` — BMAD core infrastructure (party-mode workflow, shared tasks, base agent definitions)
+- **Optional:** `cis` — Creative Innovation Suite (brainstorming, design thinking, storytelling skills used during preplan/expressplan), `tea` — Test Engineering Academy (test framework setup, test design, test automation skills used during devproposal/sprintplan)
 
 ## Author
 

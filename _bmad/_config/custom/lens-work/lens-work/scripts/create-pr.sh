@@ -68,7 +68,7 @@ invoke_git() {
     if [[ "$allow_failure" == true ]]; then
         local rc=0
         git "${args[@]}" 2>&1 || rc=$?
-        return $rc
+        return "$rc"
     else
         git "${args[@]}"
     fi

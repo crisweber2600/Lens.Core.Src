@@ -10,6 +10,7 @@ display_name: ExpressPlan
 agent_owner: lens
 agent_role: "Express Planner"
 imports: lifecycle.yaml
+trackEligibility: "Only initiatives on the `express` track. See lifecycle.yaml tracks.express for the phase/audience definition."
 entryStep: './steps/step-01-preflight.md'
 ---
 

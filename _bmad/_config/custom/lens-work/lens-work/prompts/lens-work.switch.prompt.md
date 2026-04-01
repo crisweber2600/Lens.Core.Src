@@ -1,5 +1,7 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
+model: "{default_model}"
+communication_language: "{communication_language}"
+document_output_language: "{document_output_language}"
 description: "Switch to a different initiative branch"
 ---
 
@@ -19,9 +21,7 @@ Routes the `/switch` command to the switch workflow, which performs a safe `git 
 
 ### Step 0: Run Preflight
 
-Execute shared preflight from `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`.
-
-If preflight reports missing authority repos, stop and direct the user to run `/onboard` first.
+Execute `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`. Halt if authority repos missing — direct user to `/onboard`.
 
 ### Step 1: Execute Workflow
 

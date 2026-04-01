@@ -14,63 +14,36 @@
 
 ## Preflight Steps
 
+> **Script implementation:** The full logic for Steps 1–4b is implemented in
+> [`scripts/preflight.sh`](../../scripts/preflight.sh) (Bash) and
+> [`scripts/preflight.ps1`](../../scripts/preflight.ps1) (PowerShell).
+> The steps below describe the algorithm. Run the script to execute all checks:
+>
+> ```bash
+> bash bmad.lens.release/_bmad/lens-work/scripts/preflight.sh                    # default
+> bash bmad.lens.release/_bmad/lens-work/scripts/preflight.sh --caller onboard   # from /onboard
+> bash bmad.lens.release/_bmad/lens-work/scripts/preflight.sh --skip-constitution
+> ```
+>
+> ```powershell
+> .\bmad.lens.release\_bmad\lens-work\scripts\preflight.ps1                      # default
+> .\bmad.lens.release\_bmad\lens-work\scripts\preflight.ps1 -Caller onboard      # from /onboard
+> .\bmad.lens.release\_bmad\lens-work\scripts\preflight.ps1 -SkipConstitution
+> ```
+
 ### 1. Check Release Branch
 
-Read the `bmad.lens.release` branch:
-```bash
-git -C bmad.lens.release branch --show-current
-```
+Verify that `bmad.lens.release` directory exists.
 
 ### 1a. Enforce LENS_VERSION Compatibility
 
-Read `LENS_VERSION` from the control repo root and `schema_version` from `bmad.lens.release/_bmad/lens-work/lifecycle.yaml`.
+Read `LENS_VERSION` from the control repo root and `schema_version` from `bmad.lens.release/_bmad/lens-work/lifecycle.yaml`. Hard-stop if they don't match.
 
-If `LENS_VERSION` is missing or does not match the lifecycle schema version, hard-stop the workflow:
-
-```bash
-MODULE_SCHEMA=$(awk '/^schema_version:/ { print $2; exit }' bmad.lens.release/_bmad/lens-work/lifecycle.yaml)
-
-if [[ -z "$MODULE_SCHEMA" ]]; then
-        echo "ERROR: Unable to determine schema_version from bmad.lens.release/_bmad/lens-work/lifecycle.yaml."
-        exit 1
-fi
-
-if [[ ! -f LENS_VERSION ]]; then
-        echo "VERSION MISMATCH: control repo is missing LENS_VERSION, module expects v${MODULE_SCHEMA}. Run /lens-upgrade."
-        exit 1
-fi
-
-CONTROL_VERSION=$(tr -d $'\r\n' < LENS_VERSION || true)
-
-if [[ -z "$CONTROL_VERSION" || ( "$CONTROL_VERSION" != "$MODULE_SCHEMA" && "$CONTROL_VERSION" != "$MODULE_SCHEMA.0.0" ) ]]; then
-        echo "VERSION MISMATCH: control repo is v${CONTROL_VERSION:-missing}, module expects v${MODULE_SCHEMA}. Run /lens-upgrade."
-        exit 1
-fi
-```
-
-**PowerShell:**
-```powershell
-$moduleSchemaLine = Get-Content "bmad.lens.release/_bmad/lens-work/lifecycle.yaml" | Where-Object { $_ -match '^schema_version:' } | Select-Object -First 1
-
-if ([string]::IsNullOrWhiteSpace($moduleSchemaLine)) {
-    throw "VERSION MISMATCH: lifecycle.yaml is missing a 'schema_version:' entry. Run /lens-upgrade."
-}
-
-$moduleSchema = ($moduleSchemaLine -split ':', 2)[1].Trim()
-
-if ([string]::IsNullOrWhiteSpace($moduleSchema)) {
-    throw "VERSION MISMATCH: lifecycle.yaml has an empty 'schema_version'. Run /lens-upgrade."
-}
-
-$controlVersion = if (Test-Path "LENS_VERSION") { (Get-Content "LENS_VERSION" -Raw).Trim() } else { "" }
-
-if ([string]::IsNullOrWhiteSpace($controlVersion) -or ($controlVersion -ne $moduleSchema -and $controlVersion -ne "$moduleSchema.0.0")) {
-                $displayControlVersion = if ([string]::IsNullOrWhiteSpace($controlVersion)) { 'missing' } else { $controlVersion }
-                throw "VERSION MISMATCH: control repo is v$displayControlVersion, module expects v$moduleSchema. Run /lens-upgrade."
-}
-```
+> **Session caching:** The agent activation (step 4) loads `lifecycle.yaml` into `{lifecycle}`. If the session variable `{lifecycle}` already contains the parsed lifecycle data, use it instead of re-reading the file. Fall back to a file read only on cache-miss.
 
 ### 2. Determine Pull Strategy
+
+> See [docs/preflight-strategy.md](../../docs/preflight-strategy.md) for rationale behind freshness windows.
 
 Read `_bmad-output/lens-work/personal/.preflight-timestamp` as the last successful full preflight time (ISO 8601 UTC datetime).
 
@@ -79,150 +52,28 @@ Use branch-aware freshness windows:
 - **If branch is `beta`:** run full preflight when timestamp is missing or older than **3 hours**.
 - **Otherwise:** run full preflight when timestamp is missing or older than **today** (daily cadence).
 
-If full preflight is required, pull ALL authority repos:
-
-```bash
-git -C bmad.lens.release pull origin
-git -C {governance-repo-path} pull origin   # path from governance-setup.yaml
-```
-
-If full preflight is not required, skip pulls and run presence + `.github` sync checks only.
+If full preflight is required, pull ALL authority repos. Otherwise, skip pulls and run presence + `.github` sync checks only.
 
 ### 3. Sync .github from Release Repo
 
-On every preflight run, verify `.github/` completeness against `bmad.lens.release/.github/` and sync if files are missing. Also sync if release `.github/` changed during pull.
-
-This check runs even when pull is skipped by timestamp.
-
-If `bmad.lens.release/.github/` is missing, stop with an error.
-
-If `.github/` is missing, create it and copy from release.
-
-If any files are missing in local `.github/`, copy from release.
-
-If pull detected changes under release `.github/`, copy from release.
-
-After sync, keep prompt hygiene: `.github/prompts/` must only contain `lens-work*.prompt.md` files.
-
-**PowerShell:**
-```powershell
-if (-not (Test-Path "bmad.lens.release/.github")) {
-        throw "Missing authority folder: bmad.lens.release/.github"
-}
-
-if (-not (Test-Path ".github")) {
-        New-Item -ItemType Directory -Path ".github" -Force | Out-Null
-        Copy-Item -Recurse -Force "bmad.lens.release/.github/*" ".github/"
-}
-
-$missing = Get-ChildItem "bmad.lens.release/.github" -Recurse -File |
-        Where-Object {
-                $relative = $_.FullName.Substring((Resolve-Path "bmad.lens.release/.github").Path.Length).TrimStart('\\','/')
-                -not (Test-Path (Join-Path ".github" $relative))
-        }
-
-$changed = git -C bmad.lens.release diff --name-only HEAD@{1} HEAD -- .github/ 2>$null
-
-if ($missing.Count -gt 0 -or $changed) {
-        Copy-Item -Recurse -Force "bmad.lens.release/.github/*" ".github/"
-}
-
-if (Test-Path ".github/prompts") {
-        Get-ChildItem ".github/prompts" -File -Filter "*.prompt.md" |
-                Where-Object { $_.Name -notlike "lens-work*.prompt.md" } |
-                Remove-Item -Force
-}
-```
-
-**Bash:**
-```bash
-if [ ! -d "bmad.lens.release/.github" ]; then
-    echo "ERROR: Missing authority folder bmad.lens.release/.github"
-    exit 1
-fi
-
-if [ ! -d ".github" ]; then
-    mkdir -p .github
-    cp -rf bmad.lens.release/.github/* .github/
-fi
-
-missing="$(cd bmad.lens.release && find .github -type f | while read -r f; do [ -f "../$f" ] || echo "$f"; done)"
-changed="$(git -C bmad.lens.release diff --name-only HEAD@{1} HEAD -- .github/ 2>/dev/null || true)"
-
-if [ -n "$missing" ] || [ -n "$changed" ]; then
-    cp -rf bmad.lens.release/.github/* .github/
-fi
-
-if [ -d ".github/prompts" ]; then
-    find .github/prompts -type f -name '*.prompt.md' ! -name 'lens-work*.prompt.md' -delete
-fi
-```
+On every preflight run, verify `.github/` completeness against `bmad.lens.release/.github/` and sync if files are missing. Also sync if release `.github/` changed during pull. Keep prompt hygiene: `.github/prompts/` must only contain `lens-work*.prompt.md` files.
 
 ### Step 3b: Sync Agent Entry Points
 
-On every preflight run, sync agent entry point files from the release repo to the workspace root. Copy each entry point file if it is missing or if the release version changed during pull.
-
-This check runs even when the pull is skipped by timestamp.
-
-**Bash:**
-```bash
-for entry_point in CLAUDE.md; do
-    if [ -f "bmad.lens.release/$entry_point" ]; then
-        changed="$(git -C bmad.lens.release diff --name-only HEAD@{1} HEAD -- "$entry_point" 2>/dev/null || true)"
-        if [ ! -f "./$entry_point" ] || [ -n "$changed" ]; then
-            cp "bmad.lens.release/$entry_point" "./$entry_point"
-        fi
-    fi
-done
-```
-
-**PowerShell:**
-```powershell
-foreach ($entryPoint in @("CLAUDE.md")) {
-    $src = "bmad.lens.release/$entryPoint"
-    $dst = "./$entryPoint"
-    if (Test-Path $src) {
-        $changed = git -C bmad.lens.release diff --name-only HEAD@{1} HEAD -- $entryPoint 2>$null
-        if (-not (Test-Path $dst) -or $changed) {
-            Copy-Item -Force $src $dst
-        }
-    }
-}
-```
-
-If any authority repo directory is missing, stop and report the failure.
-
-**Exception for /onboard:** If missing repos are reported during onboarding, continue so the workflow can bootstrap/repair those repos.
+On every preflight run, sync agent entry point files (e.g., `CLAUDE.md`) from the release repo to the workspace root. Copy each entry point file if it is missing or if the release version changed during pull.
 
 ### Step 4: Verify IDE Adapters
 
 On every preflight run, check that IDE command adapters are installed. For Claude Code, the required adapter is `.claude/commands/`. If the directory is missing, run the installer in idempotent mode before proceeding.
 
-This check runs even when pull is skipped by timestamp.
-
-**Bash:**
-```bash
-if [ ! -d ".claude/commands" ]; then
-    echo "[preflight] .claude/commands missing — running installer..."
-    bash bmad.lens.release/_bmad/lens-work/scripts/install.sh --ide claude
-fi
-```
-
-**PowerShell:**
-```powershell
-if (-not (Test-Path ".claude/commands")) {
-    Write-Host "[preflight] .claude/commands missing — running installer..."
-    bash bmad.lens.release/_bmad/lens-work/scripts/install.sh --ide claude
-}
-```
-
 Note: If additional IDEs are active (Cursor, Codex), add equivalent checks as those adapters are introduced to the workspace.
 
 ### 4. Verify Authority Repos
 
-If any authority repo directory is missing, stop and report the failure.
+If any authority repo directory is missing:
 
-**Exception for /onboard:** If missing repos are reported during onboarding, continue so the workflow can bootstrap/repair those repos.
+1. **If the calling workflow is `/onboard`:** Continue so the workflow can bootstrap/repair those repos.
+2. **Otherwise:** Show a warm redirect instead of a cryptic hard-stop — explain what onboarding does, how long it takes, and offer to run `/onboard`.
 
 ### 5. Resolve and Enforce Constitution
 
@@ -234,29 +85,45 @@ If any authority repo directory is missing, stop and report the failure.
 
 Resolve constitutional governance before any workflow-specific logic runs.
 
+#### 5a. Resolve Context
+
 ```yaml
-if params.skip_constitution != true:
-  # Resolve constitutional context (initiative-aware when available, global fallback otherwise)
+if params.skip_constitution == true:
+  # Skip — caller handles its own constitutional context injection
+  goto: Step 6
+
+# Check session cache first — avoid re-resolving if already loaded during this session
+if session.constitutional_context exists and session.constitutional_context.status != null:
+  constitutional_context = session.constitutional_context
+else:
   constitutional_context = invoke("constitution.resolve-context")
+```
 
-  if constitutional_context.status == "parse_error":
-          # Bootstrap workflows (for example /onboard, /new-domain) may not have
-          # initiative-level context yet. Downgrade to advisory in that case.
-          if constitutional_context.context_available == false:
-                  warning: "⚠️ Constitutional context unavailable during bootstrap. Continuing in advisory mode."
-                  constitutional_context.gate_mode = "advisory"
-          else:
-                  FAIL("❌ Constitutional context parse error. Fix governance files before continuing.")
+#### 5b. Handle Parse Errors
 
-  session.constitutional_context = constitutional_context
+```yaml
+if constitutional_context.status == "parse_error":
+  if constitutional_context.context_available == false:
+    warning: "⚠️ Constitutional context unavailable during bootstrap. Continuing in advisory mode."
+    constitutional_context.gate_mode = "advisory"
+  else:
+    FAIL("❌ Constitutional context parse error. Fix governance files before continuing.")
+```
 
-  # Enforce hard-gate mode immediately when constitution requires it
-  if constitutional_context.gate_mode == "hard" and constitutional_context.preflight_status == "FAIL":
-          FAIL("❌ Constitution hard gate failed during preflight. Resolve compliance issues before running this workflow.")
+#### 5c. Cache and Enforce Hard Gates
 
-  # Advisory mode never blocks, but must be surfaced to the user
-  if constitutional_context.gate_mode == "advisory" and constitutional_context.preflight_status == "WARN":
-          warning: "⚠️ Constitution advisory warnings detected. Continue with care and address warnings in phase outputs."
+```yaml
+session.constitutional_context = constitutional_context
+
+if constitutional_context.gate_mode == "hard" and constitutional_context.preflight_status == "FAIL":
+  FAIL("❌ Constitution hard gate failed during preflight. Resolve compliance issues before running this workflow.")
+```
+
+#### 5d. Surface Advisory Warnings
+
+```yaml
+if constitutional_context.gate_mode == "advisory" and constitutional_context.preflight_status == "WARN":
+  warning: "⚠️ Constitution advisory warnings detected. Continue with care and address warnings in phase outputs."
 ```
 
 All downstream workflow decisions MUST follow `session.constitutional_context`.

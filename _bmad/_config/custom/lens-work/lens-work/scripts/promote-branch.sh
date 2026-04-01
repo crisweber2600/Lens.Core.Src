@@ -110,7 +110,7 @@ get_branch_context() {
     esac
   done
 
-  if [[ $audience_idx -lt 0 ]]; then
+  if [[ "$audience_idx" -lt 0 ]]; then
     return 1
   fi
 
@@ -468,7 +468,7 @@ PR_URL=$(get_pr_url "$remote_host" "$remote_org" "$remote_project" "$remote_repo
 
 PAT=""
 PAT_SOURCE=""
-PR_CREATED=false
+export PR_CREATED=false  # exported for caller
 
 if [[ "$remote_platform" == "github" && "$CREATE_PR" == true && "$URL_ONLY" != true ]]; then
   # Priority 1: Host-specific environment variables
@@ -555,7 +555,7 @@ if [[ -n "$PAT" && "$remote_platform" == "github" && "$CREATE_PR" == true && "$U
   
   if pr_result=$(invoke_github_pr_create "$remote_host" "$remote_org" "$remote_repo" "$SOURCE_BRANCH" "$TARGET_BRANCH" "$PAT"); then
     echo -e "${GREEN}[OK] PR created: $pr_result${RESET}"
-    PR_CREATED=true  # Used for exit summary
+    PR_CREATED=true
   else
     echo -e "${YELLOW}[WARN]  PR creation failed. Manual URL: $PR_URL${RESET}"
   fi
@@ -621,7 +621,8 @@ if [[ "$CLEANUP_CHILDREN" == true ]]; then
   remote_branches=$(invoke_git for-each-ref "refs/remotes/$REMOTE" --format="%(refname:short)")
   while IFS= read -r branch; do
     # Strip remote prefix
-    branch_name="${branch#$REMOTE/}"
+    _remote_prefix="$REMOTE/"
+    branch_name="${branch#"$_remote_prefix"}"
     if [[ "$branch_name" == "$SOURCE_BRANCH"-* ]]; then
       if invoke_git push "$REMOTE" --delete "$branch_name" 2> /dev/null; then
         echo -e "  ${GREEN}[OK]${RESET} Deleted: $REMOTE/$branch_name"

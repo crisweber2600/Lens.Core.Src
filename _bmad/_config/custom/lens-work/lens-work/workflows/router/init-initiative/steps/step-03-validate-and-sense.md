@@ -34,6 +34,8 @@ if scope == "feature":
 
 ### 2. Cross-Initiative Sensing
 
+> **Parallelization:** Sensing (section 2) and Track Permission Gate (section 3) are independent reads. Execute them in parallel when the runtime supports concurrent skill invocations.
+
 ```yaml
 sensing_result = invoke: sensing.scan-initiatives
 params:
@@ -65,7 +67,7 @@ if scope == "feature":
   resolved_constitution = constitution_result.resolved_constitution || constitution_result
 
   if resolved_constitution.permitted_tracks exists and not contains(resolved_constitution.permitted_tracks, track):
-    FAIL("⚠️ Constitution blocks creation: track `${track}` is not permitted for ${domain}/${service}.")
+    FAIL("⚠️ Constitution blocks creation: track `${track}` is not permitted for ${domain}/${service}. Run `/constitution` to review governance rules or contact governance admins.")
 ```
 
 ---

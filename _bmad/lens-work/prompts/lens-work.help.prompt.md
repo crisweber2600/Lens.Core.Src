@@ -1,5 +1,7 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
+model: "{default_model}"
+communication_language: "{communication_language}"
+document_output_language: "{document_output_language}"
 description: "Show available commands and usage"
 ---
 
@@ -13,11 +15,9 @@ Routes the `/help` command to the help workflow, which displays all available co
 
 ## Steps
 
-### Step 0: Run Preflight
+### Step 0: Preflight
 
-Execute shared preflight from `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`.
-
-If preflight reports missing authority repos, stop and direct the user to run `/onboard` first.
+Execute `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`. Halt if authority repos missing — direct user to `/onboard`.
 
 ### Step 1: Execute Workflow
 

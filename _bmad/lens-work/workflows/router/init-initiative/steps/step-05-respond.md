@@ -40,12 +40,16 @@ if scope == "feature":
   output: |
     📂 Initiative: ${initiative_root}
     🏷️ Track: ${track}
-    👥 Audience: small
-    📋 Phases: ${track_config.phases.join(', ')}
+    � Phases: ${track_config.phases.join(', ')}
 
     ✅ Feature initiative created successfully.
-    - Branches: `${initiative_root}`, `${initiative_root}-small`
+    - Branch: `${initiative_root}`
     - Config: `${config_path}`
 
     ▶️ Run `/${track_config.start_phase}` to begin the first phase.
+
+  if track == "express":
+    output_append: |
+
+      💡 Express track selected — run `/expressplan` to generate all planning artifacts in a single session.
 ```

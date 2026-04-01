@@ -1,5 +1,7 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
+model: "{default_model}"
+communication_language: "{communication_language}"
+document_output_language: "{document_output_language}"
 description: "Resolve and display constitutional governance rules and compliance"
 ---
 
@@ -9,9 +11,7 @@ Check or resolve constitutional governance for the current initiative.
 
 ## Routing
 
-1. Run preflight before governance resolution:
-	1. Execute shared preflight from `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`.
-	2. If preflight reports missing authority repos, stop and direct the user to run `/onboard` first.
+1. **Preflight**: Execute `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`. Halt if authority repos missing — direct user to `/onboard`.
 2. Use `git-state` skill → `current-initiative` to confirm on an initiative branch
 3. If not on an initiative branch: `❌ Not on an initiative branch. Use /switch to select an initiative first.`
 4. Parse domain and service from the current initiative root

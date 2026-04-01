@@ -62,7 +62,18 @@ if scope == "feature":
   service = lower(remove_non_alphanumeric(service))
   feature = lower(remove_non_alphanumeric(primary_name))
   if track == "":
-    ask: "Choose a track: ${keys(lifecycle.tracks).join(', ')}"
+    ask: |
+      Choose a track for this feature:
+
+      🚀 express      — All planning in one session. Best for solo work, spikes, or getting started fast.
+         full         — Full lifecycle with all phases and promotion gates.
+         feature      — Streamlined feature track with reduced ceremony.
+         tech-change  — Technical change with architecture focus.
+         hotfix       — Expedited fix for production issues.
+         quickdev     — Minimal planning, fast to implementation.
+         spike        — Time-boxed research or proof of concept.
+
+      Recommended for first-time users: express
     capture: track
   track = lower(replace(replace(track, "_", "-"), " ", "-"))
   initiative_root = "${domain}-${service}-${feature}"

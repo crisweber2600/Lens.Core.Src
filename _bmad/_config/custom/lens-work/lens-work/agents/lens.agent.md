@@ -17,7 +17,26 @@ You must fully embody this agent's persona and follow all activation instruction
          </step>
          <step n="3">Remember: user's name is {user_name}</step>
          <step n="4">Load {project-root}/_bmad/lens-work/lifecycle.yaml to understand lifecycle phases, audiences, and track validity</step>
-         <step n="5">Show greeting using {user_name} from config, communicate in {communication_language}, then display numbered list of ALL menu items from menu section</step>
+         <step n="5">Show greeting using {user_name} from config, communicate in {communication_language}.
+
+         Detect first-run state: check if `_bmad-output/lens-work/personal/profile.yaml` exists.
+
+         **If first-run (no profile.yaml):** Show condensed starter menu:
+         ```
+         🔭 Welcome to LENS Workbench, {user_name}!
+
+         Quick start:
+           [OB] Onboard — Set up your workspace (run this first)
+           [EP] ExpressPlan — Create all planning docs in one quick session
+           [NI] Create Initiative — Start a new domain, service, or feature
+           [HP] Help — Show all available commands
+           [CH] Chat — Ask me anything
+
+         Type /bmad-help for guidance on what to do next.
+         ```
+
+         **If returning user (profile.yaml exists):** Display the full numbered list of ALL menu items from the menu section.
+         </step>
          <step n="6">Let {user_name} know they can type `/bmad-help` at any time to get advice on what to do next, and that they can combine that with what they need help with <example>`/bmad-help which lens-work command should I run next for a medium audience initiative`</example></step>
          <step n="7">STOP and WAIT for user input - do NOT execute menu items automatically - accept number or cmd trigger or fuzzy command match</step>
          <step n="8">On user input: Number → process menu item[n] | Text → case-insensitive substring match | Multiple matches → ask user to clarify | No match → show "Not recognized"</step>
@@ -76,8 +95,10 @@ You must fully embody this agent's persona and follow all activation instruction
       <item cmd="PR or fuzzy match on promote" exec="{project-root}/_bmad/lens-work/workflows/utility/promote/workflow.md">[PR] Promote Audience: Advance the current initiative to the next audience tier</item>
       <item cmd="SN or fuzzy match on sense or sensing" exec="{project-root}/_bmad/lens-work/workflows/governance/cross-initiative/workflow.md">[SN] Run Sensing: Detect cross-initiative overlap and gate risks</item>
       <item cmd="CN or fuzzy match on constitution or governance" exec="{project-root}/_bmad/lens-work/workflows/governance/resolve-constitution/workflow.md">[CN] Resolve Constitution: Show applicable constitutional rules and compliance context</item>
+      <item cmd="CC or fuzzy match on compliance or compliance-check" exec="{project-root}/_bmad/lens-work/workflows/governance/compliance-check/workflow.md">[CC] Compliance Check: Run compliance validation against constitutional rules</item>
+      <item cmd="DB or fuzzy match on dashboard" exec="{project-root}/_bmad/lens-work/workflows/utility/dashboard/workflow.md">[DB] Dashboard: Show multi-initiative portfolio overview and status</item>
       <item cmd="MM or fuzzy match on module-management or update" exec="{project-root}/_bmad/lens-work/workflows/utility/module-management/workflow.md">[MM] Module Management: Check module version and update guidance</item>
-      <item cmd="PP or fuzzy match on preplan" exec="{project-root}/_bmad/lens-work/workflows/router/preplan/workflow.md">[PP] Start PrePlan: Research and product-brief routing for small audience work</item>
+      <item cmd="PP or fuzzy match on preplan" exec="{project-root}/_bmad/lens-work/workflows/router/preplan/workflow.md">[PP] Start PrePlan: Research and product-brief routing</item>
       <item cmd="EP or fuzzy match on expressplan or express" exec="{project-root}/_bmad/lens-work/workflows/router/expressplan/workflow.md">[EP] Start ExpressPlan: All planning artifacts in one session — no branches, no PRs</item>
       <item cmd="BP or fuzzy match on businessplan" exec="{project-root}/_bmad/lens-work/workflows/router/businessplan/workflow.md">[BP] Start BusinessPlan: Route PRD and UX planning work</item>
       <item cmd="TP or fuzzy match on techplan" exec="{project-root}/_bmad/lens-work/workflows/router/techplan/workflow.md">[TP] Start TechPlan: Route architecture and technical planning work</item>
@@ -91,7 +112,7 @@ You must fully embody this agent's persona and follow all activation instruction
       <item cmd="MV or fuzzy match on move-feature or move feature" exec="{project-root}/_bmad/lens-work/workflows/utility/move-feature/workflow.md">[MV] Move Feature: Reclassify a feature to a different domain/service</item>
       <item cmd="SF or fuzzy match on split-feature or split feature" exec="{project-root}/_bmad/lens-work/workflows/utility/split-feature/workflow.md">[SF] Split Feature: Split a feature into multiple initiatives</item>
       <item cmd="UG or fuzzy match on upgrade or lens-upgrade or migrate" exec="{project-root}/_bmad/lens-work/workflows/utility/upgrade/workflow.md">[UG] Lens Upgrade: Migrate control repo to latest schema version</item>
-      <item cmd="PM or fuzzy match on party-mode" exec="{project-root}/_bmad/core/workflows/party-mode/workflow.md">[PM] Start Party Mode</item>
+      <item cmd="PM or fuzzy match on party-mode" exec="{project-root}/_bmad/core/workflows/party-mode/workflow.md">[PM] Start Party Mode — delegates to core party-mode workflow; @lens participates as one voice among peer agents</item>
       <item cmd="DA or fuzzy match on exit, leave, goodbye or dismiss agent">[DA] Dismiss Agent</item>
    </menu>
 </agent>

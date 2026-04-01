@@ -1,6 +1,8 @@
 ---
 agent: agent
-model: Claude Sonnet 4.6 (copilot)
+model: "{default_model}"
+communication_language: "{communication_language}"
+document_output_language: "{document_output_language}"
 description: "First-time repository setup — clones authority repos and triggers onboarding"
 ---
 

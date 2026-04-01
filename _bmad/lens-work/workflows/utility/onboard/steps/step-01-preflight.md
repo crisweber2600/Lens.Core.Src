@@ -38,6 +38,16 @@ output: |
 
 ---
 
+## OUTPUT CONTRACT
+
+Downstream steps may reference these session variables set during preflight:
+
+| Variable | Source | Description |
+|----------|--------|-------------|
+| `{remote_url}` | `git remote get-url origin` | The configured origin remote URL |
+| `{provider}` | `provider-adapter.detect-provider` | Detected git provider (`github`, `gitlab`, etc.) |
+| `{session.constitutional_context}` | Shared preflight Step 5 | Resolved constitutional governance context |
+
 ## NEXT STEP DIRECTIVE
 
 **NEXT:** Read fully and follow: `{nextStepFile}`

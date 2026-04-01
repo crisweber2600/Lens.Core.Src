@@ -129,5 +129,15 @@ Report to the user:
 
 ---
 
+## Error Handling
+
+| Error | Cause | Action |
+|-------|-------|--------|
+| Source already superseded | Feature was previously split or closed | Show: "Feature `{source_feature}` is already `{status}`. Cannot split a non-active feature." |
+| Fewer than 2 child names | User provides 0-1 names | Show: "A split requires at least 2 child feature names." |
+| Child name already in use | Name collision in features.yaml or branches | Show which name(s) conflict and ask for alternatives. |
+| No artifacts to copy | Source feature has no planning artifacts | Warn: "No artifacts found to copy. Children will start with empty planning." Continue. |
+| Commit fails | Dirty working tree or git conflict | Show: "Resolve uncommitted changes first: `git status`." |
+
 > **NEXT STEP DIRECTIVE**
 > This is the only step. Workflow complete after commit.

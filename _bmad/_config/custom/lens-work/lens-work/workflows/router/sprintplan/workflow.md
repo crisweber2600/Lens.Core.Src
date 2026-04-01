@@ -10,6 +10,7 @@ display_name: SprintPlan
 agent_owner: bob
 agent_role: Scrum Master
 imports: lifecycle.yaml
+storyFileSchema: 'See docs/story-file-reference.md for the story YAML schema'
 entryStep: './steps/step-01-preflight.md'
 ---
 
