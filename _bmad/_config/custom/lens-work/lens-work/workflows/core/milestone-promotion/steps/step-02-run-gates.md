@@ -21,6 +21,22 @@ enabled_phases = (lifecycle.tracks[track_name] != null and lifecycle.tracks[trac
 milestone_phases = lifecycle.milestones[current_milestone].phases || []
 required_phases = filter(milestone_phases, phase_name -> contains(enabled_phases, phase_name))
 
+# v3.2: Check collapse_gates from constitution
+resolved_constitution = invoke: lens-work.resolve-constitution
+collapse_gates = resolved_constitution.collapse_gates || false
+
+# When collapse_gates is enabled:
+# - devproposal→sprintplan promotion merges into a single step
+# - stakeholder-approval gate is treated as informational regardless of constitution setting
+# - After techplan, adversarial review produces epics/stories/sprint-plan → dev-ready directly
+if collapse_gates and current_milestone == "devproposal" and next_milestone == "sprintplan":
+  output: |
+    ℹ️ Gate collapsing enabled — merging devproposal → sprintplan into single promotion.
+    Stakeholder approval treated as informational.
+  # Skip sprintplan milestone — promote directly to dev-ready
+  next_milestone = "dev-ready"
+  session.next_milestone = next_milestone
+
 for each phase_name in required_phases:
   phase_state = invoke: git-state.phase-status
   params:
@@ -38,7 +54,6 @@ for each phase_name in required_phases:
     if not file_exists(artifact_path):
       append gate_failures with "[HARD] Required artifact missing: ${artifact_name} for ${phase_name}"
 
-resolved_constitution = invoke: lens-work.resolve-constitution
 compliance_result = invoke: constitution.check-compliance
 params:
   constitution: ${resolved_constitution}

@@ -19,3 +19,8 @@ lens-work,lens-work-techplan,TechPlan,TP,"Start TechPlan phase — architecture 
 lens-work,lens-work-devproposal,DevProposal,DP,"Start DevProposal phase — epics stories readiness check",,,phase-4,TP,,false,_bmad-output/lens-work/initiatives,"epics stories"
 lens-work,lens-work-sprintplan,SprintPlan,SP,"Start SprintPlan phase — sprint-status story files",,,phase-5,DP,,false,_bmad-output/lens-work/initiatives,"sprint-status story-files"
 lens-work,lens-work-dev,Dev,DV,"Delegate to implementation agents in target projects",,,delegation,,,,_bmad-output/lens-work/initiatives,
+lens-work,lens-work-expressplan,ExpressPlan,EP,"All planning artifacts in one session — no branches no PRs (express track only)",,,phase-express,,,false,_bmad-output/lens-work/initiatives,"product-brief prd architecture epics stories sprint-status review-report"
+lens-work,lens-work-retrospective,Retrospective,RT,"Review initiative outcomes — what worked what broke lessons learned",,,anytime,,,,,_bmad-output/implementation-artifacts,"retro-report"
+lens-work,lens-work-log-problem,Log Problem,LP,"Record an issue or friction point for the active initiative",,,anytime,,,,,_bmad-output/lens-work/initiatives,"problems"
+lens-work,lens-work-move-feature,Move Feature,MV,"Reclassify a feature to a different domain or service",,,anytime,,,,,_bmad-output/lens-work,
+lens-work,lens-work-split-feature,Split Feature,SF,"Split a feature into multiple new initiatives",,,anytime,,,,,_bmad-output/lens-work,

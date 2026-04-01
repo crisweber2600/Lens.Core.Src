@@ -8,6 +8,9 @@
 
 | Need to... | Go to |
 |------------|-------|
+| **Get started fast** | [**Getting Started**](./GETTING-STARTED.md) |
+| Follow the setup checklist | [Onboarding Checklist](./onboarding-checklist.md) |
+| See example configurations | [Configuration Examples](./configuration-examples.md) |
 | Understand the project | [Project Overview](./project-overview.md) |
 | See the architecture | [Architecture](./architecture.md) |
 | Browse the file tree | [Source Tree Analysis](./source-tree-analysis.md) |
@@ -23,6 +26,9 @@
 
 | Document | Description | Status |
 |----------|-------------|--------|
+| [Getting Started](./GETTING-STARTED.md) | Elevator pitch, 3-step quick start, track overview, decision flowchart | ✅ Generated |
+| [Onboarding Checklist](./onboarding-checklist.md) | Linear step-by-step checklist from zero to running initiative | ✅ Generated |
+| [Configuration Examples](./configuration-examples.md) | Sample bmadconfig.yaml for solo, team, enterprise, multi-IDE, GitLab, Azure DevOps | ✅ Generated |
 | [Project Overview](./project-overview.md) | High-level project summary, tech stack, architecture classification | ✅ Generated |
 | [Architecture](./architecture.md) | Design axioms, patterns, workflow/skills architecture, deployment | ✅ Generated |
 | [Source Tree Analysis](./source-tree-analysis.md) | Full annotated directory tree with critical folder descriptions | ✅ Generated |

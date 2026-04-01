@@ -78,6 +78,7 @@ You must fully embody this agent's persona and follow all activation instruction
       <item cmd="CN or fuzzy match on constitution or governance" exec="{project-root}/_bmad/lens-work/workflows/governance/resolve-constitution/workflow.md">[CN] Resolve Constitution: Show applicable constitutional rules and compliance context</item>
       <item cmd="MM or fuzzy match on module-management or update" exec="{project-root}/_bmad/lens-work/workflows/utility/module-management/workflow.md">[MM] Module Management: Check module version and update guidance</item>
       <item cmd="PP or fuzzy match on preplan" exec="{project-root}/_bmad/lens-work/workflows/router/preplan/workflow.md">[PP] Start PrePlan: Research and product-brief routing for small audience work</item>
+      <item cmd="EP or fuzzy match on expressplan or express" exec="{project-root}/_bmad/lens-work/workflows/router/expressplan/workflow.md">[EP] Start ExpressPlan: All planning artifacts in one session — no branches, no PRs</item>
       <item cmd="BP or fuzzy match on businessplan" exec="{project-root}/_bmad/lens-work/workflows/router/businessplan/workflow.md">[BP] Start BusinessPlan: Route PRD and UX planning work</item>
       <item cmd="TP or fuzzy match on techplan" exec="{project-root}/_bmad/lens-work/workflows/router/techplan/workflow.md">[TP] Start TechPlan: Route architecture and technical planning work</item>
       <item cmd="DP or fuzzy match on devproposal" exec="{project-root}/_bmad/lens-work/workflows/router/devproposal/workflow.md">[DP] Start DevProposal: Route epics, stories, and readiness work</item>
@@ -85,6 +86,10 @@ You must fully embody this agent's persona and follow all activation instruction
       <item cmd="DV or fuzzy match on dev" exec="{project-root}/_bmad/lens-work/workflows/router/dev/workflow.md">[DV] Delegate Dev: Route implementation execution to target project agents</item>
       <item cmd="DS or fuzzy match on discover" exec="{project-root}/_bmad/lens-work/workflows/router/discover/workflow.md">[DS] Discover Target Repos: Inspect TargetProjects and prepare governance-aware repo context</item>
       <item cmd="CL or fuzzy match on close or abandon or complete" exec="{project-root}/_bmad/lens-work/workflows/router/close/workflow.md">[CL] Close Initiative: Formally complete, abandon, or supersede the current initiative</item>
+      <item cmd="RT or fuzzy match on retrospective or retro" exec="{project-root}/_bmad/lens-work/workflows/router/retrospective/workflow.md">[RT] Retrospective: Review what happened during an initiative — what worked, what broke, lessons learned</item>
+      <item cmd="LP or fuzzy match on log-problem or log problem" exec="{project-root}/_bmad/lens-work/workflows/utility/log-problem/workflow.md">[LP] Log Problem: Record an issue or friction point for the active initiative</item>
+      <item cmd="MV or fuzzy match on move-feature or move feature" exec="{project-root}/_bmad/lens-work/workflows/utility/move-feature/workflow.md">[MV] Move Feature: Reclassify a feature to a different domain/service</item>
+      <item cmd="SF or fuzzy match on split-feature or split feature" exec="{project-root}/_bmad/lens-work/workflows/utility/split-feature/workflow.md">[SF] Split Feature: Split a feature into multiple initiatives</item>
       <item cmd="UG or fuzzy match on upgrade or lens-upgrade or migrate" exec="{project-root}/_bmad/lens-work/workflows/utility/upgrade/workflow.md">[UG] Lens Upgrade: Migrate control repo to latest schema version</item>
       <item cmd="PM or fuzzy match on party-mode" exec="{project-root}/_bmad/core/workflows/party-mode/workflow.md">[PM] Start Party Mode</item>
       <item cmd="DA or fuzzy match on exit, leave, goodbye or dismiss agent">[DA] Dismiss Agent</item>

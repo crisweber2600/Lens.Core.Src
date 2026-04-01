@@ -32,6 +32,27 @@ Create a new branch following lifecycle.yaml naming conventions.
 | Initiative root | `{initiative-root}` | Control repo default branch |
 | Milestone | `{initiative-root}-{milestone}` | Initiative root or previous milestone branch |
 
+**Branching strategy awareness (v3.2):**
+Before creating branches or PRs, resolve the constitutional `branching_strategy` for the initiative:
+
+| Strategy | Milestone Branches | Promotion PRs | Behavior |
+|----------|-------------------|---------------|----------|
+| `pr-per-milestone` | Created lazily at phase closeout | One PR per milestone promotion | Default ? current v3.1 behavior |
+| `pr-per-epic` | Skipped | One PR per epic (target repo only) | Plan on initiative root, no milestone branches |
+| `trunk-based` | Skipped | None | All work on initiative root, no PRs |
+
+When `branching_strategy` is `trunk-based` or `pr-per-epic`, `create-milestone-branch` returns a no-op success instead of creating a branch. Similarly, PR creation operations return a no-op when the strategy does not require PRs.
+
+**Initiative root pattern (v3.2):**
+The `initiative_root_pattern` constitution capability controls naming:
+
+| Pattern | Initiative Root | Example |
+|---------|----------------|---------|
+| `domain-service-feature` | `{domain}-{service}-{feature}` | `payments-auth-oauth` |
+| `feature-only` | `{feature}` | `oauth` |
+
+When `feature-only` is active, the domain/service hierarchy is maintained in folder paths and initiative-state.yaml only. The features.yaml registry provides the reverse lookup.
+
 **Precondition:** `validate-branch-name` MUST pass before any branch creation.
 
 **Algorithm:**
@@ -47,7 +68,9 @@ git push -u origin "${NEW_BRANCH}"
 **Validation rules:**
 - Branch name MUST match lifecycle.yaml `branch_patterns`
 - Milestone token MUST be one of the milestones defined in lifecycle.yaml `milestones`
-- Initiative root MUST be slug-safe (`{domain}-{service}-{feature}` pattern where each component is lowercase alphanumeric)
+- Initiative root MUST be slug-safe:
+  - `domain-service-feature` pattern: `{domain}-{service}-{feature}` (lowercase alphanumeric + hyphens)
+  - `feature-only` pattern: `{feature}` (lowercase alphanumeric + hyphens, no internal structure required)
 - Reject invalid names with clear error message
 
 **Milestone branch creation policy: LAZY**

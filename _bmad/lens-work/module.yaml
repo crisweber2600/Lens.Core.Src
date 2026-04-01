@@ -91,6 +91,12 @@ workflows:
     - id: close
       path: workflows/router/close/
       description: "/close — close/abandon initiative"
+    - id: expressplan
+      path: workflows/router/expressplan/
+      description: "/expressplan — all planning artifacts in one session (express track)"
+    - id: retrospective
+      path: workflows/router/retrospective/
+      description: "/retrospective — post-initiative review and lessons learned"
   utility:
     - id: onboard
       path: workflows/utility/onboard/
@@ -116,6 +122,15 @@ workflows:
     - id: upgrade
       path: workflows/utility/upgrade/
       description: "/lens-upgrade — migrate control repo to latest schema version"
+    - id: log-problem
+      path: workflows/utility/log-problem/
+      description: "/log-problem — record issues and friction points for active initiative"
+    - id: move-feature
+      path: workflows/utility/move-feature/
+      description: "/move-feature — reclassify feature to different domain/service"
+    - id: split-feature
+      path: workflows/utility/split-feature/
+      description: "/split-feature — split feature into multiple initiatives"
   governance:
     - id: compliance-check
       path: workflows/governance/compliance-check/
@@ -194,10 +209,15 @@ prompts:
   - lens-work.onboard.prompt.md
   - lens-work.new-initiative.prompt.md
   - lens-work.preplan.prompt.md
+  - lens-work.expressplan.prompt.md
   - lens-work.businessplan.prompt.md
   - lens-work.techplan.prompt.md
   - lens-work.devproposal.prompt.md
   - lens-work.sprintplan.prompt.md
+  - lens-work.retrospective.prompt.md
+  - lens-work.log-problem.prompt.md
+  - lens-work.move-feature.prompt.md
+  - lens-work.split-feature.prompt.md
   - lens-work.status.prompt.md
   - lens-work.next.prompt.md
   - lens-work.switch.prompt.md

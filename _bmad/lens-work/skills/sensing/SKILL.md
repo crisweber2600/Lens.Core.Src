@@ -1,5 +1,5 @@
-]633;E;echo '---';1f0482a0-f773-402e-9b8d-02ad2949aad3]633;C---
-name: lens-work-sensing
+---
+name: sensing
 description: "Cross-initiative overlap detection at lifecycle gates. Use when running sensing checks or detecting initiative conflicts."
 ---
 
@@ -50,15 +50,42 @@ current_scope: feature       # domain | service | feature
 
 **Algorithm:**
 
+0. **Load features.yaml registry (if available):**
+   ```yaml
+   features_registry = git show HEAD:features.yaml 2>/dev/null || {}
+   naming_convention = lifecycle.yaml -> planning_repo.branch_patterns.naming_convention  # "dsf" or "feature-only"
+   ```
+   The features registry maps feature names to their domain/service. This is the authority for domain/service resolution when `naming_convention` is `feature-only`, and a supplementary source for DSF naming.
+
 1. List all remote branches: `git branch -r`
 2. Filter branches matching initiative naming patterns (exclude non-initiative branches like `main`, `develop`, `feature/*`)
-3. Parse each branch name to extract:
+3. Parse each branch name to extract domain/service/feature:
+
+   **If naming_convention is `dsf` (default):**
    - `initiative_root`: everything before the audience token
    - `domain`: first segment of the root
    - `service`: second segment of the root (if present; null for domain-only roots)
    - `feature`: third segment of the root (if present; null for domain or service-level roots)
    - `audience`: the audience token (small/medium/large/base)
    - `phase`: the phase suffix (if present)
+
+   **If naming_convention is `feature-only`:**
+   - `initiative_root`: the feature name (everything before the audience token)
+   - Look up `initiative_root` in `features_registry` to resolve domain/service:
+     ```yaml
+     if features_registry[initiative_root]:
+       domain = features_registry[initiative_root].domain
+       service = features_registry[initiative_root].service
+       feature = initiative_root
+     else:
+       domain = "unknown"
+       service = "unknown"
+       feature = initiative_root
+       # Advisory: "Feature not in features.yaml - domain/service unknown"
+     ```
+   - `audience`: the audience token (small/medium/large/base)
+   - `phase`: the phase suffix (if present)
+
 4. Group parsed branches by initiative root (deduplicate — multiple branches per initiative)
 5. For each unique initiative, determine:
    - Current audience (highest audience branch that exists)

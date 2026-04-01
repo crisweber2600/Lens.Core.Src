@@ -83,6 +83,7 @@ milestones:
     description: "Stakeholder sign-off — sprintplan milestone branches from here post-promotion"
     phases: [sprintplan]
     entry_gate: stakeholder-approval
+    entry_gate_mode: informational   # v3.2: informational by default, constitution can set to 'hard'
   dev-ready:
     role: "Ready for execution"
     description: "Constitution-gated — dev execution happens after sprintplan completes"
@@ -175,7 +176,28 @@ phases:
 # NOTE: 'dev' is NOT a lifecycle phase — it is a delegation command that hands off
 # to implementation agents in target projects. It exists as a router workflow but
 # is not part of the phase ordering or milestone promotion chain.
+# NOTE: 'expressplan' is NOT in phase_order — it is a standalone single-phase track
+# that produces all artifacts in one session. It has its own phase definition below.
 phase_order: [preplan, businessplan, techplan, devproposal, sprintplan]
+
+# Standalone phase — not part of phase_order, used only by express track
+  expressplan:
+    display_name: "ExpressPlan"
+    agent: lens
+    agent_role: "Express Planner"
+    supporting_agents: [winston, john, sally, bob]
+    description: "Combined planning — product brief, PRD, architecture, epics, stories, and sprint plan in a single guided session"
+    artifacts:
+      - product-brief
+      - prd
+      - architecture
+      - epics
+      - stories
+      - sprint-status
+      - review-report
+    milestone: dev-ready
+    auto_advance_to: /dev
+    auto_advance_promote: false
 
 # -----------------------------------------------------------------------------
 # TRACKS (predefined lifecycle profiles)
@@ -229,6 +251,18 @@ tracks:
     milestones: [devproposal, dev-ready]
     constitution_controlled_gates: [adversarial-review]
     start_phase: devproposal
+
+  express:
+    description: "Lightweight single-phase planning — all artifacts in one session, no milestone branches, no PRs"
+    phases: [expressplan]
+    milestones: [dev-ready]
+    constitution_controlled_gates: [adversarial-review]
+    gate_mode: informational         # Gates produce reports but do not block
+    bypass_constitution_gate: false   # Constitution gate runs but is advisory
+    start_phase: expressplan
+    branch_model: single             # Only {initiative-root} branch, no milestone branches
+    pr_creation: disabled            # No PRs created during express workflow
+    requires_constitution_permission: true  # Must be permitted via permitted_tracks in constitution
 
 # -----------------------------------------------------------------------------
 # PROMOTE SEMANTICS (v3.1 — approval-only model)
@@ -287,6 +321,19 @@ artifact_validation:
     sprint-status:
       format: yaml
       required_fields: [sprint_number, stories, status]
+    # Express track validators — relaxed thresholds for single-session planning
+    express-product-brief:
+      required_sections: [Vision, Target Audience]
+      min_word_count: 100
+    express-prd:
+      required_sections: [Overview, Requirements]
+      min_word_count: 200
+    express-architecture:
+      required_sections: [Overview, System Design]
+      min_word_count: 200
+    express-review-report:
+      required_sections: [Review Summary, Findings]
+      min_word_count: 100
 
 # -----------------------------------------------------------------------------
 # PARALLEL PHASE EXECUTION (v3.1)
@@ -444,6 +491,11 @@ adversarial_review:
 # -----------------------------------------------------------------------------
 planning_repo:
   artifacts_location: central-only
+  # v3.2: initiative_root_pattern controls naming convention
+  # Resolved from constitution (default: domain-service-feature)
+  initiative_root_patterns:
+    domain-service-feature: "{domain}-{service}-{feature}"   # default — e.g., payments-auth-oauth
+    feature-only: "{feature}"                                 # e.g., oauth (domain/service in folder path + features.yaml)
   branch_patterns:
     initiative_root: "{initiative-root}"
     milestone: "{initiative-root}-{milestone}"
@@ -550,6 +602,11 @@ constitution:
     - artifact_validator_overrides   # Override per-artifact validation rules
     - template_overrides             # Override artifact templates per domain
     - content_sensing_mode           # Override content-aware sensing (informational | hard-gate)
+    # v3.2 capabilities
+    - branching_strategy             # pr-per-milestone | pr-per-epic | trunk-based (planning repo)
+    - target_repo_branching          # pr-per-story | pr-per-epic | trunk-based (target repos)
+    - stakeholder_gate               # hard | informational (default: informational)
+    - features_registry              # Enable features.yaml-based feature tracking
 
 # -----------------------------------------------------------------------------
 # GIT STATE MODEL (v3 — git-derived)
@@ -608,6 +665,40 @@ credentials:
   enforcement: "Scanning all git-tracked files for credential patterns must find nothing"
 
 # -----------------------------------------------------------------------------
+# FEATURES REGISTRY (v3.2)
+# -----------------------------------------------------------------------------
+# Optional feature-to-domain/service mapping for simplified branch naming
+# and feature mobility. When enabled, branch names use {feature} only;
+# domain/service classification lives in this registry + folder structure.
+features_registry:
+  enabled: false                    # Opt-in — enable via constitution or /lens-upgrade
+  file: "_bmad-output/lens-work/features.yaml"
+  schema:
+    features:
+      "{feature-name}":
+        domain: "{domain}"
+        service: "{service}"
+        status: active | closed
+        branch: "{feature-name}"
+        track: "{track}"
+        created: "{ISO-8601}"
+
+# -----------------------------------------------------------------------------
+# PROBLEM LOGGING (v3.2)
+# -----------------------------------------------------------------------------
+# Standard convention for capturing issues encountered during initiative work.
+# Used by /log-problem command and consumed by /retrospective workflow.
+problem_logging:
+  enabled: true
+  file_pattern: "_bmad-output/lens-work/initiatives/{domain}/{service}/problems.md"
+  entry_format: |
+    ## [{severity}] {title}
+    **Phase:** {phase} | **Date:** {date}
+    {description}
+  severity_levels: [blocker, warning, note]
+  consumed_by: retrospective
+
+# -----------------------------------------------------------------------------
 # MIGRATIONS
 # -----------------------------------------------------------------------------
 migrations:
@@ -653,3 +744,46 @@ migrations:
       - type: add_field
         path: initiative_state_schema
         value: initiative-state.yaml
+
+  - from_version: 3.1
+    to_version: 3.2
+    breaking: false
+    migration_command: "/lens-upgrade --from 3.1 --to 3.2"
+    branch_rename_required: false  # only required if switching to feature-only naming
+    changes:
+      - type: add_capability
+        path: constitution.capabilities
+        value: branching_strategy
+      - type: add_capability
+        path: constitution.capabilities
+        value: target_repo_branching
+      - type: add_capability
+        path: constitution.capabilities
+        value: stakeholder_gate
+      - type: add_capability
+        path: constitution.capabilities
+        value: features_registry
+      - type: add_section
+        path: features_registry
+        value: { index_file: "_bmad-output/lens-work/features.yaml", scope: per-domain-service }
+      - type: add_section
+        path: problem_logging
+        value: { enabled: true, consumed_by: retrospective }
+      - type: add_track
+        path: tracks.express
+        value: { phases: [expressplan], milestones: [dev-ready], gate_mode: informational }
+      - type: change_default
+        path: milestones.sprintplan.entry_gate_mode
+        old_value: hard
+        new_value: informational
+    optional_migrations:
+      - name: feature-only-branch-naming
+        description: "Rename initiative branches from {domain}-{service}-{feature} to {feature}"
+        prerequisite: "Set initiative_root_pattern: feature-only in your constitution"
+        steps:
+          - "Detect initiatives using domain-service-feature branch names"
+          - "For each active initiative: git branch -m {old} {new}"
+          - "Update initiative-state.yaml with new initiative_root"
+          - "Create features.yaml entries mapping feature→domain/service"
+          - "Update any open PRs (close old, create new with same body)"
+          - "Old branches preserved with -archived suffix until user confirms cleanup"

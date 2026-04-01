@@ -28,13 +28,13 @@ The governance repo contains constitutions at 4 levels, resolved bottom-up with 
 ```
 lens-governance/constitutions/
 ├── org/
-│   └── constitution.md              ← Level 1: org-wide defaults
+│   └── constitution.md              ↝ Level 1: org-wide defaults
 ├── {domain}/
-│   └── constitution.md              ← Level 2: domain-specific rules
+│   └── constitution.md              ↝ Level 2: domain-specific rules
 │   └── {service}/
-│       └── constitution.md          ← Level 3: service-specific rules
+│       └── constitution.md          ↝ Level 3: service-specific rules
 │       └── {repo}/
-│           └── constitution.md      ← Level 4: repo-specific rules
+│           └── constitution.md      ↝ Level 4: repo-specific rules
 ```
 
 ### Language-Specific Constitutions (POST-MVP — FR16)
@@ -76,6 +76,11 @@ language: typescript    # optional — language overlay
 - Lower level `gate_mode` overrides upper level (hard overrides informational)
 - `permitted_tracks` is intersection (lower levels can only restrict)
 - `additional_review_participants` is union
+- `branching_strategy` uses lowest level that defines it (default: `pr-per-milestone`)
+- `target_repo_branching` uses lowest level that defines it (default: `pr-per-story`)
+- `stakeholder_gate` uses lowest level that defines it (default: `informational`)
+- `collapse_gates` uses lowest level that defines it (default: `false`)
+- `initiative_root_pattern` uses lowest level that defines it (default: `domain-service-feature`)
 
 **Output:**
 ```yaml
@@ -96,6 +101,12 @@ resolved_constitution:
   sensing_gate_mode: informational    # or "hard" if upgraded
   additional_review_participants: []
   enforce_stories: true
+  # v3.2 capabilities
+  branching_strategy: pr-per-milestone    # pr-per-milestone | pr-per-epic | trunk-based
+  target_repo_branching: pr-per-story     # pr-per-story | pr-per-epic | trunk-based
+  stakeholder_gate: informational         # hard | informational
+  collapse_gates: false                   # merges devproposal+sprintplan when true
+  initiative_root_pattern: domain-service-feature  # domain-service-feature | feature-only
 ```
 
 **Determinism guarantee (NFR3):** Identical inputs ALWAYS produce identical output. The algorithm is pure function with no side effects.
@@ -243,4 +254,4 @@ return constitutional_context
 |-------|----------|
 | Governance repo not found | `❌ Governance repo not accessible at {path}. Run /onboard to verify.` |
 | Constitution file missing | Use defaults from parent level (org level is always required) |
-| Invalid constitution format | `⚠️ Constitution at {level} has invalid format. Using parent level defaults.` |
+| Invalid constitution format | `⚠︝ Constitution at {level} has invalid format. Using parent level defaults.` |
