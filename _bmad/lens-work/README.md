@@ -1,4 +1,4 @@
-# LENS Workbench Module — v2.0.0
+# LENS Workbench Module — v3.0.0
 
 **Module Code:** `lens-work`
 **Type:** Standalone BMAD Module
@@ -6,12 +6,12 @@
 
 ## Overview
 
-LENS Workbench v2 provides guided lifecycle routing with git-orchestrated discipline for BMAD workflows. It manages the full planning lifecycle from pre-planning through sprint execution using automated branch topology, PR-based review gates, and constitutional governance.
+LENS Workbench v3 provides guided lifecycle routing with git-orchestrated discipline for BMAD workflows. It manages the full planning lifecycle from pre-planning through sprint execution using automated branch topology, PR-based review gates, and constitutional governance.
 
-## v2 Design Principles
+## Design Principles
 
 - **Git is the only source of truth** — no secondary state stores, no git-ignored runtime state
-- **PRs are the only gating mechanism** — automatic PR creation at phase/promotion boundaries
+- **PRs are the only gating mechanism** — automatic PR creation at phase/milestone promotion boundaries
 - **Authority domains are explicit** — every file belongs to exactly one domain
 - **Sensing is automatic** — cross-initiative awareness at lifecycle gates
 - **Declarative only** — no runtime code (JS, Python, etc.)
@@ -21,7 +21,7 @@ LENS Workbench v2 provides guided lifecycle routing with git-orchestrated discip
 ```
 lens-work/
 ├── bmadconfig.yaml        # BMAD agent activation config + source defaults
-├── lifecycle.yaml         # THE contract — phases, audiences, tracks, branches
+├── lifecycle.yaml         # THE contract — phases, milestones, tracks, branches
 ├── module.yaml            # Module identity, skills, workflow manifest
 ├── module-help.csv        # Help entries (13-column format)
 ├── agents/                # Runtime BMAD agent definitions
@@ -109,7 +109,7 @@ See `module.yaml` `install_questions` for configuration options (target projects
 
 ### Workflow Sets
 
-- **Core:** `phase-lifecycle`, `audience-promotion`
+- **Core:** `phase-lifecycle`, `milestone-promotion`
 - **Router:** `init-initiative`, `preplan`, `businessplan`, `techplan`, `devproposal`, `sprintplan`, `dev`, `discover`
 - **Utility:** `onboard`, `status`, `next`, `switch`, `help`, `module-management`
 - **Governance:** `compliance-check`, `resolve-constitution`, `cross-initiative`
@@ -122,7 +122,7 @@ All commands are available via the LENS agent menu. Initiative creation is now c
 - `[UG] Lens Upgrade` — migrate control repo to latest schema version
 
 Menu/command triggers:
-`/onboard`, `/create-initiative` (`/new-domain`, `/new-service`, `/new-feature`), `/preplan`, `/businessplan`, `/techplan`, `/devproposal`, `/sprintplan`, `/dev`, `/status`, `/next`, `/switch`, `/promote`, `/sense`, `/constitution`, `/discover`, `/module-management`, `/help`, `/close`, `/upgrade`
+`/onboard`, `/create-initiative` (`/new-domain`, `/new-service`, `/new-feature`), `/preplan`, `/businessplan`, `/techplan`, `/devproposal`, `/sprintplan`, `/dev`, `/status`, `/next`, `/switch`, `/promote`, `/sense`, `/constitution`, `/discover`, `/module-management`, `/help`, `/close`, `/lens-upgrade`
 
 ## Configuration
 
@@ -146,7 +146,7 @@ The install-question keys use validator-friendly kebab-case. During installation
 
 See the [docs/](docs/) folder for detailed reference:
 
-- [Lifecycle Reference](docs/lifecycle-reference.md) — Phases, audiences, tracks
+- [Lifecycle Reference](docs/lifecycle-reference.md) — Phases, milestones, tracks
 - [Lex Persona](docs/lex-persona.md) — Governance voice used by `@lens`
 - [Copilot Adapter Reference](docs/copilot-adapter-reference.md) — Agent stub architecture
 - [Copilot Adapter Templates](docs/copilot-adapter-templates.md) — Template patterns
@@ -177,7 +177,4 @@ LENS Workbench is part of the BMad Method ecosystem. See the [BMad Method](https
 
 See [TODO.md](TODO.md) for the full checklist and next steps.
 
-# Updated: Mar 31, 2026
-
-
-
+# Updated: Apr 1, 2026
