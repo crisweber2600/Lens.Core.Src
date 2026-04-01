@@ -1,7 +1,7 @@
 # LENS Workbench — Lifecycle Reference Guide
 
-**Module:** lens-work v3.1  
-**Schema:** 3.1  
+**Module:** lens-work v3.2  
+**Schema:** 3.2  
 **Purpose:** Human-readable reference for the lens-work lifecycle system
 
 ---
@@ -63,18 +63,33 @@ Tracks are predefined lifecycle profiles that determine which phases apply.
 | hotfix-express | techplan | Critical fix — bypasses constitution gate and adversarial review |
 | spike | preplan | Research only |
 | quickdev | devproposal | Rapid execution |
+| express | expressplan | Solo/small team — all planning in one session, no milestone branches, no PRs |
 
 > **v3.1:** The `hotfix-express` track is an expedited path for critical production fixes. It skips the constitution gate and adversarial review while still requiring a technical plan. The constitution controls which teams/repos may use this track.
+
+> **v3.2:** The `express` track combines all planning into a single `expressplan` phase. No milestone branches are created, no PRs are required, and gates are informational only. Ideal for solo developers or small features that don't need multi-phase ceremony.
 
 ## Branch Topology
 
 ### Naming Convention
 
+Two naming conventions are supported (configured via `lifecycle.yaml → planning_repo.branch_patterns.naming_convention`):
+
+**DSF (domain-service-feature) — default:**
 ```
-{initiative-root}                          # Initiative root
-{initiative-root}-{audience}               # Audience branch
-{initiative-root}-{audience}-{phase}       # Phase branch
+{domain}-{service}-{feature}                          # Initiative root
+{domain}-{service}-{feature}-{audience}               # Audience branch
+{domain}-{service}-{feature}-{audience}-{phase}       # Phase branch
 ```
+
+**Feature-only (v3.2):**
+```
+{feature}                          # Initiative root
+{feature}-{audience}               # Audience branch (if used)
+{feature}-{audience}-{phase}       # Phase branch (if used)
+```
+
+Feature-only naming requires a `features.yaml` registry in the control repo to map feature names to their domain/service. Express track defaults to feature-only naming.
 
 ### Merge Flow
 
@@ -99,6 +114,7 @@ Only `{root}` and `{root}-small` are created at init. Higher audience branches a
 | `/devproposal` | DevProposal | Promoted to medium, techplan PR merged |
 | `/sprintplan` | SprintPlan | Promoted to large, devproposal PR merged |
 | `/dev` | Dev | Delegates to implementation agents in target projects |
+| `/expressplan` | ExpressPlan | Express track — combined planning in one session (no PRs, no milestone branches) |
 
 ### Initiative Commands
 
@@ -122,6 +138,10 @@ Only `{root}` and `{root}-small` are created at init. Higher audience branches a
 | `/close` | Formally complete, abandon, or supersede the current initiative |
 | `/lens-upgrade` | Migrate control repo to latest lifecycle schema version |
 | `/dashboard` | Cross-initiative status overview with Gantt timeline |
+| `/retrospective` | Review what worked, what broke, and lessons learned for a completed initiative |
+| `/log-problem` | Record an issue or friction point for the active initiative |
+| `/move-feature` | Reclassify a feature to a different domain/service |
+| `/split-feature` | Split a feature initiative into multiple child initiatives |
 
 ### Governance Commands
 
@@ -173,7 +193,7 @@ org/constitution.md              ← Level 1: universal defaults
 
 Resolution uses **additive inheritance** — lower levels add requirements, never remove them.
 
-### Constitution Capabilities (v3.1)
+### Constitution Capabilities (v3.2)
 
 The constitution now controls additional lifecycle behaviors:
 
@@ -183,13 +203,18 @@ The constitution now controls additional lifecycle behaviors:
 | `parallel_phases` | Allow concurrent phase execution |
 | `bypass_gates` | Allow express tracks to skip specific gates |
 | `dev_completion_requirements` | Define what constitutes dev-complete |
+| `branching_strategy` | Branch model: `pr-per-milestone` (default), `feature-only`, or `trunk-based` |
+| `target_repo_branching` | Target repo merge strategy: `pr` (default) or `direct-push` |
+| `stakeholder_gate` | Stakeholder approval mode: `informational` (default) or `required` |
+| `collapse_gates` | Collapse devproposal→sprintplan gates into a single step |
+| `features_registry` | Enable features.yaml tracking for feature mobility |
 
-### Gate Collapsing (v3.1)
+### Gate Collapsing (v3.2)
 
 For small features, adjacent gates can be merged to reduce ceremony:
 
-- Controlled by the constitution (`gate_collapsing.enabled: true`)
-- Collapsible gates: `adversarial-review`, `stakeholder-approval`
+- Controlled by the constitution (`collapse_gates: true`)
+- When enabled and promoting from devproposal→sprintplan: stakeholder-approval gate is skipped, auto-advances through sprintplan to dev-ready
 - The constitution defines which initiative scopes qualify
 - Gate requirements are still met — they are combined, not skipped
 
@@ -249,3 +274,38 @@ Artifact validation now checks structural requirements per type:
 - **Template diff** — artifacts with <20% change from template trigger a warning
 
 Validation runs at phase PR creation and blocks merge if structural requirements are missing.
+
+## Features Registry (v3.2)
+
+The `features.yaml` file in the control repo root tracks all features and their domain/service assignments:
+
+```yaml
+oauth-refactor:
+  domain: payments
+  service: auth
+  created: 2026-03-15
+  status: active
+
+login-redesign:
+  domain: identity
+  service: frontend
+  split_from: identity-overhaul
+  created: 2026-03-20
+  status: active
+```
+
+**Purpose:**
+- Enables feature-only branch naming by providing domain/service lookup
+- Tracks feature mobility (moves and splits via `split_from` field)
+- Used by sensing to resolve domain/service for overlap detection
+- Auto-populated by `/create-initiative`, `/move-feature`, and `/split-feature`
+
+## Problem Logging (v3.2)
+
+The `/log-problem` command records issues and friction points in a `problems.md` file within the initiative output folder. Each entry includes:
+
+- Severity (`low` / `medium` / `high` / `critical`)
+- Title and description
+- Timestamp and phase context
+
+Problems are committed with a `[PROBLEM:{severity}]` marker. The `/retrospective` workflow consumes this file as input for post-initiative analysis.

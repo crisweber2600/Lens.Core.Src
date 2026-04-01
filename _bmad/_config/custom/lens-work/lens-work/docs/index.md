@@ -1,6 +1,6 @@
 # LENS Workbench Module — Documentation Index
 
-**Module:** lens-work v3.1.0 | **Type:** CLI / Toolkit | **Last Updated:** 2026-04-01
+**Module:** lens-work v3.2.0 | **Type:** CLI / Toolkit | **Last Updated:** 2026-04-01
 
 ---
 
@@ -19,6 +19,11 @@
 | Understand the lifecycle | [Lifecycle Reference](./lifecycle-reference.md) |
 | See the lifecycle visually | [Lifecycle Visual Guide](./lifecycle-visual-guide.md) |
 | Understand CI/CD pipeline | [Pipeline: Source to Release](./pipeline-source-to-release.md) |
+| Run express planning (no PRs) | `/expressplan` — [Workflow](../workflows/router/expressplan/workflow.md) |
+| Run a retrospective | `/retrospective` — [Workflow](../workflows/router/retrospective/workflow.md) |
+| Log a problem | `/log-problem` — [Workflow](../workflows/utility/log-problem/workflow.md) |
+| Move a feature across domains | `/move-feature` — [Workflow](../workflows/utility/move-feature/workflow.md) |
+| Split a feature into children | `/split-feature` — [Workflow](../workflows/utility/split-feature/workflow.md) |
 
 ---
 
@@ -32,7 +37,7 @@
 | [Project Overview](./project-overview.md) | High-level project summary, tech stack, architecture classification | ✅ Generated |
 | [Architecture](./architecture.md) | Design axioms, patterns, workflow/skills architecture, deployment | ✅ Generated |
 | [Source Tree Analysis](./source-tree-analysis.md) | Full annotated directory tree with critical folder descriptions | ✅ Generated |
-| [Component Inventory](./component-inventory.md) | Complete inventory: 6 skills, 24 workflows, 22 prompts, 5 scripts, 1 agent | ✅ Generated |
+| [Component Inventory](./component-inventory.md) | Complete inventory: 5 skills, 29 workflows, 26 prompts, 5 scripts, 1 agent | ✅ Generated |
 | [Development Guide](./development-guide.md) | Prerequisites, installation, environment setup, scripts reference, testing | ✅ Generated |
 
 ---
@@ -50,7 +55,8 @@
 | [Copilot Repo Instructions](./copilot-repo-instructions.md) | Repository-level instruction patterns | — |
 | [Script Integration](./script-integration.md) | Script execution patterns and provider adapters | — |
 | [Lex Persona](./lex-persona.md) | Constitutional governance voice definition | — |
-| [v3.1 Improvements](./v3.1-improvements.md) | Changelog / improvements in schema v3.1 | — |
+| [What's New (v2.0 → v3.2)](./whats-new.md) | Full changelog from v2.0 through v3.2 | ~300 |
+| [v3.1 Improvements](./v3.1-improvements.md) | Detailed changelog for schema v3.1 | ~420 |
 
 ---
 
@@ -69,8 +75,8 @@
 | `lifecycle.yaml` | **THE CONTRACT** — phases, audiences, tracks, validation rules |
 | `module.yaml` | Module registry — version, skills, workflows |
 | `bmadconfig.yaml` | Runtime configuration template |
-| `module-help.csv` | Command index (21 entries, 13 columns) |
+| `module-help.csv` | Command index (25 entries, 13 columns) |
 | `README.md` | Module overview with design axioms |
 | `TODO.md` | Development checklist |
-| `agents/lens.agent.md` | Agent persona and 23-item menu |
+| `agents/lens.agent.md` | Agent persona and 28-item menu |
 | `agents/lens.agent.yaml` | Agent YAML companion for validation |

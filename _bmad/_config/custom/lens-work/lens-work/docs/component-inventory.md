@@ -1,6 +1,6 @@
 # Component Inventory — LENS Workbench Module (lens-work)
 
-**Generated:** 2026-04-01 | **Scan Level:** Deep | **Module Version:** 3.1.0
+**Generated:** 2026-04-01 | **Scan Level:** Deep | **Module Version:** 3.2.0
 
 ---
 
@@ -8,13 +8,13 @@
 
 | Category | Count |
 |----------|-------|
-| Skills | 6 (5 base + 1 dashboard) |
-| Workflows | 24 (3 core + 9 router + 9 utility + 3 governance) |
-| Prompts | 22 |
+| Skills | 5 (git-state, git-orchestration, constitution, sensing, checklist) |
+| Workflows | 29 (3 core + 11 router + 12 utility + 3 governance) |
+| Prompts | 26 |
 | Scripts | 5 (cross-platform Bash + PowerShell) |
-| Agents | 1 (lens agent with 23 menu items) |
+| Agents | 1 (lens agent with 28 menu items) |
 | IDE Adapters | 4 (github-copilot, cursor, claude, codex) |
-| Step Files | ~60–80 across all workflows |
+| Step Files | ~70–90 across all workflows |
 
 ---
 
@@ -136,7 +136,7 @@
 
 ---
 
-### Router Workflows (9)
+### Router Workflows (11)
 
 | Workflow | Command | Purpose | Steps |
 |----------|---------|---------|-------|
@@ -149,13 +149,15 @@
 | **dev** | `/dev` | Delegate implementation to target project agents | 3+ |
 | **discover** | `/discover` | Discover repos, inspect BMAD config, manage governance | 4+ |
 | **close** | `/close` | Close, abandon, or supersede initiative | 3+ |
+| **expressplan** | `/expressplan` | Combined planning in one session — express track (no PRs, no milestone branches) | 5 |
+| **retrospective** | `/retrospective` | Post-initiative review — what worked, what broke, lessons learned | 4 |
 
 ---
 
-### Utility Workflows (9)
+### Utility Workflows (12)
 
 | Workflow | Command | Purpose |
-|----------|---------|---------|
+|----------|---------|--------|
 | **onboard** | `/onboard` | Bootstrap control repo: provider auth, profile, governance, TargetProjects auto-clone |
 | **status** | `/status` | Show current initiative state derived from git |
 | **next** | `/next` | Recommend next action based on lifecycle state |
@@ -165,6 +167,9 @@
 | **promote** | `/promote` | Advance audience tier with gate checks and sensing |
 | **upgrade** | `/lens-upgrade` | Migrate control repo to latest schema version |
 | **dashboard** | `/dashboard` | Multi-initiative status overview with Gantt timeline |
+| **log-problem** | `/log-problem` | Record an issue or friction point for the active initiative |
+| **move-feature** | `/move-feature` | Reclassify a feature to a different domain/service |
+| **split-feature** | `/split-feature` | Split a feature initiative into multiple child initiatives |
 
 ---
 
@@ -178,7 +183,7 @@
 
 ---
 
-## 3. Prompts (22)
+## 3. Prompts (26)
 
 | Prompt File | Command | Abbr |
 |-------------|---------|------|
@@ -204,6 +209,11 @@
 | `lens-work.upgrade.prompt.md` | `/lens-upgrade` | UG |
 | `lens-work.dashboard.prompt.md` | `/dashboard` | DB |
 | `lens-work.sense.prompt.md` | `/sense` | SN |
+| `lens-work.expressplan.prompt.md` | `/expressplan` | EP |
+| `lens-work.retrospective.prompt.md` | `/retrospective` | RT |
+| `lens-work.log-problem.prompt.md` | `/log-problem` | LP |
+| `lens-work.move-feature.prompt.md` | `/move-feature` | MV |
+| `lens-work.split-feature.prompt.md` | `/split-feature` | SF |
 
 ---
 
@@ -227,7 +237,7 @@
 |---|---|
 | **Files** | `agents/lens.agent.md`, `agents/lens.agent.yaml` |
 | **Module** | lens-work |
-| **Menu Items** | 23 (covering all workflows + chat, help redisplay, dismiss) |
+| **Menu Items** | 28 (covering all workflows + chat, help redisplay, dismiss) |
 | **Activation** | 9-step sequence: load bmadconfig → load lifecycle → derive git state → detect initiative → resolve constitution → render menu |
 | **Governance Voice** | Shifts to "Lex" — authoritative, rule-citing — when constitutional governance invoked |
 | **Routing** | Fuzzy matching with abbreviations (OB, NI, SW, etc.) |
@@ -238,13 +248,14 @@
 
 | | |
 |---|---|
-| **File** | `lifecycle.yaml` (schema v3.1) |
-| **Phases** | preplan → businessplan → techplan → devproposal → sprintplan → dev |
+| **File** | `lifecycle.yaml` (schema v3.2) |
+| **Phases** | preplan → businessplan → techplan → devproposal → sprintplan → dev + expressplan |
 | **Audiences** | small → medium → large → base |
-| **Tracks** | full, feature, tech-change, hotfix |
+| **Tracks** | full, feature, tech-change, hotfix, hotfix-express, spike, quickdev, express |
 | **Scope Levels** | domain (1 segment), service (2 segments), feature (3 segments) |
 | **State File** | `initiative-state.yaml` (committed, single source of truth) |
-| **Branch Pattern** | `{initiative-root}` for root; `{initiative-root}-{milestone}` for milestones |
+| **Branch Patterns** | DSF: `{domain}-{service}-{feature}` or Feature-only: `{feature}` (v3.2) |
+| **Features Registry** | `features.yaml` — maps feature names to domain/service (v3.2) |
 
 ---
 

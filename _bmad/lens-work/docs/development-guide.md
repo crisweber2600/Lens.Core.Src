@@ -1,6 +1,6 @@
 # Development Guide — LENS Workbench Module (lens-work)
 
-**Generated:** 2026-04-01 | **Scan Level:** Deep | **Module Version:** 3.1.0
+**Generated:** 2026-04-01 | **Scan Level:** Deep | **Module Version:** 3.2.0
 
 ---
 
@@ -232,4 +232,34 @@ See [pipeline-source-to-release.md](./pipeline-source-to-release.md) for details
 
 ```
 @lens → /constitution
+```
+
+### Express Planning (v3.2)
+
+```
+@lens → /expressplan
+```
+
+### Post-Initiative Retrospective (v3.2)
+
+```
+@lens → /retrospective
+```
+
+### Log a Problem (v3.2)
+
+```
+@lens → /log-problem
+```
+
+### Move Feature to Different Domain/Service (v3.2)
+
+```
+@lens → /move-feature
+```
+
+### Split Feature Into Multiple Initiatives (v3.2)
+
+```
+@lens → /split-feature
 ```

@@ -69,6 +69,9 @@ LENS will walk you through naming your feature, selecting a lifecycle track, and
 | `/dashboard` | See all active initiatives across domains |
 | `/expressplan` | Run the express planning workflow (single-phase, no PRs) |
 | `/retrospective` | Run a retrospective on a completed initiative |
+| `/log-problem` | Record an issue or friction point for the active initiative |
+| `/move-feature` | Reclassify a feature to a different domain/service |
+| `/split-feature` | Split a feature initiative into multiple child initiatives |
 
 ---
 
@@ -93,6 +96,14 @@ main
 ```
 
 > Express track uses only `{feature-name}` — no milestone branches, no PRs.
+
+### Feature-Only Branch Naming (v3.2)
+
+Initiatives can use short feature-only branch names (e.g., `auth` instead of `foo-bar-auth`) when the feature name is unique. LENS maps short names to their full domain/service path via `features.yaml` at the control repo root.
+
+### Gate Collapsing (v3.2)
+
+Governance constitutions can enable `collapse_gates` to auto-advance devproposal → sprintplan without a separate PR, reducing ceremony for express and lightweight tracks.
 
 ---
 

@@ -1,6 +1,6 @@
 # Architecture — LENS Workbench Module (lens-work)
 
-**Generated:** 2026-04-01 | **Scan Level:** Deep | **Module Version:** 3.1.0
+**Generated:** 2026-04-01 | **Scan Level:** Deep | **Module Version:** 3.2.0
 
 ---
 
@@ -28,15 +28,16 @@ The module operates as a **stateless orchestrator**: it reads state exclusively 
 
 ### 3.1 The Lifecycle Contract
 
-`lifecycle.yaml` (schema v3.1) is the single source of truth for all lifecycle behavior. It defines:
+`lifecycle.yaml` (schema v3.2) is the single source of truth for all lifecycle behavior. It defines:
 
 - **Fundamental Truths** — 3 non-negotiable design axioms
 - **Milestones** — 5 promotion backbone points (techplan → devproposal → sprintplan → dev-ready → dev-complete)
-- **Phases** — 5 planning phases (preplan → businessplan → techplan → devproposal → sprintplan)
-- **Tracks** — 7 predefined lifecycle profiles (full, feature, tech-change, hotfix, hotfix-express, spike, quickdev)
+- **Phases** — 6 planning phases (preplan → businessplan → techplan → devproposal → sprintplan + expressplan)
+- **Tracks** — 8 predefined lifecycle profiles (full, feature, tech-change, hotfix, hotfix-express, spike, quickdev, express)
 - **Audience Tiers** — Progressive review scope (small → medium → large → base)
 - **Artifact Validation** — Per-artifact structural validators with constitutional overrides
 - **Sensing Configuration** — Scope and content overlap detection thresholds
+- **Gate Collapsing** — Constitution-driven `collapse_gates` capability for auto-advancing devproposal → sprintplan
 
 ### 3.2 Phase-to-Milestone Mapping
 
@@ -73,6 +74,27 @@ Milestone: dev-complete (optional)
 ```
 
 **Key insight:** Branch existence is a meaningful lifecycle signal. If `{root}-devproposal` exists, the devproposal phase is definitively complete.
+
+### 3.3.1 Feature-Only Branch Naming (v3.2)
+
+Initiatives may use **feature-only** naming where the branch is just `{feature}` instead of the full `{domain}-{service}-{feature}` DSF pattern. This is enabled when:
+- The initiative scope is `feature` and the feature name is unique across the workspace
+- The `features.yaml` registry maps the short name back to the full domain/service path
+
+**`features.yaml`** (control-repo root) maps feature names to their domain/service context:
+```yaml
+features:
+  auth:
+    domain: foo
+    service: bar
+    initiative_root: auth
+  payments:
+    domain: billing
+    service: core
+    initiative_root: payments
+```
+
+Sensing resolves feature-only names via this registry during overlap detection and state derivation.
 
 ### 3.4 Promotion Flow
 
@@ -123,14 +145,18 @@ The LENS Workbench agent is the single entry point for all user interaction. It 
 
 ## 5. Workflow Architecture
 
-### 5.1 Organization: 4 Categories, 24 Workflows
+### 5.1 Organization: 4 Categories, 29 Workflows
 
 | Category | Count | Purpose |
 |----------|-------|---------|
 | **Core** | 3 | Infrastructure — phase lifecycle, audience promotion, milestone promotion |
-| **Router** | 9 | User-facing phase flows — init, preplan, businessplan, techplan, devproposal, sprintplan, dev, discover, close |
-| **Utility** | 9 | Operational — onboard, status, next, switch, help, promote, module-management, upgrade, dashboard |
+| **Router** | 11 | User-facing phase flows — init, preplan, businessplan, techplan, devproposal, sprintplan, dev, discover, close, expressplan, retrospective |
+| **Utility** | 12 | Operational — onboard, status, next, switch, help, promote, module-management, upgrade, dashboard, log-problem, move-feature, split-feature |
 | **Governance** | 3 | Compliance — compliance-check, cross-initiative, resolve-constitution |
+
+#### Express Track (v3.2)
+
+The **express** track provides combined planning in a single session — no milestone branches, no PRs, ~5 steps total. Ideal for small features or quick changes where full ceremony is unnecessary. Uses the `/expressplan` command. Gate collapsing via `collapse_gates` constitution capability allows auto-advancing devproposal → sprintplan on this track.
 
 ### 5.2 Step-File Pattern
 
