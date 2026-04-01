@@ -1,6 +1,6 @@
 # LENS Workbench — Lifecycle Reference Guide
 
-**Module:** lens-work v2.0  
+**Module:** lens-work v3.0  
 **Purpose:** Human-readable reference for the lens-work lifecycle system
 
 ---
@@ -93,6 +93,14 @@ Only `{root}` and `{root}-small` are created at init. Higher audience branches a
 | `/sprintplan` | SprintPlan | Promoted to large, devproposal PR merged |
 | `/dev` | Dev | Delegates to implementation agents in target projects |
 
+### Initiative Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/create-initiative` | Consolidated initiative creation — choose domain, service, or feature scope |
+
+> **Deprecated aliases:** `/new-domain`, `/new-service`, `/new-feature` are forwarded to `/create-initiative` for backward compatibility.
+
 ### Utility Commands
 
 | Command | Purpose |
@@ -102,6 +110,10 @@ Only `{root}` and `{root}-small` are created at init. Higher audience branches a
 | `/next` | Recommend the next action based on lifecycle state |
 | `/switch` | Checkout a different initiative's branch |
 | `/help` | Command reference and module version info |
+| `/discover` | Discovery and research workflow |
+| `/module-management` | Manage installed BMAD modules |
+| `/close` | Formally complete, abandon, or supersede the current initiative |
+| `/lens-upgrade` | Migrate control repo to latest lifecycle schema version |
 
 ### Governance Commands
 

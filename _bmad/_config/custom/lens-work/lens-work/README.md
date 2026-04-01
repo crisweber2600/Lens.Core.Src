@@ -35,10 +35,12 @@ lens-work/
 ├── prompts/               # User-facing prompt entry points
 ├── scripts/               # Cross-platform PR creation & PAT management (no gh CLI needed)
 ├── docs/                  # Human-readable reference documentation
-├── bmad-lens-work-setup/  # Setup skill for module installation
+├── bmad-lens-work-setup/  # Legacy setup skill (use _module-installer for CI/CD)
 │   ├── SKILL.md
 │   ├── scripts/           # merge-config.py, merge-help-csv.py, cleanup-legacy.py
 │   └── assets/            # module.yaml, module-help.csv copies
+├── _module-installer/     # CI/CD installer — generates IDE adapters for release builds
+│   └── installer.js       # Node.js installer (called by promote-to-release.yml)
 ├── .claude-plugin/        # marketplace.json distribution manifest
 └── tests/contracts/       # Slim contract tests
 ```
