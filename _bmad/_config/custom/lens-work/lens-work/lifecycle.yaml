@@ -185,7 +185,7 @@ tracks:
 
   tech-change:
     description: "Pure technical change — no business case needed"
-    phases: [techplan, sprintplan]
+    phases: [techplan, devproposal, sprintplan]
     milestones: [techplan, devproposal, sprintplan, dev-ready]
     constitution_controlled_gates: [devproposal, devproposal-to-sprintplan]
     start_phase: techplan

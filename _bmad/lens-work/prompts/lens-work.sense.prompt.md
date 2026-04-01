@@ -1,5 +1,6 @@
 ---
 model: Claude Sonnet 4.6 (copilot)
+description: "Run cross-initiative overlap detection and sensing scan"
 ---
 
 # /sense Prompt
@@ -9,7 +10,7 @@ Run cross-initiative overlap detection for the current initiative.
 ## Routing
 
 1. Run preflight before sensing:
-   1. Execute shared preflight from `_bmad/lens-work/workflows/includes/preflight.md`.
+   1. Execute shared preflight from `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`.
    2. If preflight reports missing authority repos, stop and direct the user to run `/onboard` first.
 2. Use `git-state` skill → `current-initiative` to confirm the current initiative context.
 3. Execute `workflows/governance/cross-initiative/workflow.md`.

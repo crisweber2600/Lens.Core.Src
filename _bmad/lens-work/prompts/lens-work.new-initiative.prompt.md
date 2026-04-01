@@ -23,7 +23,7 @@ Routes `/new-domain`, `/new-service`, and `/new-feature` commands to the init-in
 
 ### Step 0: Run Preflight
 
-Execute shared preflight from `_bmad/lens-work/workflows/includes/preflight.md`.
+Execute shared preflight from `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`.
 
 If preflight reports missing authority repos, stop and direct the user to run `/onboard` first.
 
@@ -39,7 +39,7 @@ If preflight reports missing authority repos, stop and direct the user to run `/
 
 ### Step 2: Execute Workflow
 
-Run the init-initiative workflow at `_bmad/lens-work/workflows/router/init-initiative/`.
+Run the init-initiative workflow at `{project-root}/_bmad/lens-work/workflows/router/init-initiative/`.
 
 The workflow handles:
 - Slug-safe name validation

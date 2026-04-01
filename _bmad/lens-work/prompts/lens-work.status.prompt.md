@@ -15,13 +15,13 @@ Routes the `/status` command to the status workflow, which scans git branch topo
 
 ### Step 0: Run Preflight
 
-Execute shared preflight from `_bmad/lens-work/workflows/includes/preflight.md`.
+Execute shared preflight from `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`.
 
 If preflight reports missing authority repos, stop and direct the user to run `/onboard` first.
 
 ### Step 1: Execute Workflow
 
-Run the status workflow at `_bmad/lens-work/workflows/utility/status/`.
+Run the status workflow at `{project-root}/_bmad/lens-work/workflows/utility/status/`.
 
 The workflow handles:
 - Scanning all initiative branches using git-state skill

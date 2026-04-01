@@ -169,7 +169,7 @@ Add this at the end of router workflows (preplan, businessplan, techplan, devpro
 
 Run the promotion-check include:
 
-1. Execute `_bmad/lens-work/workflows/includes/promotion-check.md`
+1. Execute `{project-root}/_bmad/lens-work/workflows/includes/promotion-check.md`
 2. If all phases for current audience are complete, present promotion options
 3. If promotion selected, invoke the audience-promotion workflow
 4. If declined, allow user to continue on current audience

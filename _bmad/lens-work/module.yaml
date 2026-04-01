@@ -3,10 +3,14 @@
 
 code: lens-work
 name: "LENS Workbench"
-version: "2.0.0"
+module_version: "2.0.0"
+description: "Guided lifecycle router with git-orchestrated discipline. Phase-aware orchestration for BMAD workflows with automated branch topology."
 header: "Guided lifecycle router with git-orchestrated discipline"
 subheader: "Phase-aware orchestration for BMAD workflows with automated branch topology"
 default_selected: false
+module_greeting: |
+  Welcome to **LENS Workbench** — your guided lifecycle router.
+  Type `/help` to see available commands, or `/status` to check your current initiative state.
 
 # Module Type
 type: standalone
@@ -29,19 +33,19 @@ optional_dependencies:
 # Provider adapter operations are integrated into git-orchestration skill
 skills:
   - id: git-state
-    file: skills/git-state.md
+    file: skills/git-state/SKILL.md
     description: "Derive initiative state from git primitives — read-only queries"
   - id: git-orchestration
-    file: skills/git-orchestration.md
+    file: skills/git-orchestration/SKILL.md
     description: "Branch creation, commits, pushes, PR management, provider adapter — write operations"
   - id: constitution
-    file: skills/constitution.md
+    file: skills/constitution/SKILL.md
     description: "Constitutional governance resolution and compliance checks"
   - id: sensing
-    file: skills/sensing.md
+    file: skills/sensing/SKILL.md
     description: "Cross-initiative overlap detection at lifecycle gates"
   - id: checklist
-    file: skills/checklist.md
+    file: skills/checklist/SKILL.md
     description: "Phase gate checklists with progressive validation"
 
 # Workflows

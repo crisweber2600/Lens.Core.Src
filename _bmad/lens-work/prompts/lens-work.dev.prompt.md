@@ -1,5 +1,6 @@
 ---
 model: Claude Sonnet 4.6 (copilot)
+description: "Delegate implementation to target project agents via story routing"
 ---
 
 # /dev Prompt — Epic-Level Implementation Loop
@@ -21,7 +22,7 @@ The implementation target is the **TargetProject repo** — resolved from `initi
 ## Execution
 
 1. **Authority Repo Health Check** (read-only — NO writes to these repos):
-   1. Execute shared preflight from `_bmad/lens-work/workflows/includes/preflight.md`. This is a health check only — `bmad.lens.release` is NOT the implementation target.
+   1. Execute shared preflight from `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`. This is a health check only — `bmad.lens.release` is NOT the implementation target.
    2. If preflight reports missing authority repos, stop and direct the user to run `/onboard` first.
 2. Load `lifecycle.yaml` from the lens-work module (read from `bmad.lens.release` — read-only)
 3. Invoke phase routing for `dev`:

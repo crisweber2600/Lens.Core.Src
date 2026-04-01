@@ -72,7 +72,7 @@ invoke_git() {
   if [[ "$allow_failure" == true ]]; then
     local rc=0
     git "${args[@]}" 2>&1 || rc=$?
-    return $rc
+    return "$rc"
   else
     git "${args[@]}"
   fi
@@ -102,9 +102,9 @@ get_branch_context() {
 
   # Find audience keyword
   for ((i = ${#parts[@]} - 1; i >= 0; i--)); do
-    case "${parts[$i]}" in
+    case "${parts["$i"]}" in
       small|medium|large)
-        audience_idx=$i
+        audience_idx="$i"
         break
         ;;
     esac
@@ -299,7 +299,7 @@ invoke_github_pr_create() {
   fi
 
   # Create PR via REST API
-  local response http_code
+  local http_code
   http_code=$(curl -s -o /tmp/gh_pr_response.json -w '%{http_code}' \
     -X POST "${api_base}/repos/${org}/${repo}/pulls" \
     -H "Authorization: token ${pat}" \
@@ -555,7 +555,7 @@ if [[ -n "$PAT" && "$remote_platform" == "github" && "$CREATE_PR" == true && "$U
   
   if pr_result=$(invoke_github_pr_create "$remote_host" "$remote_org" "$remote_repo" "$SOURCE_BRANCH" "$TARGET_BRANCH" "$PAT"); then
     echo -e "${GREEN}[OK] PR created: $pr_result${RESET}"
-    PR_CREATED=true
+    PR_CREATED=true  # Used for exit summary
   else
     echo -e "${YELLOW}[WARN]  PR creation failed. Manual URL: $PR_URL${RESET}"
   fi

@@ -16,7 +16,7 @@ You are the `@lens` agent performing first-time setup of a control repo for lens
 
 ### Step 0: Run Preflight
 
-Execute shared preflight from `_bmad/lens-work/workflows/includes/preflight.md`.
+Execute shared preflight from `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`.
 
 **Exception for /onboard:** If missing repos are reported, continue onboarding so the workflow can bootstrap/repair those repos.
 
@@ -33,7 +33,7 @@ _bmad-output/
 
 ### Step 2: Run /onboard
 
-Execute the onboard workflow at `_bmad/lens-work/workflows/utility/onboard/`.
+Execute the onboard workflow at `{project-root}/_bmad/lens-work/workflows/utility/onboard/`.
 
 The onboard workflow handles:
 - Provider detection from git remote URL

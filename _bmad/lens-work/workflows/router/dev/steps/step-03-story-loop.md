@@ -2,9 +2,9 @@
 name: 'step-03-story-loop'
 description: 'Execute the per-story implementation loop, review gate, PR creation, and BMAD control-plane updates'
 nextStepFile: './step-04-epic-completion.md'
-targetRepoRoutingData: '../data/story-target-repo-routing.md'
-implementationGuidanceData: '../data/story-implementation-guidance.md'
-reviewLoopData: '../data/story-review-loop.md'
+targetRepoRoutingData: '../resources/story-target-repo-routing.md'
+implementationGuidanceData: '../resources/story-implementation-guidance.md'
+reviewLoopData: '../resources/story-review-loop.md'
 ---
 
 # Step 3: Story Implementation Loop

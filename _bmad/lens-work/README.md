@@ -23,13 +23,23 @@ lens-work/
 ├── bmadconfig.yaml        # BMAD agent activation config + source defaults
 ├── lifecycle.yaml         # THE contract — phases, audiences, tracks, branches
 ├── module.yaml            # Module identity, skills, workflow manifest
-├── module-help.csv        # Help entries for all commands
+├── module-help.csv        # Help entries (13-column format)
 ├── agents/                # Runtime BMAD agent definitions
-├── skills/                # git-state, git-orchestration, constitution, sensing, checklist
-├── workflows/             # core, router, utility, governance, includes
+├── skills/                # Folder-based skills (each has SKILL.md with frontmatter)
+│   ├── checklist/SKILL.md
+│   ├── constitution/SKILL.md
+│   ├── git-orchestration/SKILL.md
+│   ├── git-state/SKILL.md
+│   └── sensing/SKILL.md
+├── workflows/             # core, router, utility, governance (each has SKILL.md + workflow.md + steps/)
 ├── prompts/               # User-facing prompt entry points
 ├── scripts/               # Cross-platform PR creation & PAT management (no gh CLI needed)
 ├── docs/                  # Human-readable reference documentation
+├── bmad-lens-work-setup/  # Setup skill for module installation
+│   ├── SKILL.md
+│   ├── scripts/           # merge-config.py, merge-help-csv.py, cleanup-legacy.py
+│   └── assets/            # module.yaml, module-help.csv copies
+├── .claude-plugin/        # marketplace.json distribution manifest
 └── tests/contracts/       # Slim contract tests
 ```
 

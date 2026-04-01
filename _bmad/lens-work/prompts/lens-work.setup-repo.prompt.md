@@ -68,4 +68,4 @@ This will:
 
 - The `.github` folder syncs from `bmad.lens.release/.github/` during preflight
 - Future updates to agents/prompts will auto-sync when preflight detects changes
-- See `_bmad/lens-work/workflows/includes/preflight.md` for sync logic
+- See `{project-root}/_bmad/lens-work/workflows/includes/preflight.md` for sync logic

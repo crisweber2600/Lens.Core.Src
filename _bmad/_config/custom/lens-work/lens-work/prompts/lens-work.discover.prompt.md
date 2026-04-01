@@ -15,13 +15,13 @@ Routes the `/discover` command to the discover workflow, which scans `TargetProj
 
 ### Step 0: Run Preflight
 
-Execute shared preflight from `_bmad/lens-work/workflows/includes/preflight.md`.
+Execute shared preflight from `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`.
 
 If preflight reports missing authority repos, stop and direct the user to run `/onboard` first.
 
 ### Step 1: Execute Workflow
 
-Run the discover workflow at `_bmad/lens-work/workflows/router/discover/workflow.md`.
+Run the discover workflow at `{project-root}/_bmad/lens-work/workflows/router/discover/workflow.md`.
 
 The workflow handles:
 - Resolving the active initiative context (domain, service, governance path)
@@ -38,13 +38,12 @@ The workflow handles:
 **All documentation generated during `/discover` — from any workflow step, including `document-project` and `generate-project-context` — MUST be written to:**
 
 ```
-Docs/{domain}/{service}/{repo_name}/
+docs/{domain}/{service}/{repo_name}/
 ```
 
 Examples:
-- `Docs/bmad/lens/bmad.lens.src/` — documentation for the `bmad.lens.src` repo
-- `Docs/bmad/lens/bmad.lens.bmad/` — documentation for the `bmad.lens.bmad` repo
-
+- `docs/bmad/lens/bmad.lens.src/` — documentation for the `bmad.lens.src` repo
+- `docs/bmad/lens/bmad.lens.bmad/` — documentation for the `bmad.lens.bmad` repo
 This path is constructed from the initiative's resolved `domain` and `service` fields plus the repo's directory basename. Every output file from every documentation workflow — including `project-context.md`, project scans, architecture overviews, source trees, and deep-dive docs — is placed **inside** this folder rather than at the repo root or in `_bmad-output/`.
 
 ## Prerequisites

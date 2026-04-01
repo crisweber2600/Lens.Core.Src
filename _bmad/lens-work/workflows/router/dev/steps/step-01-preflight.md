@@ -3,7 +3,7 @@ name: 'step-01-preflight'
 description: 'Run dev pre-flight, resolve the target repo, and validate the large-to-base promotion gate'
 nextStepFile: './step-02-story-discovery.md'
 preflightInclude: '../../includes/preflight.md'
-promotionAndContextData: '../data/preflight-promotion-and-context.md'
+promotionAndContextData: '../resources/preflight-promotion-and-context.md'
 ---
 
 # Step 1: Pre-Flight And Target Repo Validation

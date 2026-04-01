@@ -34,8 +34,8 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
-BOLD='\033[1m'
-DIM='\033[2m'
+_BOLD='\033[1m'
+_DIM='\033[2m'
 RESET='\033[0m'
 
 # -- Defaults ---------------------------------------------------------------
@@ -223,11 +223,13 @@ EOF
             --max-time "$timeout" 2>&1 || echo "error")
 
         http_code=$(echo "$response" | tail -n1)
-        local json=$(echo "$response" | head -n-1)
+        local json
+        json=$(echo "$response" | head -n-1)
 
         if [[ "$http_code" == "201" ]]; then
-            local url=$(echo "$json" | grep -o '"html_url":"[^"]*' | cut -d'"' -f4)
-            local number=$(echo "$json" | grep -o '"number":[0-9]*' | cut -d':' -f2)
+            local url number
+            url=$(echo "$json" | grep -o '"html_url":"[^"]*' | cut -d'"' -f4)
+            number=$(echo "$json" | grep -o '"number":[0-9]*' | cut -d':' -f2)
             echo "SUCCESS|$url|$number"
             return 0
         elif [[ "$http_code" == "422" ]]; then
@@ -240,7 +242,7 @@ EOF
     fi
 
     # Fall back to manual URL
-    echo "MANUAL|$(get_pr_url "$host" "$org" "$repo" "" "$platform" "$source" "$target")|"
+    echo "MANUAL|$(get_pr_url "$host" "$org" "$repo" "" "github" "$source" "$target")|"
 }
 
 # ============================================================================

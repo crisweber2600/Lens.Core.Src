@@ -15,13 +15,13 @@ Routes the `/next` command to the next workflow, which derives the current state
 
 ### Step 0: Run Preflight
 
-Execute shared preflight from `_bmad/lens-work/workflows/includes/preflight.md`.
+Execute shared preflight from `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`.
 
 If preflight reports missing authority repos, stop and direct the user to run `/onboard` first.
 
 ### Step 1: Execute Workflow
 
-Run the next workflow at `_bmad/lens-work/workflows/utility/next/`.
+Run the next workflow at `{project-root}/_bmad/lens-work/workflows/utility/next/`.
 
 The workflow handles:
 - Running `/status` internally to derive current state

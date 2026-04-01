@@ -25,8 +25,8 @@ See `bmad.lens.release/_bmad/lens-work/module-help.csv` for the complete command
 
 | Skill | Path |
 |-------|------|
-| git-state | `bmad.lens.release/_bmad/lens-work/skills/git-state.md` |
-| git-orchestration | `bmad.lens.release/_bmad/lens-work/skills/git-orchestration.md` |
-| constitution | `bmad.lens.release/_bmad/lens-work/skills/constitution.md` |
-| sensing | `bmad.lens.release/_bmad/lens-work/skills/sensing.md` |
-| checklist | `bmad.lens.release/_bmad/lens-work/skills/checklist.md` |
+| git-state | `bmad.lens.release/_bmad/lens-work/skills/git-state/SKILL.md` |
+| git-orchestration | `bmad.lens.release/_bmad/lens-work/skills/git-orchestration/SKILL.md` |
+| constitution | `bmad.lens.release/_bmad/lens-work/skills/constitution/SKILL.md` |
+| sensing | `bmad.lens.release/_bmad/lens-work/skills/sensing/SKILL.md` |
+| checklist | `bmad.lens.release/_bmad/lens-work/skills/checklist/SKILL.md` |

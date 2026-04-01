@@ -24,7 +24,7 @@ Instead, run a minimal preflight:
 
 ### Step 1: Execute Workflow
 
-Run the upgrade workflow at `_bmad/lens-work/workflows/utility/upgrade/`.
+Run the upgrade workflow at `{project-root}/_bmad/lens-work/workflows/utility/upgrade/`.
 
 The workflow handles:
 - Detecting current version state (missing, v2, or already v3)

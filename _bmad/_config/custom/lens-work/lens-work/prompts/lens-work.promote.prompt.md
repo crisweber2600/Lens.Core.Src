@@ -1,5 +1,6 @@
 ---
 model: Claude Sonnet 4.6 (copilot)
+description: "Promote current initiative to the next audience tier with gate checks"
 ---
 
 # /promote Prompt
@@ -9,7 +10,7 @@ Promote the current initiative from the current audience tier to the next.
 ## Routing
 
 1. Run preflight before promotion routing:
-	1. Execute shared preflight from `_bmad/lens-work/workflows/includes/preflight.md`.
+	1. Execute shared preflight from `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`.
 	2. If preflight reports missing authority repos, stop and direct the user to run `/onboard` first.
 2. Load `lifecycle.yaml` from the lens-work module
 3. Use `git-state` skill → `current-initiative` to confirm on an initiative branch

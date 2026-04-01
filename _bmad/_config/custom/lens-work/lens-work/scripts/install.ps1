@@ -42,8 +42,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # -- Paths -------------------------------------------------------------------
-$ScriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ModuleDir   = Split-Path -Parent $ScriptDir
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ModuleDir = Split-Path -Parent $ScriptDir
 $ProjectRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $ScriptDir))
 
 $SupportedIDEs = @('github-copilot', 'cursor', 'claude', 'codex')
@@ -58,22 +58,23 @@ if (-not $IDE -or $IDE.Count -eq 0) {
 # -- Counters ----------------------------------------------------------------
 $script:Created = 0
 $script:Skipped = 0
-$script:Errors  = 0
+$script:Errors = 0
 
 # -- Helper Functions --------------------------------------------------------
 
-function Write-Info  { param([string]$Msg) Write-Host "[INFO] $Msg" -ForegroundColor Cyan }
-function Write-Ok    { param([string]$Msg) Write-Host "[OK]   $Msg" -ForegroundColor Green }
-function Write-Skip  { param([string]$Msg) Write-Host "[SKIP] $Msg" -ForegroundColor DarkGray }
+function Write-Info { param([string]$Msg) Write-Host "[INFO] $Msg" -ForegroundColor Cyan }
+function Write-Ok { param([string]$Msg) Write-Host "[OK]   $Msg" -ForegroundColor Green }
+function Write-Skip { param([string]$Msg) Write-Host "[SKIP] $Msg" -ForegroundColor DarkGray }
 function Write-Warn_ { param([string]$Msg) Write-Host "[WARN] $Msg" -ForegroundColor Yellow }
-function Write-Err   { param([string]$Msg) Write-Host "[ERR]  $Msg" -ForegroundColor Red }
+function Write-Err { param([string]$Msg) Write-Host "[ERR]  $Msg" -ForegroundColor Red }
 
 function Ensure-Directory {
     param([string]$Path)
     if (-not (Test-Path $Path)) {
         if ($DryRun) {
             Write-Info "Would create directory: $Path"
-        } else {
+        }
+        else {
             New-Item -ItemType Directory -Path $Path -Force | Out-Null
             Write-Ok "Created directory: $Path"
         }
@@ -97,7 +98,8 @@ function Write-AdapterFile {
     if ($DryRun) {
         if (Test-Path $FilePath) {
             Write-Info "Would overwrite: $relative"
-        } else {
+        }
+        else {
             Write-Info "Would create: $relative"
         }
         return
@@ -108,7 +110,8 @@ function Write-AdapterFile {
 
     if ($Update -and (Test-Path $FilePath)) {
         Write-Ok "Updated: $relative"
-    } else {
+    }
+    else {
         Write-Ok "Created: $relative"
     }
     $script:Created++
@@ -210,8 +213,8 @@ function Install-OutputDirs {
 function Install-GitHubCopilot {
     Write-Info "Installing GitHub Copilot adapter..."
 
-    $ghDir      = Join-Path $ProjectRoot '.github'
-    $agentsDir  = Join-Path $ghDir 'agents'
+    $ghDir = Join-Path $ProjectRoot '.github'
+    $agentsDir = Join-Path $ghDir 'agents'
     $promptsDir = Join-Path $ghDir 'prompts'
 
     if (Test-Path (Join-Path $ghDir '.git')) {
@@ -250,22 +253,22 @@ You must fully embody this agent's persona and follow all activation instruction
 
     # -- Stub prompts --
     $prompts = @(
-        @{ File='lens-work.onboard.prompt.md';         Name='lens-work.onboard';         Desc='Bootstrap control repo — detect provider, validate auth, create profile, auto-clone TargetProjects'; Target='lens-work.onboard.prompt.md' }
-        @{ File='lens-work.new-initiative.prompt.md';   Name='lens-work.new-initiative';   Desc='Create a new initiative (domain, service, or feature)';                                      Target='lens-work.new-initiative.prompt.md' }
-        @{ File='lens-work.new-domain.prompt.md';       Name='lens-work.new-domain';       Desc='Create new domain-level initiative with domain-only branch and folder scaffolding';            Target='lens-work.new-initiative.prompt.md'; Extra="`nInvoke with scope: **domain**" }
-        @{ File='lens-work.new-service.prompt.md';      Name='lens-work.new-service';      Desc='Create new service-level initiative within a domain';                                         Target='lens-work.new-initiative.prompt.md'; Extra="`nInvoke with scope: **service**" }
-        @{ File='lens-work.new-feature.prompt.md';      Name='lens-work.new-feature';      Desc='Create new feature-level initiative within a service';                                        Target='lens-work.new-initiative.prompt.md'; Extra="`nInvoke with scope: **feature**" }
-        @{ File='lens-work.preplan.prompt.md';          Name='lens-work.preplan';          Desc='Start PrePlan phase — brainstorm, research, product brief (Mary/Analyst, small audience)';     Target='lens-work.preplan.prompt.md' }
-        @{ File='lens-work.businessplan.prompt.md';     Name='lens-work.businessplan';     Desc='Start BusinessPlan phase — PRD creation, UX design (John/PM + Sally/UX, small audience)';    Target='lens-work.businessplan.prompt.md' }
-        @{ File='lens-work.techplan.prompt.md';         Name='lens-work.techplan';         Desc='Start TechPlan phase — architecture document, technical decisions (Winston/Architect)';        Target='lens-work.techplan.prompt.md' }
-        @{ File='lens-work.devproposal.prompt.md';      Name='lens-work.devproposal';      Desc='Start DevProposal phase — epics, stories, readiness check (John/PM, medium audience)';       Target='lens-work.devproposal.prompt.md' }
-        @{ File='lens-work.sprintplan.prompt.md';       Name='lens-work.sprintplan';       Desc='Start SprintPlan phase — sprint-status, story files (Bob/Scrum Master, large audience)';     Target='lens-work.sprintplan.prompt.md' }
-        @{ File='lens-work.status.prompt.md';           Name='lens-work.status';           Desc='Show consolidated status report across all active initiatives';                               Target='lens-work.status.prompt.md' }
-        @{ File='lens-work.next.prompt.md';             Name='lens-work.next';             Desc='Recommend next action based on lifecycle state';                                              Target='lens-work.next.prompt.md' }
-        @{ File='lens-work.switch.prompt.md';           Name='lens-work.switch';           Desc='Switch to a different initiative via git checkout';                                           Target='lens-work.switch.prompt.md' }
-        @{ File='lens-work.promote.prompt.md';          Name='lens-work.promote';          Desc='Promote current audience to next level with gate checks';                                     Target='lens-work.promote.prompt.md' }
-        @{ File='lens-work.constitution.prompt.md';     Name='lens-work.constitution';     Desc='Resolve and display constitutional governance';                                               Target='lens-work.constitution.prompt.md' }
-        @{ File='lens-work.help.prompt.md';             Name='lens-work.help';             Desc='Show available commands and usage';                                                           Target='lens-work.help.prompt.md' }
+        @{ File = 'lens-work.onboard.prompt.md'; Name = 'lens-work.onboard'; Desc = 'Bootstrap control repo — detect provider, validate auth, create profile, auto-clone TargetProjects'; Target = 'lens-work.onboard.prompt.md' }
+        @{ File = 'lens-work.new-initiative.prompt.md'; Name = 'lens-work.new-initiative'; Desc = 'Create a new initiative (domain, service, or feature)'; Target = 'lens-work.new-initiative.prompt.md' }
+        @{ File = 'lens-work.new-domain.prompt.md'; Name = 'lens-work.new-domain'; Desc = 'Create new domain-level initiative with domain-only branch and folder scaffolding'; Target = 'lens-work.new-initiative.prompt.md'; Extra = "`nInvoke with scope: **domain**" }
+        @{ File = 'lens-work.new-service.prompt.md'; Name = 'lens-work.new-service'; Desc = 'Create new service-level initiative within a domain'; Target = 'lens-work.new-initiative.prompt.md'; Extra = "`nInvoke with scope: **service**" }
+        @{ File = 'lens-work.new-feature.prompt.md'; Name = 'lens-work.new-feature'; Desc = 'Create new feature-level initiative within a service'; Target = 'lens-work.new-initiative.prompt.md'; Extra = "`nInvoke with scope: **feature**" }
+        @{ File = 'lens-work.preplan.prompt.md'; Name = 'lens-work.preplan'; Desc = 'Start PrePlan phase — brainstorm, research, product brief (Mary/Analyst, small audience)'; Target = 'lens-work.preplan.prompt.md' }
+        @{ File = 'lens-work.businessplan.prompt.md'; Name = 'lens-work.businessplan'; Desc = 'Start BusinessPlan phase — PRD creation, UX design (John/PM + Sally/UX, small audience)'; Target = 'lens-work.businessplan.prompt.md' }
+        @{ File = 'lens-work.techplan.prompt.md'; Name = 'lens-work.techplan'; Desc = 'Start TechPlan phase — architecture document, technical decisions (Winston/Architect)'; Target = 'lens-work.techplan.prompt.md' }
+        @{ File = 'lens-work.devproposal.prompt.md'; Name = 'lens-work.devproposal'; Desc = 'Start DevProposal phase — epics, stories, readiness check (John/PM, medium audience)'; Target = 'lens-work.devproposal.prompt.md' }
+        @{ File = 'lens-work.sprintplan.prompt.md'; Name = 'lens-work.sprintplan'; Desc = 'Start SprintPlan phase — sprint-status, story files (Bob/Scrum Master, large audience)'; Target = 'lens-work.sprintplan.prompt.md' }
+        @{ File = 'lens-work.status.prompt.md'; Name = 'lens-work.status'; Desc = 'Show consolidated status report across all active initiatives'; Target = 'lens-work.status.prompt.md' }
+        @{ File = 'lens-work.next.prompt.md'; Name = 'lens-work.next'; Desc = 'Recommend next action based on lifecycle state'; Target = 'lens-work.next.prompt.md' }
+        @{ File = 'lens-work.switch.prompt.md'; Name = 'lens-work.switch'; Desc = 'Switch to a different initiative via git checkout'; Target = 'lens-work.switch.prompt.md' }
+        @{ File = 'lens-work.promote.prompt.md'; Name = 'lens-work.promote'; Desc = 'Promote current audience to next level with gate checks'; Target = 'lens-work.promote.prompt.md' }
+        @{ File = 'lens-work.constitution.prompt.md'; Name = 'lens-work.constitution'; Desc = 'Resolve and display constitutional governance'; Target = 'lens-work.constitution.prompt.md' }
+        @{ File = 'lens-work.help.prompt.md'; Name = 'lens-work.help'; Desc = 'Show available commands and usage'; Target = 'lens-work.help.prompt.md' }
     )
 
     foreach ($p in $prompts) {
@@ -296,11 +299,11 @@ the module agent at `bmad.lens.release/_bmad/lens-work/agents/lens.agent.md`.
 
 | Skill | Path |
 |-------|------|
-| git-state | `bmad.lens.release/_bmad/lens-work/skills/git-state.md` |
-| git-orchestration | `bmad.lens.release/_bmad/lens-work/skills/git-orchestration.md` |
-| constitution | `bmad.lens.release/_bmad/lens-work/skills/constitution.md` |
-| sensing | `bmad.lens.release/_bmad/lens-work/skills/sensing.md` |
-| checklist | `bmad.lens.release/_bmad/lens-work/skills/checklist.md` |
+| git-state | `bmad.lens.release/_bmad/lens-work/skills/git-state/SKILL.md` |
+| git-orchestration | `bmad.lens.release/_bmad/lens-work/skills/git-orchestration/SKILL.md` |
+| constitution | `bmad.lens.release/_bmad/lens-work/skills/constitution/SKILL.md` |
+| sensing | `bmad.lens.release/_bmad/lens-work/skills/sensing/SKILL.md` |
+| checklist | `bmad.lens.release/_bmad/lens-work/skills/checklist/SKILL.md` |
 
 ## Important
 
@@ -325,23 +328,23 @@ function Install-Cursor {
     Ensure-Directory $cursorDir
 
     $commands = @(
-        @{ File='bmad-lens-work-onboard.md';            Name='onboard';            Desc='Create profile + run bootstrap + auto-clone TargetProjects';      WF='workflows/utility/onboard/workflow.md' }
-        @{ File='bmad-lens-work-init-initiative.md';     Name='init-initiative';     Desc='Create new initiative (domain/service/feature) with branch topology'; WF='workflows/router/init-initiative/workflow.md' }
-        @{ File='bmad-lens-work-preplan.md';             Name='preplan';             Desc='Launch PrePlan phase (brainstorm/research/product brief)';         WF='workflows/router/preplan/workflow.md' }
-        @{ File='bmad-lens-work-businessplan.md';        Name='businessplan';        Desc='Launch BusinessPlan phase (PRD/UX design)';                       WF='workflows/router/businessplan/workflow.md' }
-        @{ File='bmad-lens-work-techplan.md';            Name='techplan';            Desc='Launch TechPlan phase (architecture/technical decisions)';          WF='workflows/router/techplan/workflow.md' }
-        @{ File='bmad-lens-work-devproposal.md';         Name='devproposal';         Desc='Launch DevProposal phase (epics/stories/readiness check)';        WF='workflows/router/devproposal/workflow.md' }
-        @{ File='bmad-lens-work-sprintplan.md';          Name='sprintplan';          Desc='Launch SprintPlan phase (sprint-status/story files)';             WF='workflows/router/sprintplan/workflow.md' }
-        @{ File='bmad-lens-work-dev.md';                 Name='dev';                 Desc='Delegate to implementation agents in target projects';             WF='workflows/router/dev/workflow.md' }
-        @{ File='bmad-lens-work-status.md';              Name='status';              Desc='Display current state, blocks, topology, next steps';             WF='workflows/utility/status/workflow.md' }
-        @{ File='bmad-lens-work-next.md';                Name='next';                Desc='Recommend next action based on lifecycle state';                   WF='workflows/utility/next/workflow.md' }
-        @{ File='bmad-lens-work-switch.md';              Name='switch';              Desc='Switch to different initiative branch';                            WF='workflows/utility/switch/workflow.md' }
-        @{ File='bmad-lens-work-help.md';                Name='help';                Desc='Show available commands and usage reference';                      WF='workflows/utility/help/workflow.md' }
-        @{ File='bmad-lens-work-promote.md';             Name='promote';             Desc='Promote current audience to next tier with gate checks';          WF='workflows/core/audience-promotion/workflow.md' }
-        @{ File='bmad-lens-work-constitution.md';        Name='constitution';        Desc='Resolve and display constitutional governance';                   WF='workflows/governance/resolve-constitution/workflow.md' }
-        @{ File='bmad-lens-work-compliance.md';          Name='compliance';          Desc='Run constitution compliance check on current initiative';          WF='workflows/governance/compliance-check/workflow.md' }
-        @{ File='bmad-lens-work-sense.md';               Name='sense';               Desc='Cross-initiative overlap detection on demand';                    WF='workflows/governance/cross-initiative/workflow.md' }
-        @{ File='bmad-lens-work-module-management.md';   Name='module-management';   Desc='Check module version and guide self-service updates';             WF='workflows/utility/module-management/workflow.md' }
+        @{ File = 'bmad-lens-work-onboard.md'; Name = 'onboard'; Desc = 'Create profile + run bootstrap + auto-clone TargetProjects'; WF = 'workflows/utility/onboard/workflow.md' }
+        @{ File = 'bmad-lens-work-init-initiative.md'; Name = 'init-initiative'; Desc = 'Create new initiative (domain/service/feature) with branch topology'; WF = 'workflows/router/init-initiative/workflow.md' }
+        @{ File = 'bmad-lens-work-preplan.md'; Name = 'preplan'; Desc = 'Launch PrePlan phase (brainstorm/research/product brief)'; WF = 'workflows/router/preplan/workflow.md' }
+        @{ File = 'bmad-lens-work-businessplan.md'; Name = 'businessplan'; Desc = 'Launch BusinessPlan phase (PRD/UX design)'; WF = 'workflows/router/businessplan/workflow.md' }
+        @{ File = 'bmad-lens-work-techplan.md'; Name = 'techplan'; Desc = 'Launch TechPlan phase (architecture/technical decisions)'; WF = 'workflows/router/techplan/workflow.md' }
+        @{ File = 'bmad-lens-work-devproposal.md'; Name = 'devproposal'; Desc = 'Launch DevProposal phase (epics/stories/readiness check)'; WF = 'workflows/router/devproposal/workflow.md' }
+        @{ File = 'bmad-lens-work-sprintplan.md'; Name = 'sprintplan'; Desc = 'Launch SprintPlan phase (sprint-status/story files)'; WF = 'workflows/router/sprintplan/workflow.md' }
+        @{ File = 'bmad-lens-work-dev.md'; Name = 'dev'; Desc = 'Delegate to implementation agents in target projects'; WF = 'workflows/router/dev/workflow.md' }
+        @{ File = 'bmad-lens-work-status.md'; Name = 'status'; Desc = 'Display current state, blocks, topology, next steps'; WF = 'workflows/utility/status/workflow.md' }
+        @{ File = 'bmad-lens-work-next.md'; Name = 'next'; Desc = 'Recommend next action based on lifecycle state'; WF = 'workflows/utility/next/workflow.md' }
+        @{ File = 'bmad-lens-work-switch.md'; Name = 'switch'; Desc = 'Switch to different initiative branch'; WF = 'workflows/utility/switch/workflow.md' }
+        @{ File = 'bmad-lens-work-help.md'; Name = 'help'; Desc = 'Show available commands and usage reference'; WF = 'workflows/utility/help/workflow.md' }
+        @{ File = 'bmad-lens-work-promote.md'; Name = 'promote'; Desc = 'Promote current audience to next tier with gate checks'; WF = 'workflows/core/audience-promotion/workflow.md' }
+        @{ File = 'bmad-lens-work-constitution.md'; Name = 'constitution'; Desc = 'Resolve and display constitutional governance'; WF = 'workflows/governance/resolve-constitution/workflow.md' }
+        @{ File = 'bmad-lens-work-compliance.md'; Name = 'compliance'; Desc = 'Run constitution compliance check on current initiative'; WF = 'workflows/governance/compliance-check/workflow.md' }
+        @{ File = 'bmad-lens-work-sense.md'; Name = 'sense'; Desc = 'Cross-initiative overlap detection on demand'; WF = 'workflows/governance/cross-initiative/workflow.md' }
+        @{ File = 'bmad-lens-work-module-management.md'; Name = 'module-management'; Desc = 'Check module version and guide self-service updates'; WF = 'workflows/utility/module-management/workflow.md' }
     )
 
     foreach ($cmd in $commands) {
@@ -363,23 +366,23 @@ function Install-Claude {
     Ensure-Directory $claudeDir
 
     $commands = @(
-        @{ File='bmad-lens-work-onboard.md';            Name='onboard';            Desc='Create profile + run bootstrap + auto-clone TargetProjects';      WF='workflows/utility/onboard/workflow.md' }
-        @{ File='bmad-lens-work-init-initiative.md';     Name='init-initiative';     Desc='Create new initiative (domain/service/feature) with branch topology'; WF='workflows/router/init-initiative/workflow.md' }
-        @{ File='bmad-lens-work-preplan.md';             Name='preplan';             Desc='Launch PrePlan phase (brainstorm/research/product brief)';         WF='workflows/router/preplan/workflow.md' }
-        @{ File='bmad-lens-work-businessplan.md';        Name='businessplan';        Desc='Launch BusinessPlan phase (PRD/UX design)';                       WF='workflows/router/businessplan/workflow.md' }
-        @{ File='bmad-lens-work-techplan.md';            Name='techplan';            Desc='Launch TechPlan phase (architecture/technical decisions)';          WF='workflows/router/techplan/workflow.md' }
-        @{ File='bmad-lens-work-devproposal.md';         Name='devproposal';         Desc='Launch DevProposal phase (epics/stories/readiness check)';        WF='workflows/router/devproposal/workflow.md' }
-        @{ File='bmad-lens-work-sprintplan.md';          Name='sprintplan';          Desc='Launch SprintPlan phase (sprint-status/story files)';             WF='workflows/router/sprintplan/workflow.md' }
-        @{ File='bmad-lens-work-dev.md';                 Name='dev';                 Desc='Delegate to implementation agents in target projects';             WF='workflows/router/dev/workflow.md' }
-        @{ File='bmad-lens-work-status.md';              Name='status';              Desc='Display current state, blocks, topology, next steps';             WF='workflows/utility/status/workflow.md' }
-        @{ File='bmad-lens-work-next.md';                Name='next';                Desc='Recommend next action based on lifecycle state';                   WF='workflows/utility/next/workflow.md' }
-        @{ File='bmad-lens-work-switch.md';              Name='switch';              Desc='Switch to different initiative branch';                            WF='workflows/utility/switch/workflow.md' }
-        @{ File='bmad-lens-work-help.md';                Name='help';                Desc='Show available commands and usage reference';                      WF='workflows/utility/help/workflow.md' }
-        @{ File='bmad-lens-work-promote.md';             Name='promote';             Desc='Promote current audience to next tier with gate checks';          WF='workflows/core/audience-promotion/workflow.md' }
-        @{ File='bmad-lens-work-constitution.md';        Name='constitution';        Desc='Resolve and display constitutional governance';                   WF='workflows/governance/resolve-constitution/workflow.md' }
-        @{ File='bmad-lens-work-compliance.md';          Name='compliance';          Desc='Run constitution compliance check on current initiative';          WF='workflows/governance/compliance-check/workflow.md' }
-        @{ File='bmad-lens-work-sense.md';               Name='sense';               Desc='Cross-initiative overlap detection on demand';                    WF='workflows/governance/cross-initiative/workflow.md' }
-        @{ File='bmad-lens-work-module-management.md';   Name='module-management';   Desc='Check module version and guide self-service updates';             WF='workflows/utility/module-management/workflow.md' }
+        @{ File = 'bmad-lens-work-onboard.md'; Name = 'onboard'; Desc = 'Create profile + run bootstrap + auto-clone TargetProjects'; WF = 'workflows/utility/onboard/workflow.md' }
+        @{ File = 'bmad-lens-work-init-initiative.md'; Name = 'init-initiative'; Desc = 'Create new initiative (domain/service/feature) with branch topology'; WF = 'workflows/router/init-initiative/workflow.md' }
+        @{ File = 'bmad-lens-work-preplan.md'; Name = 'preplan'; Desc = 'Launch PrePlan phase (brainstorm/research/product brief)'; WF = 'workflows/router/preplan/workflow.md' }
+        @{ File = 'bmad-lens-work-businessplan.md'; Name = 'businessplan'; Desc = 'Launch BusinessPlan phase (PRD/UX design)'; WF = 'workflows/router/businessplan/workflow.md' }
+        @{ File = 'bmad-lens-work-techplan.md'; Name = 'techplan'; Desc = 'Launch TechPlan phase (architecture/technical decisions)'; WF = 'workflows/router/techplan/workflow.md' }
+        @{ File = 'bmad-lens-work-devproposal.md'; Name = 'devproposal'; Desc = 'Launch DevProposal phase (epics/stories/readiness check)'; WF = 'workflows/router/devproposal/workflow.md' }
+        @{ File = 'bmad-lens-work-sprintplan.md'; Name = 'sprintplan'; Desc = 'Launch SprintPlan phase (sprint-status/story files)'; WF = 'workflows/router/sprintplan/workflow.md' }
+        @{ File = 'bmad-lens-work-dev.md'; Name = 'dev'; Desc = 'Delegate to implementation agents in target projects'; WF = 'workflows/router/dev/workflow.md' }
+        @{ File = 'bmad-lens-work-status.md'; Name = 'status'; Desc = 'Display current state, blocks, topology, next steps'; WF = 'workflows/utility/status/workflow.md' }
+        @{ File = 'bmad-lens-work-next.md'; Name = 'next'; Desc = 'Recommend next action based on lifecycle state'; WF = 'workflows/utility/next/workflow.md' }
+        @{ File = 'bmad-lens-work-switch.md'; Name = 'switch'; Desc = 'Switch to different initiative branch'; WF = 'workflows/utility/switch/workflow.md' }
+        @{ File = 'bmad-lens-work-help.md'; Name = 'help'; Desc = 'Show available commands and usage reference'; WF = 'workflows/utility/help/workflow.md' }
+        @{ File = 'bmad-lens-work-promote.md'; Name = 'promote'; Desc = 'Promote current audience to next tier with gate checks'; WF = 'workflows/core/audience-promotion/workflow.md' }
+        @{ File = 'bmad-lens-work-constitution.md'; Name = 'constitution'; Desc = 'Resolve and display constitutional governance'; WF = 'workflows/governance/resolve-constitution/workflow.md' }
+        @{ File = 'bmad-lens-work-compliance.md'; Name = 'compliance'; Desc = 'Run constitution compliance check on current initiative'; WF = 'workflows/governance/compliance-check/workflow.md' }
+        @{ File = 'bmad-lens-work-sense.md'; Name = 'sense'; Desc = 'Cross-initiative overlap detection on demand'; WF = 'workflows/governance/cross-initiative/workflow.md' }
+        @{ File = 'bmad-lens-work-module-management.md'; Name = 'module-management'; Desc = 'Check module version and guide self-service updates'; WF = 'workflows/utility/module-management/workflow.md' }
     )
 
     foreach ($cmd in $commands) {
@@ -426,11 +429,11 @@ See `bmad.lens.release/_bmad/lens-work/module-help.csv` for the complete command
 
 | Skill | Path |
 |-------|------|
-| git-state | `bmad.lens.release/_bmad/lens-work/skills/git-state.md` |
-| git-orchestration | `bmad.lens.release/_bmad/lens-work/skills/git-orchestration.md` |
-| constitution | `bmad.lens.release/_bmad/lens-work/skills/constitution.md` |
-| sensing | `bmad.lens.release/_bmad/lens-work/skills/sensing.md` |
-| checklist | `bmad.lens.release/_bmad/lens-work/skills/checklist.md` |
+| git-state | `bmad.lens.release/_bmad/lens-work/skills/git-state/SKILL.md` |
+| git-orchestration | `bmad.lens.release/_bmad/lens-work/skills/git-orchestration/SKILL.md` |
+| constitution | `bmad.lens.release/_bmad/lens-work/skills/constitution/SKILL.md` |
+| sensing | `bmad.lens.release/_bmad/lens-work/skills/sensing/SKILL.md` |
+| checklist | `bmad.lens.release/_bmad/lens-work/skills/checklist/SKILL.md` |
 '@
     Write-AdapterFile (Join-Path $ProjectRoot 'AGENTS.md') $agentsMdContent
 
@@ -439,23 +442,23 @@ See `bmad.lens.release/_bmad/lens-work/module-help.csv` for the complete command
     Ensure-Directory $codexDir
 
     $commands = @(
-        @{ File='bmad-lens-work-onboard.md';            Name='onboard';            Desc='Create profile + run bootstrap + auto-clone TargetProjects';      WF='workflows/utility/onboard/workflow.md' }
-        @{ File='bmad-lens-work-init-initiative.md';     Name='init-initiative';     Desc='Create new initiative (domain/service/feature) with branch topology'; WF='workflows/router/init-initiative/workflow.md' }
-        @{ File='bmad-lens-work-preplan.md';             Name='preplan';             Desc='Launch PrePlan phase (brainstorm/research/product brief)';         WF='workflows/router/preplan/workflow.md' }
-        @{ File='bmad-lens-work-businessplan.md';        Name='businessplan';        Desc='Launch BusinessPlan phase (PRD/UX design)';                       WF='workflows/router/businessplan/workflow.md' }
-        @{ File='bmad-lens-work-techplan.md';            Name='techplan';            Desc='Launch TechPlan phase (architecture/technical decisions)';          WF='workflows/router/techplan/workflow.md' }
-        @{ File='bmad-lens-work-devproposal.md';         Name='devproposal';         Desc='Launch DevProposal phase (epics/stories/readiness check)';        WF='workflows/router/devproposal/workflow.md' }
-        @{ File='bmad-lens-work-sprintplan.md';          Name='sprintplan';          Desc='Launch SprintPlan phase (sprint-status/story files)';             WF='workflows/router/sprintplan/workflow.md' }
-        @{ File='bmad-lens-work-dev.md';                 Name='dev';                 Desc='Delegate to implementation agents in target projects';             WF='workflows/router/dev/workflow.md' }
-        @{ File='bmad-lens-work-status.md';              Name='status';              Desc='Display current state, blocks, topology, next steps';             WF='workflows/utility/status/workflow.md' }
-        @{ File='bmad-lens-work-next.md';                Name='next';                Desc='Recommend next action based on lifecycle state';                   WF='workflows/utility/next/workflow.md' }
-        @{ File='bmad-lens-work-switch.md';              Name='switch';              Desc='Switch to different initiative branch';                            WF='workflows/utility/switch/workflow.md' }
-        @{ File='bmad-lens-work-help.md';                Name='help';                Desc='Show available commands and usage reference';                      WF='workflows/utility/help/workflow.md' }
-        @{ File='bmad-lens-work-promote.md';             Name='promote';             Desc='Promote current audience to next tier with gate checks';          WF='workflows/core/audience-promotion/workflow.md' }
-        @{ File='bmad-lens-work-constitution.md';        Name='constitution';        Desc='Resolve and display constitutional governance';                   WF='workflows/governance/resolve-constitution/workflow.md' }
-        @{ File='bmad-lens-work-compliance.md';          Name='compliance';          Desc='Run constitution compliance check on current initiative';          WF='workflows/governance/compliance-check/workflow.md' }
-        @{ File='bmad-lens-work-sense.md';               Name='sense';               Desc='Cross-initiative overlap detection on demand';                    WF='workflows/governance/cross-initiative/workflow.md' }
-        @{ File='bmad-lens-work-module-management.md';   Name='module-management';   Desc='Check module version and guide self-service updates';             WF='workflows/utility/module-management/workflow.md' }
+        @{ File = 'bmad-lens-work-onboard.md'; Name = 'onboard'; Desc = 'Create profile + run bootstrap + auto-clone TargetProjects'; WF = 'workflows/utility/onboard/workflow.md' }
+        @{ File = 'bmad-lens-work-init-initiative.md'; Name = 'init-initiative'; Desc = 'Create new initiative (domain/service/feature) with branch topology'; WF = 'workflows/router/init-initiative/workflow.md' }
+        @{ File = 'bmad-lens-work-preplan.md'; Name = 'preplan'; Desc = 'Launch PrePlan phase (brainstorm/research/product brief)'; WF = 'workflows/router/preplan/workflow.md' }
+        @{ File = 'bmad-lens-work-businessplan.md'; Name = 'businessplan'; Desc = 'Launch BusinessPlan phase (PRD/UX design)'; WF = 'workflows/router/businessplan/workflow.md' }
+        @{ File = 'bmad-lens-work-techplan.md'; Name = 'techplan'; Desc = 'Launch TechPlan phase (architecture/technical decisions)'; WF = 'workflows/router/techplan/workflow.md' }
+        @{ File = 'bmad-lens-work-devproposal.md'; Name = 'devproposal'; Desc = 'Launch DevProposal phase (epics/stories/readiness check)'; WF = 'workflows/router/devproposal/workflow.md' }
+        @{ File = 'bmad-lens-work-sprintplan.md'; Name = 'sprintplan'; Desc = 'Launch SprintPlan phase (sprint-status/story files)'; WF = 'workflows/router/sprintplan/workflow.md' }
+        @{ File = 'bmad-lens-work-dev.md'; Name = 'dev'; Desc = 'Delegate to implementation agents in target projects'; WF = 'workflows/router/dev/workflow.md' }
+        @{ File = 'bmad-lens-work-status.md'; Name = 'status'; Desc = 'Display current state, blocks, topology, next steps'; WF = 'workflows/utility/status/workflow.md' }
+        @{ File = 'bmad-lens-work-next.md'; Name = 'next'; Desc = 'Recommend next action based on lifecycle state'; WF = 'workflows/utility/next/workflow.md' }
+        @{ File = 'bmad-lens-work-switch.md'; Name = 'switch'; Desc = 'Switch to different initiative branch'; WF = 'workflows/utility/switch/workflow.md' }
+        @{ File = 'bmad-lens-work-help.md'; Name = 'help'; Desc = 'Show available commands and usage reference'; WF = 'workflows/utility/help/workflow.md' }
+        @{ File = 'bmad-lens-work-promote.md'; Name = 'promote'; Desc = 'Promote current audience to next tier with gate checks'; WF = 'workflows/core/audience-promotion/workflow.md' }
+        @{ File = 'bmad-lens-work-constitution.md'; Name = 'constitution'; Desc = 'Resolve and display constitutional governance'; WF = 'workflows/governance/resolve-constitution/workflow.md' }
+        @{ File = 'bmad-lens-work-compliance.md'; Name = 'compliance'; Desc = 'Run constitution compliance check on current initiative'; WF = 'workflows/governance/compliance-check/workflow.md' }
+        @{ File = 'bmad-lens-work-sense.md'; Name = 'sense'; Desc = 'Cross-initiative overlap detection on demand'; WF = 'workflows/governance/cross-initiative/workflow.md' }
+        @{ File = 'bmad-lens-work-module-management.md'; Name = 'module-management'; Desc = 'Check module version and guide self-service updates'; WF = 'workflows/utility/module-management/workflow.md' }
     )
 
     foreach ($cmd in $commands) {
@@ -490,9 +493,9 @@ Install-OutputDirs
 foreach ($ideName in $IDE) {
     switch ($ideName) {
         'github-copilot' { Install-GitHubCopilot }
-        'cursor'         { Install-Cursor }
-        'claude'         { Install-Claude }
-        'codex'          { Install-Codex }
+        'cursor' { Install-Cursor }
+        'claude' { Install-Claude }
+        'codex' { Install-Codex }
         default {
             Write-Err "Unknown IDE: $ideName (supported: $($SupportedIDEs -join ', '))"
             $script:Errors++
