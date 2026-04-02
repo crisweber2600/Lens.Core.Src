@@ -10,11 +10,11 @@ description: "Delegate implementation to target project agents via story routing
 Route to the dev phase workflow via the @lens phase router.
 Orchestrates the full implementation cycle for an epic: iterates all stories, implements each with per-task commits, runs adversarial review after each story, fixes issues, then continues to the next story.
 
-## Implementation Target — NOT bmad.lens.release
+## Implementation Target — NOT {release_repo_root}
 
-**⚠️ CRITICAL:** `bmad.lens.release` is a **READ-ONLY authority repo**. It contains BMAD framework code (agents, workflows, lifecycle definitions). It is **NEVER** the implementation target.
+**⚠️ CRITICAL:** `{release_repo_root}` is a **READ-ONLY authority repo**. It contains BMAD framework code (agents, workflows, lifecycle definitions). It is **NEVER** the implementation target.
 
-The implementation target is the **TargetProject repo** — resolved from `initiative.target_repos[0].local_path` in the initiative config. ALL writes (file creation, modification, commits) go to the TargetProject repo. The agent MUST NOT modify `bmad.lens.release/`, the control repo (except `_bmad-output/`), the governance repo, or `.github/`. The dev workflow enforces this via a hard gate (Step 3.Nc) that blocks implementation when the working directory resolves outside the TargetProject.
+The implementation target is the **TargetProject repo** — resolved from `initiative.target_repos[0].local_path` in the initiative config. ALL writes (file creation, modification, commits) go to the TargetProject repo. The agent MUST NOT modify `{release_repo_root}/`, the control repo (except `_bmad-output/`), the governance repo, or `.github/`. The dev workflow enforces this via a hard gate (Step 3.Nc) that blocks implementation when the working directory resolves outside the TargetProject.
 
 ## Inputs
 
@@ -23,8 +23,8 @@ The implementation target is the **TargetProject repo** — resolved from `initi
 
 ## Execution
 
-1. **Preflight** (health check only — `bmad.lens.release` is NOT the implementation target): Execute `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`. Halt if authority repos missing — direct user to `/onboard`.
-2. Load `lifecycle.yaml` from the lens-work module (read from `bmad.lens.release` — read-only)
+1. **Preflight** (health check only — `{release_repo_root}` is NOT the implementation target): Execute `{project-root}/_bmad/lens-work/workflows/includes/preflight.md`. Halt if authority repos missing — direct user to `/onboard`.
+2. Load `lifecycle.yaml` from the lens-work module (read from `{release_repo_root}` — read-only)
 3. Invoke phase routing for `dev`:
    - Validate dev-ready milestone has been reached (sprintplan completed and promoted)
    - Dev is a delegation command, not a lifecycle phase — no initiative branch is created

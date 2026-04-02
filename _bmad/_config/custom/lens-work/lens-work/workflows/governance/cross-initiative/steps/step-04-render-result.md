@@ -14,7 +14,15 @@ description: 'Render the sensing report and optionally enforce the hard gate'
 ### 1. Render The Report
 
 ```yaml
-overlap_lines = map(sensing_report.overlaps || [], item -> "- " + item.initiative + " (" + item.phase + "/" + item.audience + ") — " + item.conflict_reason)
+overlap_lines = map(sensing_report.overlaps || [], item ->
+  "- " + item.initiative + " (" + item.phase + "/" + item.audience + ") — " + item.conflict_reason + "\n  💡 " + derive_overlap_guidance(item)
+)
+
+# derive_overlap_guidance returns context-aware next steps:
+#   name_conflict   → "Consider renaming to avoid slug collision, or merge with the existing initiative."
+#   scope_overlap   → "Review whether this work belongs in the existing initiative instead."
+#   resource_clash  → "Coordinate with the owner of the overlapping initiative before proceeding."
+#   default         → "Run /status on the overlapping initiative to assess its current state."
 
 if sensing_result.blocks_promotion == true and inputs.enforce_gate == true:
   output: |

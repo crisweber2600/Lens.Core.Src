@@ -25,7 +25,7 @@ Run the module-management workflow at `{project-root}/_bmad/lens-work/workflows/
 
 The workflow handles:
 - Loading version metadata from the local and release module manifests
-- Comparing `local_version` against `latest_version` from `bmad.lens.release`
+- Comparing `local_version` against `latest_version` from `{release_repo_root}`
 - Reporting update availability with a clear version table
 - Guiding the user through the update decision — never auto-applying breaking changes
 - Summarising compatibility and safe-update steps
@@ -34,6 +34,6 @@ The workflow handles:
 
 | Condition | Response |
 |-----------|----------|
-| `bmad.lens.release` not present | `❌ Release module not found. Run /onboard to clone authority repos.` |
+| `{release_repo_root}` not present | `❌ Release module not found. Run /onboard to clone authority repos.` |
 | Local `module.yaml` missing | `❌ Cannot read local module version. Verify the lens-work module is installed correctly.` |
 | Already on latest version | `✅ Module is up to date — no action needed.` |

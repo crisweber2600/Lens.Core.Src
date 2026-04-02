@@ -423,8 +423,10 @@ A comprehensive quality scan identified 379 issues (4 critical, 62 high, 293 med
 
 ### Critical & High Fixes
 
-- **Path convention enforcement** — `{project-root}` now used exclusively for `_bmad/` paths; release module references use literal `bmad.lens.release/` prefix; `_bmad-output/` is workspace-relative
+- **Path convention enforcement** — `{project-root}` used for `_bmad/` paths; release module references now use `{release_repo_root}` variable (defined in `bmadconfig.yaml`, defaults to `bmad.lens.release`); `_bmad-output/` is workspace-relative
 - **Bare `_bmad` references** — Fixed 20+ documentation references that omitted the required repo prefix (`bmad.lens.release/` or `bmad.lens.src/`)
+- **Configurable release repo path** — Added `release_repo_root` to `bmadconfig.yaml`; all prompts, workflows, skills, and docs now reference `{release_repo_root}` instead of hardcoded `bmad.lens.release/`
+- **Agent activation refactored** — Replaced defensive padding (caps, emoji, negation patterns) in `lens.agent.md` step 2 with direct outcome-focused language
 - **Shell lint** — Fixed SC2034 (`export SKIP_CONSTITUTION` for cross-script consumption), SC2043 (shellcheck directive for intentional single-item loop), SC2168 (`local` outside function scope)
 
 ### Internationalization
@@ -457,16 +459,82 @@ A comprehensive quality scan identified 379 issues (4 critical, 62 high, 293 med
 - **Skill archetypes** — README.md documents internal delegation vs workflow skill patterns with CIS/TEA dependency descriptions
 - **Deferred items backlog** — TODO.md updated with new workflows, script extraction candidates, and enhancement roadmap
 
+### Script Extraction
+
+Nine new paired `.sh` + `.ps1` scripts extracted from workflow markdown into standalone executables:
+
+| Script | Source Workflow | Purpose |
+|--------|---------------|---------|
+| `scan-active-initiatives` | status/step-03 | Scan initiative-state.yaml files, output table/json/csv |
+| `load-command-registry` | help | Parse module-help.csv, group by category, fuzzy matching |
+| `derive-initiative-status` | status/step-03-derive-state | Derive milestone/phase/PR state per initiative |
+| `validate-phase-artifacts` | core/phase-lifecycle/step-02 | Check required artifacts per phase from lifecycle.yaml |
+| `plan-lifecycle-renames` | upgrade/step-02 | Scan v2 audience branches, build rename plan to v3 milestones |
+| `validate-feature-move` | move-feature/step-01 | Validate move target, check conflicts, verify scope |
+| `bootstrap-target-projects` | onboard/step-03 | Clone/verify repos from governance repo-inventory.yaml |
+| `derive-next-action` | next/step-02 | Apply lifecycle decision rules, return next command or gate |
+| `run-preflight-cached` | preflight | Timestamp-cached wrapper around preflight.sh (TTL-based) |
+
+### New Workflows
+
+Five new workflow directories with full step-driven architecture, SKILL.md, and prompt files:
+
+| Command | Menu Code | Category | Purpose |
+|---------|-----------|----------|---------|
+| `/approval-status` | AS | Utility | Show pending promotion PR approval state and review status |
+| `/rollback-phase` | RB | Utility | Safely revert to previous milestone while preserving git history |
+| `/pause-epic` | PE | Utility | Suspend in-flight epic state to initiative-state.yaml |
+| `/resume-epic` | RE | Utility | Resume paused epic with re-sensing and validation |
+| `/audit-all-initiatives` | AA | Governance | Aggregate compliance dashboard across all active initiatives |
+| `/profile` | PF | Utility | View and edit onboarding profile settings |
+
+### UX & Safety Enhancements
+
+**First-Run Experience:**
+- Pre-init scope explainer in `/new-initiative` — detects empty/ambiguous scope, shows domain/service/feature explanation with examples
+- Config load failure diagnosis — missing fields enumerated with `/onboard` link
+- LENS_VERSION mismatch — shows both versions (control repo vs release module) with `/lens-upgrade` link
+
+**Governance Improvements:**
+- Sensing soft gate — high-severity overlaps (same feature name in same service) pause with proceed/rename/abort options
+- Constitution-aware track filtering — `/new-initiative` filters tracks by governance; blocked tracks marked ⛔
+- Sensing advisory guidance — per-overlap action recommendations (rename, merge, adjust scope, review)
+
+**Lifecycle Improvements:**
+- `/next` preview — shows recommended action and waits for confirmation before auto-executing
+- Status health indicators — stuck detection (PR open >7 days), completeness badges (phases complete: 3/5)
+- Pre-sprintplan readiness summary — epic/story completeness scan warns if >20% stories are missing
+
+**Safety Improvements:**
+- Move-feature in-flight work safeguards — detects active branches, open PRs that would be orphaned
+- Branch-state validation before constitution load — preflight warns of branch mismatch, offers switch
+- Governance repo requirements documented in architecture.md §12
+
+### Architecture & Integration
+
+**Batch PR Status Queries:**
+- Status workflow step-03 now collects all `{head, base}` tuples across initiatives before querying
+- Single `git-orchestration.batch-query-pr-status` call replaces N sequential PR queries (previously 5 initiatives × 4 phases = 20 calls)
+
+**Parallel Sensing + Constitution:**
+- Init-initiative step-03 restructured to use `invoke_async` for concurrent sensing and constitution resolution
+- Both operations are read-only and independent — parallel execution reduces latency
+
+**Context Propagation:**
+- Preflight now publishes `session.preflight_result` with `{remote_url, provider, auth_status, sync_status, timestamp}`
+- Downstream workflows reference session context instead of re-deriving provider and remote info
+- Formal OUTPUT CONTRACT section added to preflight.md documenting all guaranteed session variables
+
 ### New & Modified Files (v3.2.1)
 
 | Category | Changes |
 |----------|--------|
-| Prompts | All 26 updated (i18n headers); `prompts/README.md` added |
-| Workflows | 8 updated (preflight, init-initiative, expressplan, sprintplan, discover, help, status, dashboard) |
-| Documentation | 7 updated (architecture, configuration-examples, GETTING-STARTED, onboarding-checklist, pipeline-source-to-release, copilot-repo-instructions, README); 1 added (preflight-strategy.md) |
-| Agents | lens.agent.md, lens.agent.yaml updated |
-| Scripts | preflight.sh, promote-branch.sh fixed |
-| Meta | TODO.md updated with deferred items backlog |
+| Prompts | All 26 updated (i18n headers); `prompts/README.md` added; 6 new prompt files for new workflows |
+| Workflows | 20+ updated (preflight, init-initiative, expressplan, sprintplan, discover, help, status, dashboard, move-feature, next, cross-initiative + step files); 5 router workflows updated (`inputs: []`); 6 new workflow directories (approval-status, rollback-phase, pause-epic, resume-epic, audit-all, profile) |
+| Documentation | 8 updated (architecture §12 governance requirements, configuration-examples, GETTING-STARTED, onboarding-checklist, pipeline-source-to-release, copilot-repo-instructions, README); 1 added (preflight-strategy.md) |
+| Agents | lens.agent.md, lens.agent.yaml updated (7 new menu items: AS, RB, PE, RE, AA, PF + config diagnostics) |
+| Scripts | preflight.sh, promote-branch.sh fixed; 18 new scripts (9 `.sh` + 9 `.ps1` pairs) |
+| Meta | TODO.md updated — all enhancement roadmap items tracked; module-help.csv updated (6 new entries) |
 
 ---
 
@@ -530,14 +598,14 @@ No migration needed. All changes are additive documentation, i18n headers, and i
 |--------|------|------|
 | Schema version | 2 | 3.2 |
 | Skills | 5 | 5 |
-| Workflows | 16 | 29 |
-| Prompts | 13 | 26 |
+| Workflows | 16 | 35 |
+| Prompts | 13 | 32 |
 | Agent menu items | ~15 | 28 |
 | Tracks | 4 | 8 |
 | Phases | 5 | 6 |
 | Milestones | — | 5 |
-| Scripts | 5 | 5 |
+| Scripts | 5 | 15 |
 | IDE adapters | 4 | 4 |
-| Documentation files | 5 | 17+ |
+| Documentation files | 5 | 22 |
 | Template assets | 0 | 8 |
 | Constitution capabilities | 0 | 9 |

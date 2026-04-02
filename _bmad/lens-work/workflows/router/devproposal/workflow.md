@@ -10,6 +10,7 @@ display_name: DevProposal
 agent_owner: john
 agent_role: PM
 imports: lifecycle.yaml
+inputs: []
 entryStep: './steps/step-01-preflight.md'
 ---
 

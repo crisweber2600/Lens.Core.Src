@@ -19,7 +19,9 @@ description: 'Render the compact summary table and optional detailed initiative 
 ### 1. Render The Summary Table
 
 ```yaml
-summary_rows = map(status_rows, row -> "| " + (row.is_current ? "► " : "") + row.initiative + " | " + (row.phase || "-") + " | " + (row.audience || "-") + " | " + row.prs + " | " + row.action + " |")
+health_icon = lambda row: row.health_status == "stuck" ? "❌" : (row.health_status == "warning" ? "🟡" : "✅")
+
+summary_rows = map(status_rows, row -> "| " + (row.is_current ? "► " : "") + row.initiative + " | " + (row.phase || "-") + " | " + (row.audience || "-") + " | " + row.prs + " | " + health_icon(row) + " " + row.action + " |")
 
 output: |
   📊 Initiative Status Report
@@ -29,7 +31,9 @@ output: |
   ${summary_rows.join("\n")}
 
   Status indicators:
-  - ✅ phase complete
+  - ✅ healthy / phase complete
+  - 🟡 warning (PR open > 7 days)
+  - ❌ stuck (PR open > 14 days)
   - ⏳ PR open or awaiting review
   - ▶ current initiative row
 ```
@@ -39,10 +43,14 @@ output: |
 ```yaml
 if detail_rows.length > 0:
   for row in detail_rows:
+    stuck_line = row.stuck_reason != null ? "\n  ⚠️ " + row.stuck_reason : ""
+    stories_line = row.stories_badge != null ? "\n  📖 Stories: " + row.stories_badge : ""
+
     output: |
       📂 Initiative: ${row.initiative}
       🏷️ Track: ${row.track != null ? row.track : "(not set)"}
       👥 Audience: ${row.audience}
+      📋 Phases complete: ${row.completeness_badge}${stories_line}${stuck_line}
       📋 Completed Phases: ${row.completed_phases.join(", ")}
       ⏳ Current Phase: ${row.phase}
       📝 Open PRs: ${row.prs}

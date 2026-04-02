@@ -36,6 +36,58 @@ for root in initiative_roots:
 
 default_audience_order = ["small", "medium", "large", "base"]
 
+# Batch-collect all PR queries across all initiatives
+# Build tuples of {head, base, root, type, phase} for a single batch call
+pr_query_tuples = []
+
+for root in initiative_roots:
+  initiative_config = initiative_configs[root]
+  if initiative_config == null:
+    initiative_config = {}
+  allowed_audiences = (initiative_config.track != null and lifecycle.tracks[initiative_config.track] != null and lifecycle.tracks[initiative_config.track].audiences != null) ? lifecycle.tracks[initiative_config.track].audiences : default_audience_order
+  enabled_phases = (initiative_config.track != null and lifecycle.tracks[initiative_config.track] != null) ? lifecycle.tracks[initiative_config.track].phases : lifecycle.phase_order
+
+  # Determine current audience
+  audience_scan_order = reverse(allowed_audiences)
+  current_audience = null
+  for audience_name in audience_scan_order:
+    audience_branch = "${root}-${audience_name}"
+    if current_audience == null and branch_exists(audience_branch):
+      current_audience = audience_name
+
+  if current_audience != null:
+    # Queue phase branch PR queries
+    for phase_name in enabled_phases:
+      phase_branch = "${root}-${current_audience}-${phase_name}"
+      if branch_exists(phase_branch):
+        pr_query_tuples.append({
+          head: phase_branch,
+          base: "${root}-${current_audience}",
+          key: "${root}::phase::${phase_name}",
+          root: root,
+          type: "phase",
+          phase: phase_name
+        })
+
+    # Queue promotion PR query
+    current_audience_index = index_of(allowed_audiences, current_audience)
+    next_audience = current_audience_index >= 0 and current_audience_index < allowed_audiences.length - 1 ? allowed_audiences[current_audience_index + 1] : null
+    if next_audience != null:
+      pr_query_tuples.append({
+        head: "${root}-${current_audience}",
+        base: "${root}-${next_audience}",
+        key: "${root}::promotion",
+        root: root,
+        type: "promotion"
+      })
+
+# Execute batch PR status query (single API call instead of N sequential calls)
+pr_results = invoke: git-orchestration.batch-query-pr-status
+params:
+  queries: ${pr_query_tuples}
+# Returns: map of key -> {state, review_decision, pr_created_at}
+# If batch-query-pr-status is unavailable, fall back to individual calls below
+
 for root in initiative_roots:
   initiative_config = initiative_configs[root]
 
@@ -64,10 +116,8 @@ for root in initiative_roots:
     for phase_name in enabled_phases:
       phase_branch = "${root}-${current_audience}-${phase_name}"
       if branch_exists(phase_branch):
-        pr_state = invoke: git-orchestration.query-pr-status
-        params:
-          head: ${phase_branch}
-          base: "${root}-${current_audience}"
+        # Use batched result instead of individual PR query
+        pr_state = pr_results["${root}::phase::${phase_name}"] || { state: "unknown", review_decision: null }
 
         phase_status_rows.append({
           phase: phase_name,
@@ -108,10 +158,8 @@ for root in initiative_roots:
       next_audience = current_audience_index >= 0 and current_audience_index < allowed_audiences.length - 1 ? allowed_audiences[current_audience_index + 1] : null
 
       if next_audience != null:
-        promotion_pr_state = invoke: git-orchestration.query-pr-status
-        params:
-          head: "${root}-${current_audience}"
-          base: "${root}-${next_audience}"
+        # Use batched result for promotion PR
+        promotion_pr_state = pr_results["${root}::promotion"] || { state: "unknown" }
 
         if promotion_pr_state.state == "open":
           pending_action = "Promotion in review"
@@ -119,6 +167,29 @@ for root in initiative_roots:
         else if promotion_pr_state.state == "merged":
           pending_action = "Start next audience"
           pr_summary = "1 ✅"
+
+  # Health indicator: stuck detection
+  health_status = "healthy"
+  stuck_reason = null
+  if current_phase != null and active_phase != null and active_phase.state == "open":
+    pr_age_days = days_since(active_phase.pr_created_at || now())
+    if pr_age_days > 14:
+      health_status = "stuck"
+      stuck_reason = "PR open ${pr_age_days} days"
+    else if pr_age_days > 7:
+      health_status = "warning"
+      stuck_reason = "PR open ${pr_age_days} days"
+
+  # Completeness tracking
+  completeness_total = audience_phases.length > 0 ? audience_phases.length : 1
+  completeness_done = completed_phases.length
+  completeness_badge = "${completeness_done}/${completeness_total}"
+
+  # Story-state tracking
+  story_state = initiative_config.story_state || null
+  stories_total = story_state != null ? (story_state.total || 0) : 0
+  stories_done = story_state != null ? (story_state.completed || 0) : 0
+  stories_badge = stories_total > 0 ? "${stories_done}/${stories_total}" : null
 
   status_row = {
     initiative: root,
@@ -129,7 +200,11 @@ for root in initiative_roots:
     action: pending_action,
     completed_phases: completed_phases,
     track: initiative_config.track,
-    blocked_reason: null
+    blocked_reason: null,
+    health_status: health_status,
+    stuck_reason: stuck_reason,
+    completeness_badge: completeness_badge,
+    stories_badge: stories_badge
   }
 
   status_rows.append(status_row)

@@ -1,6 +1,6 @@
 # Source Tree Analysis — LENS Workbench Module (lens-work)
 
-**Generated:** 2026-04-01 | **Scan Level:** Deep | **Module Version:** 3.1.0
+**Generated:** 2026-04-01 | **Scan Level:** Deep | **Module Version:** 3.2.0
 
 ---
 
@@ -15,7 +15,7 @@ lens-work/                              # Module root
 ├── lifecycle.yaml                      # ★ THE CONTRACT — single source of truth for all lifecycle behavior
 ├── module.yaml                         # ★ Module metadata, skills/workflows registry, install questions
 ├── bmadconfig.yaml                     # ★ Runtime configuration template (variable resolution)
-├── module-help.csv                     # Command index (13-column, 21 entries)
+├── module-help.csv                     # Command index (13-column, 32 entries)
 ├── README.md                           # User-facing module documentation
 ├── TODO.md                             # Development checklist / roadmap
 │
@@ -35,7 +35,7 @@ lens-work/                              # Module root
 │   └── checklist/                      #   Read-only: phase gate validation
 │       └── SKILL.md                    #     evaluate-phase-gate, evaluate-promotion-gate
 │
-├── workflows/                          # 24 workflows across 4 categories
+├── workflows/                          # 35 workflows across 4 categories
 │   ├── core/                           # [3] Infrastructure workflows
 │   │   ├── phase-lifecycle/            #   Phase start/end, phase-to-milestone PR
 │   │   │   ├── SKILL.md
@@ -53,7 +53,7 @@ lens-work/                              # Module root
 │   │       ├── steps/
 │   │       └── resources/
 │   │
-│   ├── router/                         # [9] User-facing phase workflows
+│   ├── router/                         # [11] User-facing phase workflows
 │   │   ├── init-initiative/            #   /new-domain, /new-service, /new-feature
 │   │   │   ├── SKILL.md
 │   │   │   ├── workflow.md
@@ -69,11 +69,13 @@ lens-work/                              # Module root
 │   │   ├── techplan/                   #   /techplan — architecture, technical decisions
 │   │   ├── devproposal/                #   /devproposal — epics, stories, readiness
 │   │   ├── sprintplan/                 #   /sprintplan — sprint status, story files
+│   │   ├── expressplan/                #   /expressplan — combined plan for express track
 │   │   ├── dev/                        #   /dev — delegate to implementation agents
 │   │   ├── discover/                   #   /discover — repo discovery, governance bootstrap
+│   │   ├── retrospective/              #   /retrospective — post-initiative review
 │   │   └── close/                      #   /close — complete/abandon/supersede initiative
 │   │
-│   ├── utility/                        # [9] Operational support workflows
+│   ├── utility/                        # [17] Operational support workflows
 │   │   ├── onboard/                    #   /onboard — bootstrap profile, auth, governance
 │   │   ├── status/                     #   /status — git-derived initiative state report
 │   │   ├── next/                       #   /next — recommend next action
@@ -82,9 +84,18 @@ lens-work/                              # Module root
 │   │   ├── promote/                    #   /promote — advance milestone tier
 │   │   ├── module-management/          #   /module-management — version + update
 │   │   ├── upgrade/                    #   /lens-upgrade — migrate control repo schema
-│   │   └── dashboard/                  #   /dashboard — multi-initiative Gantt + blocking PRs
+│   │   ├── dashboard/                  #   /dashboard — multi-initiative Gantt + blocking PRs
+│   │   ├── log-problem/                #   /log-problem — record issues/blockers
+│   │   ├── move-feature/               #   /move-feature — relocate feature between initiatives
+│   │   ├── split-feature/              #   /split-feature — split feature into sub-initiatives
+│   │   ├── approval-status/            #   /approval-status — check PR approval state
+│   │   ├── pause-epic/                 #   /pause-epic — pause active epic work
+│   │   ├── resume-epic/                #   /resume-epic — resume paused epic
+│   │   ├── rollback-phase/             #   /rollback-phase — revert to previous phase
+│   │   └── profile/                    #   /profile — user profile management
 │   │
-│   ├── governance/                     # [3] Compliance & cross-initiative workflows
+│   ├── governance/                     # [4] Compliance & cross-initiative workflows
+│   │   ├── audit-all/                  #   /audit-all — audit all active initiatives
 │   │   ├── compliance-check/           #   Phase gate compliance validation
 │   │   ├── cross-initiative/           #   /sense — on-demand overlap detection
 │   │   └── resolve-constitution/       #   /constitution — constitutional resolution
@@ -92,16 +103,18 @@ lens-work/                              # Module root
 │   └── includes/                       # Shared reusable includes
 │       └── preflight.md                #   Common preflight checks (context, config, lifecycle)
 │
-├── prompts/                            # 22 user-facing prompt trigger files
+├── prompts/                            # 32 user-facing prompt trigger files
 │   ├── lens-work.new-initiative.prompt.md
 │   ├── lens-work.preplan.prompt.md
 │   ├── lens-work.businessplan.prompt.md
 │   ├── lens-work.techplan.prompt.md
 │   ├── lens-work.devproposal.prompt.md
 │   ├── lens-work.sprintplan.prompt.md
+│   ├── lens-work.expressplan.prompt.md
 │   ├── lens-work.dev.prompt.md
 │   ├── lens-work.discover.prompt.md
 │   ├── lens-work.close.prompt.md
+│   ├── lens-work.retrospective.prompt.md
 │   ├── lens-work.onboard.prompt.md
 │   ├── lens-work.status.prompt.md
 │   ├── lens-work.next.prompt.md
@@ -114,28 +127,55 @@ lens-work/                              # Module root
 │   ├── lens-work.upgrade.prompt.md
 │   ├── lens-work.compliance-check.prompt.md
 │   ├── lens-work.setup-repo.prompt.md
-│   └── (additional prompts)
+│   ├── lens-work.log-problem.prompt.md
+│   ├── lens-work.move-feature.prompt.md
+│   ├── lens-work.split-feature.prompt.md
+│   ├── lens-work.approval-status.prompt.md
+│   ├── lens-work.pause-epic.prompt.md
+│   ├── lens-work.resume-epic.prompt.md
+│   ├── lens-work.rollback-phase.prompt.md
+│   ├── lens-work.profile.prompt.md
+│   └── lens-work.audit-all-initiatives.prompt.md
 │
-├── scripts/                            # Cross-platform operational scripts
+├── scripts/                            # Cross-platform operational scripts (15 pairs)
 │   ├── install.sh / install.ps1        #   ★ Module installer (IDE adapter bootstrap)
 │   ├── create-pr.sh / create-pr.ps1    #   PR creation via REST API (no gh CLI)
 │   ├── promote-branch.sh / promote-branch.ps1  #  Branch promotion helper
 │   ├── setup-control-repo.sh / setup-control-repo.ps1  #  Control repo bootstrap
-│   └── store-github-pat.sh / store-github-pat.ps1  #  PAT management (outside AI context)
+│   ├── store-github-pat.sh / store-github-pat.ps1  #  PAT management (outside AI context)
+│   ├── bootstrap-target-projects.sh / .ps1  #  Target project scaffolding
+│   ├── derive-initiative-status.sh / .ps1   #  Git-derived initiative state
+│   ├── derive-next-action.sh / .ps1         #  Next action recommendation
+│   ├── load-command-registry.sh / .ps1      #  Command registry loader
+│   ├── plan-lifecycle-renames.sh / .ps1     #  Lifecycle rename planning
+│   ├── preflight.sh / .ps1                  #  Preflight validation checks
+│   ├── run-preflight-cached.sh / .ps1       #  Cached preflight execution
+│   ├── scan-active-initiatives.sh / .ps1    #  Active initiative scanner
+│   ├── validate-feature-move.sh / .ps1      #  Feature move validation
+│   └── validate-phase-artifacts.sh / .ps1   #  Phase artifact validation
 │
-├── docs/                               # Reference documentation
+├── docs/                               # Reference documentation (22 files)
+│   ├── index.md                        #   Documentation index / table of contents
+│   ├── GETTING-STARTED.md              #   Quick-start guide
 │   ├── project-overview.md             #   Generated: project overview
 │   ├── architecture.md                 #   Generated: architecture document
-│   ├── lifecycle-reference.md          #   Human-readable lifecycle schema reference (489 lines)
-│   ├── lifecycle-visual-guide.md       #   Visual diagrams for lifecycle flow (812 lines)
-│   ├── copilot-adapter-reference.md    #   Copilot adapter architecture (64 lines)
-│   ├── copilot-adapter-templates.md    #   IDE adapter file templates (159 lines)
-│   ├── copilot-instructions.md         #   Copilot runtime instructions (29 lines)
-│   ├── copilot-repo-instructions.md    #   Repo-level Copilot instructions (207 lines)
-│   ├── lex-persona.md                  #   Constitutional governance voice definition (97 lines)
-│   ├── pipeline-source-to-release.md   #   CI/CD promotion workflow docs (171 lines)
-│   ├── script-integration.md           #   Script invocation patterns (110 lines)
-│   ├── v3.1-improvements.md            #   Release notes for v3.1 (603 lines)
+│   ├── lifecycle-reference.md          #   Human-readable lifecycle schema reference
+│   ├── lifecycle-visual-guide.md       #   Visual diagrams for lifecycle flow
+│   ├── whats-new.md                    #   Version changelog / what's new
+│   ├── component-inventory.md          #   Detailed component breakdown
+│   ├── source-tree-analysis.md         #   Annotated directory tree (this file)
+│   ├── development-guide.md            #   Developer contributing guide
+│   ├── onboarding-checklist.md         #   Team onboarding checklist
+│   ├── preflight-strategy.md           #   Preflight check strategy doc
+│   ├── configuration-examples.md       #   Configuration usage examples
+│   ├── copilot-adapter-reference.md    #   Copilot adapter architecture
+│   ├── copilot-adapter-templates.md    #   IDE adapter file templates
+│   ├── copilot-instructions.md         #   Copilot runtime instructions
+│   ├── copilot-repo-instructions.md    #   Repo-level Copilot instructions
+│   ├── lex-persona.md                  #   Constitutional governance voice definition
+│   ├── pipeline-source-to-release.md   #   CI/CD promotion workflow docs
+│   ├── script-integration.md           #   Script invocation patterns
+│   ├── v3.1-improvements.md            #   Release notes for v3.1
 │   └── project-scan-report.json        #   Scan state file
 │
 ├── tests/                              # Contract test specifications
@@ -172,12 +212,12 @@ lens-work/                              # Module root
 | `agents/` | Single agent with dual representation | `lens.agent.md` (runtime), `lens.agent.yaml` (validator) |
 | `skills/` | 5 core delegation skills | Each skill is a folder with `SKILL.md` |
 | `workflows/core/` | Infrastructure workflows | phase-lifecycle, audience-promotion, milestone-promotion |
-| `workflows/router/` | User-facing phase flows | 9 workflows mapping to lifecycle phases |
-| `workflows/utility/` | Operational commands | onboard, status, next, switch, help, promote, etc. |
-| `workflows/governance/` | Compliance workflows | compliance-check, cross-initiative, resolve-constitution |
-| `prompts/` | IDE prompt triggers | 22 `.prompt.md` files for VS Code/Copilot |
-| `scripts/` | Cross-platform scripts | 5 paired .sh/.ps1 files |
-| `docs/` | Reference documentation | 10 hand-written docs + generated docs |
+| `workflows/router/` | User-facing phase flows | 11 workflows mapping to lifecycle phases |
+| `workflows/utility/` | Operational commands | onboard, status, next, switch, help, promote, etc. (17 workflows) |
+| `workflows/governance/` | Compliance workflows | audit-all, compliance-check, cross-initiative, resolve-constitution |
+| `prompts/` | IDE prompt triggers | 32 `.prompt.md` files for VS Code/Copilot |
+| `scripts/` | Cross-platform scripts | 15 paired .sh/.ps1 files |
+| `docs/` | Reference documentation | 22 files: guides, references, release notes, scan report |
 | `tests/contracts/` | Contract test specs | 4 markdown-based specification files |
 
 ---

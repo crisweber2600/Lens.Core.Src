@@ -11,6 +11,7 @@ agent_owner: lens
 agent_role: "Express Planner"
 imports: lifecycle.yaml
 trackEligibility: "Only initiatives on the `express` track. See lifecycle.yaml tracks.express for the phase/audience definition."
+inputs: []
 entryStep: './steps/step-01-preflight.md'
 ---
 
@@ -33,6 +34,24 @@ This workflow uses **step-file architecture**:
 - Step 5 marks the initiative as dev-ready with a developer handoff summary.
 
 State persists through `initiative`, `lifecycle`, `initiative_root`, `docs_path`, `constitutional_context`, `artifacts_produced`.
+
+---
+
+## TRACK ELIGIBILITY
+
+Express track is for initiatives where single-session planning is sufficient and formal stakeholder gates are unnecessary. The initiative must be on the `express` track (set during `/new-initiative`) and the constitution must include `express` in `permitted_tracks`.
+
+| Scenario | Recommended Track | Why Not Express? |
+|----------|------------------|-----------------|
+| Solo project, well-understood scope | **express** | — |
+| Internal tool, single developer | **express** | — |
+| Feature with known business context | **feature** | Needs stakeholder review at milestone boundaries |
+| New product requiring research | **full** | Needs separate preplan research phase |
+| Pure technical refactor | **tech-change** | Skips business planning entirely |
+| Production hotfix | **hotfix** | Minimal planning, fast to execution |
+| Research-only spike | **spike** | No implementation phase needed |
+
+If the initiative is not on the `express` track, step-01 will fail with guidance to use the appropriate command (`/preplan`, `/businessplan`, or `/techplan`).
 
 ---
 

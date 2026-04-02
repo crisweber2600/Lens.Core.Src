@@ -8,9 +8,9 @@
 
 | Category | Count |
 |----------|-------|
-| Skills | 5 (git-state, git-orchestration, constitution, sensing, checklist) |
-| Workflows | 29 (3 core + 11 router + 12 utility + 3 governance) |
-| Prompts | 26 |
+| Skills | 6 (git-state, git-orchestration, constitution, sensing, checklist + dashboard) |
+| Workflows | 35 (3 core + 11 router + 17 utility + 4 governance) |
+| Prompts | 32 |
 | Scripts | 5 (cross-platform Bash + PowerShell) |
 | Agents | 1 (lens agent with 28 menu items) |
 | IDE Adapters | 4 (github-copilot, cursor, claude, codex) |
@@ -154,7 +154,7 @@
 
 ---
 
-### Utility Workflows (12)
+### Utility Workflows (17)
 
 | Workflow | Command | Purpose |
 |----------|---------|--------|
@@ -170,20 +170,26 @@
 | **log-problem** | `/log-problem` | Record an issue or friction point for the active initiative |
 | **move-feature** | `/move-feature` | Reclassify a feature to a different domain/service |
 | **split-feature** | `/split-feature` | Split a feature initiative into multiple child initiatives |
+| **approval-status** | `/approval-status` | Show pending promotion PR approval state |
+| **pause-epic** | `/pause-epic` | Suspend in-flight epic without losing state |
+| **resume-epic** | `/resume-epic` | Resume paused epic with re-sensing |
+| **rollback-phase** | `/rollback-phase` | Revert phase to restart artifact production |
+| **profile** | `/profile` | View or update onboarding profile |
 
 ---
 
-### Governance Workflows (3)
+### Governance Workflows (4)
 
 | Workflow | Command | Purpose |
 |----------|---------|---------|
 | **compliance-check** | (gate trigger) | Constitution compliance scan for initiative artifacts |
 | **resolve-constitution** | `/constitution` | 4-level constitutional hierarchy resolution |
 | **cross-initiative** | `/sense` | Cross-initiative overlap detection on demand |
+| **audit-all** | `/audit-all-initiatives` | Cross-initiative compliance dashboard |
 
 ---
 
-## 3. Prompts (26)
+## 3. Prompts (32)
 
 | Prompt File | Command | Abbr |
 |-------------|---------|------|
@@ -207,13 +213,19 @@
 | `lens-work.close.prompt.md` | `/close` | CL |
 | `lens-work.setup-repo.prompt.md` | repo setup | — |
 | `lens-work.upgrade.prompt.md` | `/lens-upgrade` | UG |
-| `lens-work.dashboard.prompt.md` | `/dashboard` | DB |
+
 | `lens-work.sense.prompt.md` | `/sense` | SN |
 | `lens-work.expressplan.prompt.md` | `/expressplan` | EP |
 | `lens-work.retrospective.prompt.md` | `/retrospective` | RT |
 | `lens-work.log-problem.prompt.md` | `/log-problem` | LP |
 | `lens-work.move-feature.prompt.md` | `/move-feature` | MV |
 | `lens-work.split-feature.prompt.md` | `/split-feature` | SF |
+| `lens-work.approval-status.prompt.md` | `/approval-status` | AS |
+| `lens-work.rollback-phase.prompt.md` | `/rollback-phase` | RB |
+| `lens-work.pause-epic.prompt.md` | `/pause-epic` | PE |
+| `lens-work.resume-epic.prompt.md` | `/resume-epic` | RE |
+| `lens-work.profile.prompt.md` | `/profile` | PF |
+| `lens-work.audit-all-initiatives.prompt.md` | `/audit-all-initiatives` | AA |
 
 ---
 

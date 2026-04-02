@@ -24,6 +24,13 @@
 | Log a problem | `/log-problem` — [Workflow](../workflows/utility/log-problem/workflow.md) |
 | Move a feature across domains | `/move-feature` — [Workflow](../workflows/utility/move-feature/workflow.md) |
 | Split a feature into children | `/split-feature` — [Workflow](../workflows/utility/split-feature/workflow.md) |
+| Check PR approval state | `/approval-status` — [Workflow](../workflows/utility/approval-status/workflow.md) |
+| Pause an active epic | `/pause-epic` — [Workflow](../workflows/utility/pause-epic/workflow.md) |
+| Resume a paused epic | `/resume-epic` — [Workflow](../workflows/utility/resume-epic/workflow.md) |
+| Revert to previous phase | `/rollback-phase` — [Workflow](../workflows/utility/rollback-phase/workflow.md) |
+| Manage user profile | `/profile` — [Workflow](../workflows/utility/profile/workflow.md) |
+| View multi-initiative dashboard | `/dashboard` — [Workflow](../workflows/utility/dashboard/workflow.md) |
+| Audit all active initiatives | `/audit-all` — [Workflow](../workflows/governance/audit-all/workflow.md) |
 
 ---
 
@@ -37,7 +44,7 @@
 | [Project Overview](./project-overview.md) | High-level project summary, tech stack, architecture classification | ✅ Generated |
 | [Architecture](./architecture.md) | Design axioms, patterns, workflow/skills architecture, deployment | ✅ Generated |
 | [Source Tree Analysis](./source-tree-analysis.md) | Full annotated directory tree with critical folder descriptions | ✅ Generated |
-| [Component Inventory](./component-inventory.md) | Complete inventory: 5 skills, 29 workflows, 26 prompts, 5 scripts, 1 agent | ✅ Generated |
+| [Component Inventory](./component-inventory.md) | Complete inventory: 6 skills, 35 workflows, 32 prompts, 15 script pairs, 1 agent | ✅ Generated |
 | [Development Guide](./development-guide.md) | Prerequisites, installation, environment setup, scripts reference, testing | ✅ Generated |
 
 ---
@@ -75,7 +82,7 @@
 | `lifecycle.yaml` | **THE CONTRACT** — phases, audiences, tracks, validation rules |
 | `module.yaml` | Module registry — version, skills, workflows |
 | `bmadconfig.yaml` | Runtime configuration template |
-| `module-help.csv` | Command index (25 entries, 13 columns) |
+| `module-help.csv` | Command index (32 entries, 13 columns) |
 | `README.md` | Module overview with design axioms |
 | `TODO.md` | Development checklist |
 | `agents/lens.agent.md` | Agent persona and 28-item menu |

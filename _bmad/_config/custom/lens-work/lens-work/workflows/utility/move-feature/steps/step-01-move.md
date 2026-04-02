@@ -43,7 +43,50 @@ if not new_domain or not new_service:
   capture: new_domain, new_service
 ```
 
-### 2. Validate Move Is Safe
+### 2. In-Flight Work Safeguards
+
+```yaml
+# Check if feature has active work in progress
+current_phase = initiative.phase || null
+current_audience = initiative.audience || null
+initiative_state_file = initiative.initiative_state || null
+
+# Detect in-flight branches
+milestone_branches = invoke: git-orchestration.list-branches
+params:
+  pattern: "${initiative_root}-*"
+
+active_prs = invoke: git-orchestration.query-prs
+params:
+  head_pattern: "${initiative_root}"
+  state: "open"
+
+warnings = []
+
+if current_phase != null and current_phase != "preplan":
+  warnings.append("Feature is in phase '${current_phase}' — active work may be in progress.")
+
+if milestone_branches.count > 0:
+  warnings.append("Found ${milestone_branches.count} milestone branch(es): ${milestone_branches.names.join(', ')}")
+
+if active_prs.count > 0:
+  warnings.append("Found ${active_prs.count} open PR(s) — moving will NOT update PR head/base references. These PRs may become orphaned.")
+
+if warnings.length > 0:
+  output: |
+    ⚠️ In-flight work detected:
+    ${map(warnings, w -> "  - " + w).join("\n")}
+
+  ask: |
+    Moving a feature with active work carries risk. Milestone branches and open PRs will not be automatically renamed or updated.
+
+    Proceed anyway? (yes/no)
+  capture: proceed_anyway
+  if lower(proceed_anyway) != "yes":
+    FAIL("Move cancelled. Resolve in-flight work before moving.")
+```
+
+### 3. Validate Move Is Safe
 
 ```yaml
 new_domain = lower(remove_non_alphanumeric(new_domain))
@@ -76,7 +119,7 @@ output: |
 ask: "Proceed with move? (yes/no)"
 ```
 
-### 3. Execute Move
+### 4. Execute Move
 
 ```yaml
 ensure_directory(new_folder)

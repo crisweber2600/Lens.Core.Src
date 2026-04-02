@@ -32,38 +32,71 @@ if scope == "feature":
     FAIL("❌ Track `${track}` not found. Available tracks: ${keys(lifecycle.tracks).join(', ')}")
 ```
 
-### 2. Cross-Initiative Sensing
+### 2. Cross-Initiative Sensing & Track Permission Gate
 
-> **Parallelization:** Sensing (section 2) and Track Permission Gate (section 3) are independent reads. Execute them in parallel when the runtime supports concurrent skill invocations.
+> **Parallel execution:** Sensing and constitution resolution are independent read-only operations.
+> Execute both concurrently to reduce latency.
 
 ```yaml
-sensing_result = invoke: sensing.scan-initiatives
+# --- BEGIN PARALLEL BLOCK ---
+# Operation A: Cross-initiative sensing
+sensing_future = invoke_async: sensing.scan-initiatives
 params:
   current_domain: ${domain}
   current_service: ${scope == "domain" ? null : service}
   current_feature: ${scope == "feature" ? feature : null}
   current_scope: ${scope}
 
+# Operation B: Constitutional track permission (feature scope only)
+constitution_future = null
+if scope == "feature":
+  constitution_future = invoke_async: constitution.resolve-constitution
+  params:
+    domain: ${domain}
+    service: ${service}
+# --- END PARALLEL BLOCK ---
+
+# Await results
+sensing_result = await(sensing_future)
+constitution_result = constitution_future != null ? await(constitution_future) : null
+```
+
+#### 2a. Evaluate Sensing Results
+
+```yaml
 sensing_report = sensing_result.sensing_report || sensing_result
 sensing_matches = sensing_report.overlaps || []
 
 if sensing_matches.length > 0:
+  overlap_severity = max(map(sensing_matches, m -> m.severity || "low"))
+
   output: |
     ⚠️ Active initiatives overlap with this scope:
-    ${map(sensing_matches, match -> "- " + match.initiative + " (" + match.phase + "/" + match.audience + ")").join("\n")}
+    ${map(sensing_matches, match -> "- " + match.initiative + " (" + match.phase + "/" + match.audience + ") — " + match.conflict_reason + "\n  💡 " + derive_overlap_guidance(match)).join("\n")}
 
-    Review for conflicts before continuing.
+  if overlap_severity == "high":
+    ask: |
+      🛑 High-severity overlap detected. Proceeding may cause naming conflicts or duplicated work.
+
+      Options:
+        [1] Proceed anyway — I've reviewed the overlaps and want to continue
+        [2] Rename — Choose a different name to avoid the conflict
+        [3] Abort — Cancel initiative creation
+
+    capture: overlap_decision
+    if overlap_decision == "2" or overlap_decision contains "rename":
+      output: "Returning to scope collection for a new name."
+      goto: step-02-collect-scope
+    if overlap_decision == "3" or overlap_decision contains "abort":
+      FAIL("Initiative creation cancelled by user.")
+  else:
+    output: "Overlaps are advisory (severity: ${overlap_severity}). Proceeding."
 ```
 
-### 3. Track Permission Gate
+#### 2b. Enforce Track Permission Gate
 
 ```yaml
-if scope == "feature":
-  constitution_result = invoke: constitution.resolve-constitution
-  params:
-    domain: ${domain}
-    service: ${service}
-
+if scope == "feature" and constitution_result != null:
   resolved_constitution = constitution_result.resolved_constitution || constitution_result
 
   if resolved_constitution.permitted_tracks exists and not contains(resolved_constitution.permitted_tracks, track):

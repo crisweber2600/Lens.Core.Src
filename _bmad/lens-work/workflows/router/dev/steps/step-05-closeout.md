@@ -81,12 +81,12 @@ Throughout `/dev`, the user may work in TargetProjects for actual coding, but al
 |--------|----------|------|
 | Write code / create files | TargetProjects/${repo} (session.target_path) | **ONLY here** |
 | Run /dev commands | BMAD directory | Control plane |
-| Read framework files | bmad.lens.release/ | **READ-ONLY - never write here** |
+| Read framework files | {release_repo_root}/ | **READ-ONLY - never write here** |
 | State tracking writes | _bmad-output/ | Sprint status, initiative config |
 | Code review | BMAD directory | |
 | Status checks | BMAD directory | |
 
-**⚠️ bmad.lens.release is NEVER the implementation target.** It is a read-only authority repo containing BMAD framework code.
+**⚠️ {release_repo_root} is NEVER the implementation target.** It is a read-only authority repo containing BMAD framework code.
 
 
 ## OUTPUT ARTIFACTS

@@ -37,6 +37,34 @@ inputs:
 
 ---
 
+## PRE-INIT SCOPE EXPLAINER
+
+If `inputs.command_name` is empty or the user typed a generic `/new` or `/create initiative` without specifying scope, display the scope explainer before proceeding:
+
+```
+📐 LENS uses a three-level hierarchy to organize work:
+
+  Domain   — A broad capability area (e.g., "auth", "payments", "analytics")
+             Creates: auth/
+  Service  — A deployable unit within a domain (e.g., "auth-gateway", "payments-api")
+             Creates: auth/gateway/
+  Feature  — A discrete piece of work within a service (e.g., "password-reset")
+             Creates: auth/gateway/password-reset.yaml
+             This is the only level that follows the full lifecycle (tracks, phases, milestones).
+
+💡 Most users start with /new-feature and let LENS infer the domain and service.
+   If the domain or service doesn't exist yet, LENS will create it as part of the flow.
+
+Which would you like to create?
+  [1] /new-domain   — Create a domain-level initiative
+  [2] /new-service  — Create a service-level initiative
+  [3] /new-feature  — Create a feature-level initiative (recommended)
+```
+
+Capture the selection and set `command_name` accordingly. If `command_name` is already set (user invoked a specific command), skip the explainer entirely.
+
+---
+
 ## WORKFLOW ARCHITECTURE
 
 This workflow uses **step-file architecture**:

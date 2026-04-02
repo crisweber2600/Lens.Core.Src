@@ -83,7 +83,7 @@ if actual_branch != story_branch:
     └── Epic branch receives code ONLY via story->epic PR merges
 
 output: |
-  📂 Target Repo Ready - ALL implementation goes here (NOT bmad.lens.release)
+  📂 Target Repo Ready - ALL implementation goes here (NOT {release_repo_root})
   ├── Repo: ${target_repo.name}
   ├── Path: ${target_path}
   ├── Initiative: ${initiative_id}
@@ -95,7 +95,7 @@ output: |
   ├── Auto-commit: ON (tasks auto-committed after completion)
   ├── Auto-PR: ON (PR created after code review, no wait)
   ├── ⚠️  Commits go to STORY branch only - epic branch is merge-only
-  └── ⚠️  bmad.lens.release is READ-ONLY - never write there
+  └── ⚠️  {release_repo_root} is READ-ONLY - never write there
 ```
 
 ## Dev Write Guard
@@ -107,11 +107,11 @@ actual_dir = exec("pwd").stdout.trim()
 target_canonical = canonicalize(session.target_path)
 actual_canonical = canonicalize(actual_dir)
 
-if actual_canonical contains "bmad.lens.release":
+if actual_canonical contains "{release_repo_root}":
   FAIL: |
-    ❌ Dev Write Guard - BLOCKED: Working directory is inside bmad.lens.release
+    ❌ Dev Write Guard - BLOCKED: Working directory is inside {release_repo_root}
     ├── Actual: ${actual_dir}
-    ├── bmad.lens.release is a READ-ONLY authority repo
+    ├── {release_repo_root} is a READ-ONLY authority repo
     ├── It contains BMAD framework code, NOT implementation targets
     └── Implementation MUST happen in: ${session.target_path}
 
@@ -126,5 +126,5 @@ output: |
   🔒 Dev Write Guard - PASSED
   ├── Working directory: ${actual_dir}
   ├── Scoped to TargetProject repo: ${session.target_path}
-  └── ⚠️  bmad.lens.release is READ-ONLY - never write there
+  └── ⚠️  {release_repo_root} is READ-ONLY - never write there
 ```

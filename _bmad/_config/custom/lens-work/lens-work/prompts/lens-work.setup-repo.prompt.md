@@ -16,31 +16,31 @@ This prompt performs first-time setup of a control repo for lens-work.
 
 Ensure the path is set to the root of the repository (the control repo you want to set up).
 
-### 1. Clone bmad.lens.release
+### 1. Clone {release_repo_root}
 
 Clone the release module and checkout the appropriate branch:
 
 ```bash
-git clone https://github.com/crisweber2600/bmad.lens.release bmad.lens.release
-cd bmad.lens.release
+git clone https://github.com/crisweber2600/bmad.lens.release {release_repo_root}
+cd {release_repo_root}
 git checkout release/4.0.0   # or alpha/beta for pre-release
 cd ..
 ```
 
 ### 2. Sync .github from Release Repo
 
-The `.github` folder is now part of `bmad.lens.release` (no longer a separate repo).
+The `.github` folder is now part of `{release_repo_root}` (no longer a separate repo).
 
 ```powershell
 # PowerShell
 if (Test-Path ".github") { Remove-Item -Recurse -Force ".github" }
-Copy-Item -Recurse "bmad.lens.release/.github" ".github"
+Copy-Item -Recurse "{release_repo_root}/.github" ".github"
 ```
 
 ```bash
 # Bash
 rm -rf .github
-cp -r bmad.lens.release/.github .github
+cp -r {release_repo_root}/.github .github
 ```
 
 ### 3. Clone Governance Repository (if configured)
@@ -68,6 +68,6 @@ This will:
 
 ## Notes
 
-- The `.github` folder syncs from `bmad.lens.release/.github/` during preflight
+- The `.github` folder syncs from `{release_repo_root}/.github/` during preflight
 - Future updates to agents/prompts will auto-sync when preflight detects changes
 - See `{project-root}/_bmad/lens-work/workflows/includes/preflight.md` for sync logic

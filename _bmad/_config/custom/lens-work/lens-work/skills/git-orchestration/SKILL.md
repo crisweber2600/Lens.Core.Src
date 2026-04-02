@@ -1478,7 +1478,7 @@ Before ANY write operation (commit, file creation, file modification), validate 
 
 | Target Path | Rule | Error Message |
 |-------------|------|---------------|
-| `bmad.lens.release/` | ALWAYS blocked for initiative writes | `❌ BLOCK — release repo is read-only at runtime. Write to _bmad-output/lens-work/initiatives/ instead.` |
+| `{release_repo_root}/` | ALWAYS blocked for initiative writes | `❌ BLOCK — release repo is read-only at runtime. Write to _bmad-output/lens-work/initiatives/ instead.` |
 | Governance repo path | Blocked except governance PR proposals | `❌ BLOCK — governance lives in its own repo. Propose changes via governance PR.` |
 | `.github/` | Not modified during initiative work | `❌ BLOCK — adapter layer is not modified during initiative work.` |
 | Outside `_bmad-output/lens-work/initiatives/` | Blocked for initiative workflow writes | `❌ BLOCK — initiative artifacts must be written to _bmad-output/lens-work/initiatives/{path}/` |
@@ -1488,7 +1488,7 @@ Before ANY write operation (commit, file creation, file modification), validate 
 
 ```
 function validate_write_target(path, context):
-  if path starts with "bmad.lens.release/":
+  if path starts with "{release_repo_root}/":
     HARD ERROR — release repo is read-only at runtime
   if path is within governance repo:
     if context != "governance-pr-proposal":
@@ -1521,7 +1521,7 @@ This path is resolved from `initiative.target_repos[0].local_path` during Pre-Fl
 
 **Blocked during `/dev`:**
 - Writes to any repo folder other than `session.target_path`
-- Writes to `bmad.lens.release/`, governance repo, `.github/`
+- Writes to `{release_repo_root}/`, governance repo, `.github/`
 - Writes to other target repos not selected for this initiative
 
 ### Exception: Governance PR Proposals

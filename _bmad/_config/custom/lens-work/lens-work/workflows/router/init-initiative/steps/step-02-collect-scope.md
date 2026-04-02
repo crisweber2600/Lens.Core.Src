@@ -62,16 +62,33 @@ if scope == "feature":
   service = lower(remove_non_alphanumeric(service))
   feature = lower(remove_non_alphanumeric(primary_name))
   if track == "":
+    # Constitution-aware track filtering
+    constitution_result = invoke_if_possible: constitution.resolve-constitution
+    params:
+      domain: ${domain}
+      service: ${service}
+    permitted_tracks = constitution_result.resolved_constitution.permitted_tracks || null
+
+    all_tracks:
+      - express: "🚀 express      — All planning in one session. Best for solo work, spikes, or getting started fast."
+      - full: "   full         — Full lifecycle with all phases and promotion gates."
+      - feature: "   feature      — Streamlined feature track with reduced ceremony."
+      - tech-change: "   tech-change  — Technical change with architecture focus."
+      - hotfix: "   hotfix       — Expedited fix for production issues."
+      - quickdev: "   quickdev     — Minimal planning, fast to implementation."
+      - spike: "   spike        — Time-boxed research or proof of concept."
+
+    if permitted_tracks != null:
+      visible_tracks = filter(all_tracks, t -> contains(permitted_tracks, key(t)))
+      blocked_note = "\n   ℹ️ Some tracks are restricted by governance for ${domain}/${service}."
+    else:
+      visible_tracks = all_tracks
+      blocked_note = ""
+
     ask: |
       Choose a track for this feature:
 
-      🚀 express      — All planning in one session. Best for solo work, spikes, or getting started fast.
-         full         — Full lifecycle with all phases and promotion gates.
-         feature      — Streamlined feature track with reduced ceremony.
-         tech-change  — Technical change with architecture focus.
-         hotfix       — Expedited fix for production issues.
-         quickdev     — Minimal planning, fast to implementation.
-         spike        — Time-boxed research or proof of concept.
+      ${map(visible_tracks, t -> value(t)).join("\n")}${blocked_note}
 
       Recommended for first-time users: express
     capture: track

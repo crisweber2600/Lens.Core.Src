@@ -11,6 +11,7 @@ agent_owner: john
 agent_role: PM
 supporting_agents: [sally]
 imports: lifecycle.yaml
+inputs: []
 entryStep: './steps/step-01-preflight.md'
 ---
 

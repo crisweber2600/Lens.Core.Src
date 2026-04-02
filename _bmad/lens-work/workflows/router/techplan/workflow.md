@@ -10,6 +10,7 @@ display_name: TechPlan
 agent_owner: winston
 agent_role: Architect
 imports: lifecycle.yaml
+inputs: []
 entryStep: './steps/step-01-preflight.md'
 ---
 

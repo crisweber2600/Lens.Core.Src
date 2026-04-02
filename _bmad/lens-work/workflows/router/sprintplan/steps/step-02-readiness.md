@@ -54,6 +54,33 @@ Load and follow `{readinessWorkflow}` in validate mode, using the resolved const
 
 If readiness blockers remain, stop and require the user to resolve them before SprintPlan can continue.
 
+### 2b. Epic/Story Completeness Summary
+
+Before proceeding to compliance, scan the initiative's epic and story artifacts for completeness:
+
+```yaml
+epics_file = load_if_exists("${docs_path}/epics.md")
+stories_file = load_if_exists("${docs_path}/stories.md")
+
+epic_count = epics_file != null ? count_sections(epics_file, level=2) : 0
+story_count = stories_file != null ? count_sections(stories_file, level=3) : 0
+stories_with_ac = stories_file != null ? count_sections_with_content(stories_file, "acceptance criteria", level=3) : 0
+stories_estimated = stories_file != null ? count_sections_with_content(stories_file, "estimate|points|size", level=3) : 0
+
+output: |
+  📋 Pre-SprintPlan Completeness
+
+  | Metric | Count | Status |
+  |--------|-------|--------|
+  | Epics | ${epic_count} | ${epic_count > 0 ? "✅" : "⚠️ No epics found"} |
+  | Stories | ${story_count} | ${story_count > 0 ? "✅" : "⚠️ No stories found"} |
+  | With acceptance criteria | ${stories_with_ac}/${story_count} | ${stories_with_ac == story_count ? "✅" : "🟡 " + (story_count - stories_with_ac) + " missing AC"} |
+  | With estimates | ${stories_estimated}/${story_count} | ${stories_estimated == story_count ? "✅" : "🟡 " + (story_count - stories_estimated) + " unestimated"} |
+
+if story_count == 0:
+  FAIL("❌ No stories found. Run /devproposal to create epics and stories before sprint planning.")
+```
+
 ### 3. Constitutional Compliance Gate (Required)
 
 Run constitutional compliance checks against each planning artifact that exists under `{docs_path}`.

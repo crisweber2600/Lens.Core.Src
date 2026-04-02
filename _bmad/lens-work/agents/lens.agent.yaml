@@ -88,9 +88,27 @@ agent:
     - trigger: SF or fuzzy match on split-feature or split feature
       exec: "{project-root}/_bmad/lens-work/workflows/utility/split-feature/workflow.md"
       description: "[SF] Split Feature: Split a feature into multiple initiatives"
+    - trigger: PF or fuzzy match on profile
+      exec: "{project-root}/_bmad/lens-work/workflows/utility/profile/workflow.md"
+      description: "[PF] Profile: View or update your onboarding profile"
     - trigger: UG or fuzzy match on upgrade or lens-upgrade or migrate
       exec: "{project-root}/_bmad/lens-work/workflows/utility/upgrade/workflow.md"
       description: "[UG] Lens Upgrade: Migrate control repo to latest schema version"
+    - trigger: AS or fuzzy match on approval-status or approval status
+      exec: "{project-root}/_bmad/lens-work/workflows/utility/approval-status/workflow.md"
+      description: "[AS] Approval Status: Show pending promotion PR approval state and review status"
+    - trigger: RB or fuzzy match on rollback-phase or rollback phase
+      exec: "{project-root}/_bmad/lens-work/workflows/utility/rollback-phase/workflow.md"
+      description: "[RB] Rollback Phase: Safely revert to previous milestone"
+    - trigger: PE or fuzzy match on pause-epic or pause epic
+      exec: "{project-root}/_bmad/lens-work/workflows/utility/pause-epic/workflow.md"
+      description: "[PE] Pause Epic: Suspend in-flight epic state"
+    - trigger: RE or fuzzy match on resume-epic or resume epic
+      exec: "{project-root}/_bmad/lens-work/workflows/utility/resume-epic/workflow.md"
+      description: "[RE] Resume Epic: Resume paused epic with re-sensing"
+    - trigger: AA or fuzzy match on audit-all or audit all
+      exec: "{project-root}/_bmad/lens-work/workflows/governance/audit-all/workflow.md"
+      description: "[AA] Audit All Initiatives: Run compliance dashboard across all active initiatives"
     - trigger: PM or fuzzy match on party-mode
       exec: "{project-root}/_bmad/core/workflows/party-mode/workflow.md"
       description: "[PM] Start Party Mode"

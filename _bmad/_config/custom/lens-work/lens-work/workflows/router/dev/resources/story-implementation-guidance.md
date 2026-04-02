@@ -20,7 +20,7 @@ override_count = count_entries(complexity_tracking) if complexity_tracking else 
 🔧 Implementation Mode - Story ${story_idx + 1}/${session.story_files.length}
 
 You're now working in: ${target_path}
-⚠️  THIS is the TargetProject repo - NOT bmad.lens.release (which is read-only).
+⚠️  THIS is the TargetProject repo - NOT {release_repo_root} (which is read-only).
 
 ${if session.special_instructions}
 ═══ Special Instructions (User-Provided) ═══
@@ -80,7 +80,7 @@ ${endif}
 - NEVER commit directly to `${epic_branch}` - epic branch receives code ONLY via merged PRs.
 
 **Remember:**
-- ALL file writes go to ${target_path} (the TargetProject repo) - NEVER to bmad.lens.release.
+- ALL file writes go to ${target_path} (the TargetProject repo) - NEVER to {release_repo_root}.
 - ALL commits go to the STORY branch - NEVER to the epic or integration branch.
 - Follow constitutional articles above during implementation.
 - Follow special instructions (if provided) for all implementation decisions.

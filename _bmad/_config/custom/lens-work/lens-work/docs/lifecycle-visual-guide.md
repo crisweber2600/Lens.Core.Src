@@ -1,7 +1,7 @@
 # LENS Workbench — Lifecycle Visual Guide
 
-**Module:** lens-work v3.1  
-**Schema Version:** 3.1  
+**Module:** lens-work v3.2  
+**Schema Version:** 3.2  
 **Last Updated:** April 1, 2026
 
 This guide provides a complete visual reference for the LENS Workbench lifecycle — from initiative creation through dev-ready execution, including every slash command, branch, commit, artifact, and PR along the way.
@@ -513,6 +513,9 @@ gantt
 
     section quickdev
     devproposal       :f1, 3, 4
+
+    section express
+    expressplan       :h1, 0, 1
 ```
 
 | Track | Phases | Milestones | Start | Use Case |
@@ -524,6 +527,7 @@ gantt
 | **hotfix-express** | techplan | techplan, dev-ready | `/techplan` | Critical fix — bypasses constitution + adversarial review |
 | **spike** | preplan | techplan | `/preplan` | Research only |
 | **quickdev** | devproposal | devproposal, dev-ready | `/devproposal` | Rapid execution |
+| **express** | expressplan | — (no milestones) | `/expressplan` | Solo/small — combined planning, no PRs |
 
 ---
 

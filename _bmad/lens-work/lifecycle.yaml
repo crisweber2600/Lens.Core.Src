@@ -9,7 +9,7 @@
 # Branch existence + PR metadata + committed artifacts = state.
 # =============================================================================
 
-schema_version: 3.1
+schema_version: 3.2
 close_states: [completed, abandoned, superseded]
 initiative_state_schema: initiative-state.yaml
 artifact_publication:

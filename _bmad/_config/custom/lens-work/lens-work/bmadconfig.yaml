@@ -13,6 +13,7 @@ implementation_artifacts: "{project-root}/_bmad-output/implementation-artifacts"
 project_knowledge: "{project-root}/docs"
 
 # Lens-work module defaults
+release_repo_root: bmad.lens.release
 target_projects_path: "../TargetProjects"
 default_git_remote: github
 lifecycle_contract: "{project-root}/_bmad/lens-work/lifecycle.yaml"

@@ -21,7 +21,7 @@ Migrates the control repo from v2 (audience-named branches) to v3 (milestone-nam
 
 Instead, run a minimal preflight:
 1. Confirm the git remote is reachable (`git remote get-url origin`)
-2. Read `bmad.lens.release/_bmad/lens-work/lifecycle.yaml` to load `schema_version` and `migrations`
+2. Read `{release_repo_root}/_bmad/lens-work/lifecycle.yaml` to load `schema_version` and `migrations`
 3. Read `LENS_VERSION` from the control repo root (may be missing — that is acceptable)
 
 ### Step 1: Execute Workflow
@@ -41,5 +41,5 @@ The workflow handles:
 
 ## Prerequisites
 
-- `bmad.lens.release/` must be present and on a valid branch
+- `{release_repo_root}/` must be present and on a valid branch
 - No uncommitted changes to tracked files (stash first if needed)

@@ -4,14 +4,14 @@
 
 - [x] Primary LENS agent defined for runtime activation in `agents/lens.agent.md`
 - [x] Validator-compatible structured companion added in `agents/lens.agent.yaml`
-- [ ] Run deep agent validation against `agents/lens.agent.yaml`
+- [x] Run deep agent validation against `agents/lens.agent.yaml`
 
 ## Workflow Build Checklist
 
 - [x] Core, router, utility, and governance workflows implemented
 - [x] Step-file scaffolding added for single-file workflows so packaging is consistent
 - [ ] Run deep workflow validation on representative workflows, starting with `router/dev` and `router/sprintplan`
-- [ ] Decide whether to fully migrate legacy single-file workflows to step-driven execution
+- [x] Decide whether to fully migrate legacy single-file workflows to step-driven execution — **Decision: only `utility/dashboard` remains single-file (intentional thin wrapper)**
 
 ## Testing
 
@@ -30,33 +30,57 @@
 
 Items identified during quality scan remediation that are out of scope for the fix pass.
 
-### New Workflows (Backlog)
+### New Workflows — ✅ COMPLETED
 
-| Workflow | Purpose | Priority |
-|----------|---------|----------|
-| `/approval-status` | Show pending promotion PR approval state | Medium |
-| `/rollback-phase` | Revert a phase to restart artifact production | Low |
-| `/pause-epic` | Suspend an in-flight epic without losing state | Low |
-| `/resume-epic` | Resume a paused epic | Low |
-| `/audit-all-initiatives` | Cross-initiative consistency scan | Medium |
+All workflow directories created with SKILL.md, workflow.md, step files, and prompt files:
 
-### Script Extraction (Backlog)
+| Workflow | Purpose | Menu Code |
+|----------|---------|-----------|
+| `/approval-status` | Show pending promotion PR approval state | AS |
+| `/rollback-phase` | Revert a phase to restart artifact production | RB |
+| `/pause-epic` | Suspend an in-flight epic without losing state | PE |
+| `/resume-epic` | Resume a paused epic | RE |
+| `/audit-all-initiatives` | Cross-initiative compliance dashboard | AA |
 
-Complex logic in workflow markdown that would benefit from shell/PowerShell extraction.
+### Script Extraction — ✅ COMPLETED
 
-**High:** `derive-initiative-status.sh`, `scan-active-initiatives.sh`, `load-command-registry.sh`, `validate-phase-artifacts.sh`, `plan-lifecycle-renames.sh`
+All scripts extracted to `scripts/` as paired `.sh` + `.ps1` files:
 
-**Medium:** `validate-feature-move.sh`, `bootstrap-target-projects.sh`, `derive-next-action.sh`, `run-preflight-cached.sh`
+**High (done):** `derive-initiative-status`, `scan-active-initiatives`, `load-command-registry`, `validate-phase-artifacts`, `plan-lifecycle-renames`
+
+**Medium (done):** `validate-feature-move`, `bootstrap-target-projects`, `derive-next-action`, `run-preflight-cached`
 
 ### Enhancement Roadmap
 
-**UX:** First-run scope guidance, `/next` preview mode, `/profile` command, status health indicators
+**UX — ✅ COMPLETED:**
+- First-run scope guidance (pre-init explainer in init-initiative)
+- `/next` preview mode (confirmation before auto-execution)
+- `/profile` command (view/edit onboarding profile)
+- Status health indicators (stuck detection, completeness badges)
 
-**Governance:** Soft gates for sensing, constitution-aware track filtering, sensing advisory guidance
+**Governance — ✅ COMPLETED:**
+- Soft gates for sensing (high-severity overlaps pause with proceed/rename/abort)
+- Constitution-aware track filtering (blocked tracks marked ⛔)
+- Sensing advisory guidance (per-overlap recommendations)
 
-**Lifecycle:** Story-state tracking in initiative-state.yaml, story chaining rollback (`/reset-story-branch`), pre-sprintplan readiness summary
+**Lifecycle — PARTIAL:**
+- ✅ Pre-sprintplan readiness summary (epic/story completeness scan)
+- [ ] Story-state tracking in initiative-state.yaml
+- [ ] Story chaining rollback (`/reset-story-branch`) — complex, warrants own workflow
 
-**Diagnostics:** Config load failure diagnosis, LENS_VERSION mismatch upgrade guidance, move-feature in-flight work safeguards
+**Diagnostics — ✅ COMPLETED:**
+- Config load failure diagnosis (required fields list + /onboard link)
+- LENS_VERSION mismatch upgrade guidance (version display + /lens-upgrade link)
+- Move-feature in-flight work safeguards (branch/PR orphan detection)
+
+**Safety — ✅ COMPLETED:**
+- Branch-state validation before constitution load in preflight
+- Governance repo requirements documented in architecture.md §12
+
+**Architecture — ✅ COMPLETED:**
+- Batch PR status queries (status/step-03 collects all PR tuples, single batch call)
+- Parallel sensing + constitution (init-initiative/step-03 uses invoke_async for concurrent execution)
+- Context propagation pattern (preflight OUTPUT CONTRACT with `session.preflight_result`)
 
 ### Architecture Notes
 

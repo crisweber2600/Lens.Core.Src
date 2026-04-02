@@ -24,7 +24,7 @@ Establish the `/dev` branch context, resolve the implementation target repo, and
 - Protect authority boundaries, branch discipline, and constitutional enforcement.
 
 ### Step-Specific Rules:
-- NEVER allow `/dev` to target `bmad.lens.release`.
+- NEVER allow `/dev` to target `{release_repo_root}`.
 - Resolve initiative context from git-derived state, not ad hoc assumptions.
 - Load `{preflightInclude}` before applying any dev-specific gate logic.
 
@@ -55,7 +55,7 @@ If `initiative.docs.path` is missing, fall back to `_bmad-output/planning-artifa
 
 Resolve the target repository from `initiative.target_repos[0]`. If no target repo is configured, ask the user for a local repository path, require a non-empty answer, and store the result in `session.target_repo` and `session.target_path`.
 
-Display the resolved target repository. If the resolved path points into `bmad.lens.release`, fail immediately because `/dev` may only write inside the TargetProject repository.
+Display the resolved target repository. If the resolved path points into `{release_repo_root}`, fail immediately because `/dev` may only write inside the TargetProject repository.
 
 If initiative-specific docs exist, load architecture and stories context when available. Otherwise continue without planning context.
 
@@ -90,7 +90,7 @@ Display: "**Proceeding to story discovery...**"
 
 ### SYSTEM FAILURE:
 - The working tree is dirty.
-- The target repo is missing, empty, or resolves into `bmad.lens.release`.
+- The target repo is missing, empty, or resolves into `{release_repo_root}`.
 - Prior-phase or promotion gates fail.
 - The `/dev` phase branch cannot be created or checked out.
 

@@ -20,24 +20,34 @@
 > The steps below describe the algorithm. Run the script to execute all checks:
 >
 > ```bash
-> bash bmad.lens.release/_bmad/lens-work/scripts/preflight.sh                    # default
-> bash bmad.lens.release/_bmad/lens-work/scripts/preflight.sh --caller onboard   # from /onboard
-> bash bmad.lens.release/_bmad/lens-work/scripts/preflight.sh --skip-constitution
+> bash {release_repo_root}/_bmad/lens-work/scripts/preflight.sh                    # default
+> bash {release_repo_root}/_bmad/lens-work/scripts/preflight.sh --caller onboard   # from /onboard
+> bash {release_repo_root}/_bmad/lens-work/scripts/preflight.sh --skip-constitution
 > ```
 >
 > ```powershell
-> .\bmad.lens.release\_bmad\lens-work\scripts\preflight.ps1                      # default
-> .\bmad.lens.release\_bmad\lens-work\scripts\preflight.ps1 -Caller onboard      # from /onboard
-> .\bmad.lens.release\_bmad\lens-work\scripts\preflight.ps1 -SkipConstitution
+> .\{release_repo_root}\_bmad\lens-work\scripts\preflight.ps1                      # default
+> .\{release_repo_root}\_bmad\lens-work\scripts\preflight.ps1 -Caller onboard      # from /onboard
+> .\{release_repo_root}\_bmad\lens-work\scripts\preflight.ps1 -SkipConstitution
 > ```
 
 ### 1. Check Release Branch
 
-Verify that `bmad.lens.release` directory exists.
+Verify that `{release_repo_root}` directory exists.
 
 ### 1a. Enforce LENS_VERSION Compatibility
 
-Read `LENS_VERSION` from the control repo root and `schema_version` from `bmad.lens.release/_bmad/lens-work/lifecycle.yaml`. Hard-stop if they don't match.
+Read `LENS_VERSION` from the control repo root and `schema_version` from `{release_repo_root}/_bmad/lens-work/lifecycle.yaml`. If they don't match, show a diagnostic and hard-stop:
+
+```
+❌ LENS_VERSION mismatch
+
+  Control repo LENS_VERSION:  {control_repo_version}
+  Release module schema_version: {release_schema_version}
+
+Your control repo was created for a different module version.
+Run /lens-upgrade to migrate your control repo to the latest schema.
+```
 
 > **Session caching:** The agent activation (step 4) loads `lifecycle.yaml` into `{lifecycle}`. If the session variable `{lifecycle}` already contains the parsed lifecycle data, use it instead of re-reading the file. Fall back to a file read only on cache-miss.
 
@@ -56,7 +66,7 @@ If full preflight is required, pull ALL authority repos. Otherwise, skip pulls a
 
 ### 3. Sync .github from Release Repo
 
-On every preflight run, verify `.github/` completeness against `bmad.lens.release/.github/` and sync if files are missing. Also sync if release `.github/` changed during pull. Keep prompt hygiene: `.github/prompts/` must only contain `lens-work*.prompt.md` files.
+On every preflight run, verify `.github/` completeness against `{release_repo_root}/.github/` and sync if files are missing. Also sync if release `.github/` changed during pull. Keep prompt hygiene: `.github/prompts/` must only contain `lens-work*.prompt.md` files.
 
 ### Step 3b: Sync Agent Entry Points
 
@@ -85,12 +95,41 @@ If any authority repo directory is missing:
 
 Resolve constitutional governance before any workflow-specific logic runs.
 
-#### 5a. Resolve Context
+#### 5a. Validate Branch State
 
 ```yaml
 if params.skip_constitution == true:
   # Skip — caller handles its own constitutional context injection
   goto: Step 6
+
+# Before resolving constitution, verify we're on the expected initiative branch.
+# Mid-initiative workflows that modify lifecycle state must be on the correct branch
+# to ensure constitution resolution reads the right governance context.
+
+current_branch = invoke_command("git symbolic-ref --short HEAD")
+expected_branch = session.initiative_root || null
+
+if expected_branch != null and current_branch != expected_branch:
+  warning: |
+    ⚠️ Branch mismatch detected.
+    Current branch:  ${current_branch}
+    Expected branch: ${expected_branch}
+
+    Constitution resolution may return stale or incorrect governance rules
+    if performed from the wrong branch.
+
+  ask: "Switch to '${expected_branch}' before continuing? (yes/no)"
+  capture: switch_branch
+  if lower(switch_branch) == "yes":
+    invoke: git-orchestration.checkout-branch
+    params:
+      branch: ${expected_branch}
+    invoke: git-orchestration.pull-latest
+  else:
+    warning: "Continuing on '${current_branch}' — governance rules may not match initiative context."
+```
+
+#### 5b. Resolve Context
 
 # Check session cache first — avoid re-resolving if already loaded during this session
 if session.constitutional_context exists and session.constitutional_context.status != null:
@@ -99,7 +138,7 @@ else:
   constitutional_context = invoke("constitution.resolve-context")
 ```
 
-#### 5b. Handle Parse Errors
+#### 5c. Handle Parse Errors
 
 ```yaml
 if constitutional_context.status == "parse_error":
@@ -110,7 +149,7 @@ if constitutional_context.status == "parse_error":
     FAIL("❌ Constitutional context parse error. Fix governance files before continuing.")
 ```
 
-#### 5c. Cache and Enforce Hard Gates
+#### 5d. Cache and Enforce Hard Gates
 
 ```yaml
 session.constitutional_context = constitutional_context
@@ -119,7 +158,7 @@ if constitutional_context.gate_mode == "hard" and constitutional_context.preflig
   FAIL("❌ Constitution hard gate failed during preflight. Resolve compliance issues before running this workflow.")
 ```
 
-#### 5d. Surface Advisory Warnings
+#### 5e. Surface Advisory Warnings
 
 ```yaml
 if constitutional_context.gate_mode == "advisory" and constitutional_context.preflight_status == "WARN":
@@ -138,12 +177,48 @@ After a successful full preflight, write the current UTC timestamp (ISO 8601 dat
 
 | Repo | Purpose |
 |------|---------|
-| `bmad.lens.release` | Release module with workflows, agents, prompts |
+| `{release_repo_root}` | Release module with workflows, agents, prompts |
 | `{governance-repo-path}` | Governance settings (from `_bmad-output/lens-work/governance-setup.yaml`) |
 
 ## Synced Content
 
 | Source | Destination | Content |
 |--------|-------------|---------|
-| `bmad.lens.release/.github/` | `.github/` | Copilot agents, prompts, instructions |
-| `bmad.lens.release/CLAUDE.md` | `./CLAUDE.md` | Claude Code agent entry point |
+| `{release_repo_root}/.github/` | `.github/` | Copilot agents, prompts, instructions |
+| `{release_repo_root}/CLAUDE.md` | `./CLAUDE.md` | Claude Code agent entry point |
+
+---
+
+## OUTPUT CONTRACT — Context Propagation
+
+After preflight completes, the following session variables are guaranteed to be set and available to all downstream workflow steps:
+
+```yaml
+session.constitutional_context:
+  status: "ok" | "parse_error" | "unavailable"
+  gate_mode: "hard" | "advisory" | "informational"
+  preflight_status: "PASS" | "WARN" | "FAIL"
+  resolved_constitution: { ... }  # Full constitution hierarchy
+  context_available: true | false
+
+session.preflight_result:
+  remote_url: "https://github.com/org/repo"       # Git remote URL
+  provider: "github" | "azure-devops" | "gitlab"   # Detected provider
+  auth_status: "authenticated" | "anonymous"        # Auth state
+  sync_status: "synced" | "stale" | "failed"        # Repo sync outcome
+  timestamp: "2026-04-01T12:00:00Z"                 # ISO 8601
+```
+
+**Usage pattern:** Downstream workflows that need remote URL or provider info should reference `session.preflight_result` rather than re-deriving these values:
+
+```yaml
+# In any workflow step after preflight:
+remote = session.preflight_result.remote_url
+provider = session.preflight_result.provider
+
+# Example: conditional behavior per provider
+if provider == "azure-devops":
+  pr_api = "azure"
+else:
+  pr_api = "github"
+```

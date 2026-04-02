@@ -1,7 +1,7 @@
 ---
 name: gametest-framework
 description: 'Game test framework initializer. Use when the user says "lets create a test framework" or "initialize game testing infrastructure"'
-main_config: '{project-root}/_bmad/gds/bmadconfig.yaml'
+main_config: '{module_config}'
 tags:
   - qa
   - setup
@@ -47,7 +47,7 @@ This workflow detects the game engine and creates all necessary test infrastruct
 
 ## INITIALIZATION
 
-Load and resolve configuration from `_bmad/gds/bmadconfig.yaml`:
+Load and resolve configuration from `{module_config}`:
 
 ```yaml
 output_folder: {from config}

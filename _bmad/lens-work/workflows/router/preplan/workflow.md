@@ -10,6 +10,7 @@ display_name: PrePlan
 agent_owner: mary
 agent_role: Analyst
 imports: lifecycle.yaml
+inputs: []
 entryStep: './steps/step-01-preflight.md'
 ---
 

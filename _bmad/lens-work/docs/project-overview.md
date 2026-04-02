@@ -8,7 +8,7 @@
 
 **lens-work** is the core lifecycle orchestration module for the BMAD (Build Measure Analyze Design) platform. It provides a declarative, git-native initiative management system that coordinates AI agents through structured planning phases — from initial brainstorming through sprint execution and closure.
 
-The module is a **CLI/Toolkit** — a command-driven BMAD module with 26 slash commands, cross-platform scripts, declarative YAML contracts, and IDE adapter integration. It is deployed into "control repos" (operational workspaces) and orchestrates work across multiple target project repositories.
+The module is a **CLI/Toolkit** — a command-driven BMAD module with 32 slash commands, cross-platform scripts, declarative YAML contracts, and IDE adapter integration. It is deployed into "control repos" (operational workspaces) and orchestrates work across multiple target project repositories.
 
 **Key Design Philosophy:** "Git is the only source of truth. PRs are the only gating mechanism. The control repo is an operational workspace, not a code repo."
 
@@ -36,7 +36,7 @@ The module is a **CLI/Toolkit** — a command-driven BMAD module with 26 slash c
 - **Repository Type:** Monolith (single cohesive module)
 - **Architecture Pattern:** Declarative contract-driven with step-file workflow decomposition
 - **State Model:** Git-derived (branch existence + PR metadata + committed artifacts)
-- **Agent Model:** Single primary agent (`@lens`) with 5 delegated skills and 29 workflows
+- **Agent Model:** Single primary agent (`@lens`) with 5 delegated skills and 35 workflows
 
 ---
 
@@ -46,10 +46,10 @@ The module is a **CLI/Toolkit** — a command-driven BMAD module with 26 slash c
 lens-work/
 ├── agents/          # BMAD agent definitions (dual .md + .yaml)
 ├── skills/          # 5 core skills (git-state, git-orchestration, constitution, sensing, checklist)
-├── workflows/       # 29 workflows across 4 categories (core/router/utility/governance)
-├── prompts/         # 26 user-facing prompt trigger files
-├── scripts/         # Cross-platform operational scripts (5 paired .sh/.ps1)
-├── docs/            # Reference documentation (10 files, 2700+ lines)
+├── workflows/       # 35 workflows across 4 categories (core/router/utility/governance)
+├── prompts/         # 32 user-facing prompt trigger files
+├── scripts/         # Cross-platform operational scripts (15 paired .sh/.ps1)
+├── docs/            # Reference documentation (22 files)
 ├── tests/           # Contract test specifications (4 markdown files)
 ├── assets/          # Template assets
 ├── _module-installer/  # CI/CD installer (Node.js)
@@ -57,7 +57,7 @@ lens-work/
 ├── lifecycle.yaml   # THE CONTRACT — single source of truth
 ├── module.yaml      # Module metadata and registry
 ├── bmadconfig.yaml  # Runtime configuration template
-└── module-help.csv  # Command index (13-column, 21 entries)
+└── module-help.csv  # Command index (13-column, 32 entries)
 ```
 
 ---

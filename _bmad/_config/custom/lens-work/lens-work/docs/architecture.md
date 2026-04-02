@@ -145,7 +145,7 @@ The LENS Workbench agent is the single entry point for all user interaction. It 
 
 ## 5. Workflow Architecture
 
-### 5.1 Organization: 4 Categories, 29 Workflows
+### 5.1 Organization: 4 Categories, 35 Workflows
 
 | Category | Count | Purpose |
 |----------|-------|---------|
@@ -161,8 +161,8 @@ Core workflows are **internal infrastructure** — never invoked directly by use
 | `phase-lifecycle` | Called by router workflows after phase artifacts are committed | Detect phase completion, create/report phase PR, surface promotion readiness, clean up merged phase branches |
 | `audience-promotion` | Called by `/promote` when the next promotion step is an audience tier change | Validate gates (artifact, constitution, sensing), create next-audience branch, open promotion PR |
 | `milestone-promotion` | Called by `/promote` when the next promotion step is a milestone boundary | Validate gates (phase, artifact, constitution, sensing), create next-milestone branch, open promotion PR |
-| **Utility** | 12 | Operational — onboard, status, next, switch, help, promote, module-management, upgrade, dashboard, log-problem, move-feature, split-feature |
-| **Governance** | 3 | Compliance — compliance-check, cross-initiative, resolve-constitution |
+| **Utility** | 17 | Operational — onboard, status, next, switch, help, promote, module-management, upgrade, dashboard, log-problem, move-feature, split-feature, approval-status, pause-epic, resume-epic, rollback-phase, profile |
+| **Governance** | 4 | Compliance — audit-all, compliance-check, cross-initiative, resolve-constitution |
 
 #### Express Track (v3.2)
 
@@ -194,7 +194,7 @@ workflow-name/
 | Domain | Location | Owner | Operations |
 |--------|----------|-------|------------|
 | Domain 1 (Control Repo) | `_bmad-output/lens-work/initiatives/` | `@lens` agent | Write initiative artifacts |
-| Domain 2 (Release Module) | `bmad.lens.release/_bmad/lens-work/` | Module builder only | Read-only at runtime |
+| Domain 2 (Release Module) | `{release_repo_root}/_bmad/lens-work/` | Module builder only | Read-only at runtime |
 | Domain 3 (Copilot Adapter) | `.github/` | User only | Not modified during initiative work |
 | Domain 4 (Governance) | `TargetProjects/lens/lens-governance/` | Governance leads only | Cross-repo PRs |
 
@@ -319,7 +319,7 @@ artifacts:
 ### 11.1 Module Configuration (`module.yaml`)
 
 ```yaml
-version: 3.1.0
+version: 3.2.0
 type: standalone
 global: false
 lifecycle_contract: lifecycle.yaml
@@ -344,3 +344,35 @@ Template with `{project-root}` variable resolution:
 | `target-projects-path` | `../TargetProjects` | Where to find/create target repos |
 | `default-git-remote` | `github` | Git provider selection |
 | `ides` | `github-copilot` | IDE adapter targets |
+
+---
+
+## 12. Governance Repository Requirements
+
+Workflows that resolve constitutions or read lifecycle contracts require access to the governance repository. The governance repo is cloned into a configured path during `setup-control-repo` (default: `TargetProjects/lens/lens-governance`).
+
+### 12.1 Governance Access by Workflow
+
+| Workflow | Governance Access | What It Reads |
+|----------|-------------------|---------------|
+| `/new-initiative` (init-initiative) | Required | Constitution hierarchy for track filtering; sensing overlap data |
+| `/promote` (promote-phase) | Required | Constitution for gate validation; artifact validators |
+| `/cross-check` (cross-initiative) | Required | Constitution for sensing thresholds; overlap policies |
+| `/move-feature` | Optional | Constitution for target domain/service validation |
+| `/audit-all` | Required | Full constitution hierarchy for compliance scanning |
+| `/sprintplan` | Read-only | Lifecycle contract for phase/track validation |
+| `/status` | None | Uses only local git state and initiative-state.yaml |
+| `/next` | None | Derives actions from local initiative state |
+| `/onboard` | None | Creates local config only |
+| `/profile` | None | Reads/writes local bmadconfig.yaml |
+| `/approval-status` | Read-only | Lifecycle contract for approval gate definitions |
+| `/rollback-phase` | Required | Constitution for rollback permissions |
+| `/pause-epic` / `/resume-epic` | None | Updates local initiative-state.yaml only |
+
+### 12.2 Failure Modes
+
+When governance access is required but unavailable:
+
+1. **Clone missing** — Preflight detects missing governance path → directs to `setup-control-repo`
+2. **Stale clone** — Constitution may reference outdated rules → preflight warns if governance HEAD is >7 days behind remote
+3. **Network offline** — Governance reads from local clone succeed; PR-based operations fail gracefully with retry guidance
