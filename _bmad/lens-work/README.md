@@ -72,7 +72,103 @@ PR creation and authentication use cross-platform scripts with REST API + PAT. *
 
 PAT resolution: `GITHUB_PAT` env var → `GH_TOKEN` env var → `profile.yaml` → URL-only fallback
 
-## Installation
+## Getting Started — New Control Repo
+
+A **control repo** is your local workspace for running LENS Workbench. The setup script bootstraps everything: it clones this release module, copies the IDE adapter, sets up your governance repo, and writes the configuration files that `/onboard` needs.
+
+### Step 1: Create and clone your control repo
+
+```bash
+# Create a new repo on GitHub (e.g., myproject.src), then clone it:
+git clone https://github.com/your-username/myproject.src.git
+cd myproject.src
+```
+
+### Step 2: Clone the release module
+
+```bash
+# macOS / Linux / Git Bash:
+git clone --branch beta https://github.com/your-username/bmad.lens.release.git
+
+# Windows PowerShell:
+git clone --branch beta https://github.com/your-username/bmad.lens.release.git
+```
+
+### Step 3: Run the setup script
+
+Run with **no arguments** to enter the interactive wizard:
+
+```bash
+# macOS / Linux / Git Bash:
+./bmad.lens.release/_bmad/lens-work/scripts/setup-control-repo.sh
+```
+
+```powershell
+# Windows PowerShell:
+.\bmad.lens.release\_bmad\lens-work\scripts\setup-control-repo.ps1
+```
+
+The wizard auto-detects your GitHub username, walks you through each setting with smart defaults, and asks for confirmation before making changes.
+
+> **For CI / scripted use**, pass `--org` (bash) or `-Org` (PowerShell) to skip the wizard:
+>
+> ```bash
+> ./bmad.lens.release/_bmad/lens-work/scripts/setup-control-repo.sh --org your-username
+> ```
+
+The setup script will:
+
+1. **Pull latest** for `bmad.lens.release` (or clone if first run)
+2. **Copy `.github/`** from the release module — installs the GitHub Copilot adapter
+3. **Clone your governance repo** (auto-creates it as a private repo if `gh` CLI is available)
+4. **Create output directories** — `_bmad-output/lens-work/initiatives/` and `personal/`
+5. **Write `governance-setup.yaml`** — stores governance repo coordinates for preflight and `/onboard`
+6. **Write `LENS_VERSION`** — version compatibility file read by preflight
+7. **Update `.gitignore`** — excludes cloned repos and personal data
+
+### Step 4: Store your GitHub PAT
+
+> **Run this in your terminal, not in AI chat.** PATs should never be typed into a chat interface.
+
+```bash
+bash bmad.lens.release/_bmad/lens-work/scripts/store-github-pat.sh
+```
+
+```powershell
+.\bmad.lens.release\_bmad\lens-work\scripts\store-github-pat.ps1
+```
+
+### Step 5: Run `/onboard`
+
+Open VS Code with GitHub Copilot Chat and type:
+
+```
+/onboard
+```
+
+This validates authentication, creates your profile, and clones target project repos from the governance `repo-inventory.yaml`.
+
+### Step 6 (Optional): Install additional IDE adapters
+
+GitHub Copilot is ready after setup. For other IDEs, run the module installer:
+
+```bash
+./_bmad/lens-work/scripts/install.sh --ide cursor    # single IDE
+./_bmad/lens-work/scripts/install.sh --all-ides       # all supported IDEs
+```
+
+```powershell
+.\_bmad\lens-work\scripts\install.ps1 -IDE cursor
+.\_bmad\lens-work\scripts\install.ps1 -AllIDEs
+```
+
+> **Full setup details:** See [`scripts/README.md`](scripts/README.md) for parameter reference, generated file documentation, re-run behavior, and troubleshooting.
+
+---
+
+## Installation (IDE Adapters)
+
+The setup script above handles the initial GitHub Copilot adapter automatically. The commands below are for **adding or updating IDE adapters** after setup.
 
 ### Quick Install (default — GitHub Copilot adapter only)
 
