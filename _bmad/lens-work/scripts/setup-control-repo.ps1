@@ -4,43 +4,44 @@
 # PURPOSE:
 #   Bootstraps a new control repo by cloning all required authority domains:
 #   - bmad.lens.release   → Release module (read-only dependency)
-#   - <control-repo>.governance → Governance repo (constitutional authority)
 #   - .github             → Copied from bmad.lens.release/.github
+#   - governance repo     → Governance repo (constitutional authority)
 #
 #   Safe to re-run: pulls latest if repos already exist.
 #
 # USAGE:
-#   .\setup-control-repo.ps1 -Org <github-org-or-user>
-#   .\setup-control-repo.ps1 -Org weberbot -ReleaseRepo my-release
-#   .\setup-control-repo.ps1 -ReleaseOrg myorg -GovernanceOrg governance-team
-#   .\setup-control-repo.ps1 -Org weberbot -BaseUrl https://github.company.com
-#   .\setup-control-repo.ps1 -Help
+#   Interactive wizard (recommended for first-time setup):
+#     .\setup-control-repo.ps1
+#
+#   Parameter mode (for scripting/CI):
+#     .\setup-control-repo.ps1 -Org <github-org-or-user>
+#     .\setup-control-repo.ps1 -Org weberbot -ReleaseRepo my-release
+#     .\setup-control-repo.ps1 -ReleaseOrg myorg -GovernanceOrg governance-team
+#     .\setup-control-repo.ps1 -Org weberbot -BaseUrl https://github.company.com
+#     .\setup-control-repo.ps1 -Help
+#
+# When run with no arguments, the script enters an interactive wizard that
+# auto-detects your environment and guides you through configuration.
 #
 # =============================================================================
 
 param(
     [Parameter(Mandatory = $false)]
-    [string]$Org = "crisweber2600",
+    [string]$Org = "",
 
-    [string]$ReleaseOrg = "crisweber2600",
+    [string]$ReleaseOrg = "",
 
     [string]$ReleaseRepo = "bmad.lens.release",
 
     [string]$ReleaseBranch = "beta",
 
-    [string]$CopilotOrg = "crisweber2600",
+    [string]$GovernanceOrg = "",
 
-    [string]$CopilotRepo = "bmad.lens.copilot",
-
-    [string]$CopilotBranch = "beta",
-
-    [string]$GovernanceOrg = "crisweber2600",
-
-    [string]$GovernanceRepo = "lens-governance",
+    [string]$GovernanceRepo = "",
 
     [string]$GovernanceBranch = "main",
 
-    [string]$GovernancePath = "TargetProjects\lens\lens-governance",
+    [string]$GovernancePath = "",
 
     [string]$BaseUrl = "https://github.com",
 
@@ -54,19 +55,6 @@ if ($Help) {
     Get-Content $PSCommandPath | Select-String '^#' | ForEach-Object { $_.Line -replace '^# ?', '' }
     exit 0
 }
-
-# -- Validate ---------------------------------------------------------------
-if (-not $Org -and -not $ReleaseOrg -and -not $CopilotOrg -and -not $GovernanceOrg) {
-    Write-Host "Error: -Org is required (or specify -ReleaseOrg, -CopilotOrg, -GovernanceOrg individually)" -ForegroundColor Red
-    Write-Host ""
-    Write-Host "Usage: .\setup-control-repo.ps1 -Org <github-org-or-user>"
-    exit 1
-}
-
-# -- Apply fallbacks --------------------------------------------------------
-if (-not $ReleaseOrg) { $ReleaseOrg = $Org }
-if (-not $CopilotOrg) { $CopilotOrg = $Org }
-if (-not $GovernanceOrg) { $GovernanceOrg = $Org }
 
 try {
     $gitRoot = (git -C (Split-Path -Parent $PSCommandPath) rev-parse --show-toplevel 2>$null).Trim()
@@ -83,13 +71,14 @@ catch {
 
 # Derive governance defaults from control repo name unless explicitly provided.
 $controlRepoName = Split-Path -Leaf $ProjectRoot
-if ($controlRepoName -match "\.src$") {
-    $controlRepoName = $controlRepoName -replace "\.src$", ".bmad"
+$derivedControlName = $controlRepoName
+if ($derivedControlName -match "\.src$") {
+    $derivedControlName = $derivedControlName -replace "\.src$", ".bmad"
 }
-if (-not $PSBoundParameters.ContainsKey("GovernanceRepo")) {
-    $GovernanceRepo = "$controlRepoName.governance"
+if (-not $PSBoundParameters.ContainsKey("GovernanceRepo") -or [string]::IsNullOrEmpty($GovernanceRepo)) {
+    $GovernanceRepo = "$derivedControlName.governance"
 }
-if (-not $PSBoundParameters.ContainsKey("GovernancePath")) {
+if (-not $PSBoundParameters.ContainsKey("GovernancePath") -or [string]::IsNullOrEmpty($GovernancePath)) {
     $GovernancePath = Join-Path "TargetProjects\lens" $GovernanceRepo
 }
 
@@ -99,6 +88,49 @@ function Write-Info { param([string]$Msg) Write-Host "[INFO] $Msg" -ForegroundCo
 function Write-Ok { param([string]$Msg) Write-Host "[OK]   $Msg" -ForegroundColor Green }
 function Write-Warn { param([string]$Msg) Write-Host "[WARN] $Msg" -ForegroundColor Yellow }
 function Write-Err { param([string]$Msg) Write-Host "[ERR]  $Msg" -ForegroundColor Red }
+
+function Read-WithDefault {
+    param(
+        [string]$Prompt,
+        [string]$Default
+    )
+    $input = Read-Host "  $Prompt [$Default]"
+    if ([string]::IsNullOrWhiteSpace($input)) { return $Default }
+    return $input.Trim()
+}
+
+function Read-YesNo {
+    param(
+        [string]$Prompt,
+        [string]$Default = "y"
+    )
+    if ($Default -eq "y") {
+        $input = Read-Host "  $Prompt [Y/n]"
+    } else {
+        $input = Read-Host "  $Prompt [y/N]"
+    }
+    if ([string]::IsNullOrWhiteSpace($input)) { $input = $Default }
+    return $input -match '^[yY]'
+}
+
+function Get-DetectedGitHubUsername {
+    # Try gh CLI first
+    $ghCmd = Get-Command gh -ErrorAction SilentlyContinue
+    if ($ghCmd) {
+        try {
+            $ghUser = (& gh api user --jq '.login' 2>$null)
+            if ($LASTEXITCODE -eq 0 -and $ghUser) {
+                return $ghUser.Trim()
+            }
+        } catch {}
+    }
+    # Try git config
+    try {
+        $gitUser = (git config user.name 2>$null)
+        if ($gitUser) { return $gitUser.Trim() }
+    } catch {}
+    return ""
+}
 
 function Invoke-CloneOrPull {
     param(
@@ -371,11 +403,135 @@ function Ensure-GitIgnoreEntries {
 }
 
 # =============================================================================
+# WIZARD MODE
+# =============================================================================
+
+function Invoke-SetupWizard {
+    Write-Host ""
+    Write-Host "+--------------------------------------------------------------+" -ForegroundColor White
+    Write-Host "|       LENS Workbench v3 -- Control Repo Setup Wizard         |" -ForegroundColor White
+    Write-Host "+--------------------------------------------------------------+" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  This wizard will bootstrap your control repo by:"
+    Write-Host "    1. " -ForegroundColor Cyan -NoNewline; Write-Host "Cloning the LENS release module (read-only)"
+    Write-Host "    2. " -ForegroundColor Cyan -NoNewline; Write-Host "Copying the GitHub Copilot adapter (.github/)"
+    Write-Host "    3. " -ForegroundColor Cyan -NoNewline; Write-Host "Cloning (or creating) your governance repo"
+    Write-Host "    4. " -ForegroundColor Cyan -NoNewline; Write-Host "Setting up output directories and LENS_VERSION"
+    Write-Host ""
+    Write-Host "  Press Enter to accept defaults shown in [brackets]." -ForegroundColor DarkGray
+    Write-Host ""
+
+    # -- Step 1: GitHub Account -----------------------------------------------
+    Write-Host "Step 1: GitHub Account" -ForegroundColor White
+    Write-Host ""
+
+    $detectedUser = Get-DetectedGitHubUsername
+    if ($detectedUser) {
+        Write-Host "  Detected: $detectedUser" -ForegroundColor DarkGray
+    }
+
+    $defaultUser = if ($detectedUser) { $detectedUser } else { "your-username" }
+    $script:Org = Read-WithDefault -Prompt "GitHub org or username" -Default $defaultUser
+    Write-Host ""
+
+    # -- Step 2: GitHub Server ------------------------------------------------
+    Write-Host "Step 2: GitHub Server" -ForegroundColor White
+    Write-Host ""
+
+    if (Read-YesNo -Prompt "Use github.com?" -Default "y") {
+        $script:BaseUrl = "https://github.com"
+    } else {
+        $script:BaseUrl = Read-WithDefault -Prompt "Enterprise GitHub URL" -Default "https://github.company.com"
+    }
+    Write-Host ""
+
+    # -- Step 3: Release Repository -------------------------------------------
+    Write-Host "Step 3: Release Repository" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  The release repo contains the LENS module (read-only dependency)." -ForegroundColor DarkGray
+
+    $script:ReleaseRepo = Read-WithDefault -Prompt "Release repo name" -Default $ReleaseRepo
+    $script:ReleaseBranch = Read-WithDefault -Prompt "Release repo branch" -Default $ReleaseBranch
+    $script:ReleaseOrg = Read-WithDefault -Prompt "Release repo owner" -Default $Org
+    Write-Host ""
+
+    # -- Step 4: Governance Repository ----------------------------------------
+    Write-Host "Step 4: Governance Repository" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  The governance repo holds constitutional rules for your organization." -ForegroundColor DarkGray
+    Write-Host "  Auto-derived from control repo name: $GovernanceRepo" -ForegroundColor DarkGray
+
+    $script:GovernanceRepo = Read-WithDefault -Prompt "Governance repo name" -Default $GovernanceRepo
+    $script:GovernanceBranch = Read-WithDefault -Prompt "Governance repo branch" -Default $GovernanceBranch
+    $script:GovernanceOrg = Read-WithDefault -Prompt "Governance repo owner" -Default $Org
+
+    # Re-derive path if governance repo name was customized
+    $script:GovernancePath = Join-Path "TargetProjects\lens" $GovernanceRepo
+    $script:GovernancePath = Read-WithDefault -Prompt "Local clone path" -Default $GovernancePath
+    Write-Host ""
+
+    # -- Step 5: Review & Confirm ---------------------------------------------
+    Write-Host "Step 5: Review & Confirm" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  Configuration summary:" -ForegroundColor White
+    Write-Host ""
+    Write-Host "    Base URL:         " -NoNewline; Write-Host "$BaseUrl" -ForegroundColor Cyan
+    Write-Host "    Control repo:     " -NoNewline; Write-Host "$ProjectRoot" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "    Release repo:     " -NoNewline; Write-Host "$ReleaseOrg/$ReleaseRepo" -ForegroundColor Green -NoNewline; Write-Host " (branch: $ReleaseBranch)"
+    Write-Host "      -> clone to:     $ReleaseRepo/" -ForegroundColor DarkGray
+    Write-Host "      -> .github:      copied from release repo" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "    Governance repo:  " -NoNewline; Write-Host "$GovernanceOrg/$GovernanceRepo" -ForegroundColor Green -NoNewline; Write-Host " (branch: $GovernanceBranch)"
+    Write-Host "      -> clone to:     $GovernancePath/" -ForegroundColor DarkGray
+    Write-Host ""
+
+    if (-not (Read-YesNo -Prompt "Proceed with setup?" -Default "y")) {
+        Write-Host ""
+        Write-Host "  Setup cancelled." -ForegroundColor Yellow
+        exit 0
+    }
+    Write-Host ""
+}
+
+# =============================================================================
+# DETERMINE MODE
+# =============================================================================
+
+$hasParamArgs = $PSBoundParameters.ContainsKey("Org") -or
+                $PSBoundParameters.ContainsKey("ReleaseOrg") -or
+                $PSBoundParameters.ContainsKey("GovernanceOrg") -or
+                $PSBoundParameters.ContainsKey("ReleaseRepo") -or
+                $PSBoundParameters.ContainsKey("ReleaseBranch") -or
+                $PSBoundParameters.ContainsKey("GovernanceRepo") -or
+                $PSBoundParameters.ContainsKey("GovernanceBranch") -or
+                $PSBoundParameters.ContainsKey("GovernancePath") -or
+                $PSBoundParameters.ContainsKey("BaseUrl")
+
+if (-not $hasParamArgs) {
+    # No org/repo params passed — enter wizard mode
+    Invoke-SetupWizard
+}
+else {
+    # Validate that we have enough info in parameter mode
+    if (-not $Org -and -not $ReleaseOrg -and -not $GovernanceOrg) {
+        Write-Host "Error: -Org is required (or specify -ReleaseOrg, -GovernanceOrg individually)" -ForegroundColor Red
+        Write-Host ""
+        Write-Host "Usage: .\setup-control-repo.ps1 -Org <github-org-or-user>"
+        exit 1
+    }
+}
+
+# -- Apply fallbacks --------------------------------------------------------
+if (-not $ReleaseOrg) { $ReleaseOrg = $Org }
+if (-not $GovernanceOrg) { $GovernanceOrg = $Org }
+
+# =============================================================================
 # MAIN
 # =============================================================================
 
 Write-Host ""
-Write-Host "LENS Workbench v3 - Control Repo Setup" -ForegroundColor White -NoNewline
+Write-Host "LENS Workbench v3 - Control Repo Setup" -ForegroundColor White
 Write-Host ""
 Write-Host "Base URL: $BaseUrl" -ForegroundColor DarkGray
 Write-Host "Root:     $ProjectRoot" -ForegroundColor DarkGray
@@ -460,13 +616,21 @@ Write-Host ""
 Write-Host "Setup Complete" -ForegroundColor White
 Write-Host ""
 Write-Host "  $ReleaseOrg/$ReleaseRepo -> $ReleaseRepo\    (branch: $ReleaseBranch)" -ForegroundColor Green
-Write-Host "  .github  ``<--  $ReleaseRepo\.github" -ForegroundColor Green
+Write-Host "  .github  <--  $ReleaseRepo\.github" -ForegroundColor Green
 Write-Host "  $GovernanceOrg/$GovernanceRepo -> $GovernancePath\  (branch: $GovernanceCloneBranch)" -ForegroundColor Green
 Write-Host ""
-Write-Host "GitHub Copilot adapter is installed from bmad.lens.release/.github."
+Write-Host "GitHub Copilot adapter is installed from $ReleaseRepo/.github."
 Write-Host "No further setup is needed if GitHub Copilot is your only IDE."
 Write-Host ""
-Write-Host 'For non-Copilot IDEs, run the module installer:'
-Write-Host '  .\_bmad\lens-work\scripts\install.ps1 -IDE cursor' -ForegroundColor Cyan
-Write-Host '  .\_bmad\lens-work\scripts\install.ps1 -AllIDEs' -ForegroundColor Cyan
+Write-Host "For non-Copilot IDEs, run the module installer:"
+Write-Host "  .\_bmad\lens-work\scripts\install.ps1 -IDE cursor" -ForegroundColor Cyan
+Write-Host "  .\_bmad\lens-work\scripts\install.ps1 -AllIDEs" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Next Steps:" -ForegroundColor White
+Write-Host "  1. Store your GitHub PAT (run in terminal, " -NoNewline
+Write-Host "not in AI chat" -ForegroundColor Yellow -NoNewline
+Write-Host "):"
+Write-Host "     .\$ReleaseRepo\_bmad\lens-work\scripts\store-github-pat.ps1" -ForegroundColor Cyan
+Write-Host "  2. Open VS Code + GitHub Copilot Chat and run:"
+Write-Host "     /onboard" -ForegroundColor Cyan
 Write-Host ""
