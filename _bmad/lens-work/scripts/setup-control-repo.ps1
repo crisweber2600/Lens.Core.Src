@@ -106,7 +106,8 @@ function Read-YesNo {
     )
     if ($Default -eq "y") {
         $input = Read-Host "  $Prompt [Y/n]"
-    } else {
+    }
+    else {
         $input = Read-Host "  $Prompt [y/N]"
     }
     if ([string]::IsNullOrWhiteSpace($input)) { $input = $Default }
@@ -122,13 +123,15 @@ function Get-DetectedGitHubUsername {
             if ($LASTEXITCODE -eq 0 -and $ghUser) {
                 return $ghUser.Trim()
             }
-        } catch {}
+        }
+        catch {}
     }
     # Try git config
     try {
         $gitUser = (git config user.name 2>$null)
         if ($gitUser) { return $gitUser.Trim() }
-    } catch {}
+    }
+    catch {}
     return ""
 }
 
@@ -440,7 +443,8 @@ function Invoke-SetupWizard {
 
     if (Read-YesNo -Prompt "Use github.com?" -Default "y") {
         $script:BaseUrl = "https://github.com"
-    } else {
+    }
+    else {
         $script:BaseUrl = Read-WithDefault -Prompt "Enterprise GitHub URL" -Default "https://github.company.com"
     }
     Write-Host ""
@@ -499,14 +503,14 @@ function Invoke-SetupWizard {
 # =============================================================================
 
 $hasParamArgs = $PSBoundParameters.ContainsKey("Org") -or
-                $PSBoundParameters.ContainsKey("ReleaseOrg") -or
-                $PSBoundParameters.ContainsKey("GovernanceOrg") -or
-                $PSBoundParameters.ContainsKey("ReleaseRepo") -or
-                $PSBoundParameters.ContainsKey("ReleaseBranch") -or
-                $PSBoundParameters.ContainsKey("GovernanceRepo") -or
-                $PSBoundParameters.ContainsKey("GovernanceBranch") -or
-                $PSBoundParameters.ContainsKey("GovernancePath") -or
-                $PSBoundParameters.ContainsKey("BaseUrl")
+$PSBoundParameters.ContainsKey("ReleaseOrg") -or
+$PSBoundParameters.ContainsKey("GovernanceOrg") -or
+$PSBoundParameters.ContainsKey("ReleaseRepo") -or
+$PSBoundParameters.ContainsKey("ReleaseBranch") -or
+$PSBoundParameters.ContainsKey("GovernanceRepo") -or
+$PSBoundParameters.ContainsKey("GovernanceBranch") -or
+$PSBoundParameters.ContainsKey("GovernancePath") -or
+$PSBoundParameters.ContainsKey("BaseUrl")
 
 if (-not $hasParamArgs) {
     # No org/repo params passed — enter wizard mode
