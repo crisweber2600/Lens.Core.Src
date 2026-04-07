@@ -27,6 +27,7 @@ initiative_config = {
   feature: feature,
   track: track,
   initiative_root: initiative_root,
+  initiative_root_pattern: initiative_root_pattern,
   created: now_iso8601()
 }
 
@@ -55,37 +56,45 @@ if scope == "service":
 ### 2. Create Branch Topology, Commit, And Push
 
 ```yaml
-# v3.4: Resolve topology from track config
-track_config = lifecycle.tracks[track] || {}
-topology = track_config.topology || "legacy"
+# v3.4: Resolve topology from scope + track config
+track_config = scope == "feature" ? (lifecycle.tracks[track] || {}) : {}
+topology = scope == "feature" ? (track_config.topology || "2-branch") : "container-single-branch"
 
-if topology == "2-branch":
+if scope == "feature" and topology == "2-branch":
   # --- 2-BRANCH TOPOLOGY ---
   # Create featureId branch (code branch)
   invoke: git-orchestration.create-branch
   params:
     branch_name: ${initiative_root}
 
-  # Create feature.yaml on the code branch
+  # Create feature.yaml in initiative metadata path on the code branch
+  feature_yaml_path = "{initiative_output_folder}/${domain}/${service}/${initiative_root}/feature.yaml"
+  ensure_directory("{initiative_output_folder}/${domain}/${service}/${initiative_root}")
+
   feature_yaml = {
     feature: initiative_root,
     domain: domain,
     service: service,
     track: track,
+    initiative_root_pattern: initiative_root_pattern,
+    lifecycle_status: "active",
     status: "draft",
     owner: user_name,
     current_milestone: track_config.milestones[0] || "techplan",
     current_phase: track_config.start_phase,
+    context:
+      last_pulled: null
+      stale: false
     created: now_iso8601(),
     updated_at: now_iso8601()
   }
-  write_yaml("feature.yaml", feature_yaml)
+  write_yaml(feature_yaml_path, feature_yaml)
 
   invoke: git-orchestration.commit-artifacts
   params:
     file_paths:
       - ${config_path}
-      - feature.yaml
+      - ${feature_yaml_path}
     phase: INIT
     initiative: ${initiative_root}
     description: ${commit_description}
@@ -107,7 +116,7 @@ if topology == "2-branch":
     branch: "${initiative_root}-plan"
 
 else:
-  # --- LEGACY TOPOLOGY ---
+  # --- SINGLE-BRANCH CONTAINER OR NON-2-BRANCH TOPOLOGY ---
   invoke: git-orchestration.create-branch
   params:
     branch_name: ${initiative_root}
@@ -123,16 +132,6 @@ else:
   invoke: git-orchestration.push
   params:
     branch: ${initiative_root}
-
-  if scope == "feature":
-    invoke: git-orchestration.create-branch
-    params:
-      branch_name: "${initiative_root}-small"
-      parent_branch: ${initiative_root}
-
-    invoke: git-orchestration.push
-    params:
-      branch: "${initiative_root}-small"
 ```
 
 ### 3. Register In Feature Index And Create Summary Stub On Main *(v3.3)*
@@ -145,7 +144,8 @@ For 2-branch topology features, `feature_yaml: true` is also registered.
 
 ```yaml
 features_registry_config = load("lifecycle.yaml").features_registry
-if features_registry_config.enabled:
+features_registry_enabled = scope == "feature" ? true : (features_registry_config.enabled || false)
+if features_registry_enabled and scope == "feature":
 
   # 3a. Switch to main
   CURRENT_BRANCH = git symbolic-ref --short HEAD
@@ -160,9 +160,9 @@ if features_registry_config.enabled:
     service: ${service}
     status: draft
     owner: ${user_name}
-    plan_branch: "${initiative_root}-plan"
+    plan_branch: ${scope == "feature" and topology == "2-branch" ? "${initiative_root}-plan" : ""}
     topology: ${topology}
-    feature_yaml: ${track_config.feature_yaml || false}
+    feature_yaml: ${scope == "feature" and topology == "2-branch"}
     summary: "New initiative — ${commit_description}"
     relationships:
       depends_on: []

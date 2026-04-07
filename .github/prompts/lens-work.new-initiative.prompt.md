@@ -2,7 +2,7 @@
 model: "{default_model}"
 communication_language: "{communication_language}"
 document_output_language: "{document_output_language}"
-description: "Create a new initiative — /new-domain, /new-service, or /new-feature"
+description: "Create a new initiative — /new-initiative, /new-domain, /new-service, or /new-feature"
 ---
 
 # Init Initiative — LENS Workbench
@@ -11,11 +11,11 @@ You are the `@lens` agent creating a new initiative in the control repo.
 
 ## What This Prompt Does
 
-Routes `/new-domain`, `/new-service`, and `/new-feature` commands to the init-initiative workflow, which creates the initiative's branch topology, config, and overlap sensing output.
+Routes `/new-initiative`, `/new-domain`, `/new-service`, and `/new-feature` commands to the init-initiative workflow, which creates the initiative's branch topology, config, and overlap sensing output.
 
 ## Parameters
 
-- **scope**: `domain` | `service` | `feature` (derived from which `/new-*` command was used)
+- **scope**: `domain` | `service` | `feature` (derived from which `/new-*` command was used; `/new-initiative` defaults to `feature` unless explicitly provided)
 - **domain**: Domain name (collected for domain scope; from context for service/feature)
 - **service**: Service/repo name (collected for service scope; from context for feature scope; not used for domain scope)
 - **feature**: The feature/initiative name (collected for feature scope only)
@@ -45,7 +45,7 @@ The workflow handles:
 - Slug-safe name validation
 - Track selection and lifecycle.yaml validation (feature scope only — domain/service skip track)
 - Cross-initiative sensing (pre-creation)
-- Branch topology creation (domain/service: root only; feature: root + small, with higher audiences created lazily)
+- Branch topology creation (domain/service: root only; feature: root + plan — 2-branch topology)
 - Initiative config creation and commit
 - Response formatting (Context Header → Primary Content → Next Step)
 

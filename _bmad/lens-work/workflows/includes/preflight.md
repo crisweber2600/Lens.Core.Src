@@ -251,7 +251,7 @@ if feature_yaml_content is null:
 
 session.feature_yaml_state = {
   available: true,
-  topology: track_config.topology || "legacy",
+  topology: track_config.topology || "2-branch",
   feature: feature_yaml_content.feature,
   status: feature_yaml_content.status,
   current_milestone: feature_yaml_content.current_milestone,

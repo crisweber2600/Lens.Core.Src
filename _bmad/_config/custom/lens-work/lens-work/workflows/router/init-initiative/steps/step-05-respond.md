@@ -39,12 +39,19 @@ if scope == "service":
 if scope == "feature":
   output: |
     📂 Initiative: ${initiative_root}
+    🧭 Root pattern: ${initiative_root_pattern}
     🏷️ Track: ${track}
     � Phases: ${track_config.phases.join(', ')}
 
     ✅ Feature initiative created successfully.
-    - Branch: `${initiative_root}`
+    - Code branch: `${initiative_root}`
+    - Plan branch: `${initiative_root}-plan`
     - Config: `${config_path}`
+    - Feature metadata: `{initiative_output_folder}/${domain}/${service}/${initiative_root}/feature.yaml` on `${initiative_root}`
+
+    Visibility metadata on main (when feature registry is enabled):
+    - `feature-index.yaml` entry for `${initiative_root}`
+    - `summary.md` stub for `${initiative_root}`
 
     ▶️ Run `/${track_config.start_phase}` to begin the first phase.
 

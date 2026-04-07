@@ -2,15 +2,19 @@
 name: init-initiative
 description: Create domain, service, or feature initiatives with validated names, sensing checks, config scaffolding, and branch topology
 agent: "@lens"
-trigger: /new-domain, /new-service, or /new-feature
+trigger: /new-initiative, /new-domain, /new-service, or /new-feature
 category: router
 phase_name: init
 display_name: Init Initiative
 entryStep: './steps/step-01-preflight.md'
 inputs:
   command_name:
-    description: One of /new-domain, /new-service, or /new-feature
+    description: One of /new-initiative, /new-domain, /new-service, or /new-feature
     required: true
+  scope:
+    description: Optional explicit scope for /new-initiative (domain, service, feature)
+    required: false
+    default: ""
   name:
     description: The primary name argument supplied with the command
     required: false
@@ -29,7 +33,7 @@ inputs:
     default: ""
 ---
 
-# /new-domain, /new-service, /new-feature - Init Initiative Workflow
+# /new-initiative, /new-domain, /new-service, /new-feature - Init Initiative Workflow
 
 **Goal:** Create a new initiative with the correct scope, validated slug-safe naming, sensing checks, config scaffolding, and git branch topology.
 

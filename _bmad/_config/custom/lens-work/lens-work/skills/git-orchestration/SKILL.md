@@ -657,7 +657,7 @@ Invalid milestone token:
 ```yaml
 name: foo-bar-auth-medium
 valid: false
-reason: "Token 'medium' is not a valid milestone. Valid milestones: techplan, devproposal, sprintplan, dev-ready"
+reason: "Token 'medium' is not a valid milestone. Valid milestones: techplan, devproposal, sprintplan, dev-ready (legacy topology only ? 2-branch topology uses featureId + featureId-plan)"
 ```
 
 Invalid slug:
@@ -1162,6 +1162,10 @@ body: |
   ### Artifacts
   - architecture.md
 source_branch: foo-bar-auth-small-techplan
+
+# 2-branch topology example:
+# source_branch: foo-bar-auth-plan
+# target_branch: foo-bar-auth
 target_branch: foo-bar-auth-small
 ```
 
@@ -1273,6 +1277,17 @@ prs:
     source: foo-bar-auth-small-techplan
     target: foo-bar-auth-small
 ```
+
+> Legacy topology example above. 2-branch topology equivalent:
+>
+> ```yaml
+> prs:
+>   - number: 42
+>     title: "[TECHPLAN] foo-bar-auth — Architecture Review"
+>     state: merged
+>     source: foo-bar-auth-plan
+>     target: foo-bar-auth
+> ```
 
 ---
 

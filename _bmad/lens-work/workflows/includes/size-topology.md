@@ -1,11 +1,13 @@
 # Audience → Branch Topology Mapping
 
+> **⚠️ DEPRECATED (v3.4):** This audience-based topology is superseded by the **2-branch model** (`featureId` + `featureId-plan`). New features use 2-branch topology configured via `lifecycle.yaml → tracks.*.topology: 2-branch`. See `tests/contracts/two-branch-topology.md` for the current branch specification. This file is retained for backward compatibility with legacy topology consumers only.
+
 **Type:** Workflow include
-**Purpose:** Map audience tiers to branch naming patterns for consistent topology operations.
+**Purpose:** Map audience tiers to branch naming patterns for consistent topology operations (legacy topology only).
 
 ## Usage
 
-Referenced by phase-lifecycle, audience-promotion, and init-initiative workflows to derive correct branch names from audience context.
+Referenced by phase-lifecycle, audience-promotion, and init-initiative workflows to derive correct branch names from audience context. **For 2-branch topology, these workflows short-circuit and skip audience branching entirely.**
 
 ## Audience Chain
 

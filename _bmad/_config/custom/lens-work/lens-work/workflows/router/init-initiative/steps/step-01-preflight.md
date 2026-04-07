@@ -24,6 +24,7 @@ params:
   skip_constitution: true
 
 command_name = inputs.command_name
+requested_scope = lower(inputs.scope || "")
 
 if command_name == "/new-domain":
   scope = "domain"
@@ -31,6 +32,12 @@ else if command_name == "/new-service":
   scope = "service"
 else if command_name == "/new-feature":
   scope = "feature"
+else if command_name == "/new-initiative":
+  if requested_scope == "domain" or requested_scope == "service" or requested_scope == "feature":
+    scope = requested_scope
+  else:
+    # Backward-compatible default: generic new-initiative behaves as new-feature.
+    scope = "feature"
 else:
   FAIL("❌ Unsupported command for init-initiative: ${command_name}")
 

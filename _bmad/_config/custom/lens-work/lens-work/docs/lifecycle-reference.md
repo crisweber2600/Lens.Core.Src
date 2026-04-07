@@ -36,6 +36,8 @@ Phases are sequential stages of planning and implementation. Each phase produces
 
 ### Audience Tiers
 
+> **v3.4 (2-branch topology):** Audience tiers are **not used** when `topology: 2-branch` is configured. Phase transitions are tracked via `feature.yaml` metadata, not audience branches. The table below applies to legacy topology only.
+
 Audiences represent levels of review and approval. Initiatives start at `small` and promote upward through PR-based gates.
 
 | Audience | Role | Entry Gate | Phases Worked |
@@ -100,7 +102,9 @@ Audience → Next audience           (promotion PR with gates)
 
 ### Lazy Branch Creation
 
-Only `{root}` and `{root}-small` are created at init. Higher audience branches are created lazily when a promotion requires them.
+> **v3.4 (2-branch topology):** When `topology: 2-branch` is configured, only `{featureId}` and `{featureId}-plan` are created at init. There are no audience branches — phase transitions are metadata updates in `feature.yaml`, not new branches.
+
+**Legacy topology:** Only `{root}` and `{root}-small` are created at init. Higher audience branches are created lazily when a promotion requires them.
 
 ## Commands Reference
 

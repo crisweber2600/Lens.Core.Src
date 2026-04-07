@@ -25,13 +25,23 @@ Ask the user for the feature vision. Produce a focused product brief covering:
 artifact = produce_artifact("product-brief", template="express")
 save_to: "${docs_path}/product-brief.md"
 
-invoke: git-orchestration.commit-artifacts
-params:
-  file_paths:
-    - ${docs_path}/product-brief.md
-  phase: "ARTIFACT:EXPRESSPLAN:PRODUCT-BRIEF"
-  initiative: ${initiative_root}
-  description: "product brief produced (express)"
+# v3.4: 2-branch topology uses commit-and-publish (artifacts to plan branch + summary to main)
+if session.feature_yaml_context != null and session.feature_yaml_context.enabled == true:
+  invoke: git-orchestration.commit-and-publish
+  params:
+    file_paths:
+      - ${docs_path}/product-brief.md
+    phase: "ARTIFACT:EXPRESSPLAN:PRODUCT-BRIEF"
+    initiative: ${initiative_root}
+    description: "product brief produced (express)"
+else:
+  invoke: git-orchestration.commit-artifacts
+  params:
+    file_paths:
+      - ${docs_path}/product-brief.md
+    phase: "ARTIFACT:EXPRESSPLAN:PRODUCT-BRIEF"
+    initiative: ${initiative_root}
+    description: "product brief produced (express)"
 ```
 
 ### 2. PRD (Product Requirements Document)
@@ -46,13 +56,23 @@ Building on the product brief, produce a focused PRD:
 artifact = produce_artifact("prd", template="express", context=["product-brief"])
 save_to: "${docs_path}/prd.md"
 
-invoke: git-orchestration.commit-artifacts
-params:
-  file_paths:
-    - ${docs_path}/prd.md
-  phase: "ARTIFACT:EXPRESSPLAN:PRD"
-  initiative: ${initiative_root}
-  description: "PRD produced (express)"
+# v3.4: 2-branch topology uses commit-and-publish (artifacts to plan branch + summary to main)
+if session.feature_yaml_context != null and session.feature_yaml_context.enabled == true:
+  invoke: git-orchestration.commit-and-publish
+  params:
+    file_paths:
+      - ${docs_path}/prd.md
+    phase: "ARTIFACT:EXPRESSPLAN:PRD"
+    initiative: ${initiative_root}
+    description: "PRD produced (express)"
+else:
+  invoke: git-orchestration.commit-artifacts
+  params:
+    file_paths:
+      - ${docs_path}/prd.md
+    phase: "ARTIFACT:EXPRESSPLAN:PRD"
+    initiative: ${initiative_root}
+    description: "PRD produced (express)"
 ```
 
 ### 3. Architecture
@@ -67,13 +87,23 @@ Produce a focused architecture document:
 artifact = produce_artifact("architecture", template="express", context=["product-brief", "prd"])
 save_to: "${docs_path}/architecture.md"
 
-invoke: git-orchestration.commit-artifacts
-params:
-  file_paths:
-    - ${docs_path}/architecture.md
-  phase: "ARTIFACT:EXPRESSPLAN:ARCHITECTURE"
-  initiative: ${initiative_root}
-  description: "architecture produced (express)"
+# v3.4: 2-branch topology uses commit-and-publish (artifacts to plan branch + summary to main)
+if session.feature_yaml_context != null and session.feature_yaml_context.enabled == true:
+  invoke: git-orchestration.commit-and-publish
+  params:
+    file_paths:
+      - ${docs_path}/architecture.md
+    phase: "ARTIFACT:EXPRESSPLAN:ARCHITECTURE"
+    initiative: ${initiative_root}
+    description: "architecture produced (express)"
+else:
+  invoke: git-orchestration.commit-artifacts
+  params:
+    file_paths:
+      - ${docs_path}/architecture.md
+    phase: "ARTIFACT:EXPRESSPLAN:ARCHITECTURE"
+    initiative: ${initiative_root}
+    description: "architecture produced (express)"
 
 session.artifacts_produced = ["product-brief", "prd", "architecture"]
 ```

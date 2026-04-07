@@ -20,6 +20,7 @@ domain = inputs.domain || ""
 service = inputs.service || ""
 track = lower(replace(replace(inputs.track || "", "_", "-"), " ", "-"))
 feature = ""
+initiative_root_pattern = ""
 current_root_segments = current_context != null and current_context.initiative_root != null ? split(current_context.initiative_root, "-") : []
 
 if scope == "domain":
@@ -27,6 +28,7 @@ if scope == "domain":
     ask: "Provide the domain name for the new domain initiative."
     capture: primary_name
   domain = lower(remove_non_alphanumeric(primary_name))
+  initiative_root_pattern = "domain"
   initiative_root = domain
   config_path = "{initiative_output_folder}/${domain}/initiative.yaml"
 
@@ -41,6 +43,7 @@ if scope == "service":
     capture: primary_name
   domain = lower(remove_non_alphanumeric(domain))
   service = lower(remove_non_alphanumeric(primary_name))
+  initiative_root_pattern = "domain-service"
   initiative_root = "${domain}-${service}"
   config_path = "{initiative_output_folder}/${domain}/${service}/initiative.yaml"
 
@@ -61,13 +64,24 @@ if scope == "feature":
   domain = lower(remove_non_alphanumeric(domain))
   service = lower(remove_non_alphanumeric(service))
   feature = lower(remove_non_alphanumeric(primary_name))
+
+  # Resolve constitutional naming + track constraints once and reuse.
+  constitution_result = invoke_if_possible: constitution.resolve-constitution
+  params:
+    domain: ${domain}
+    service: ${service}
+  resolved_constitution = constitution_result.resolved_constitution || constitution_result || {}
+  initiative_root_pattern = resolved_constitution.initiative_root_pattern || "domain-service-feature"
+
+  if initiative_root_pattern == "feature-only":
+    initiative_root = "${feature}"
+  else:
+    # Default and fallback: domain-service-feature
+    initiative_root = "${domain}-${service}-${feature}"
+
   if track == "":
     # Constitution-aware track filtering
-    constitution_result = invoke_if_possible: constitution.resolve-constitution
-    params:
-      domain: ${domain}
-      service: ${service}
-    permitted_tracks = constitution_result.resolved_constitution.permitted_tracks || null
+    permitted_tracks = resolved_constitution.permitted_tracks || null
 
     all_tracks:
       - express: "🚀 express      — All planning in one session. Best for solo work, spikes, or getting started fast."
@@ -93,12 +107,12 @@ if scope == "feature":
       Recommended for first-time users: express
     capture: track
   track = lower(replace(replace(track, "_", "-"), " ", "-"))
-  initiative_root = "${domain}-${service}-${feature}"
   config_path = "{initiative_output_folder}/${domain}/${service}/${feature}.yaml"
 
 output: |
   ✅ Scope inputs collected
   ├── Initiative root: ${initiative_root}
+  ├── Root pattern: ${initiative_root_pattern}
   └── Config path: ${config_path}
 ```
 
