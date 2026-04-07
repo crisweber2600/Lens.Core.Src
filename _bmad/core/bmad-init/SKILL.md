@@ -91,8 +91,8 @@ The `--answers` JSON format:
 Note: Pass the **raw user answers** (before result template expansion). The script applies result templates and `{project-root}` expansion when writing.
 
 The script:
-- Creates `_bmad/core/config.yaml` with core values (if core answers provided)
-- Creates `_bmad/{module}/config.yaml` with core values + module values (result-expanded)
+- Creates `_bmad/core/bmadconfig.yaml` with core values (if core answers provided)
+- Creates `_bmad/{module}/bmadconfig.yaml` with core values + module values (result-expanded)
 - Creates any directories listed in the module.yaml `directories` array
 
 ### Step 5: Return vars

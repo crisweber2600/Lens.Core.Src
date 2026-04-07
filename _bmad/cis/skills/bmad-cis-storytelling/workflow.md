@@ -1,7 +1,7 @@
 ---
 name: bmad-cis-storytelling
 description: 'Craft compelling narratives using story frameworks. Use when the user says "help me with storytelling" or "I want to create a narrative through storytelling"'
-main_config: '{project-root}/_bmad/cis/config.yaml'
+main_config: '{project-root}/_bmad/cis/bmadconfig.yaml'
 ---
 
 # Storytelling Workflow

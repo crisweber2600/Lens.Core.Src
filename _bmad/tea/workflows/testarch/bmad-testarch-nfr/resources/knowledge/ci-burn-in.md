@@ -213,7 +213,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: junit-results-shard-${{ matrix.shard }}
-          path: test-results/junit.xml
+          path: test-results/junit.yaml
           retention-days: 30
 
   merge-test-results:

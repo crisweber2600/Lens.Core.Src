@@ -47,7 +47,7 @@ export default defineConfig({
   // CI-specific artifact retention
   reporter: [
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
-    ['junit', { outputFile: 'results.xml' }],
+    ['junit', { outputFile: 'results.yaml' }],
     ['list'], // Console output
   ],
 
