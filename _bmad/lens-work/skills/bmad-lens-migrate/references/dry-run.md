@@ -4,7 +4,7 @@ Preview the full migration plan without making any changes. This step is mandato
 
 ## Outcome
 
-A complete report of every action that would be taken — feature.yaml paths to be created, feature-index.yaml entries to be added, summary stubs to be written — with no files written or modified.
+A complete report of every action that would be taken — feature.yaml paths to be created, feature-index.yaml entries to be added, summary and problems stubs to be written, and any legacy state or artifacts to preserve — with no files written or modified.
 
 ## Process
 
@@ -31,10 +31,12 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   "planned_actions": [
     "Create feature.yaml at {governance_repo}/features/platform/identity/auth-login/feature.yaml",
     "Update feature-index.yaml at {governance_repo}/feature-index.yaml",
-    "Create summary stub at {governance_repo}/summaries/auth-login.md"
+    "Create summary stub at {governance_repo}/features/platform/identity/auth-login/summary.md",
+    "Create problems log at {governance_repo}/features/platform/identity/auth-login/problems.md"
   ],
   "feature_yaml_created": false,
-  "index_updated": false
+  "index_updated": false,
+  "legacy_state_path": "{governance_repo}/branches/platform-identity-auth-login/initiative-state.yaml"
 }
 ```
 
