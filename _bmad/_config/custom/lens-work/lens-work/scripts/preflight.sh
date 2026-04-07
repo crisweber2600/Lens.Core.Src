@@ -24,7 +24,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+# Script lives at lens.core/_bmad/lens-work/scripts; project root is one level above lens.core.
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 RELEASE_DIR="${PROJECT_ROOT}/lens.core"
 TIMESTAMP_FILE="${PROJECT_ROOT}/_bmad-output/lens-work/personal/.preflight-timestamp"
 
