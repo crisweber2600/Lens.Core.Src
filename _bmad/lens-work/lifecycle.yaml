@@ -212,16 +212,16 @@ tracks:
     phases: [preplan, businessplan, techplan, devproposal, sprintplan]
     milestones: [techplan, devproposal, sprintplan, dev-ready]
     start_phase: preplan
-    topology: legacy                  # v3.4: legacy (milestone branches) | 2-branch (featureId + featureId-plan)
-    feature_yaml: false               # v3.4: use feature.yaml as optional state source
+    topology: 2-branch                # v3.4: legacy (milestone branches) | 2-branch (featureId + featureId-plan)
+    feature_yaml: true                # v3.4: use feature.yaml as optional state source
 
   feature:
     description: "Known business context — skip research, start at business plan"
     phases: [businessplan, techplan, devproposal, sprintplan]
     milestones: [techplan, devproposal, sprintplan, dev-ready]
     start_phase: businessplan
-    topology: legacy
-    feature_yaml: false
+    topology: 2-branch
+    feature_yaml: true
 
   tech-change:
     description: "Pure technical change — no business case needed"
@@ -229,8 +229,8 @@ tracks:
     milestones: [techplan, devproposal, sprintplan, dev-ready]
     constitution_controlled_gates: [devproposal, devproposal-to-sprintplan]
     start_phase: techplan
-    topology: legacy
-    feature_yaml: false
+    topology: 2-branch
+    feature_yaml: true
 
   hotfix:
     description: "Urgent fix — minimal planning, fast to execution"
@@ -238,8 +238,8 @@ tracks:
     milestones: [techplan, dev-ready]
     constitution_controlled_gates: [adversarial-review]
     start_phase: techplan
-    topology: legacy
-    feature_yaml: false
+    topology: 2-branch
+    feature_yaml: true
 
   hotfix-express:
     description: "Emergency fix — single promotion, constitution gate informational-only"
@@ -250,16 +250,16 @@ tracks:
     bypass_constitution_gate: true
     start_phase: techplan
     requires_constitution_permission: true
-    topology: legacy
-    feature_yaml: false
+    topology: 2-branch
+    feature_yaml: true
 
   spike:
     description: "Research only — no implementation"
     phases: [preplan]
     milestones: [techplan]
     start_phase: preplan
-    topology: legacy
-    feature_yaml: false
+    topology: 2-branch
+    feature_yaml: true
 
   quickdev:
     description: "Rapid execution — delegates to target-project agents"
@@ -267,8 +267,8 @@ tracks:
     milestones: [devproposal, dev-ready]
     constitution_controlled_gates: [adversarial-review]
     start_phase: devproposal
-    topology: legacy
-    feature_yaml: false
+    topology: 2-branch
+    feature_yaml: true
 
   express:
     description: "Lightweight single-phase planning — all artifacts in one session, no milestone branches, no PRs"
@@ -281,8 +281,8 @@ tracks:
     branch_model: single
     pr_creation: disabled
     requires_constitution_permission: true
-    topology: legacy
-    feature_yaml: false
+    topology: 2-branch
+    feature_yaml: true
 
 # -----------------------------------------------------------------------------
 # PROMOTE SEMANTICS (v3.1 — approval-only model)

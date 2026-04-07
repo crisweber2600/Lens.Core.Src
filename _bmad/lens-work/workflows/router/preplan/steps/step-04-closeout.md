@@ -24,23 +24,43 @@ params:
   phase: preplan
   artifacts: ${artifact_list}
 
-invoke: git-orchestration.commit-artifacts
-params:
-  file_paths:
-    - ${output_path}
-    - ${initiative_state.state_path}
-  phase: "PHASE:PREPLAN:COMPLETE"
-  initiative: ${initiative.initiative_root}
-  description: "preplan artifacts complete"
-  commit_body: |
-    Artifacts:
-    ${artifact_list.join('\n    - ')}
+# v3.4: 2-branch topology uses commit-and-publish (artifacts to plan branch + summary to main)
+if session.feature_yaml_context != null and session.feature_yaml_context.enabled == true:
+  invoke: git-orchestration.commit-and-publish
+  params:
+    file_paths:
+      - ${output_path}
+      - ${initiative_state.state_path}
+    phase: "PHASE:PREPLAN:COMPLETE"
+    initiative: ${initiative.initiative_root}
+    description: "preplan artifacts complete"
+    commit_body: |
+      Artifacts:
+      ${artifact_list.join('\n    - ')}
 
-invoke: git-orchestration.push
+  output: |
+    ✅ /preplan complete (2-branch topology)
+    ├── Artifacts committed to plan branch, summary published to main
+    └── Next: Run `/businessplan` to continue planning.
 
-output: |
-  ✅ /preplan complete
-  ├── Branch: ${initiative.initiative_root} (initiative root)
-  ├── Artifacts committed with [PHASE:PREPLAN:COMPLETE] marker
-  └── Next: Run `/businessplan` to continue planning.
+else:
+  invoke: git-orchestration.commit-artifacts
+  params:
+    file_paths:
+      - ${output_path}
+      - ${initiative_state.state_path}
+    phase: "PHASE:PREPLAN:COMPLETE"
+    initiative: ${initiative.initiative_root}
+    description: "preplan artifacts complete"
+    commit_body: |
+      Artifacts:
+      ${artifact_list.join('\n    - ')}
+
+  invoke: git-orchestration.push
+
+  output: |
+    ✅ /preplan complete
+    ├── Branch: ${initiative.initiative_root} (initiative root)
+    ├── Artifacts committed with [PHASE:PREPLAN:COMPLETE] marker
+    └── Next: Run `/businessplan` to continue planning.
 ```

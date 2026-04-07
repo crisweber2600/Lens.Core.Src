@@ -1,4 +1,7 @@
 ﻿#Requires -Version 5.1
+# ⚠️  DEPRECATED (v3.4) — Legacy audience-based topology only.
+# For 2-branch topology (the default), use git-orchestration.create-pr directly.
+# This script will be removed in a future release.
 <#
 .SYNOPSIS
     LENS Workbench — Branch promotion + cleanup helper

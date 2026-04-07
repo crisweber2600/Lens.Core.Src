@@ -50,15 +50,16 @@ params:
 # Operation B: Constitutional track permission (feature scope only)
 constitution_future = null
 if scope == "feature":
-  constitution_future = invoke_async: constitution.resolve-constitution
-  params:
-    domain: ${domain}
-    service: ${service}
+  if constitution_result == null:
+    constitution_future = invoke_async: constitution.resolve-constitution
+    params:
+      domain: ${domain}
+      service: ${service}
 # --- END PARALLEL BLOCK ---
 
 # Await results
 sensing_result = await(sensing_future)
-constitution_result = constitution_future != null ? await(constitution_future) : null
+constitution_result = constitution_result != null ? constitution_result : (constitution_future != null ? await(constitution_future) : null)
 ```
 
 #### 2a. Evaluate Sensing Results
@@ -98,6 +99,11 @@ if sensing_matches.length > 0:
 ```yaml
 if scope == "feature" and constitution_result != null:
   resolved_constitution = constitution_result.resolved_constitution || constitution_result
+
+  expected_pattern = resolved_constitution.initiative_root_pattern || "domain-service-feature"
+  expected_root = expected_pattern == "feature-only" ? feature : "${domain}-${service}-${feature}"
+  if initiative_root != expected_root:
+    FAIL("❌ Initiative root `${initiative_root}` does not match constitutional naming pattern `${expected_pattern}`. Expected `${expected_root}`.")
 
   if resolved_constitution.permitted_tracks exists and not contains(resolved_constitution.permitted_tracks, track):
     FAIL("⚠️ Constitution blocks creation: track `${track}` is not permitted for ${domain}/${service}. Run `/constitution` to review governance rules or contact governance admins.")
