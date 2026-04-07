@@ -73,7 +73,7 @@ fi
 echo -e "${CYAN}[preflight]${NC} Verifying LENS_VERSION compatibility..."
 
 MODULE_SCHEMA=$(awk '/^schema_version:/ { print $2; exit }' \
-  "${RELEASE_DIR}/lens.core/_bmad/lens-work/lifecycle.yaml")
+  "${RELEASE_DIR}/_bmad/lens-work/lifecycle.yaml")
 
 if [[ -z "$MODULE_SCHEMA" ]]; then
   echo -e "${RED}ERROR: Unable to determine schema_version from lifecycle.yaml.${NC}"
@@ -174,7 +174,7 @@ done
 # =============================================================================
 if [ ! -d ".claude/commands" ]; then
   echo -e "${YELLOW}[preflight]${NC} .claude/commands missing — running installer..."
-  bash "${RELEASE_DIR}/lens.core/_bmad/lens-work/scripts/install.sh" --ide claude
+  bash "${RELEASE_DIR}/_bmad/lens-work/scripts/install.sh" --ide claude
 fi
 
 # =============================================================================
