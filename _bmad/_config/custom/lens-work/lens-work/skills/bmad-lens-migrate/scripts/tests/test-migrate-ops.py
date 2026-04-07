@@ -146,6 +146,7 @@ def test_migrate_feature_creates_yaml():
         assert_eq("migrated_from field", data["migrated_from"], "platform-identity-auth-login")
         assert_eq("phase field", data["phase"], "preplan")
         assert_true("has team lead", data["team"][0]["role"] == "lead")
+        assert_true("has milestones map", isinstance(data.get("milestones"), dict))
 
 
 def test_migrate_feature_creates_index_entry():
@@ -170,12 +171,14 @@ def test_migrate_feature_creates_index_entry():
         with open(index_path) as f:
             index = yaml.safe_load(f)
 
-        feature_ids = [e["featureId"] for e in index.get("features", [])]
+        feature_ids = [e.get("id") or e.get("featureId") for e in index.get("features", [])]
         assert_true("feature in index", "user-mgmt" in feature_ids)
 
-        entry = next(e for e in index["features"] if e["featureId"] == "user-mgmt")
+        entry = next(e for e in index["features"] if (e.get("id") or e.get("featureId")) == "user-mgmt")
         assert_eq("index entry domain", entry["domain"], "core")
         assert_eq("index entry migrated_from", entry["migrated_from"], "core-api-user-mgmt")
+        assert_eq("index entry id", entry["id"], "user-mgmt")
+        assert_eq("index entry compatibility featureId", entry["featureId"], "user-mgmt")
 
 
 def test_migrate_feature_dry_run():
@@ -197,6 +200,10 @@ def test_migrate_feature_dry_run():
         assert_eq("dry_run no yaml created", result["feature_yaml_created"], False)
         assert_eq("dry_run no index updated", result["index_updated"], False)
         assert_true("planned_actions present", len(result.get("planned_actions", [])) > 0)
+        assert_true(
+            "summary path uses feature directory",
+            any("features/platform/identity/auth-login/summary.md" in action for action in result.get("planned_actions", [])),
+        )
 
         feature_path = Path(tmp) / "features" / "platform" / "identity" / "auth-login" / "feature.yaml"
         assert_eq("feature.yaml not created in dry run", feature_path.exists(), False)
@@ -321,6 +328,111 @@ def test_scan_detects_conflict():
         assert_eq("conflict old_id", result["conflicts"][0]["old_id"], "platform-identity-auth-login")
 
 
+def test_migrate_feature_preserves_legacy_state():
+    """migrate-feature preserves phase, track, transitions, and context from legacy state."""
+    print("test_migrate_feature_preserves_legacy_state", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        branch = make_branch_dir(tmp, "platform-identity-auth-login")
+        with open(branch / "initiative-state.yaml", "w") as f:
+            yaml.dump(
+                {
+                    "phase": "techplan",
+                    "track": "hotfix",
+                    "created": "2026-04-01T00:00:00Z",
+                    "last_updated": "2026-04-02T00:00:00Z",
+                    "phase_transitions": [
+                        {"phase": "preplan", "timestamp": "2026-04-01T00:00:00Z", "user": "legacy"},
+                        {"phase": "techplan", "timestamp": "2026-04-02T00:00:00Z", "user": "legacy"},
+                    ],
+                    "context": {"last_pulled": "2026-04-02T12:00:00Z", "stale": True},
+                    "milestones": {"techplan": "2026-04-02T00:00:00Z"},
+                },
+                f,
+                sort_keys=False,
+            )
+
+        result, code = run([
+            "migrate-feature",
+            "--governance-repo", tmp,
+            "--old-id", "platform-identity-auth-login",
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--username", "testuser",
+        ])
+        assert_eq("migrate status", result["status"], "pass")
+        assert_eq("migrate exit code", code, 0)
+        assert_true("legacy state path returned", result.get("legacy_state_path") is not None)
+
+        feature_path = Path(tmp) / "features" / "platform" / "identity" / "auth-login" / "feature.yaml"
+        with open(feature_path) as f:
+            data = yaml.safe_load(f)
+
+        assert_eq("phase preserved", data["phase"], "techplan")
+        assert_eq("track preserved", data["track"], "hotfix")
+        assert_eq("created preserved", data["created"], "2026-04-01T00:00:00Z")
+        assert_eq("updated preserved", data["updated"], "2026-04-02T00:00:00Z")
+        assert_eq("transition count preserved", len(data["phase_transitions"]), 2)
+        assert_eq("context stale preserved", data["context"]["stale"], True)
+        assert_eq("techplan milestone preserved", data["milestones"]["techplan"], "2026-04-02T00:00:00Z")
+
+
+def test_migrate_feature_creates_summary_and_problems_in_feature_dir():
+    """migrate-feature writes summary.md and problems.md into the feature directory."""
+    print("test_migrate_feature_creates_summary_and_problems_in_feature_dir", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        result, code = run([
+            "migrate-feature",
+            "--governance-repo", tmp,
+            "--old-id", "platform-identity-auth-login",
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--username", "testuser",
+        ])
+        assert_eq("migrate status", result["status"], "pass")
+        assert_eq("migrate exit code", code, 0)
+        assert_eq("problems created", result["problems_created"], True)
+
+        feature_dir = Path(tmp) / "features" / "platform" / "identity" / "auth-login"
+        summary_path = feature_dir / "summary.md"
+        problems_path = feature_dir / "problems.md"
+        legacy_summary_dir = Path(tmp) / "summaries"
+
+        assert_eq("summary.md exists in feature dir", summary_path.exists(), True)
+        assert_eq("problems.md exists in feature dir", problems_path.exists(), True)
+        assert_eq("no legacy summaries dir created", legacy_summary_dir.exists(), False)
+        assert_true("summary mentions migrated from", "Migrated from legacy branch" in summary_path.read_text())
+        assert_true("problems template rendered", "Feature: platform/identity/auth-login" in problems_path.read_text())
+
+
+def test_migrate_feature_copies_legacy_artifacts():
+    """migrate-feature copies legacy planning artifacts when present."""
+    print("test_migrate_feature_copies_legacy_artifacts", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        branch = make_branch_dir(tmp, "platform-identity-auth-login")
+        artifacts_dir = branch / "_bmad-output" / "lens-work" / "planning-artifacts"
+        artifacts_dir.mkdir(parents=True, exist_ok=True)
+        (artifacts_dir / "tech-plan.md").write_text("legacy tech plan", encoding="utf-8")
+
+        result, code = run([
+            "migrate-feature",
+            "--governance-repo", tmp,
+            "--old-id", "platform-identity-auth-login",
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--username", "testuser",
+        ])
+        assert_eq("migrate status", result["status"], "pass")
+        assert_eq("migrate exit code", code, 0)
+        assert_eq("artifact copied list", result["artifacts_copied"], ["tech-plan.md"])
+
+        copied_artifact = Path(tmp) / "features" / "platform" / "identity" / "auth-login" / "tech-plan.md"
+        assert_eq("copied artifact exists", copied_artifact.exists(), True)
+        assert_eq("copied artifact content", copied_artifact.read_text(encoding="utf-8"), "legacy tech plan")
+
+
 if __name__ == "__main__":
     test_scan_detects_legacy()
     test_scan_derives_components()
@@ -336,6 +448,9 @@ if __name__ == "__main__":
     test_governance_repo_not_found()
     test_governance_repo_not_found_migrate()
     test_scan_detects_conflict()
+    test_migrate_feature_preserves_legacy_state()
+    test_migrate_feature_creates_summary_and_problems_in_feature_dir()
+    test_migrate_feature_copies_legacy_artifacts()
 
     print(f"\n{'='*40}", file=sys.stderr)
     print(f"Results: {PASS} passed, {FAIL} failed", file=sys.stderr)

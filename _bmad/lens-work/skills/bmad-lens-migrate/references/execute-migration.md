@@ -1,13 +1,14 @@
 # Execute Migration
 
-Execute the migration plan after dry-run confirmation. Creates new branch artifacts, populates feature-index.yaml, and writes summary stubs on main.
+Execute the migration plan after dry-run confirmation. Creates canonical Lens Next governance artifacts, preserves legacy state when present, populates feature-index.yaml, and writes summary stubs on main.
 
 ## Outcome
 
 For each confirmed feature:
 - `feature.yaml` created at `{governance_repo}/features/{domain}/{service}/{featureId}/feature.yaml`
 - Entry added to `{governance_repo}/feature-index.yaml`
-- Summary stub created at `{governance_repo}/summaries/{featureId}.md`
+- Summary stub created at `{governance_repo}/features/{domain}/{service}/{featureId}/summary.md`
+- Problems log created at `{governance_repo}/features/{domain}/{service}/{featureId}/problems.md`
 
 Old branches are NOT deleted at this step. Cleanup is a separate, explicit operation.
 
@@ -38,7 +39,11 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   "dry_run": false,
   "feature_yaml_created": true,
   "index_updated": true,
-  "summary_created": true
+  "summary_created": true,
+  "problems_created": true,
+  "artifacts_copied": ["tech-plan.md"],
+  "legacy_state_path": "{governance_repo}/branches/platform-identity-auth-login/initiative-state.yaml",
+  "warnings": []
 }
 ```
 
@@ -52,7 +57,7 @@ For each confirmed feature in the migration plan:
 4. Scaffold governance feature directory:
    - Create `{governance_repo}/features/{domain}/{service}/{featureId}/`
    - Create `problems.md` from template if not exists
-   - Copy planning artifacts from legacy branches to governance feature directory
+  - Copy planning artifacts from `{governance_repo}/branches/{old_id}/_bmad-output/lens-work/planning-artifacts/` when present
 5. Log result: pass / fail / skipped
 6. Continue to next feature — do not abort batch on single failure
 
@@ -148,22 +153,21 @@ features:
     added: <timestamp>
 ```
 
-## Summary Stub (summaries/{featureId}.md)
+## Summary Stub (features/{domain}/{service}/{featureId}/summary.md)
 
-Written to main branch at `{governance_repo}/summaries/{featureId}.md`:
+Written to main branch at `{governance_repo}/features/{domain}/{service}/{featureId}/summary.md`:
 
 ```markdown
 # Auth Login
 
-**Feature ID:** auth-login
-**Domain:** platform
-**Service:** identity
-**Migrated from:** platform-identity-auth-login
-**Migration date:** <timestamp>
+> Status: migrated | Feature ID: `auth-login`
 
-## Summary
+Migrated from legacy branch `platform-identity-auth-login`. Update as planning resumes.
 
-_To be filled in._
+**Domain:** platform  
+**Service:** identity  
+**Owner:** cweber  
+**Migrated:** <timestamp>
 ```
 
 ## Completion Summary
