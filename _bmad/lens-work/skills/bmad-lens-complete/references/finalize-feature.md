@@ -69,6 +69,19 @@ python3 ./scripts/complete-ops.py finalize \
 4. Writes `{feature-dir}/summary.md` with the archive summary
 5. All writes are atomic (temp file + rename)
 
+## Post-Script Git Sync
+
+After the script returns `status: pass`, sync the governance repo:
+
+```bash
+git -C {governance_repo} pull --rebase origin main
+git -C {governance_repo} add -A
+git -C {governance_repo} commit -m "chore: archive {featureId}"
+git -C {governance_repo} push origin main
+```
+
+If `git push` fails (e.g., concurrent write conflict), report the error and instruct the user to resolve the conflict manually before retrying the push. Do NOT re-run the finalize script.
+
 ## Output
 
 ```json

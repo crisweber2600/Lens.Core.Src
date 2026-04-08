@@ -254,12 +254,15 @@ def build_git_commands(
         ])
 
     cmds.extend([
+        f"git -C {gov} pull --rebase origin main",
         f"git -C {gov} checkout -b {plan_branch}",
         f"git -C {gov} add {feature_yaml_rel}",
         f'git -C {gov} commit -m "feat({domain}/{service}): init {feature_id} planning artifacts"',
+        f"git -C {gov} push origin {plan_branch}",
         f"git -C {gov} checkout main",
         f"git -C {gov} add {' '.join(visibility_paths)}",
         f'git -C {gov} commit -m "feat: add {feature_id} to feature index"',
+        f"git -C {gov} push origin main",
     ])
 
     return cmds

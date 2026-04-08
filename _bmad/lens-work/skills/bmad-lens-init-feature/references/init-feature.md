@@ -79,12 +79,15 @@ Execute the `git_commands` returned by the script in sequence, then the `gh_comm
 # Example output sequence:
 # git -C {control_repo} checkout -b {featureId}
 # git -C {control_repo} checkout -b {featureId}-plan
+# git -C {governance_repo} pull --rebase origin main
 # git -C {governance_repo} checkout -b {featureId}-plan
 # git -C {governance_repo} add features/{domain}/{service}/{featureId}/feature.yaml
 # git -C {governance_repo} commit -m "feat({domain}/{service}): init {featureId} planning artifacts"
+# git -C {governance_repo} push origin {featureId}-plan
 # git -C {governance_repo} checkout main
 # git -C {governance_repo} add feature-index.yaml features/{domain}/{service}/{featureId}/summary.md
 # git -C {governance_repo} commit -m "feat: add {featureId} to feature index"
+# git -C {governance_repo} push origin main
 
 # Then gh_commands:
 # gh pr create --repo {control_repo} --head {featureId}-plan --base {featureId} ...
