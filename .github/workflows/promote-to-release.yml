@@ -22,6 +22,9 @@ on:
     branches: [main]
     paths:
       - "_bmad/lens-work/**"
+      - ".github/agents/**"
+      - ".github/prompts/**"
+      - ".github/skills/**"
       - ".github/workflows/promote-to-release.yml"
   workflow_dispatch: # Allow manual trigger
 
@@ -258,15 +261,26 @@ jobs:
 
           echo "✅ Overlaid $SRC_COUNT source skill(s) into release payload"
 
-      # ── 10.6 Sync all lens-work prompts → .github/prompts ─────────────
-      - name: Sync lens-work prompts to .github/prompts
+      # ── 10.6 Overlay source .github prompt stubs into release payload ─
+      # The lens-work installer (step 9) generates GitHub Copilot prompt
+      # stubs, but the canonical release payload lives in source .github/
+      # so manual stub edits win and any deleted stubs are removed.
+      - name: Overlay source .github prompt stubs
         run: |
           mkdir -p build-output/.github/prompts
-          # Replace any installer-generated stubs with the canonical lens-work prompts
+
+          # Remove installer-generated prompts before overlaying the source
+          # stub set so build-output exactly matches the canonical source.
           rm -f build-output/.github/prompts/*.prompt.md
-          cp build-output/_bmad/lens-work/prompts/*.prompt.md build-output/.github/prompts/
-          SYNCED=$(find build-output/.github/prompts -name '*.prompt.md' | wc -l)
-          echo "✅ Synced $SYNCED prompt(s) from lens-work to .github/prompts"
+
+          SRC_COUNT=0
+          for src in .github/prompts/*.prompt.md; do
+            [ -f "$src" ] || continue
+            cp "$src" "build-output/.github/prompts/$(basename "$src")"
+            SRC_COUNT=$((SRC_COUNT + 1))
+          done
+
+          echo "✅ Overlaid $SRC_COUNT source prompt stub(s) into release payload"
 
       # ── 11. Post-process: .xml→.yaml + config.yaml→bmadconfig.yaml ──
       - name: Post-process XML and config file names
@@ -389,14 +403,42 @@ jobs:
             MISSING=1
           fi
 
-          LENS_WORK_COUNT=$(find build-output/_bmad/lens-work/prompts -name '*.prompt.md' | wc -l)
-          GITHUB_COUNT=$(find build-output/.github/prompts -name '*.prompt.md' | wc -l)
-          if [ "$GITHUB_COUNT" -ne "$LENS_WORK_COUNT" ]; then
-            echo "::error::.github/prompts count ($GITHUB_COUNT) != lens-work/prompts count ($LENS_WORK_COUNT)"
+          SOURCE_PROMPT_COUNT=$(find .github/prompts -maxdepth 1 -type f -name '*.prompt.md' | wc -l)
+          GITHUB_COUNT=$(find build-output/.github/prompts -maxdepth 1 -type f -name '*.prompt.md' | wc -l)
+          if [ "$GITHUB_COUNT" -ne "$SOURCE_PROMPT_COUNT" ]; then
+            echo "::error::.github/prompts count ($GITHUB_COUNT) != source stub count ($SOURCE_PROMPT_COUNT)"
             MISSING=1
           else
-            echo "✅ .github/prompts ($GITHUB_COUNT) matches lens-work/prompts ($LENS_WORK_COUNT)"
+            echo "✅ .github/prompts ($GITHUB_COUNT) matches source stub count ($SOURCE_PROMPT_COUNT)"
           fi
+
+          for src in .github/prompts/*.prompt.md; do
+            [ -f "$src" ] || continue
+            target="build-output/.github/prompts/$(basename "$src")"
+
+            if [ ! -f "$target" ]; then
+              echo "::error::Missing published prompt stub: $target"
+              MISSING=1
+              continue
+            fi
+
+            if ! cmp -s "$src" "$target"; then
+              echo "::error::Published prompt stub differs from source: $target"
+              MISSING=1
+            else
+              echo "✅ $target matches source stub"
+            fi
+
+            if ! grep -q '(Stub)' "$target"; then
+              echo "::error::Published prompt is not marked as a stub: $target"
+              MISSING=1
+            fi
+
+            if ! grep -q 'Read and follow all instructions in: lens.core/_bmad/lens-work/prompts/' "$target"; then
+              echo "::error::Published prompt does not redirect to lens.core module content: $target"
+              MISSING=1
+            fi
+          done
 
           if [ "$MISSING" -eq 1 ]; then
             exit 1
