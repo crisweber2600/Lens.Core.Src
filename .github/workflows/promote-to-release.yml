@@ -507,7 +507,7 @@ jobs:
           }
 
           process.exit(failed ? 1 : 0);
-NODE
+          NODE
           then
             MISSING=1
           fi
