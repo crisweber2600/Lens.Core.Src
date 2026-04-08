@@ -27,6 +27,7 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = (Resolve-Path (Join-Path $ScriptDir "..\..\..\..")).Path
 $ReleaseDir = Join-Path $ProjectRoot "lens.core"
 $TimestampFile = Join-Path $ProjectRoot "_bmad-output/lens-work/personal/.preflight-timestamp"
+$GithubHashFile = Join-Path $ProjectRoot "_bmad-output/lens-work/personal/.github-hashes"
 $LifecyclePath = Join-Path $ReleaseDir "_bmad/lens-work/lifecycle.yaml"
 
 function Get-PreflightTimestamp {
@@ -144,7 +145,7 @@ if ($needsPull) {
 }
 
 # =============================================================================
-# Step 3: Sync .github from Release Repo
+# Step 3: Sync .github from Release Repo (hash-based)
 # =============================================================================
 Write-Host "[preflight] Syncing .github/ from release repo..." -ForegroundColor Cyan
 
@@ -155,22 +156,45 @@ if (-not (Test-Path $releaseGithub)) {
 
 if (-not (Test-Path ".github")) {
     New-Item -ItemType Directory -Path ".github" -Force | Out-Null
-    Copy-Item -Recurse -Force "$releaseGithub/*" ".github/"
 }
 
-$missing = @(Get-ChildItem $releaseGithub -Recurse -File |
-    Where-Object {
-        $relative = $_.FullName.Substring((Resolve-Path $releaseGithub).Path.Length).TrimStart('\', '/')
-        -not (Test-Path (Join-Path ".github" $relative))
-    })
-
-$changed = @(git -C $ReleaseDir diff --name-only 'HEAD@{1}' HEAD -- .github/ 2>$null |
-    Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-
-if ($missing.Count -gt 0 -or $changed.Count -gt 0) {
-    Copy-Item -Recurse -Force "$releaseGithub/*" ".github/"
-    Write-Host "  ✓ .github/ synced" -ForegroundColor Green
+# Load stored hashes
+$storedHashes = @{}
+if (Test-Path $GithubHashFile) {
+    Get-Content $GithubHashFile | ForEach-Object {
+        if ($_ -match '^([0-9a-fA-F]+)  (.+)$') {
+            $storedHashes[$Matches[2]] = $Matches[1].ToLower()
+        }
+    }
 }
+
+# Walk release .github tree; copy files whose hash changed or local copy diverged
+$updatedCount = 0
+$newHashes = @{}
+
+$releaseGithubResolved = (Resolve-Path $releaseGithub).Path
+Get-ChildItem $releaseGithub -Recurse -File | ForEach-Object {
+    $relPath = ".github\" + $_.FullName.Substring($releaseGithubResolved.Length).TrimStart('\', '/')
+    $releaseHash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+    $storedHash = $storedHashes[$relPath]
+    $localPath = Join-Path $ProjectRoot $relPath
+    $localHash = if (Test-Path $localPath) { (Get-FileHash $localPath -Algorithm SHA256).Hash.ToLower() } else { "" }
+
+    if ($releaseHash -ne $storedHash -or $localHash -ne $releaseHash) {
+        $destDir = Split-Path $localPath -Parent
+        if (-not (Test-Path $destDir)) { New-Item -ItemType Directory -Path $destDir -Force | Out-Null }
+        Copy-Item -Force $_.FullName $localPath
+        $updatedCount++
+    }
+    $newHashes[$relPath] = $releaseHash
+}
+
+# Rewrite hash manifest (prunes removed files automatically)
+$hashDir = Split-Path $GithubHashFile -Parent
+if (-not (Test-Path $hashDir)) { New-Item -ItemType Directory -Path $hashDir -Force | Out-Null }
+$newHashes.GetEnumerator() | ForEach-Object { "$($_.Value)  $($_.Key)" } | Set-Content $GithubHashFile
+
+Write-Host "  ✓ .github/ synced ($updatedCount file(s) updated)" -ForegroundColor Green
 
 # Prompt hygiene
 if (Test-Path ".github/prompts") {

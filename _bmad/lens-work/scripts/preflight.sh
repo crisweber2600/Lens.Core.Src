@@ -28,6 +28,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 RELEASE_DIR="${PROJECT_ROOT}/lens.core"
 TIMESTAMP_FILE="${PROJECT_ROOT}/_bmad-output/lens-work/personal/.preflight-timestamp"
+GITHUB_HASH_FILE="${PROJECT_ROOT}/_bmad-output/lens-work/personal/.github-hashes"
 
 # -- Colors -----------------------------------------------------------------
 RED='\033[0;31m'
@@ -140,7 +141,7 @@ if [[ "$NEEDS_PULL" == "true" ]]; then
 fi
 
 # =============================================================================
-# Step 3: Sync .github from Release Repo
+# Step 3: Sync .github from Release Repo (hash-based)
 # =============================================================================
 echo -e "${CYAN}[preflight]${NC} Syncing .github/ from release repo..."
 
@@ -149,18 +150,46 @@ if [ ! -d "${RELEASE_DIR}/.github" ]; then
   exit 1
 fi
 
-if [ ! -d ".github" ]; then
-  mkdir -p .github
-  cp -rf "${RELEASE_DIR}/.github/"* .github/
+mkdir -p .github
+
+# Load stored hashes into associative array
+declare -A stored_hashes
+if [[ -f "$GITHUB_HASH_FILE" ]]; then
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    hash="${line%%  *}"
+    file="${line#*  }"
+    stored_hashes["$file"]="$hash"
+  done < "$GITHUB_HASH_FILE"
 fi
 
-MISSING="$(cd "$RELEASE_DIR" && find .github -type f | while read -r f; do [ -f "${PROJECT_ROOT}/$f" ] || echo "$f"; done)"
-CHANGED="$(git -C "$RELEASE_DIR" diff --name-only 'HEAD@{1}' HEAD -- .github/ 2>/dev/null || true)"
+# Walk release .github tree; copy files whose hash changed or local copy diverged
+UPDATED_COUNT=0
+declare -A new_hashes
 
-if [ -n "$MISSING" ] || [ -n "$CHANGED" ]; then
-  cp -rf "${RELEASE_DIR}/.github/"* .github/
-  echo -e "${GREEN}  ✓ .github/ synced${NC}"
-fi
+while IFS= read -r abs_src; do
+  rel=".github/${abs_src#${RELEASE_DIR}/.github/}"
+  release_hash=$(sha256sum "$abs_src" | awk '{print $1}')
+  stored_hash="${stored_hashes[$rel]:-}"
+  local_hash=""
+  [[ -f "${PROJECT_ROOT}/${rel}" ]] && local_hash=$(sha256sum "${PROJECT_ROOT}/${rel}" | awk '{print $1}')
+
+  if [[ "$release_hash" != "$stored_hash" || "$local_hash" != "$release_hash" ]]; then
+    mkdir -p "${PROJECT_ROOT}/$(dirname "$rel")"
+    cp -f "$abs_src" "${PROJECT_ROOT}/${rel}"
+    (( UPDATED_COUNT++ )) || true
+  fi
+  new_hashes["$rel"]="$release_hash"
+done < <(find "${RELEASE_DIR}/.github" -type f)
+
+# Rewrite hash manifest (prunes removed files automatically)
+mkdir -p "$(dirname "$GITHUB_HASH_FILE")"
+: > "$GITHUB_HASH_FILE"
+for rel in "${!new_hashes[@]}"; do
+  echo "${new_hashes[$rel]}  ${rel}" >> "$GITHUB_HASH_FILE"
+done
+
+echo -e "${GREEN}  ✓ .github/ synced (${UPDATED_COUNT} file(s) updated)${NC}"
 
 # Remove stale lens-work prompt stubs so deletions in the release repo propagate locally.
 if [ -d ".github/prompts" ]; then
