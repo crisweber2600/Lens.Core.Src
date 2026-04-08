@@ -4,6 +4,7 @@ description: 'Run dev pre-flight, resolve the target repo, and validate the larg
 nextStepFile: './step-02-story-discovery.md'
 preflightInclude: '../../includes/preflight.md'
 promotionAndContextData: '../resources/preflight-promotion-and-context.md'
+autoDiscoverResource: '../resources/target-repo-auto-discover.md'
 ---
 
 # Step 1: Pre-Flight And Target Repo Validation
@@ -53,7 +54,7 @@ Set the `/dev` audience context to `base`, resolve `initiative_root`, derive `ph
 
 If `initiative.docs.path` is missing, fall back to `_bmad-output/planning-artifacts/`, clear `repo_docs_path`, and surface the existing deprecation warning.
 
-Resolve the target repository from `initiative.target_repos[0]`. If no target repo is configured, ask the user for a local repository path, require a non-empty answer, and store the result in `session.target_repo` and `session.target_path`.
+Resolve the target repository from `initiative.target_repos[0]`. **If `target_repos` is empty or not configured**, do NOT prompt the user for a path — instead load and execute `{autoDiscoverResource}` completely. That resource runs the discover sub-flow (discover steps 2–4), presents the results to the user for selection, and populates `session.target_repo` and `session.target_path` before returning here. Only after `{autoDiscoverResource}` resolves successfully, continue below. The manual "ask user for a local path" fallback is removed — discovery is always attempted first when `target_repos` is absent.
 
 Display the resolved target repository. If the resolved path points into `{release_repo_root}`, fail immediately because `/dev` may only write inside the TargetProject repository.
 
@@ -86,11 +87,13 @@ Display: "**Proceeding to story discovery...**"
 ### SUCCESS:
 - `/dev` phase branch is ready and checked out.
 - `session.target_repo` and `session.target_path` are resolved and safe.
+- If `target_repos` was empty, `{autoDiscoverResource}` ran, produced a selection, and resolved a safe repo.
 - Prior-phase, promotion, and constitutional checks have been applied.
 
 ### SYSTEM FAILURE:
 - The working tree is dirty.
 - The target repo is missing, empty, or resolves into `{release_repo_root}`.
+- `target_repos` is empty AND `{autoDiscoverResource}` finds zero repos after running the discover sub-flow.
 - Prior-phase or promotion gates fail.
 - The `/dev` phase branch cannot be created or checked out.
 
