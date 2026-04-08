@@ -15,6 +15,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
@@ -34,11 +35,12 @@ LEGACY_ARTIFACTS_DIR = Path("_bmad-output/lens-work/planning-artifacts")
 
 # Document source types for discovery
 DOC_SOURCE_GOVERNANCE_LEGACY = "governance-legacy"
+DOC_SOURCE_BRANCH_DOCS = "branch-docs"
 DOC_SOURCE_REPO_DOCS = "source-docs"
 DOC_SOURCE_BMAD_OUTPUT = "bmad-output"
 
 # Priority order for conflict resolution (first wins)
-DOC_SOURCE_PRIORITY = [DOC_SOURCE_GOVERNANCE_LEGACY, DOC_SOURCE_REPO_DOCS, DOC_SOURCE_BMAD_OUTPUT]
+DOC_SOURCE_PRIORITY = [DOC_SOURCE_GOVERNANCE_LEGACY, DOC_SOURCE_BRANCH_DOCS, DOC_SOURCE_REPO_DOCS, DOC_SOURCE_BMAD_OUTPUT]
 
 LEGACY_PHASE_MAP = {
     "planning": "preplan",
@@ -119,6 +121,66 @@ def read_yaml_if_exists(path: Path) -> dict | None:
     except (yaml.YAMLError, OSError):
         return None
     return data if isinstance(data, dict) else None
+
+
+# ---------------------------------------------------------------------------
+# Git Utilities — read content from branches without checkout
+# ---------------------------------------------------------------------------
+
+def _git_ref_exists(repo_path: Path, ref: str) -> bool:
+    """Check whether a git ref (branch, tag, commit) exists in the repo."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_path), "rev-parse", "--verify", "--quiet", ref],
+            capture_output=True,
+            timeout=10,
+        )
+        return result.returncode == 0
+    except (subprocess.TimeoutExpired, OSError):
+        return False
+
+
+def _git_ls_tree(repo_path: Path, ref: str, prefix: str = "") -> list[str]:
+    """List file paths under *prefix* on *ref*. Returns relative paths (files only)."""
+    cmd = ["git", "-C", str(repo_path), "ls-tree", "-r", "--name-only", ref]
+    if prefix:
+        cmd.extend(["--", prefix])
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        if result.returncode != 0:
+            return []
+        return [line for line in result.stdout.splitlines() if line]
+    except (subprocess.TimeoutExpired, OSError):
+        return []
+
+
+def _git_show_file(repo_path: Path, ref: str, path: str) -> bytes | None:
+    """Read raw bytes of a single file from *ref*. Returns None on failure."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_path), "show", f"{ref}:{path}"],
+            capture_output=True,
+            timeout=30,
+        )
+        if result.returncode != 0:
+            return None
+        return result.stdout
+    except (subprocess.TimeoutExpired, OSError):
+        return None
+
+
+def _git_list_remote_branches(repo_path: Path, pattern: str = "") -> list[str]:
+    """List remote branch names. *pattern* filters with fnmatch-style glob."""
+    cmd = ["git", "-C", str(repo_path), "branch", "-r", "--format=%(refname:short)"]
+    if pattern:
+        cmd.extend(["--list", pattern])
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+        if result.returncode != 0:
+            return []
+        return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    except (subprocess.TimeoutExpired, OSError):
+        return []
 
 
 def group_legacy_branches(names: list[str]) -> dict[str, dict]:
@@ -231,21 +293,34 @@ def normalize_phase_transitions(transitions: object, timestamp: str, username: s
 
 
 def detect_legacy_milestones(governance_repo: Path, old_id: str) -> list[str]:
-    """Infer legacy milestone suffixes from sibling branch directories."""
+    """Infer legacy milestone suffixes from sibling branch directories or git remote branches."""
     branches_dir = governance_repo / LEGACY_BRANCHES_DIR
-    if not branches_dir.exists():
+    if branches_dir.exists():
+        prefix = old_id + "-"
+        milestones: list[str] = []
+        for entry in sorted(branches_dir.iterdir()):
+            if entry.is_dir() and entry.name.startswith(prefix):
+                milestones.append(entry.name[len(prefix):])
+        return milestones
+
+    # Fall back: detect from remote branches
+    remote_branches = _git_list_remote_branches(governance_repo, f"origin/{old_id}-*")
+    if not remote_branches:
         return []
 
-    prefix = old_id + "-"
-    milestones: list[str] = []
-    for entry in sorted(branches_dir.iterdir()):
-        if entry.is_dir() and entry.name.startswith(prefix):
-            milestones.append(entry.name[len(prefix):])
-    return milestones
+    prefix = f"origin/{old_id}-"
+    milestones = []
+    for branch in remote_branches:
+        if branch.startswith(prefix):
+            milestones.append(branch[len(prefix):])
+    return sorted(milestones)
 
 
 def find_legacy_state(governance_repo: Path, old_id: str, domain: str, service: str, feature_id: str) -> tuple[dict | None, str | None]:
-    """Locate a legacy initiative-state.yaml in known historical locations."""
+    """Locate a legacy initiative-state.yaml in known historical locations.
+
+    Tries filesystem first, then falls back to git extraction from origin/{old_id}.
+    """
     branch_dir = governance_repo / LEGACY_BRANCHES_DIR / old_id
     candidates = [
         branch_dir / "initiative-state.yaml",
@@ -254,10 +329,30 @@ def find_legacy_state(governance_repo: Path, old_id: str, domain: str, service: 
         branch_dir / "_bmad-output" / "lens-work" / "initiatives" / domain / service / "initiative-state.yaml",
     ]
 
+    # Try filesystem first
     for path in candidates:
         data = read_yaml_if_exists(path)
         if data is not None:
             return data, str(path)
+
+    # Fall back: try git extraction from governance repo branch
+    ref = f"origin/{old_id}"
+    if _git_ref_exists(governance_repo, ref):
+        git_candidates = [
+            "initiative-state.yaml",
+            "_bmad-output/lens-work/initiative-state.yaml",
+            f"_bmad-output/lens-work/initiatives/{domain}/{service}/{feature_id}/initiative-state.yaml",
+            f"_bmad-output/lens-work/initiatives/{domain}/{service}/initiative-state.yaml",
+        ]
+        for git_path in git_candidates:
+            content = _git_show_file(governance_repo, ref, git_path)
+            if content is not None:
+                try:
+                    data = yaml.safe_load(content.decode("utf-8"))
+                    if isinstance(data, dict):
+                        return data, f"git:{ref}:{git_path}"
+                except (yaml.YAMLError, UnicodeDecodeError):
+                    continue
 
     return None, None
 
@@ -296,20 +391,48 @@ def create_problems_log(feature_dir: Path, feature_id: str, domain: str, service
 
 
 def copy_legacy_artifacts(governance_repo: Path, old_id: str, feature_dir: Path) -> list[str]:
-    """Copy legacy planning artifacts from the old branch snapshot when present."""
+    """Copy legacy planning artifacts from the old branch snapshot when present.
+
+    Tries filesystem first (branches/{old_id}/...), then falls back to git
+    extraction from origin/{old_id} in the governance repo.
+    """
     source_root = governance_repo / LEGACY_BRANCHES_DIR / old_id / LEGACY_ARTIFACTS_DIR
-    if not source_root.exists():
+
+    # Filesystem path exists — use direct copy
+    if source_root.exists():
+        copied: list[str] = []
+        for source_path in sorted(source_root.rglob("*")):
+            if not source_path.is_file():
+                continue
+            relative_path = source_path.relative_to(source_root)
+            target_path = feature_dir / relative_path
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source_path, target_path)
+            copied.append(str(relative_path))
+        return copied
+
+    # Fall back: extract from git branch
+    ref = f"origin/{old_id}"
+    if not _git_ref_exists(governance_repo, ref):
         return []
 
-    copied: list[str] = []
-    for source_path in sorted(source_root.rglob("*")):
-        if not source_path.is_file():
+    artifact_prefix = str(LEGACY_ARTIFACTS_DIR) + "/"
+    paths = _git_ls_tree(governance_repo, ref, artifact_prefix)
+    if not paths:
+        return []
+
+    copied = []
+    for git_path in paths:
+        rel = git_path[len(artifact_prefix):]
+        if not rel:
             continue
-        relative_path = source_path.relative_to(source_root)
-        target_path = feature_dir / relative_path
+        content = _git_show_file(governance_repo, ref, git_path)
+        if content is None:
+            continue
+        target_path = feature_dir / rel
         target_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source_path, target_path)
-        copied.append(str(relative_path))
+        target_path.write_bytes(content)
+        copied.append(rel)
     return copied
 
 
@@ -334,13 +457,20 @@ def discover_documents(
     feature_id: str,
     source_repo: Path | None,
 ) -> list[dict]:
-    """Discover documents from all three sources for a feature.
+    """Discover documents from all sources for a feature.
 
-    Returns list of dicts: {source_type, source_path, relative_path, filename}.
+    Sources checked (in priority order):
+      1. governance-legacy  — filesystem branches/{old_id}/... or git origin/{old_id} in governance repo
+      2. branch-docs        — git origin/{old_id} docs/ tree in source repo
+      3. source-docs        — filesystem Docs/{domain}/{service}/{featureId}/ in source repo
+      4. bmad-output        — filesystem _bmad-output/lens-work/initiatives/{domain}/{service}/ in source repo
+
+    Returns list of dicts: {source_type, source_path, relative_path, filename, git_ref?, git_path?}.
     """
     discovered: list[dict] = []
 
-    # Source 1: Governance legacy artifacts (branches/{old_id}/_bmad-output/...)
+    # Source 1: Governance legacy artifacts
+    # Try filesystem first, then fall back to git
     legacy_root = governance_repo / LEGACY_BRANCHES_DIR / old_id / LEGACY_ARTIFACTS_DIR
     if legacy_root.is_dir():
         for fpath in sorted(legacy_root.rglob("*")):
@@ -351,9 +481,70 @@ def discover_documents(
                     "relative_path": str(fpath.relative_to(legacy_root)),
                     "filename": fpath.name,
                 })
+    else:
+        # Fall back: read from git branch in governance repo
+        ref = f"origin/{old_id}"
+        if _git_ref_exists(governance_repo, ref):
+            artifact_prefix = str(LEGACY_ARTIFACTS_DIR) + "/"
+            paths = _git_ls_tree(governance_repo, ref, artifact_prefix)
+            for git_path in paths:
+                rel = git_path[len(artifact_prefix):]
+                if rel:
+                    discovered.append({
+                        "source_type": DOC_SOURCE_GOVERNANCE_LEGACY,
+                        "source_path": f"git:{ref}:{git_path}",
+                        "relative_path": rel,
+                        "filename": Path(rel).name,
+                        "git_ref": ref,
+                        "git_path": git_path,
+                        "git_repo": str(governance_repo),
+                    })
 
     if source_repo is not None:
-        # Source 2: Source repo Docs/{domain}/{service}/{featureId}/
+        # Source 2: Branch-docs — documents on the legacy branch in source repo
+        ref = f"origin/{old_id}"
+        if _git_ref_exists(source_repo, ref):
+            # Try both path patterns: with and without 'feature/' intermediary
+            doc_prefixes = [
+                f"docs/{domain}/{service}/feature/{feature_id}/",
+                f"docs/{domain}/{service}/{feature_id}/",
+            ]
+            found_prefix = None
+            for prefix in doc_prefixes:
+                paths = _git_ls_tree(source_repo, ref, prefix)
+                if paths:
+                    found_prefix = prefix
+                    for git_path in paths:
+                        rel = git_path[len(prefix):]
+                        if rel:
+                            discovered.append({
+                                "source_type": DOC_SOURCE_BRANCH_DOCS,
+                                "source_path": f"git:{ref}:{git_path}",
+                                "relative_path": rel,
+                                "filename": Path(rel).name,
+                                "git_ref": ref,
+                                "git_path": git_path,
+                                "git_repo": str(source_repo),
+                            })
+                    break  # Use first matching prefix
+
+            # Also check _bmad-output on the branch itself
+            bmad_branch_prefix = "_bmad-output/lens-work/"
+            bmad_paths = _git_ls_tree(source_repo, ref, bmad_branch_prefix)
+            for git_path in bmad_paths:
+                rel = git_path[len(bmad_branch_prefix):]
+                if rel:
+                    discovered.append({
+                        "source_type": DOC_SOURCE_BRANCH_DOCS,
+                        "source_path": f"git:{ref}:{git_path}",
+                        "relative_path": rel,
+                        "filename": Path(rel).name,
+                        "git_ref": ref,
+                        "git_path": git_path,
+                        "git_repo": str(source_repo),
+                    })
+
+        # Source 3: Source repo Docs/{domain}/{service}/{featureId}/ (filesystem)
         docs_folder = _find_docs_folder(source_repo)
         if docs_folder is not None:
             feature_docs = docs_folder / domain / service / feature_id
@@ -367,7 +558,7 @@ def discover_documents(
                             "filename": fpath.name,
                         })
 
-        # Source 3: Source repo _bmad-output/lens-work/initiatives/{domain}/{service}/
+        # Source 4: Source repo _bmad-output/lens-work/initiatives/{domain}/{service}/ (filesystem)
         bmad_output = source_repo / "_bmad-output" / "lens-work" / "initiatives" / domain / service
         if bmad_output.is_dir():
             for fpath in sorted(bmad_output.rglob("*")):
@@ -393,6 +584,7 @@ def migrate_documents(
     """Copy discovered documents into governance feature docs/ folder.
 
     Conflict resolution: first source wins per DOC_SOURCE_PRIORITY order.
+    Handles both filesystem-based and git-based sources.
     Returns (list of copied relative paths, {source_type: count} dict).
     """
     docs = discover_documents(governance_repo, old_id, domain, service, feature_id, source_repo)
@@ -418,7 +610,17 @@ def migrate_documents(
 
         target_path = target_dir / rel
         target_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(doc["source_path"], target_path)
+
+        # Git-based source: extract via git show
+        if "git_ref" in doc:
+            content = _git_show_file(Path(doc["git_repo"]), doc["git_ref"], doc["git_path"])
+            if content is None:
+                continue  # Silently skip files that can't be read
+            target_path.write_bytes(content)
+        else:
+            # Filesystem-based source
+            shutil.copy2(doc["source_path"], target_path)
+
         copied.append(rel)
         source_counts[doc["source_type"]] = source_counts.get(doc["source_type"], 0) + 1
 
@@ -654,8 +856,6 @@ def cmd_scan(args: argparse.Namespace) -> dict:
         sys.exit(1)
 
     branches_dir = governance_repo / LEGACY_BRANCHES_DIR
-    if not branches_dir.exists():
-        return {"status": "pass", "legacy_features": [], "total": 0, "conflicts": []}
 
     pattern_str = args.branch_pattern or DEFAULT_BRANCH_PATTERN
     try:
@@ -664,9 +864,20 @@ def cmd_scan(args: argparse.Namespace) -> dict:
         return {"status": "fail", "error": f"Invalid branch pattern: {e}"}
 
     candidate_names = []
-    for entry in branches_dir.iterdir():
-        if entry.is_dir() and pattern.match(entry.name):
-            candidate_names.append(entry.name)
+
+    # Try filesystem first
+    if branches_dir.exists():
+        for entry in branches_dir.iterdir():
+            if entry.is_dir() and pattern.match(entry.name):
+                candidate_names.append(entry.name)
+    else:
+        # Fall back: discover legacy branches from git remotes
+        remote_branches = _git_list_remote_branches(governance_repo)
+        for branch in remote_branches:
+            # Strip 'origin/' prefix
+            name = branch.split("/", 1)[1] if "/" in branch else branch
+            if pattern.match(name):
+                candidate_names.append(name)
 
     if not candidate_names:
         return {"status": "pass", "legacy_features": [], "total": 0, "conflicts": []}

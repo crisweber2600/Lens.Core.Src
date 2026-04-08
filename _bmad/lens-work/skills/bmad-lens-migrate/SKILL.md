@@ -48,7 +48,8 @@ You are the migration bridge between LENS v3 and Lens Next. You scan for old-mod
 | **cleanup** | Separate, explicit step to delete old branches after successful migration + confirmation |
 | **governance repo** | The repository containing Lens feature YAML, index, and summaries |
 | **source repo** | The source code repository that may contain a `Docs/` folder or `_bmad-output/` with feature documents |
-| **document discovery** | Scanning governance-legacy branches, source repo `Docs/`, and `_bmad-output/` for feature documents |
+| **document discovery** | Scanning governance-legacy branches, source repo `Docs/`, `_bmad-output/`, and legacy git branches for feature documents. Uses `git ls-tree`/`git show` when filesystem paths do not exist. |
+| **branch-docs** | Documents discovered on legacy git branches in the source repo via `git ls-tree`/`git show`. Prioritized between governance-legacy and source-docs. |
 | **verification** | Post-migration check confirming all expected artifacts exist before cleanup is allowed |
 
 ## Branch Pattern Reference
@@ -65,6 +66,8 @@ You are the migration bridge between LENS v3 and Lens Next. You scan for old-mod
 **featureId derivation:** Use the `{feature}` portion of the old branch name (parts after domain and service), converted to kebab-case.
 
 ## On Activation
+
+**Prerequisite:** Ensure `git fetch` has been run on both the governance repo and source repo so remote branch refs are current. The script uses `subprocess`-based git commands (`git branch -r`, `git ls-tree`, `git show`) when filesystem paths (e.g., `branches/`) do not exist.
 
 Load available config from `{project-root}/lens.core/_bmad/bmadconfig.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml`. Expected config keys under `lens`: `governance_repo`, `username`. Resolve:
 

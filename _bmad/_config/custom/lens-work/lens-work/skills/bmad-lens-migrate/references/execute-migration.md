@@ -32,7 +32,7 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   --source-repo {source_repo}
 ```
 
-`--source-repo` is optional. When provided, the migration also discovers and copies documents from the source repo.
+`--source-repo` is optional. When provided, the migration also discovers and copies documents from the source repo (filesystem and git branches).
 
 ## Output Shape
 
@@ -48,7 +48,7 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   "artifacts_copied": ["tech-plan.md"],
   "documents_migrated": ["prd.md", "tech-plan.md"],
   "documents_source": {
-    "prd.md": "source-docs",
+    "prd.md": "branch-docs",
     "tech-plan.md": "governance-legacy"
   },
   "legacy_state_path": "{governance_repo}/branches/platform-identity-auth-login/initiative-state.yaml",
@@ -72,12 +72,15 @@ For each confirmed feature in the migration plan:
 
 ### Document Migration
 
-After governance scaffolding, documents are discovered from up to three sources and copied to `{governance_repo}/features/{domain}/{service}/{featureId}/docs/`.
+After governance scaffolding, documents are discovered from up to four sources and copied to `{governance_repo}/features/{domain}/{service}/{featureId}/docs/`.
 
 Priority order (highest wins when filenames conflict):
-1. **governance-legacy** — `{governance_repo}/branches/{old_id}/_bmad-output/` files
-2. **source-docs** — `{source_repo}/Docs/{domain}/{service}/{featureId}/` (requires `--source-repo`)
-3. **bmad-output** — `{source_repo}/_bmad-output/lens-work/initiatives/{domain}/{service}/` (requires `--source-repo`)
+1. **governance-legacy** — `{governance_repo}/branches/{old_id}/_bmad-output/` files (filesystem, or git `origin/{old_id}` branch fallback)
+2. **branch-docs** — `origin/{old_id}` branch in source repo: `docs/{domain}/{service}/feature/{featureId}/` or `docs/{domain}/{service}/{featureId}/`, plus `_bmad-output/lens-work/` on the branch (git-only, requires `--source-repo`)
+3. **source-docs** — `{source_repo}/Docs/{domain}/{service}/{featureId}/` (filesystem, requires `--source-repo`)
+4. **bmad-output** — `{source_repo}/_bmad-output/lens-work/initiatives/{domain}/{service}/` (filesystem, requires `--source-repo`)
+
+Git-based sources use `git ls-tree` to enumerate files and `git show` to extract content. Ensure `git fetch` has been run before migration.
 
 Duplicate filenames are resolved by priority: the highest-priority source wins and a warning is emitted for the skipped duplicate.
 

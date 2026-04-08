@@ -22,7 +22,7 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   --dry-run
 ```
 
-`--source-repo` is optional. When provided, the dry run also discovers documents from the source repo's `Docs/` folder and `_bmad-output/` directory.
+`--source-repo` is optional. When provided, the dry run also discovers documents from the source repo's `Docs/` folder, `_bmad-output/` directory, and legacy git branches (via `git ls-tree`/`git show`).
 
 ## Output Shape
 
@@ -45,9 +45,21 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   "documents_discovered": [
     {
       "source_type": "governance-legacy",
-      "source_path": "branches/platform-identity-auth-login/_bmad-output/tech-plan.md",
+      "source_path": "git:origin/platform-identity-auth-login:_bmad-output/lens-work/planning-artifacts/tech-plan.md",
       "relative_path": "tech-plan.md",
-      "filename": "tech-plan.md"
+      "filename": "tech-plan.md",
+      "git_ref": "origin/platform-identity-auth-login",
+      "git_path": "_bmad-output/lens-work/planning-artifacts/tech-plan.md",
+      "git_repo": "/path/to/governance"
+    },
+    {
+      "source_type": "branch-docs",
+      "source_path": "git:origin/platform-identity-auth-login:docs/platform/identity/feature/auth-login/prd.md",
+      "relative_path": "prd.md",
+      "filename": "prd.md",
+      "git_ref": "origin/platform-identity-auth-login",
+      "git_path": "docs/platform/identity/feature/auth-login/prd.md",
+      "git_repo": "/path/to/source"
     },
     {
       "source_type": "source-docs",
