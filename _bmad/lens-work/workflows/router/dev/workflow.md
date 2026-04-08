@@ -30,7 +30,7 @@ entryStep: './steps/step-01-preflight.md'
 This workflow uses **step-file architecture**:
 
 - Each stage of the implementation loop is isolated so the long-running `/dev` phase remains readable and maintainable.
-- State persists through the active initiative and execution context: `initiative`, `docs_path`, `bmad_docs`, `phase_branch`, `constitutional_context`, `story_files`, `stories_completed`, `stories_failed`, `target_repo`, `target_path`, `initiative_branch`, `epic_branch`, `story_branch`, `resolved_integration_branch`, `epic_number`, `special_instructions`, `story_id`, `code_review_path`, and `epic_pr_result`.
+- State persists through the active initiative and execution context: `initiative`, `docs_path`, `bmad_docs`, `phase_branch`, `constitutional_context`, `story_files`, `stories_completed`, `stories_failed`, `target_repo`, `target_path`, `resolver_result`, `discovered_repos`, `repo_results`, `initiative_branch`, `epic_branch`, `story_branch`, `resolved_integration_branch`, `epic_number`, `special_instructions`, `story_id`, `code_review_path`, and `epic_pr_result`.
 - The story loop, review loop, and epic gate behavior remain the same as the legacy router; only the structure changed.
 
 ---
@@ -61,7 +61,7 @@ Read fully and follow: `{entryStep}`
 
 ### Step Map
 
-1. `step-01-preflight.md` - Pre-flight, target-repo resolution, promotion gate
+1. `step-01-preflight.md` - Pre-flight, target-repo resolution (auto-discover gate when target_repos empty), promotion gate
 2. `step-02-story-discovery.md` - Batch handling and epic story discovery
 3. `step-03-story-loop.md` - Per-story implementation, review, PR, and control-plane commits
 4. `step-04-epic-completion.md` - Epic-level gates and epic PR merge wait
