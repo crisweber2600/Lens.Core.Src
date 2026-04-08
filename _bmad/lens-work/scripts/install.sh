@@ -30,7 +30,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-PROJECT_ROOT="$(cd "${MODULE_DIR}/../../.." && pwd)"
+PROJECT_ROOT="$(cd "${MODULE_DIR}/../../../.." && pwd)"
 
 # -- Colors -----------------------------------------------------------------
 RED='\033[0;31m'

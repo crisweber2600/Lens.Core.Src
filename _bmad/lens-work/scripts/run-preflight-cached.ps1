@@ -85,10 +85,14 @@ if ($cacheValid) {
 Write-Host "[preflight-cached] Cache expired or forced. Running preflight..." -ForegroundColor Cyan
 
 $preflightScript = Join-Path $ScriptDir "preflight.ps1"
-$powerShellHost = (Get-Process -Id $PID).Path
+$powerShellHost = if ($PSVersionTable.PSEdition -eq "Desktop") {
+    Join-Path $PSHOME "powershell.exe"
+} else {
+    Join-Path $PSHOME "pwsh"
+}
 $invocationArgs = @("-NoLogo", "-NoProfile", "-File", $preflightScript)
 
-if ([string]::IsNullOrWhiteSpace($powerShellHost)) {
+if ([string]::IsNullOrWhiteSpace($powerShellHost) -or -not (Test-Path $powerShellHost)) {
     $powerShellHost = if ($PSVersionTable.PSEdition -eq "Desktop") { "powershell" } else { "pwsh" }
 }
 
