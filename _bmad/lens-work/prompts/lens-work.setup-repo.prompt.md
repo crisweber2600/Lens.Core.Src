@@ -16,51 +16,43 @@ This prompt performs first-time setup of a control repo for lens-work.
 
 Ensure the path is set to the root of the repository (the control repo you want to set up).
 
-### 1. Clone {release_repo_root}
+### 1. Ensure {release_repo_root} Exists
 
-Clone the release module and checkout the appropriate branch:
+If the release module is not already present locally, clone it into `{release_repo_root}` and check out the appropriate branch.
 
-```bash
-git clone https://github.com/crisweber2600/lens.core {release_repo_root}
-cd {release_repo_root}
-git checkout release/4.0.0   # or alpha/beta for pre-release
-cd ..
-```
+### 2. Run setup-control-repo
 
-### 2. Sync .github from Release Repo
-
-The `.github` folder is now part of `{release_repo_root}` (no longer a separate repo).
-
-```powershell
-# PowerShell
-if (Test-Path ".github") { Remove-Item -Recurse -Force ".github" }
-Copy-Item -Recurse "{release_repo_root}/.github" ".github"
-```
+Use the release payload's setup script instead of manually copying `.github`, cloning governance, or writing `LENS_VERSION` yourself.
 
 ```bash
 # Bash
-rm -rf .github
-cp -r {release_repo_root}/.github .github
+./{release_repo_root}/_bmad/lens-work/scripts/setup-control-repo.sh
 ```
 
-### 3. Clone Governance Repository (if configured)
+```powershell
+# PowerShell
+.\{release_repo_root}\_bmad\lens-work\scripts\setup-control-repo.ps1
+```
 
-If you have a governance repo configured:
+That setup script is the supported bootstrap path. It:
 
-- Read coordinates from `_bmad-output/lens-work/governance-setup.yaml` (if it exists)
-- Clone `remote_url` into `local_path` and checkout `default_branch`
-- If already cloned, run `git pull` to ensure it's up to date
+- Syncs `.github/` from the release payload
+- Clones or updates the governance repo
+- Writes `_bmad-output/lens-work/governance-setup.yaml`
+- Writes `LENS_VERSION`
+- Updates `.gitignore`
 
-### 4. Trigger Onboarding
+### 3. Trigger Onboarding
 
-Run the onboarding prompt to complete setup:
+Run the onboarding prompt only after `setup-control-repo` completes successfully:
 
 ```
 /lens-work.onboard
 ```
 
-This will:
-- Create workspace directories
+This final onboarding step will:
+
+- Create workspace directories if they are still missing
 - Detect your git provider
 - Validate authentication
 - Bootstrap TargetProjects from governance
@@ -68,6 +60,6 @@ This will:
 
 ## Notes
 
-- The `.github` folder syncs from `{release_repo_root}/.github/` during preflight
+- `/lens-work.onboard` assumes the repo has already been bootstrapped and that `LENS_VERSION` exists
 - Future updates to agents/prompts will auto-sync when preflight detects changes
 - See `{project-root}/lens.core/_bmad/lens-work/workflows/includes/preflight.md` for sync logic

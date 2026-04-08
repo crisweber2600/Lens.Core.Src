@@ -24,8 +24,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
-CACHE_FILE="${PROJECT_ROOT}/_bmad-output/lens-work/personal/.preflight-timestamp"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
+# Keep the short-lived wrapper cache separate from the ISO full-preflight timestamp.
+CACHE_FILE="${PROJECT_ROOT}/_bmad-output/lens-work/personal/.preflight-cache"
 
 # -- Colors -------------------------------------------------------------------
 RED='\033[0;31m'
@@ -64,7 +65,7 @@ CACHED_AT=""
 
 if [[ -f "$CACHE_FILE" ]] && ! $FORCE; then
   CACHED_AT=$(cat "$CACHE_FILE" 2>/dev/null || echo "")
-  if [[ -n "$CACHED_AT" ]]; then
+  if [[ "$CACHED_AT" =~ ^[0-9]+$ ]]; then
     AGE=$(( NOW - CACHED_AT ))
     if [[ $AGE -lt $TTL ]]; then
       CACHE_VALID=true

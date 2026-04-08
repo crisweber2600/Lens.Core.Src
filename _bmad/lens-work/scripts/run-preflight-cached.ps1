@@ -38,21 +38,22 @@ param(
 $ErrorActionPreference = "Stop"
 
 $ScriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ProjectRoot = Resolve-Path (Join-Path $ScriptDir "../../..")
-$CacheFile   = Join-Path $ProjectRoot "_bmad-output/lens-work/personal/.preflight-timestamp"
+$ProjectRoot = (Resolve-Path (Join-Path $ScriptDir "..\..\..\..")).Path
+$CacheFile   = Join-Path $ProjectRoot "_bmad-output/lens-work/personal/.preflight-cache"
 
 # =============================================================================
 # Cache check
 # =============================================================================
 
-$now = [int][double]::Parse((Get-Date -UFormat %s))
+$now = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 $cacheValid = $false
 $cachedAt = $null
 $age = $null
 
 if ((Test-Path $CacheFile) -and -not $Force) {
-    $cachedAt = [int](Get-Content $CacheFile -ErrorAction SilentlyContinue)
-    if ($cachedAt) {
+    $rawCachedAt = (Get-Content $CacheFile -Raw -ErrorAction SilentlyContinue).Trim()
+    if ($rawCachedAt -match '^\d+$') {
+        $cachedAt = [long]$rawCachedAt
         $age = $now - $cachedAt
         if ($age -lt $TTL) {
             $cacheValid = $true
@@ -83,16 +84,22 @@ if ($cacheValid) {
 # Run the actual preflight
 Write-Host "[preflight-cached] Cache expired or forced. Running preflight..." -ForegroundColor Cyan
 
-$preflightArgs = @()
-if ($SkipConstitution) { $preflightArgs += "--skip-constitution" }
-if ($Caller)           { $preflightArgs += "--caller"; $preflightArgs += $Caller }
-if ($GovernancePath)   { $preflightArgs += "--governance-path"; $preflightArgs += $GovernancePath }
+$preflightScript = Join-Path $ScriptDir "preflight.ps1"
+$powerShellHost = (Get-Process -Id $PID).Path
+$invocationArgs = @("-NoLogo", "-NoProfile", "-File", $preflightScript)
 
-$preflightScript = Join-Path $ScriptDir "preflight.sh"
+if ([string]::IsNullOrWhiteSpace($powerShellHost)) {
+    $powerShellHost = if ($PSVersionTable.PSEdition -eq "Desktop") { "powershell" } else { "pwsh" }
+}
+
+if ($SkipConstitution) { $invocationArgs += "-SkipConstitution" }
+if ($Caller)           { $invocationArgs += "-Caller"; $invocationArgs += $Caller }
+if ($GovernancePath)   { $invocationArgs += "-GovernancePath"; $invocationArgs += $GovernancePath }
+
 $exitCode = 0
 
 try {
-    & bash $preflightScript @preflightArgs
+    & $powerShellHost @invocationArgs
     $exitCode = $LASTEXITCODE
 } catch {
     $exitCode = 1
@@ -101,12 +108,13 @@ try {
 if ($exitCode -eq 0) {
     $cacheDir = Split-Path -Parent $CacheFile
     if (-not (Test-Path $cacheDir)) { New-Item -ItemType Directory -Path $cacheDir -Force | Out-Null }
-    [int][double]::Parse((Get-Date -UFormat %s)) | Out-File -FilePath $CacheFile -NoNewline
+    $cachedAt = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+    [System.IO.File]::WriteAllText($CacheFile, [string]$cachedAt, [System.Text.UTF8Encoding]::new($false))
 
     if ($Json) {
         @{
             status         = "passed"
-            cached_at      = [int](Get-Content $CacheFile)
+            cached_at      = $cachedAt
             age_seconds    = 0
             ttl_remaining  = $TTL
             ran_preflight  = $true

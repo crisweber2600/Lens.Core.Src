@@ -97,11 +97,23 @@ echo -e "${GREEN}  ✓ LENS_VERSION v${CONTROL_VERSION} matches module schema${N
 # =============================================================================
 # Step 2: Determine Pull Strategy
 # =============================================================================
+parse_timestamp_epoch() {
+  local raw_value="$1"
+
+  # Earlier cached wrappers wrote Unix epoch seconds into the full-preflight timestamp file.
+  if [[ "$raw_value" =~ ^[0-9]+$ ]]; then
+    echo "$raw_value"
+    return
+  fi
+
+  date -d "$raw_value" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$raw_value" +%s 2>/dev/null || echo 0
+}
+
 NEEDS_PULL=true
 
 if [[ -f "$TIMESTAMP_FILE" ]]; then
   LAST_PREFLIGHT=$(cat "$TIMESTAMP_FILE")
-  LAST_EPOCH=$(date -d "$LAST_PREFLIGHT" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$LAST_PREFLIGHT" +%s 2>/dev/null || echo 0)
+  LAST_EPOCH=$(parse_timestamp_epoch "$LAST_PREFLIGHT")
   NOW_EPOCH=$(date +%s)
   ELAPSED=$(( NOW_EPOCH - LAST_EPOCH ))
 
