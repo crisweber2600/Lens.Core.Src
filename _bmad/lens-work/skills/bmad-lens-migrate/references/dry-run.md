@@ -50,7 +50,8 @@ python3 ./scripts/migrate-ops.py migrate-feature \
       "filename": "tech-plan.md",
       "git_ref": "origin/platform-identity-auth-login",
       "git_path": "_bmad-output/lens-work/planning-artifacts/tech-plan.md",
-      "git_repo": "/path/to/governance"
+      "git_repo": "/path/to/governance",
+      "commit_ts": 1700000000
     },
     {
       "source_type": "branch-docs",
@@ -59,13 +60,15 @@ python3 ./scripts/migrate-ops.py migrate-feature \
       "filename": "prd.md",
       "git_ref": "origin/platform-identity-auth-login",
       "git_path": "docs/platform/identity/feature/auth-login/prd.md",
-      "git_repo": "/path/to/source"
+      "git_repo": "/path/to/source",
+      "commit_ts": 1712000000
     },
     {
       "source_type": "source-docs",
       "source_path": "/path/to/source/Docs/platform/identity/auth-login/prd.md",
       "relative_path": "prd.md",
-      "filename": "prd.md"
+      "filename": "prd.md",
+      "commit_ts": 1690000000
     }
   ]
 }

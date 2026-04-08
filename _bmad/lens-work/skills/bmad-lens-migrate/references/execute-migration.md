@@ -82,7 +82,7 @@ Priority order (highest wins when filenames conflict):
 
 Git-based sources use `git ls-tree` to enumerate files and `git show` to extract content. Ensure `git fetch` has been run before migration.
 
-Duplicate filenames are resolved by priority: the highest-priority source wins and a warning is emitted for the skipped duplicate.
+Duplicate filenames are resolved by freshness: the most recently committed version wins. When commit timestamps are equal (or unavailable), the static source priority above is used as a tiebreaker.
 
 ### Governance Directory Scaffolding (v3.4)
 

@@ -48,7 +48,7 @@ You are the migration bridge between LENS v3 and Lens Next. You scan for old-mod
 | **cleanup** | Separate, explicit step to delete old branches after successful migration + confirmation |
 | **governance repo** | The repository containing Lens feature YAML, index, and summaries |
 | **source repo** | The source code repository that may contain a `Docs/` folder or `_bmad-output/` with feature documents |
-| **document discovery** | Scanning governance-legacy branches, source repo `Docs/`, `_bmad-output/`, and legacy git branches for feature documents. Uses `git ls-tree`/`git show` when filesystem paths do not exist. |
+| **document discovery** | Scanning governance-legacy branches, source repo `Docs/`, `_bmad-output/`, and legacy git branches for feature documents. Uses `git ls-tree`/`git show` when filesystem paths do not exist. Each discovered document includes a `commit_ts` (Unix epoch of last commit); duplicates are resolved by freshness (newest wins), with static source priority as tiebreaker. |
 | **branch-docs** | Documents discovered on legacy git branches in the source repo via `git ls-tree`/`git show`. Prioritized between governance-legacy and source-docs. |
 | **verification** | Post-migration check confirming all expected artifacts exist before cleanup is allowed |
 
