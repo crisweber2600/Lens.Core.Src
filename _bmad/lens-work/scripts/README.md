@@ -206,6 +206,20 @@ If you use Cursor, Claude Code, or Codex in addition to GitHub Copilot:
 .\lens.core\_bmad\lens-work\scripts\install.ps1 -AllIDEs
 ```
 
+### PowerShell Validation on Linux
+
+Use this when changing `.ps1` scripts from a Linux workstation.
+
+- Install PowerShell 7 (`pwsh`) first if it is not already available.
+- Run validation from the **control repo root** against the promoted `lens.core/` payload, not from `TargetProjects/lens/src/Lens.Core.Src/`.
+- If `LENS_VERSION` or `_bmad-output/lens-work/governance-setup.yaml` are missing, run `setup-control-repo.sh` or `setup-control-repo.ps1` before validating `/onboard` or preflight behavior.
+
+```bash
+pwsh -NoLogo -NoProfile -File ./lens.core/_bmad/lens-work/scripts/preflight.ps1
+pwsh -NoLogo -NoProfile -File ./lens.core/_bmad/lens-work/scripts/preflight.ps1 -Caller onboard
+pwsh -NoLogo -NoProfile -File ./lens.core/_bmad/lens-work/scripts/run-preflight-cached.ps1 -Json
+```
+
 ---
 
 ## Parameter Reference

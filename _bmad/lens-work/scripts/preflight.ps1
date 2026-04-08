@@ -24,9 +24,37 @@ param(
 $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ProjectRoot = Resolve-Path (Join-Path $ScriptDir "../../..")
+$ProjectRoot = (Resolve-Path (Join-Path $ScriptDir "..\..\..\..")).Path
 $ReleaseDir = Join-Path $ProjectRoot "lens.core"
 $TimestampFile = Join-Path $ProjectRoot "_bmad-output/lens-work/personal/.preflight-timestamp"
+$LifecyclePath = Join-Path $ReleaseDir "_bmad/lens-work/lifecycle.yaml"
+
+function Get-PreflightTimestamp {
+    param([string]$Path)
+
+    if (-not (Test-Path $Path)) {
+        return $null
+    }
+
+    $rawValue = (Get-Content $Path -Raw).Trim()
+    if ([string]::IsNullOrWhiteSpace($rawValue)) {
+        return $null
+    }
+
+    # Earlier cached wrappers wrote Unix epoch seconds into the full-preflight timestamp file.
+    if ($rawValue -match '^\d+$') {
+        return [DateTimeOffset]::FromUnixTimeSeconds([long]$rawValue).UtcDateTime
+    }
+
+    $styles = [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
+    $parsed = [datetime]::MinValue
+    if ([datetime]::TryParse($rawValue, [System.Globalization.CultureInfo]::InvariantCulture, $styles, [ref]$parsed)) {
+        return $parsed.ToUniversalTime()
+    }
+
+    Write-Host "  ⚠ Ignoring invalid preflight timestamp at $Path" -ForegroundColor Yellow
+    return $null
+}
 
 if ($Help) {
     Get-Help $MyInvocation.MyCommand.Path -Detailed
@@ -49,7 +77,11 @@ if (-not (Test-Path $ReleaseDir)) {
 # =============================================================================
 Write-Host "[preflight] Verifying LENS_VERSION compatibility..." -ForegroundColor Cyan
 
-$moduleSchemaLine = Get-Content (Join-Path $ReleaseDir "lens.core/_bmad/lens-work/lifecycle.yaml") |
+if (-not (Test-Path $LifecyclePath)) {
+    throw "ERROR: lifecycle.yaml not found at $LifecyclePath"
+}
+
+$moduleSchemaLine = Get-Content $LifecyclePath |
     Where-Object { $_ -match '^schema_version:' } | Select-Object -First 1
 
 if ([string]::IsNullOrWhiteSpace($moduleSchemaLine)) {
@@ -76,10 +108,13 @@ Write-Host "  ✓ LENS_VERSION v$controlVersion matches module schema" -Foregrou
 # Step 2: Determine Pull Strategy
 # =============================================================================
 $needsPull = $true
+$lastTime = $null
 
 if (Test-Path $TimestampFile) {
-    $lastPreflight = Get-Content $TimestampFile -Raw
-    $lastTime = [datetime]::Parse($lastPreflight.Trim())
+    $lastTime = Get-PreflightTimestamp -Path $TimestampFile
+}
+
+if ($null -ne $lastTime) {
     $elapsed = (Get-Date).ToUniversalTime() - $lastTime
 
     $currentBranch = git branch --show-current 2>$null
@@ -123,21 +158,28 @@ if (-not (Test-Path ".github")) {
     Copy-Item -Recurse -Force "$releaseGithub/*" ".github/"
 }
 
-$missing = Get-ChildItem $releaseGithub -Recurse -File |
+$missing = @(Get-ChildItem $releaseGithub -Recurse -File |
     Where-Object {
         $relative = $_.FullName.Substring((Resolve-Path $releaseGithub).Path.Length).TrimStart('\', '/')
         -not (Test-Path (Join-Path ".github" $relative))
-    }
+    })
 
-$changed = git -C $ReleaseDir diff --name-only 'HEAD@{1}' HEAD -- .github/ 2>$null
+$changed = @(git -C $ReleaseDir diff --name-only 'HEAD@{1}' HEAD -- .github/ 2>$null |
+    Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 
-if ($missing.Count -gt 0 -or $changed) {
+if ($missing.Count -gt 0 -or $changed.Count -gt 0) {
     Copy-Item -Recurse -Force "$releaseGithub/*" ".github/"
     Write-Host "  ✓ .github/ synced" -ForegroundColor Green
 }
 
 # Prompt hygiene
 if (Test-Path ".github/prompts") {
+    $releasePromptDir = Join-Path $releaseGithub "prompts"
+
+    Get-ChildItem ".github/prompts" -File -Filter "lens-work*.prompt.md" |
+        Where-Object { -not (Test-Path (Join-Path $releasePromptDir $_.Name)) } |
+        Remove-Item -Force
+
     Get-ChildItem ".github/prompts" -File -Filter "*.prompt.md" |
         Where-Object { $_.Name -notlike "lens-work*.prompt.md" } |
         Remove-Item -Force
@@ -162,7 +204,7 @@ foreach ($entryPoint in @("CLAUDE.md")) {
 # =============================================================================
 if (-not (Test-Path ".claude/commands")) {
     Write-Host "[preflight] .claude/commands missing — running installer..." -ForegroundColor Yellow
-    bash (Join-Path $ReleaseDir "lens.core/_bmad/lens-work/scripts/install.sh") --ide claude
+    & (Join-Path $ReleaseDir "_bmad/lens-work/scripts/install.ps1") -IDE claude
 }
 
 # =============================================================================
