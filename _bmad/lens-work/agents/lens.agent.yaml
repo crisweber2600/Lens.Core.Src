@@ -183,3 +183,6 @@ agent:
     - trigger: LC or fuzzy match on lens-constitution or resolve rules
       exec: "{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-constitution/SKILL.md"
       description: "[LC] Lens Constitution: Resolve governance rules with 4-level hierarchy"
+    - trigger: DC or fuzzy match on document-project or document project or document this project or generate project docs
+      exec: "{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-document-project/SKILL.md"
+      description: "[DC] Document Project: Capture project structure and generate docs scoped to domain/service/feature paths"

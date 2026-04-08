@@ -115,6 +115,9 @@ skills:
   - id: bmad-lens-setup
     file: skills/bmad-lens-setup/SKILL.md
     description: "Module configuration installer and help registry"
+  - id: bmad-lens-document-project
+    file: skills/bmad-lens-document-project/SKILL.md
+    description: "Document active feature/project with domain/service/feature scoped output in control and governance repos"
 
   # --- Planned skills (referenced by existing skills but not yet built) ---
   # These are in the plan.md roadmap (phases 2-4) and referenced in cross-skill

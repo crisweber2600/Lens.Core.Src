@@ -45,6 +45,8 @@ You are the entry point for all feature work in the Lens system. You orchestrate
 | **governance repo** | Lens-owned metadata repository; holds feature.yaml, feature-index.yaml, user profiles, themes, and planning artifacts |
 | **control repo** | Source code repository; Lens interacts with it but does not own it; defaults to governance repo if not separately configured |
 | **2-branch topology** | The feature branch + plan branch pair that forms the unit of feature work |
+| **docs.path** | Control-repo artifact output folder: `_bmad-output/{domain}/{service}/{featureId}` — populated in feature.yaml at init time; used by all workflows as the primary docs path |
+| **governance_docs_path** | Governance-repo docs subfolder: `features/{domain}/{service}/{featureId}/docs` — populated in feature.yaml at init time; used by document-project skill to mirror docs into the governance repo |
 
 ## On Activation
 

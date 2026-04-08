@@ -27,6 +27,11 @@ created: "{created_date}"
 owner: "{owner}"
 description: "{description}"
 
+# Artifact Paths (domain/service/feature scoped)
+docs:
+  path: "_bmad-output/{domain}/{service}/{featureId}"
+  governance_docs_path: "features/{domain}/{service}/{featureId}/docs"
+
 # Artifact Registry
 artifacts: []
 # - path: docs/prd.md

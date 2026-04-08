@@ -86,6 +86,8 @@ def test_create_feature():
         assert_eq("track in yaml", data.get("track"), "quickplan")
         assert_eq("team lead", data.get("team", [{}])[0].get("role"), "lead")
         assert_eq("team username", data.get("team", [{}])[0].get("username"), "cweber")
+        assert_eq("docs.path", data.get("docs", {}).get("path"), "_bmad-output/platform/identity/auth-refresh")
+        assert_eq("docs.governance_docs_path", data.get("docs", {}).get("governance_docs_path"), "features/platform/identity/auth-refresh/docs")
 
         index_path = Path(tmp) / "feature-index.yaml"
         assert_eq("feature-index.yaml exists", index_path.exists(), True)
