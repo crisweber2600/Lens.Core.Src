@@ -1216,6 +1216,8 @@ def cmd_cleanup(args: argparse.Namespace) -> dict:
         }
 
     planned_deletions: list[dict] = []
+    planned_branch_deletions: list[dict] = []
+    delete_remote = getattr(args, "delete_remote_branches", False)
 
     # 1. Governance legacy branch directory
     legacy_dir = governance_repo / LEGACY_BRANCHES_DIR / old_id
@@ -1247,15 +1249,61 @@ def cmd_cleanup(args: argparse.Namespace) -> dict:
                 "source": "source-bmad-output",
             })
 
+    # 4. Remote branch cleanup (when --delete-remote-branches is set)
+    if delete_remote:
+        # Governance repo: base branch + milestone branches
+        gov_base_ref = f"origin/{old_id}"
+        if _git_ref_exists(governance_repo, gov_base_ref):
+            planned_branch_deletions.append({
+                "branch": old_id,
+                "repo": str(governance_repo),
+                "repo_label": "governance",
+                "command": f"git -C {governance_repo} push origin --delete {old_id}",
+            })
+        milestones = detect_legacy_milestones(governance_repo, old_id)
+        for ms in milestones:
+            ms_branch = f"{old_id}-{ms}"
+            planned_branch_deletions.append({
+                "branch": ms_branch,
+                "repo": str(governance_repo),
+                "repo_label": "governance",
+                "command": f"git -C {governance_repo} push origin --delete {ms_branch}",
+            })
+
+        # Source repo: base branch + milestone branches
+        if source_repo:
+            src_base_ref = f"origin/{old_id}"
+            if _git_ref_exists(source_repo, src_base_ref):
+                planned_branch_deletions.append({
+                    "branch": old_id,
+                    "repo": str(source_repo),
+                    "repo_label": "source",
+                    "command": f"git -C {source_repo} push origin --delete {old_id}",
+                })
+            src_ms_branches = _git_list_remote_branches(source_repo, f"origin/{old_id}-*")
+            src_prefix = f"origin/{old_id}-"
+            for branch in src_ms_branches:
+                if branch.startswith(src_prefix):
+                    branch_name = branch[len("origin/"):]
+                    planned_branch_deletions.append({
+                        "branch": branch_name,
+                        "repo": str(source_repo),
+                        "repo_label": "source",
+                        "command": f"git -C {source_repo} push origin --delete {branch_name}",
+                    })
+
     if dry_run:
-        return {
+        result: dict = {
             "status": "pass",
             "feature_id": feature_id,
             "dry_run": True,
             "planned_deletions": planned_deletions,
         }
+        if planned_branch_deletions:
+            result["planned_branch_deletions"] = planned_branch_deletions
+        return result
 
-    # Execute deletions
+    # Execute filesystem deletions
     cleaned: list[dict] = []
     errors: list[str] = []
     for deletion in planned_deletions:
@@ -1267,12 +1315,31 @@ def cmd_cleanup(args: argparse.Namespace) -> dict:
         except OSError as e:
             errors.append(f"Failed to delete {target}: {e}")
 
-    result: dict = {
+    # Execute remote branch deletions
+    branches_deleted: list[dict] = []
+    for bd in planned_branch_deletions:
+        try:
+            res = subprocess.run(
+                ["git", "-C", bd["repo"], "push", "origin", "--delete", bd["branch"]],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            if res.returncode == 0:
+                branches_deleted.append(bd)
+            else:
+                errors.append(f"Failed to delete remote branch {bd['branch']} in {bd['repo_label']}: {res.stderr.strip()}")
+        except (subprocess.TimeoutExpired, OSError) as e:
+            errors.append(f"Failed to delete remote branch {bd['branch']} in {bd['repo_label']}: {e}")
+
+    result = {
         "status": "pass" if not errors else "partial",
         "feature_id": feature_id,
         "dry_run": False,
         "cleaned": cleaned,
     }
+    if branches_deleted:
+        result["branches_deleted"] = branches_deleted
     if errors:
         result["errors"] = errors
     return result
@@ -1350,6 +1417,8 @@ Examples:
     cl_p.add_argument("--domain", required=True, help="Domain name")
     cl_p.add_argument("--service", required=True, help="Service name")
     cl_p.add_argument("--source-repo", help="Path to source repo (for Docs/ and _bmad-output cleanup)")
+    cl_p.add_argument("--delete-remote-branches", action="store_true",
+                       help="Also delete legacy remote branches (governance + source repo)")
     cl_p.add_argument("--dry-run", action="store_true", help="Preview deletions without executing")
 
     return parser
