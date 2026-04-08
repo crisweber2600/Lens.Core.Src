@@ -65,8 +65,14 @@ def test_create_feature():
         assert_eq("index_updated", result.get("index_updated"), True)
         assert_true("feature_yaml_path in result", result.get("feature_yaml_path"))
         assert_true("summary_path in result", result.get("summary_path"))
+        assert_true("container markers returned", len(result.get("container_markers", [])) == 2)
         assert_true("git_commands non-empty", len(result.get("git_commands", [])) > 0)
         assert_true("gh_commands non-empty", len(result.get("gh_commands", [])) > 0)
+
+        domain_marker = Path(tmp) / "features" / "platform" / "domain.yaml"
+        service_marker = Path(tmp) / "features" / "platform" / "identity" / "service.yaml"
+        assert_eq("domain marker exists", domain_marker.exists(), True)
+        assert_eq("service marker exists", service_marker.exists(), True)
 
         feature_yaml = Path(tmp) / "features" / "platform" / "identity" / "auth-refresh" / "feature.yaml"
         assert_eq("feature.yaml exists", feature_yaml.exists(), True)
@@ -101,6 +107,106 @@ def test_create_feature():
         summary_text = summary_path.read_text()
         assert_true("summary contains feature name", "Auth Token Refresh" in summary_text)
         assert_true("summary contains featureId", "auth-refresh" in summary_text)
+
+
+def test_create_domain_marker():
+    """Domain container creation writes the governance marker and returns git commands."""
+    print("test_create_domain_marker", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        result, code = run([
+            "create-domain",
+            "--governance-repo", tmp,
+            "--domain", "platform",
+            "--name", "Platform",
+            "--username", "cweber",
+        ])
+
+        assert_eq("domain create status", result.get("status"), "pass")
+        assert_eq("domain create exit code", code, 0)
+        assert_eq("domain scope", result.get("scope"), "domain")
+        assert_true("domain git commands non-empty", len(result.get("git_commands", [])) > 0)
+
+        marker_path = Path(tmp) / "features" / "platform" / "domain.yaml"
+        assert_eq("domain marker exists", marker_path.exists(), True)
+
+        with open(marker_path) as f:
+            data = yaml.safe_load(f)
+        assert_eq("domain marker kind", data.get("kind"), "domain")
+        assert_eq("domain marker id", data.get("id"), "platform")
+        assert_eq("domain marker owner", data.get("owner"), "cweber")
+
+
+def test_create_service_marker_creates_parent_domain():
+    """Service container creation creates the service marker and an implicit domain marker when needed."""
+    print("test_create_service_marker_creates_parent_domain", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        result, code = run([
+            "create-service",
+            "--governance-repo", tmp,
+            "--domain", "platform",
+            "--service", "identity",
+            "--name", "Identity",
+            "--username", "cweber",
+        ])
+
+        assert_eq("service create status", result.get("status"), "pass")
+        assert_eq("service create exit code", code, 0)
+        assert_eq("service scope", result.get("scope"), "service")
+        assert_eq("parent domain created", result.get("created_domain_marker"), True)
+        assert_eq("two markers created", len(result.get("created_marker_paths", [])), 2)
+
+        domain_marker = Path(tmp) / "features" / "platform" / "domain.yaml"
+        service_marker = Path(tmp) / "features" / "platform" / "identity" / "service.yaml"
+        assert_eq("implicit domain marker exists", domain_marker.exists(), True)
+        assert_eq("service marker exists", service_marker.exists(), True)
+
+        with open(service_marker) as f:
+            data = yaml.safe_load(f)
+        assert_eq("service marker kind", data.get("kind"), "service")
+        assert_eq("service marker name", data.get("name"), "Identity")
+
+
+def test_duplicate_domain_service_rejected():
+    """Duplicate container markers fail with a clear error."""
+    print("test_duplicate_domain_service_rejected", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        first_domain, code1 = run([
+            "create-domain",
+            "--governance-repo", tmp,
+            "--domain", "platform",
+            "--username", "cweber",
+        ])
+        assert_eq("first domain status", first_domain.get("status"), "pass")
+        assert_eq("first domain exit code", code1, 0)
+
+        second_domain, code2 = run([
+            "create-domain",
+            "--governance-repo", tmp,
+            "--domain", "platform",
+            "--username", "cweber",
+        ])
+        assert_eq("duplicate domain status", second_domain.get("status"), "fail")
+        assert_eq("duplicate domain exit code", code2, 1)
+
+        first_service, code3 = run([
+            "create-service",
+            "--governance-repo", tmp,
+            "--domain", "platform",
+            "--service", "identity",
+            "--username", "cweber",
+        ])
+        assert_eq("first service status", first_service.get("status"), "pass")
+        assert_eq("first service exit code", code3, 0)
+
+        second_service, code4 = run([
+            "create-service",
+            "--governance-repo", tmp,
+            "--domain", "platform",
+            "--service", "identity",
+            "--username", "cweber",
+        ])
+        assert_eq("duplicate service status", second_service.get("status"), "fail")
+        assert_eq("duplicate service exit code", code4, 1)
 
 
 def test_index_created_when_missing():
@@ -394,6 +500,9 @@ def test_control_repo_git_commands():
 
 if __name__ == "__main__":
     test_create_feature()
+    test_create_domain_marker()
+    test_create_service_marker_creates_parent_domain()
+    test_duplicate_domain_service_rejected()
     test_index_created_when_missing()
     test_dry_run()
     test_invalid_feature_id()

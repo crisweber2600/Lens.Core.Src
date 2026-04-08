@@ -6,7 +6,7 @@ nextStepFile: './step-03-validate-and-sense.md'
 
 # Step 2: Collect Scope-Specific Inputs
 
-**Goal:** Collect only the inputs that are valid for the selected scope, then derive the initiative root and config path.
+**Goal:** Collect only the inputs that are valid for the selected scope, then derive the initiative root and governance metadata path.
 
 ---
 
@@ -30,7 +30,7 @@ if scope == "domain":
   domain = lower(remove_non_alphanumeric(primary_name))
   initiative_root_pattern = "domain"
   initiative_root = domain
-  config_path = "{initiative_output_folder}/${domain}/initiative.yaml"
+  config_path = "${governance_repo_path}/features/${domain}/domain.yaml"
 
 if scope == "service":
   if domain == "" and current_root_segments.length > 0:
@@ -45,7 +45,7 @@ if scope == "service":
   service = lower(remove_non_alphanumeric(primary_name))
   initiative_root_pattern = "domain-service"
   initiative_root = "${domain}-${service}"
-  config_path = "{initiative_output_folder}/${domain}/${service}/initiative.yaml"
+  config_path = "${governance_repo_path}/features/${domain}/${service}/service.yaml"
 
 if scope == "feature":
   if domain == "" and current_root_segments.length > 0:
@@ -107,13 +107,13 @@ if scope == "feature":
       Recommended for first-time users: express
     capture: track
   track = lower(replace(replace(track, "_", "-"), " ", "-"))
-  config_path = "{initiative_output_folder}/${domain}/${service}/${feature}.yaml"
+  config_path = "${governance_repo_path}/features/${domain}/${service}/${feature}/feature.yaml"
 
 output: |
   ✅ Scope inputs collected
   ├── Initiative root: ${initiative_root}
   ├── Root pattern: ${initiative_root_pattern}
-  └── Config path: ${config_path}
+  └── Governance path: ${config_path}
 ```
 
 ### 2. Collection Boundaries

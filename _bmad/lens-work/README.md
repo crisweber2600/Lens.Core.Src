@@ -242,7 +242,7 @@ Install-time values are sourced from `module.yaml` install questions:
 | `default-git-remote` | Git provider (GitHub, GitLab, Azure DevOps) | `github` |
 | `ides` | IDE adapters to install | `github-copilot` |
 
-The install-question keys use validator-friendly kebab-case. During installation, the module installer maps them into the existing runtime `bmadconfig.yaml` keys `target_projects_path` and `default_git_remote` so agent and workflow compatibility stays intact.
+The install-question keys use validator-friendly kebab-case. During installation, the module installer maps them into the existing runtime `bmadconfig.yaml` keys `target_projects_path` and `default_git_remote`, and derives `governance_repo_path` as `${target_projects_path}/lens/lens-governance` so new initiatives write metadata into the governance repo by default.
 
 
 ## Documentation

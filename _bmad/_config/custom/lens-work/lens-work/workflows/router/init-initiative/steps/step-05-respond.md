@@ -21,8 +21,8 @@ if scope == "domain":
     ✅ Domain scaffold created successfully.
     - No lifecycle branch created — domains are structural containers only
     - TargetProjects folder: `${target_projects_path}/${domain}/`
-    - Config: `${config_path}`
-    - Commit: recorded on the current branch only
+    - Governance marker: `${config_path}`
+    - Governance commit: recorded on `main` in `${governance_repo_path}`
 
     ▶️ Run `/new-service` to create a service under this domain.
 
@@ -33,8 +33,8 @@ if scope == "service":
     ✅ Service scaffold created successfully.
     - No lifecycle branch created — services are structural containers only
     - TargetProjects folder: `${target_projects_path}/${domain}/${service}/`
-    - Config: `${config_path}`
-    - Commit: recorded on the current branch only
+    - Governance marker: `${config_path}`
+    - Governance commit: recorded on `main` in `${governance_repo_path}`
 
     ▶️ Next: clone your service repos into `${target_projects_path}/${domain}/${service}/`, then run `/discover`.
 
@@ -43,17 +43,18 @@ if scope == "feature":
     📂 Initiative: ${initiative_root}
     🧭 Root pattern: ${initiative_root_pattern}
     🏷️ Track: ${track}
-    � Phases: ${track_config.phases.join(', ')}
+    📋 Phases: ${track_config.phases.join(', ')}
 
     ✅ Feature initiative created successfully.
     - Code branch: `${initiative_root}`
     - Plan branch: `${initiative_root}-plan`
-    - Config: `${config_path}`
-    - Feature metadata: `{initiative_output_folder}/${domain}/${service}/${initiative_root}/feature.yaml` on `${initiative_root}`
+    - Feature metadata: `${config_path}`
+    - Governance repo: `${governance_repo_path}`
 
-    Visibility metadata on main (when feature registry is enabled):
+    Visibility metadata on governance main:
     - `feature-index.yaml` entry for `${initiative_root}`
     - `summary.md` stub for `${initiative_root}`
+    - Parent container markers created when missing
 
     ▶️ Run `/${track_config.start_phase}` to begin the first phase.
 

@@ -6,7 +6,7 @@ nextStepFile: './step-04-create-initiative.md'
 
 # Step 3: Validate Names And Run Sensing
 
-**Goal:** Reject invalid initiative names early, validate feature tracks, and surface overlapping initiatives before creating config or branches.
+**Goal:** Reject invalid initiative names early, validate feature tracks, and surface overlapping initiatives before creating governance metadata or branches.
 
 ---
 
@@ -30,6 +30,18 @@ if scope == "feature":
   track_config = lifecycle.tracks[track]
   if track_config == null:
     FAIL("❌ Track `${track}` not found. Available tracks: ${keys(lifecycle.tracks).join(', ')}")
+
+if file_exists(config_path):
+  FAIL("❌ A ${scope} entry already exists in the governance repo at `${config_path}`.")
+
+if scope == "feature":
+  feature_index_path = "${governance_repo_path}/feature-index.yaml"
+  if file_exists(feature_index_path):
+    feature_index = load(feature_index_path)
+    feature_entries = feature_index.features || []
+    duplicate_feature = any(feature_entries, entry -> (entry.id || entry.featureId || "") == initiative_root)
+    if duplicate_feature:
+      FAIL("❌ Feature `${initiative_root}` already exists in `feature-index.yaml` on the governance repo main branch.")
 ```
 
 ### 2. Cross-Initiative Sensing & Track Permission Gate

@@ -7,11 +7,11 @@ description: "Create a new initiative — /new-initiative, /new-domain, /new-ser
 
 # Init Initiative — LENS Workbench
 
-You are the `@lens` agent creating a new initiative in the control repo.
+You are the `@lens` agent creating a new initiative with governance-owned metadata.
 
 ## What This Prompt Does
 
-Routes `/new-initiative`, `/new-domain`, `/new-service`, and `/new-feature` commands to the init-initiative workflow, which creates the initiative scaffold, config, overlap sensing output, and feature branch topology when scope=`feature`.
+Routes `/new-initiative`, `/new-domain`, `/new-service`, and `/new-feature` commands to the init-initiative workflow, which creates governance metadata, overlap sensing output, and feature branch topology when scope=`feature`.
 
 ## Parameters
 
@@ -46,7 +46,7 @@ The workflow handles:
 - Track selection and lifecycle.yaml validation (feature scope only — domain/service skip track)
 - Cross-initiative sensing (pre-creation)
 - Branch topology creation (domain/service: none — scaffold only; feature: root + plan — 2-branch topology)
-- Initiative config creation (domain/service: commit on current branch only; feature: branch creation + commits)
+- Governance metadata creation (domain: `features/{domain}/domain.yaml`; service: `features/{domain}/{service}/service.yaml`; feature: `features/{domain}/{service}/{featureId}/feature.yaml`)
 - Response formatting (Context Header → Primary Content → Next Step)
 
 ## Prerequisites

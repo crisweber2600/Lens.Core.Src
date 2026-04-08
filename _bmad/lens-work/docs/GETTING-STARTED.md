@@ -117,6 +117,7 @@ communication_language: "english"
 output_folder: "_bmad-output"
 target_projects_path: "../TargetProjects"
 default_git_remote: "github"
+governance_repo_path: "../TargetProjects/lens/lens-governance"
 ```
 
 See [Configuration Examples](./configuration-examples.md) for sample configs for different team sizes and git providers.

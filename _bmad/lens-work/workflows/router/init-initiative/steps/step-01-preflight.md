@@ -5,6 +5,8 @@ nextStepFile: './step-02-collect-scope.md'
 preflightInclude: '../../../includes/preflight.md'
 lifecycleContract: '../../../../lifecycle.yaml'
 moduleConfigPath: '../../../../bmadconfig.yaml'
+governanceSetupPath: '{project-root}/_bmad-output/lens-work/governance-setup.yaml'
+profilePath: '{project-root}/_bmad-output/lens-work/personal/profile.yaml'
 ---
 
 # Step 1: Preflight And Scope Initialization
@@ -45,6 +47,20 @@ lifecycle = load("{lifecycleContract}")
 module_config = load("{moduleConfigPath}")
 profile = load_if_exists("{personal_output_folder}/profile.yaml")
 current_context = invoke: git-state.current-initiative
+
+governance_setup = load_if_exists("{governanceSetupPath}")
+target_projects_path = profile.target_projects_path || module_config.target_projects_path || "TargetProjects"
+module_governance_path = module_config.governance_repo_path || ""
+if module_governance_path == "{project-root}" or module_governance_path == ".":
+  module_governance_path = ""
+
+governance_repo_path = governance_setup.governance_repo_path || profile.governance_repo_path || module_governance_path || "${target_projects_path}/lens/lens-governance"
+
+if governance_repo_path == "" or not directory_exists(governance_repo_path):
+  FAIL("❌ Governance repo not found. Run `/onboard` so initiative metadata can be written to the governance repo before creating new initiatives.")
+
+session.target_projects_path = target_projects_path
+session.governance_repo_path = governance_repo_path
 ```
 
 ### 2. Early Dirty-State Check
@@ -66,7 +82,8 @@ if dirty_state.status == "dirty":
 output: |
   🌱 Initiative creation initialized
   ├── Command: ${command_name}
-  └── Scope: ${scope}
+  ├── Scope: ${scope}
+  └── Governance repo: ${governance_repo_path}
 ```
 
 ---

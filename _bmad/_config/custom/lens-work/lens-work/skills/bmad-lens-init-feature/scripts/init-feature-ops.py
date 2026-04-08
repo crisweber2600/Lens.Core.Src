@@ -3,11 +3,14 @@
 # requires-python = ">=3.10"
 # dependencies = ["pyyaml>=6.0"]
 # ///
-"""Feature initialization operations — create branches, feature.yaml, PR, and feature-index entries.
+"""Governance initialization operations for Lens features and containers.
 
 The init-feature workflow creates the 2-branch topology ({featureId} and {featureId}-plan),
 writes feature.yaml to the governance repo, registers the feature in feature-index.yaml on main,
-and creates a summary.md stub. Git/gh commands are returned as arrays — not executed directly.
+and creates a summary.md stub. Domain and service container markers are also created in the
+governance repo so container-only scopes have durable metadata outside the control repo.
+
+Git/gh commands are returned as arrays — not executed directly.
 """
 
 import argparse
@@ -149,18 +152,94 @@ def make_summary_md(
     )
 
 
+def make_domain_yaml(domain: str, name: str, username: str, timestamp: str) -> dict:
+    """Build the governance marker for a domain container."""
+    return {
+        "kind": "domain",
+        "id": domain,
+        "name": name,
+        "domain": domain,
+        "status": "active",
+        "owner": username,
+        "created": timestamp,
+        "updated": timestamp,
+    }
+
+
+def make_service_yaml(
+    domain: str,
+    service: str,
+    name: str,
+    username: str,
+    timestamp: str,
+) -> dict:
+    """Build the governance marker for a service container."""
+    return {
+        "kind": "service",
+        "id": f"{domain}-{service}",
+        "name": name,
+        "domain": domain,
+        "service": service,
+        "status": "active",
+        "owner": username,
+        "created": timestamp,
+        "updated": timestamp,
+    }
+
+
+def get_domain_marker_path(governance_repo: str, domain: str) -> Path:
+    """Return the canonical governance path for a domain marker."""
+    return Path(governance_repo) / "features" / domain / "domain.yaml"
+
+
+def get_service_marker_path(governance_repo: str, domain: str, service: str) -> Path:
+    """Return the canonical governance path for a service marker."""
+    return Path(governance_repo) / "features" / domain / service / "service.yaml"
+
+
+def ensure_container_markers(
+    governance_repo: str,
+    domain: str,
+    service: str,
+    username: str,
+    timestamp: str,
+    dry_run: bool = False,
+) -> list[str]:
+    """Create missing domain/service governance markers and return created relative paths."""
+    created: list[str] = []
+    domain_path = get_domain_marker_path(governance_repo, domain)
+    service_path = get_service_marker_path(governance_repo, domain, service)
+
+    if not domain_path.exists():
+        created.append(str(domain_path.relative_to(governance_repo)))
+        if not dry_run:
+            atomic_write_yaml(domain_path, make_domain_yaml(domain, domain, username, timestamp))
+
+    if not service_path.exists():
+        created.append(str(service_path.relative_to(governance_repo)))
+        if not dry_run:
+            atomic_write_yaml(
+                service_path,
+                make_service_yaml(domain, service, service, username, timestamp),
+            )
+
+    return created
+
+
 def build_git_commands(
     governance_repo: str,
     control_repo: str | None,
     feature_id: str,
     domain: str,
     service: str,
+    container_rel_paths: list[str] | None = None,
 ) -> list[str]:
     """Return the ordered git commands needed to commit the initialized feature."""
     gov = governance_repo
     plan_branch = f"{feature_id}-plan"
     feature_yaml_rel = f"features/{domain}/{service}/{feature_id}/feature.yaml"
     summary_rel = f"features/{domain}/{service}/{feature_id}/summary.md"
+    visibility_paths = ["feature-index.yaml", summary_rel, *(container_rel_paths or [])]
 
     cmds: list[str] = []
 
@@ -175,11 +254,22 @@ def build_git_commands(
         f"git -C {gov} add {feature_yaml_rel}",
         f'git -C {gov} commit -m "feat({domain}/{service}): init {feature_id} planning artifacts"',
         f"git -C {gov} checkout main",
-        f"git -C {gov} add feature-index.yaml {summary_rel}",
+        f"git -C {gov} add {' '.join(visibility_paths)}",
         f'git -C {gov} commit -m "feat: add {feature_id} to feature index"',
     ])
 
     return cmds
+
+
+def build_container_git_commands(governance_repo: str, rel_paths: list[str], commit_message: str) -> list[str]:
+    """Return the ordered git commands needed to commit domain/service markers on main."""
+    return [
+        f"git -C {governance_repo} checkout main",
+        f"git -C {governance_repo} pull origin main",
+        f"git -C {governance_repo} add {' '.join(rel_paths)}",
+        f'git -C {governance_repo} commit -m "{commit_message}"',
+        f"git -C {governance_repo} push origin main",
+    ]
 
 
 def build_gh_commands(control_repo: str, feature_id: str, name: str) -> list[str]:
@@ -235,12 +325,27 @@ def cmd_create(args: argparse.Namespace) -> dict:
         Path(governance_repo) / "features" / domain / service / feature_id / "summary.md"
     )
     index_path = Path(governance_repo) / "feature-index.yaml"
+    container_markers = ensure_container_markers(
+        governance_repo,
+        domain,
+        service,
+        username,
+        timestamp,
+        dry_run=args.dry_run,
+    )
 
     # control_repo for git commands: use separately if provided, else None to skip ctrl-repo cmds
     ctrl_for_git = control_repo if (control_repo and control_repo != governance_repo) else None
     pr_repo = control_repo or governance_repo
 
-    git_cmds = build_git_commands(governance_repo, ctrl_for_git, feature_id, domain, service)
+    git_cmds = build_git_commands(
+        governance_repo,
+        ctrl_for_git,
+        feature_id,
+        domain,
+        service,
+        container_markers,
+    )
     gh_cmds = build_gh_commands(pr_repo, feature_id, name)
 
     if args.dry_run:
@@ -251,6 +356,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
             "feature_yaml_path": str(feature_yaml_path),
             "index_updated": True,
             "summary_path": str(summary_path),
+            "container_markers": container_markers,
             "git_commands": git_cmds,
             "gh_commands": gh_cmds,
         }
@@ -291,8 +397,118 @@ def cmd_create(args: argparse.Namespace) -> dict:
         "feature_yaml_path": str(feature_yaml_path),
         "index_updated": True,
         "summary_path": str(summary_path),
+        "container_markers": container_markers,
         "git_commands": git_cmds,
         "gh_commands": gh_cmds,
+    }
+
+
+def cmd_create_domain(args: argparse.Namespace) -> dict:
+    """Create a governance marker for a domain container."""
+    err = validate_safe_id(args.domain, "domain")
+    if err:
+        return {"status": "fail", "error": err}
+
+    governance_repo = args.governance_repo
+    domain = args.domain
+    name = args.name or domain
+    username = args.username
+    timestamp = now_iso()
+    marker_path = get_domain_marker_path(governance_repo, domain)
+
+    if marker_path.exists():
+        return {
+            "status": "fail",
+            "error": f"Domain '{domain}' already exists at {marker_path}",
+        }
+
+    rel_path = str(marker_path.relative_to(governance_repo))
+    git_cmds = build_container_git_commands(
+        governance_repo,
+        [rel_path],
+        f"feat(domain): add {domain} container",
+    )
+
+    if args.dry_run:
+        return {
+            "status": "pass",
+            "dry_run": True,
+            "scope": "domain",
+            "path": str(marker_path),
+            "created_marker_paths": [rel_path],
+            "git_commands": git_cmds,
+        }
+
+    try:
+        atomic_write_yaml(marker_path, make_domain_yaml(domain, name, username, timestamp))
+    except OSError as e:
+        return {"status": "fail", "error": f"Failed to write domain marker: {e}"}
+
+    return {
+        "status": "pass",
+        "scope": "domain",
+        "path": str(marker_path),
+        "created_marker_paths": [rel_path],
+        "git_commands": git_cmds,
+    }
+
+
+def cmd_create_service(args: argparse.Namespace) -> dict:
+    """Create governance markers for a service container and its parent domain if needed."""
+    err = validate_safe_id(args.domain, "domain")
+    if err:
+        return {"status": "fail", "error": err}
+    err = validate_safe_id(args.service, "service")
+    if err:
+        return {"status": "fail", "error": err}
+
+    governance_repo = args.governance_repo
+    domain = args.domain
+    service = args.service
+    name = args.name or service
+    username = args.username
+    timestamp = now_iso()
+
+    service_path = get_service_marker_path(governance_repo, domain, service)
+    if service_path.exists():
+        return {
+            "status": "fail",
+            "error": f"Service '{domain}/{service}' already exists at {service_path}",
+        }
+
+    created_marker_paths = ensure_container_markers(
+        governance_repo,
+        domain,
+        service,
+        username,
+        timestamp,
+        dry_run=args.dry_run,
+    )
+
+    # Overwrite the auto-generated service marker with the requested display name.
+    if not args.dry_run:
+        try:
+            atomic_write_yaml(
+                service_path,
+                make_service_yaml(domain, service, name, username, timestamp),
+            )
+        except OSError as e:
+            return {"status": "fail", "error": f"Failed to write service marker: {e}"}
+
+    git_cmds = build_container_git_commands(
+        governance_repo,
+        created_marker_paths,
+        f"feat(service): add {domain}/{service} container",
+    )
+
+    return {
+        "status": "pass",
+        "dry_run": bool(args.dry_run),
+        "scope": "service",
+        "path": str(service_path),
+        "created_domain_marker": any(path.endswith("/domain.yaml") for path in created_marker_paths),
+        "created_marker_paths": created_marker_paths,
+        "git_commands": git_cmds,
     }
 
 
@@ -353,12 +569,18 @@ def cmd_fetch_context(args: argparse.Namespace) -> dict:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Feature initialization operations — create branches, feature.yaml, PR, and feature-index entries.",
+                description="Governance initialization operations for features and container scopes.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   %(prog)s create --governance-repo /path/to/repo --feature-id auth-refresh \\
     --domain platform --service identity --name "Auth Token Refresh" --username cweber
+
+    %(prog)s create-domain --governance-repo /path/to/repo --domain platform \\
+        --name "Platform" --username cweber
+
+    %(prog)s create-service --governance-repo /path/to/repo --domain platform \\
+        --service identity --name "Identity" --username cweber
 
   %(prog)s create --governance-repo /path/to/gov --control-repo /path/to/src \\
     --feature-id payment-gateway --domain commerce --service payments \\
@@ -371,6 +593,35 @@ Examples:
     )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    create_domain_p = subparsers.add_parser(
+        "create-domain",
+        help="Create a governance marker for a domain container",
+    )
+    create_domain_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
+    create_domain_p.add_argument("--domain", required=True, help="Domain name")
+    create_domain_p.add_argument("--name", default=None, help="Human-friendly domain name")
+    create_domain_p.add_argument("--username", required=True, help="Username of the creator")
+    create_domain_p.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print planned operations without writing any files",
+    )
+
+    create_service_p = subparsers.add_parser(
+        "create-service",
+        help="Create a governance marker for a service container",
+    )
+    create_service_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
+    create_service_p.add_argument("--domain", required=True, help="Domain name")
+    create_service_p.add_argument("--service", required=True, help="Service name")
+    create_service_p.add_argument("--name", default=None, help="Human-friendly service name")
+    create_service_p.add_argument("--username", required=True, help="Username of the creator")
+    create_service_p.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print planned operations without writing any files",
+    )
 
     create_p = subparsers.add_parser("create", help="Create feature branches, YAML, PR, and index entry")
     create_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
@@ -418,6 +669,8 @@ def main() -> None:
     args = parser.parse_args()
 
     commands = {
+        "create-domain": cmd_create_domain,
+        "create-service": cmd_create_service,
         "create": cmd_create,
         "fetch-context": cmd_fetch_context,
     }

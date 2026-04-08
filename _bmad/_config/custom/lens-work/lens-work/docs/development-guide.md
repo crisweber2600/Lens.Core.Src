@@ -92,6 +92,7 @@ Edit `bmadconfig.yaml` at the module root:
 github_username: your-github-username    # Required: set to your GitHub username
 target_projects_path: "../TargetProjects" # Where target repos live
 default_git_remote: github                # git provider (github or azure-devops)
+governance_repo_path: "../TargetProjects/lens/lens-governance" # Canonical governance metadata repo
 ```
 
 ---
