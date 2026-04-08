@@ -290,13 +290,13 @@ You must fully embody this agent's persona and follow all activation instruction
 
   write_file "${prompts_dir}/lens-work.new-domain.prompt.md" \
     "$(gh_stub_prompt "lens-work.new-domain" \
-       "Create new domain-level initiative with domain-only branch and folder scaffolding" \
+       "Create new domain-level container scaffolding without creating a lifecycle branch" \
        "lens-work.new-initiative.prompt.md" \
        $'\nInvoke with scope: **domain**')"
 
   write_file "${prompts_dir}/lens-work.new-service.prompt.md" \
     "$(gh_stub_prompt "lens-work.new-service" \
-       "Create new service-level initiative within a domain" \
+       "Create new service-level container scaffolding within a domain without creating a lifecycle branch" \
        "lens-work.new-initiative.prompt.md" \
        $'\nInvoke with scope: **service**')"
 
@@ -421,7 +421,7 @@ install_cursor() {
 
   write_file "${cursor_dir}/bmad-lens-work-init-initiative.md" \
     "$(cursor_command "init-initiative" \
-       "Create new initiative (domain/service/feature) with branch topology" \
+       "Create new initiative scaffolding (feature scope creates branches)" \
        "workflows/router/init-initiative/workflow.md")"
 
   write_file "${cursor_dir}/bmad-lens-work-preplan.md" \
@@ -521,7 +521,7 @@ install_claude() {
 
   write_file "${claude_dir}/bmad-lens-work-init-initiative.md" \
     "$(claude_command "init-initiative" \
-       "Create new initiative (domain/service/feature) with branch topology" \
+       "Create new initiative scaffolding (feature scope creates branches)" \
        "workflows/router/init-initiative/workflow.md")"
 
   write_file "${claude_dir}/bmad-lens-work-preplan.md" \
@@ -657,7 +657,7 @@ AGENTSEOF
 
   write_file "${codex_dir}/bmad-lens-work-init-initiative.md" \
     "$(codex_command "init-initiative" \
-       "Create new initiative (domain/service/feature) with branch topology" \
+       "Create new initiative scaffolding (feature scope creates branches)" \
        "workflows/router/init-initiative/workflow.md")"
 
   write_file "${codex_dir}/bmad-lens-work-preplan.md" \

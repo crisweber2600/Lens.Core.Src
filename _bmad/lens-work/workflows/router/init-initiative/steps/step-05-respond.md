@@ -5,7 +5,7 @@ description: 'Render the scope-specific creation summary and next-step guidance'
 
 # Step 5: Respond
 
-**Goal:** Confirm what was created, show the resulting branch topology, and direct the user to the correct next action for the chosen scope.
+**Goal:** Confirm what was created, show the resulting scaffold or feature topology, and direct the user to the correct next action for the chosen scope.
 
 ---
 
@@ -18,10 +18,11 @@ if scope == "domain":
   output: |
     📂 Domain: ${initiative_root}
 
-    ✅ Domain created successfully.
-    - Branch: `${initiative_root}`
+    ✅ Domain scaffold created successfully.
+    - No lifecycle branch created — domains are structural containers only
     - TargetProjects folder: `${target_projects_path}/${domain}/`
     - Config: `${config_path}`
+    - Commit: recorded on the current branch only
 
     ▶️ Run `/new-service` to create a service under this domain.
 
@@ -29,10 +30,11 @@ if scope == "service":
   output: |
     📂 Service: ${initiative_root}
 
-    ✅ Service created successfully.
-    - Branch: `${initiative_root}`
+    ✅ Service scaffold created successfully.
+    - No lifecycle branch created — services are structural containers only
     - TargetProjects folder: `${target_projects_path}/${domain}/${service}/`
     - Config: `${config_path}`
+    - Commit: recorded on the current branch only
 
     ▶️ Next: clone your service repos into `${target_projects_path}/${domain}/${service}/`, then run `/discover`.
 

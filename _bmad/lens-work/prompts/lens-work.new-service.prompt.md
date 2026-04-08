@@ -11,7 +11,7 @@ Routes `/new-service` command to the init-initiative workflow.
 
 ## What This Prompt Does
 
-Creates a new service initiative in the control repo. Triggers the same workflow as `/new-initiative` with `scope=service`.
+Creates a new service container scaffold in the control repo. Triggers the same workflow as `/new-initiative` with `scope=service`.
 
 ## Parameters
 
@@ -37,8 +37,8 @@ Run the init-initiative workflow at `{project-root}/lens.core/_bmad/lens-work/wo
 The workflow handles:
 - Slug-safe name validation
 - Cross-initiative sensing (pre-creation)
-- Branch topology creation (root only)
-- Initiative config creation and commit
+- Local scaffold creation (no lifecycle branch creation)
+- Initiative config creation and commit on the current branch
 - Response formatting (Context Header -> Primary Content -> Next Step)
 
 ## Prerequisites

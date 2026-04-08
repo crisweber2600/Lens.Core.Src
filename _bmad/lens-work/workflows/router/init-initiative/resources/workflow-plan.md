@@ -2,7 +2,7 @@
 
 ## Goal
 
-Create a new domain, service, or feature initiative with validated scope-specific inputs, correct config placement, and the proper git topology.
+Create a new domain, service, or feature initiative with validated scope-specific inputs, correct config placement, and feature-only git topology.
 
 ## Step Structure
 
@@ -22,8 +22,8 @@ Create a new domain, service, or feature initiative with validated scope-specifi
 4. `steps/step-04-create-initiative.md`
    - Create the initiative config
    - Scaffold TargetProjects folders for domain and service scopes
-   - Halt on a dirty working tree before branch creation
-   - Create, commit, and push the branch topology
+   - Halt on a dirty working tree before feature branch creation
+   - Create feature branches when scope = feature; otherwise commit scaffold-only config on the current branch
 5. `steps/step-05-respond.md`
    - Render the scope-specific success message
    - Surface the correct next command
@@ -46,4 +46,5 @@ Create a new domain, service, or feature initiative with validated scope-specifi
 
 - `_bmad-output/lens-work/initiatives/...` initiative config YAML
 - Local TargetProjects folder for domain or service scope
-- Root branch and small-audience feature branch when scope = feature
+- No lifecycle branches for domain/service scope
+- Feature root + plan branches when scope = feature

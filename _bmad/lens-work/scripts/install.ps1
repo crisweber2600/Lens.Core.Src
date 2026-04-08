@@ -255,8 +255,8 @@ You must fully embody this agent's persona and follow all activation instruction
     $prompts = @(
         @{ File = 'lens-work.onboard.prompt.md'; Name = 'lens-work.onboard'; Desc = 'Bootstrap control repo — detect provider, validate auth, create profile, auto-clone TargetProjects'; Target = 'lens-work.onboard.prompt.md' }
         @{ File = 'lens-work.new-initiative.prompt.md'; Name = 'lens-work.new-initiative'; Desc = 'Create a new initiative (domain, service, or feature)'; Target = 'lens-work.new-initiative.prompt.md' }
-        @{ File = 'lens-work.new-domain.prompt.md'; Name = 'lens-work.new-domain'; Desc = 'Create new domain-level initiative with domain-only branch and folder scaffolding'; Target = 'lens-work.new-initiative.prompt.md'; Extra = "`nInvoke with scope: **domain**" }
-        @{ File = 'lens-work.new-service.prompt.md'; Name = 'lens-work.new-service'; Desc = 'Create new service-level initiative within a domain'; Target = 'lens-work.new-initiative.prompt.md'; Extra = "`nInvoke with scope: **service**" }
+        @{ File = 'lens-work.new-domain.prompt.md'; Name = 'lens-work.new-domain'; Desc = 'Create new domain-level container scaffolding without creating a lifecycle branch'; Target = 'lens-work.new-initiative.prompt.md'; Extra = "`nInvoke with scope: **domain**" }
+        @{ File = 'lens-work.new-service.prompt.md'; Name = 'lens-work.new-service'; Desc = 'Create new service-level container scaffolding within a domain without creating a lifecycle branch'; Target = 'lens-work.new-initiative.prompt.md'; Extra = "`nInvoke with scope: **service**" }
         @{ File = 'lens-work.new-feature.prompt.md'; Name = 'lens-work.new-feature'; Desc = 'Create new feature-level initiative within a service'; Target = 'lens-work.new-initiative.prompt.md'; Extra = "`nInvoke with scope: **feature**" }
         @{ File = 'lens-work.preplan.prompt.md'; Name = 'lens-work.preplan'; Desc = 'Start PrePlan phase — brainstorm, research, product brief (Mary/Analyst, small audience)'; Target = 'lens-work.preplan.prompt.md' }
         @{ File = 'lens-work.businessplan.prompt.md'; Name = 'lens-work.businessplan'; Desc = 'Start BusinessPlan phase — PRD creation, UX design (John/PM + Sally/UX, small audience)'; Target = 'lens-work.businessplan.prompt.md' }
@@ -329,7 +329,7 @@ function Install-Cursor {
 
     $commands = @(
         @{ File = 'bmad-lens-work-onboard.md'; Name = 'onboard'; Desc = 'Create profile + run bootstrap + auto-clone TargetProjects'; WF = 'workflows/utility/onboard/workflow.md' }
-        @{ File = 'bmad-lens-work-init-initiative.md'; Name = 'init-initiative'; Desc = 'Create new initiative (domain/service/feature) with branch topology'; WF = 'workflows/router/init-initiative/workflow.md' }
+        @{ File = 'bmad-lens-work-init-initiative.md'; Name = 'init-initiative'; Desc = 'Create new initiative scaffolding (feature scope creates branches)'; WF = 'workflows/router/init-initiative/workflow.md' }
         @{ File = 'bmad-lens-work-preplan.md'; Name = 'preplan'; Desc = 'Launch PrePlan phase (brainstorm/research/product brief)'; WF = 'workflows/router/preplan/workflow.md' }
         @{ File = 'bmad-lens-work-businessplan.md'; Name = 'businessplan'; Desc = 'Launch BusinessPlan phase (PRD/UX design)'; WF = 'workflows/router/businessplan/workflow.md' }
         @{ File = 'bmad-lens-work-techplan.md'; Name = 'techplan'; Desc = 'Launch TechPlan phase (architecture/technical decisions)'; WF = 'workflows/router/techplan/workflow.md' }
@@ -367,7 +367,7 @@ function Install-Claude {
 
     $commands = @(
         @{ File = 'bmad-lens-work-onboard.md'; Name = 'onboard'; Desc = 'Create profile + run bootstrap + auto-clone TargetProjects'; WF = 'workflows/utility/onboard/workflow.md' }
-        @{ File = 'bmad-lens-work-init-initiative.md'; Name = 'init-initiative'; Desc = 'Create new initiative (domain/service/feature) with branch topology'; WF = 'workflows/router/init-initiative/workflow.md' }
+        @{ File = 'bmad-lens-work-init-initiative.md'; Name = 'init-initiative'; Desc = 'Create new initiative scaffolding (feature scope creates branches)'; WF = 'workflows/router/init-initiative/workflow.md' }
         @{ File = 'bmad-lens-work-preplan.md'; Name = 'preplan'; Desc = 'Launch PrePlan phase (brainstorm/research/product brief)'; WF = 'workflows/router/preplan/workflow.md' }
         @{ File = 'bmad-lens-work-businessplan.md'; Name = 'businessplan'; Desc = 'Launch BusinessPlan phase (PRD/UX design)'; WF = 'workflows/router/businessplan/workflow.md' }
         @{ File = 'bmad-lens-work-techplan.md'; Name = 'techplan'; Desc = 'Launch TechPlan phase (architecture/technical decisions)'; WF = 'workflows/router/techplan/workflow.md' }
@@ -443,7 +443,7 @@ See `lens.core/_bmad/lens-work/module-help.csv` for the complete command list.
 
     $commands = @(
         @{ File = 'bmad-lens-work-onboard.md'; Name = 'onboard'; Desc = 'Create profile + run bootstrap + auto-clone TargetProjects'; WF = 'workflows/utility/onboard/workflow.md' }
-        @{ File = 'bmad-lens-work-init-initiative.md'; Name = 'init-initiative'; Desc = 'Create new initiative (domain/service/feature) with branch topology'; WF = 'workflows/router/init-initiative/workflow.md' }
+        @{ File = 'bmad-lens-work-init-initiative.md'; Name = 'init-initiative'; Desc = 'Create new initiative scaffolding (feature scope creates branches)'; WF = 'workflows/router/init-initiative/workflow.md' }
         @{ File = 'bmad-lens-work-preplan.md'; Name = 'preplan'; Desc = 'Launch PrePlan phase (brainstorm/research/product brief)'; WF = 'workflows/router/preplan/workflow.md' }
         @{ File = 'bmad-lens-work-businessplan.md'; Name = 'businessplan'; Desc = 'Launch BusinessPlan phase (PRD/UX design)'; WF = 'workflows/router/businessplan/workflow.md' }
         @{ File = 'bmad-lens-work-techplan.md'; Name = 'techplan'; Desc = 'Launch TechPlan phase (architecture/technical decisions)'; WF = 'workflows/router/techplan/workflow.md' }

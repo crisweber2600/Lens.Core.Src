@@ -1,12 +1,12 @@
 ---
 name: 'step-04-create-initiative'
-description: 'Create the initiative config, scaffold local folders, and create the branch topology'
+description: 'Create the initiative config, scaffold local folders, and create feature branch topology when required'
 nextStepFile: './step-05-respond.md'
 ---
 
 # Step 4: Create The Initiative
 
-**Goal:** Materialize the initiative config, create any required local folders, and create the correct git topology for the selected scope.
+**Goal:** Materialize the initiative config, create any required local folders, and create feature git topology only when the selected scope requires it.
 
 ---
 
@@ -53,12 +53,12 @@ if scope == "service":
   ensure_directory("${target_projects_path}/${domain}/${service}")
 ```
 
-### 2. Create Branch Topology, Commit, And Push
+### 2. Create Feature Topology When Required
 
 ```yaml
-# v3.4: Resolve topology from scope + track config
+# v3.4: Only feature scope creates lifecycle branches.
 track_config = scope == "feature" ? (lifecycle.tracks[track] || {}) : {}
-topology = scope == "feature" ? (track_config.topology || "2-branch") : "container-single-branch"
+topology = scope == "feature" ? (track_config.topology || "2-branch") : "scaffold-only"
 
 if scope == "feature" and topology == "2-branch":
   # --- 2-BRANCH TOPOLOGY ---
@@ -116,22 +116,33 @@ if scope == "feature" and topology == "2-branch":
     branch: "${initiative_root}-plan"
 
 else:
-  # --- SINGLE-BRANCH CONTAINER OR NON-2-BRANCH TOPOLOGY ---
-  invoke: git-orchestration.create-branch
-  params:
-    branch_name: ${initiative_root}
+  if scope == "feature":
+    # --- LEGACY FEATURE TOPOLOGY FALLBACK ---
+    invoke: git-orchestration.create-branch
+    params:
+      branch_name: ${initiative_root}
 
-  invoke: git-orchestration.commit-artifacts
-  params:
-    file_paths:
-      - ${config_path}
-    phase: INIT
-    initiative: ${initiative_root}
-    description: ${commit_description}
+    invoke: git-orchestration.commit-artifacts
+    params:
+      file_paths:
+        - ${config_path}
+      phase: INIT
+      initiative: ${initiative_root}
+      description: ${commit_description}
 
-  invoke: git-orchestration.push
-  params:
-    branch: ${initiative_root}
+    invoke: git-orchestration.push
+    params:
+      branch: ${initiative_root}
+  else:
+    # --- DOMAIN/SERVICE SCAFFOLDING ONLY ---
+    # Keep the working tree clean for follow-up commands, but do not create or push a lifecycle branch.
+    invoke: git-orchestration.commit-artifacts
+    params:
+      file_paths:
+        - ${config_path}
+      phase: INIT
+      initiative: ${initiative_root}
+      description: ${commit_description} + " (scaffold-only)"
 ```
 
 ### 3. Register In Feature Index And Create Summary Stub On Main *(v3.3)*

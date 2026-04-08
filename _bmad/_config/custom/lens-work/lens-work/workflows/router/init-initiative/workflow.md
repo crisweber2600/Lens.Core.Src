@@ -1,6 +1,6 @@
 ---
 name: init-initiative
-description: Create domain, service, or feature initiatives with validated names, sensing checks, config scaffolding, and branch topology
+description: Create domain, service, or feature initiatives with validated names, sensing checks, config scaffolding, and feature-only branch topology
 agent: "@lens"
 trigger: /new-initiative, /new-domain, /new-service, or /new-feature
 category: router
@@ -35,9 +35,9 @@ inputs:
 
 # /new-initiative, /new-domain, /new-service, /new-feature - Init Initiative Workflow
 
-**Goal:** Create a new initiative with the correct scope, validated slug-safe naming, sensing checks, config scaffolding, and git branch topology.
+**Goal:** Create a new initiative with the correct scope, validated slug-safe naming, sensing checks, config scaffolding, and feature-only git branch topology.
 
-**Your Role:** Operate as the initiative bootstrap router. Collect only the inputs allowed for the selected scope, validate them against lifecycle and naming rules, then create the config, local scaffolding, and branch topology without over-collecting data.
+**Your Role:** Operate as the initiative bootstrap router. Collect only the inputs allowed for the selected scope, validate them against lifecycle and naming rules, then create the config, local scaffolding, and feature topology without over-collecting data.
 
 ---
 
@@ -49,19 +49,19 @@ If `inputs.command_name` is empty or the user typed a generic `/new` or `/create
 📐 LENS uses a three-level hierarchy to organize work:
 
   Domain   — A broad capability area (e.g., "auth", "payments", "analytics")
-             Creates: auth/
+             Creates: auth/ container scaffolding only
   Service  — A deployable unit within a domain (e.g., "auth-gateway", "payments-api")
-             Creates: auth/gateway/
+             Creates: auth/gateway/ container scaffolding only
   Feature  — A discrete piece of work within a service (e.g., "password-reset")
              Creates: auth/gateway/password-reset.yaml
-             This is the only level that follows the full lifecycle (tracks, phases, milestones).
+             This is the only level that follows the full lifecycle (tracks, phases, milestones) and creates Lens-managed branches.
 
 💡 Most users start with /new-feature and let LENS infer the domain and service.
    If the domain or service doesn't exist yet, LENS will create it as part of the flow.
 
 Which would you like to create?
-  [1] /new-domain   — Create a domain-level initiative
-  [2] /new-service  — Create a service-level initiative
+  [1] /new-domain   — Create a domain-level container
+  [2] /new-service  — Create a service-level container
   [3] /new-feature  — Create a feature-level initiative (recommended)
 ```
 
@@ -75,7 +75,7 @@ This workflow uses **step-file architecture**:
 
 - Each step handles one stage of initiative creation: preflight, scope collection, validation, creation, and response.
 - State persists through `command_name`, `scope`, `domain`, `service`, `feature`, `track`, `initiative_root`, `config_path`, `target_projects_path`, `track_config`, `sensing_matches`, `lifecycle`, `module_config`, `profile`, and `current_context`.
-- Domain and service scope remain lightweight containers; feature scope is the only path that reads lifecycle tracks and audiences.
+- Domain and service scope remain lightweight containers; feature scope is the only path that creates lifecycle branches and reads lifecycle tracks and audiences.
 
 ---
 

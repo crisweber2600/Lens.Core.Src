@@ -15,6 +15,13 @@
 | `payments-auth` | `payments-auth` | `payments-auth-plan` | 2-branch | ✅ Both created |
 | `oauth` | `oauth-techplan` | n/a | legacy | ✅ Milestone branch (legacy behavior) |
 
+### Container Scaffolding (Domain/Service)
+
+| Command | Scope | Expected Branches Created | Expected Commit Behavior | Result |
+|--------|-------|---------------------------|--------------------------|--------|
+| `/new-domain payments` | domain | none | Config committed on current branch only | ✅ Scaffold-only |
+| `/new-service api` | service | none | Config committed on current branch only | ✅ Scaffold-only |
+
 ### Topology Resolution
 
 | Track | Topology Field | feature_yaml Field | Expected Behavior |
@@ -65,3 +72,4 @@
 3. For milestone tracking: read `feature.yaml` after each phase completion and verify `current_milestone` value
 4. For merge chain: verify single PR created from `{featureId}` to `main`
 5. For backward compatibility: run legacy track operations and verify no 2-branch behavior leaks
+6. For container scopes: run `/new-domain` and `/new-service` and verify no lifecycle branch is created
