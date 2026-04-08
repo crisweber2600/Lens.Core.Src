@@ -23,7 +23,20 @@ python3 ./scripts/migrate-ops.py scan \
   --branch-pattern "^your-pattern$"
 ```
 
+With document discovery from a source repo:
+
+```bash
+python3 ./scripts/migrate-ops.py scan \
+  --governance-repo {governance_repo} \
+  --source-repo /path/to/source/repo
+```
+
 The script scans `{governance_repo}/branches/` for directories matching the legacy pattern `^([a-z0-9-]+)-([a-z0-9-]+)-([a-z0-9-]+)(?:-([a-z0-9-]+))?$`. It groups milestone branches under their base branch, derives domain/service/featureId, and detects conflicts.
+
+When `--source-repo` is provided, the scan also discovers documents from three sources per feature:
+1. **governance-legacy** — `{governance_repo}/branches/{old_id}/_bmad-output/lens-work/planning-artifacts/`
+2. **source-docs** — `{source_repo}/Docs/{domain}/{service}/{featureId}/` (case-insensitive Docs/docs)
+3. **bmad-output** — `{source_repo}/_bmad-output/lens-work/initiatives/{domain}/{service}/`
 
 ## Output Shape
 
@@ -46,6 +59,21 @@ The script scans `{governance_repo}/branches/` for directories matching the lega
   ],
   "total": 1,
   "conflicts": []
+}
+```
+
+When `--source-repo` is provided, each feature entry also includes a `documents` array:
+
+```json
+{
+  "documents": [
+    {
+      "source_type": "source-docs",
+      "source_path": "/path/to/source/Docs/platform/identity/auth-login/prd.md",
+      "relative_path": "prd.md",
+      "filename": "prd.md"
+    }
+  ]
 }
 ```
 

@@ -312,6 +312,12 @@ const STUB_PROMPTS = [
     { file: 'lens-work.sense.prompt.md', name: 'lens-work.sense', desc: 'Run cross-initiative overlap detection on demand', target: 'lens-work.sense.prompt.md' },
     { file: 'lens-work.constitution.prompt.md', name: 'lens-work.constitution', desc: 'Resolve and display constitutional governance', target: 'lens-work.constitution.prompt.md' },
     { file: 'lens-work.help.prompt.md', name: 'lens-work.help', desc: 'Show available commands and usage', target: 'lens-work.help.prompt.md' },
+    { file: 'lens-work.bmad-brainstorming.prompt.md', name: 'lens-work.bmad-brainstorming', desc: 'Run BMAD brainstorming with Lens domain, service, feature, governance, and repo context', target: 'lens-work.bmad-brainstorming.prompt.md' },
+    { file: 'lens-work.bmad-create-prd.prompt.md', name: 'lens-work.bmad-create-prd', desc: 'Run BMAD create PRD with Lens feature, governance, and output-path context', target: 'lens-work.bmad-create-prd.prompt.md' },
+    { file: 'lens-work.bmad-create-architecture.prompt.md', name: 'lens-work.bmad-create-architecture', desc: 'Run BMAD create architecture with Lens feature, repo, and governance context', target: 'lens-work.bmad-create-architecture.prompt.md' },
+    { file: 'lens-work.bmad-create-epics-and-stories.prompt.md', name: 'lens-work.bmad-create-epics-and-stories', desc: 'Run BMAD create epics and stories with Lens feature, repo, and governance context', target: 'lens-work.bmad-create-epics-and-stories.prompt.md' },
+    { file: 'lens-work.bmad-quick-dev.prompt.md', name: 'lens-work.bmad-quick-dev', desc: 'Run BMAD quick dev with Lens feature scope, target repo resolution, and write-boundary guidance', target: 'lens-work.bmad-quick-dev.prompt.md' },
+    { file: 'lens-work.bmad-code-review.prompt.md', name: 'lens-work.bmad-code-review', desc: 'Run BMAD code review with Lens feature scope, target repo resolution, and governance-aware review context', target: 'lens-work.bmad-code-review.prompt.md' },
 ];
 
 const IDE_COMMANDS = [

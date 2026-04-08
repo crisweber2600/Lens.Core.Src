@@ -11,7 +11,7 @@ This skill transitions existing features from the LENS v3 branch topology (`{dom
 
 **The non-negotiable:** In-progress work must not be lost. Dry-run must be shown and confirmed before any execution. Old branches are kept until an explicit cleanup step.
 
-**Args:** Accepts operation as first argument: `scan`, `dry-run`, `migrate`, `cleanup`. Pass `--governance-repo <path>` for all operations.
+**Args:** Accepts operation as first argument: `scan`, `dry-run`, `migrate`, `verify`, `cleanup`. Pass `--governance-repo <path>` for all operations. Pass `--source-repo <path>` for scan, migrate, verify, and cleanup when document migration is needed.
 
 ## Identity
 
@@ -47,6 +47,9 @@ You are the migration bridge between LENS v3 and Lens Next. You scan for old-mod
 | **conflict** | A feature.yaml already exists at the target path for the derived featureId |
 | **cleanup** | Separate, explicit step to delete old branches after successful migration + confirmation |
 | **governance repo** | The repository containing Lens feature YAML, index, and summaries |
+| **source repo** | The source code repository that may contain a `Docs/` folder or `_bmad-output/` with feature documents |
+| **document discovery** | Scanning governance-legacy branches, source repo `Docs/`, and `_bmad-output/` for feature documents |
+| **verification** | Post-migration check confirming all expected artifacts exist before cleanup is allowed |
 
 ## Branch Pattern Reference
 
@@ -77,16 +80,22 @@ If both config files are absent, use all defaults.
 | Scan Legacy Branches | Load `./references/scan-legacy.md` |
 | Dry Run | Load `./references/dry-run.md` |
 | Execute Migration | Load `./references/execute-migration.md` |
-| Cleanup Old Branches | Load `./references/execute-migration.md` (see Cleanup section) |
+| Verify Migration | Load `./references/verify-migration.md` |
+| Cleanup Sources | Load `./references/cleanup.md` |
 
 ## Script Reference
 
-`./scripts/migrate-ops.py` — Python script (uv-runnable) with three subcommands:
+`./scripts/migrate-ops.py` — Python script (uv-runnable) with five subcommands:
 
 ```bash
 # Scan governance repo for legacy branches
 python3 ./scripts/migrate-ops.py scan \
   --governance-repo /path/to/repo
+
+# Scan with source repo for document discovery
+python3 ./scripts/migrate-ops.py scan \
+  --governance-repo /path/to/repo \
+  --source-repo /path/to/source
 
 # Scan with custom branch pattern
 python3 ./scripts/migrate-ops.py scan \
@@ -108,6 +117,7 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   --domain platform \
   --service identity \
   --username cweber \
+  --source-repo /path/to/source \
   --dry-run
 
 # Execute migration for a single feature (live)
@@ -117,7 +127,35 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   --feature-id auth-login \
   --domain platform \
   --service identity \
-  --username cweber
+  --username cweber \
+  --source-repo /path/to/source
+
+# Verify migration artifacts exist
+python3 ./scripts/migrate-ops.py verify \
+  --governance-repo /path/to/repo \
+  --feature-id auth-login \
+  --domain platform \
+  --service identity
+
+# Preview cleanup (dry run)
+python3 ./scripts/migrate-ops.py cleanup \
+  --governance-repo /path/to/repo \
+  --old-id platform-identity-auth-login \
+  --feature-id auth-login \
+  --domain platform \
+  --service identity \
+  --source-repo /path/to/source \
+  --dry-run
+
+# Execute cleanup (live — requires verification to pass)
+python3 ./scripts/migrate-ops.py cleanup \
+  --governance-repo /path/to/repo \
+  --old-id platform-identity-auth-login \
+  --feature-id auth-login \
+  --domain platform \
+  --service identity \
+  --source-repo /path/to/source
+```
 ```
 
 ## Integration Points
