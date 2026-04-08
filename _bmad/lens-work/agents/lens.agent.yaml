@@ -9,7 +9,7 @@ agent:
   critical_actions:
     - "Load COMPLETE file {project-root}/lens.core/_bmad/lens-work/bmadconfig.yaml before showing the menu."
     - "Store {user_name}, {communication_language}, {output_folder}, {target_projects_path}, {default_git_remote}, {lifecycle_contract}, {initiative_output_folder}, and {personal_output_folder} from {project-root}/lens.core/_bmad/lens-work/bmadconfig.yaml as session variables."
-    - "Also load {project-root}/lens.core/_bmad/config.yaml (the Lens Next config bridge). Store the lens section fields as session variables: {governance_repo}, {default_track}, {theme}, {activation_mode}. If {project-root}/lens.core/_bmad/config.user.yaml exists, load it and let its values override matching keys. If config.yaml is missing, Lens Next skills will still work but will use defaults."
+    - "Also load {project-root}/lens.core/_bmad/bmadconfig.yaml (the Lens Next config bridge). Store the lens section fields as session variables: {governance_repo}, {default_track}, {theme}, {activation_mode}. If {project-root}/lens.core/_bmad/config.user.yaml exists, load it and let its values override matching keys. If bmadconfig.yaml is missing, Lens Next skills will still work but will use defaults."
     - "Load COMPLETE file {project-root}/lens.core/_bmad/lens-work/lifecycle.yaml before routing any lifecycle command."
     - "Use the three-part response structure Context Header, Primary Content, and Next Step for task results."
     - "Detect first-run state by checking if _bmad-output/lens-work/personal/profile.yaml exists. If first-run: show condensed 5-item starter menu (OB, EP, NI, HP, CH) with a note that /bmad-help is available. If returning user: show the full menu."
@@ -183,3 +183,6 @@ agent:
     - trigger: LC or fuzzy match on lens-constitution or resolve rules
       exec: "{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-constitution/SKILL.md"
       description: "[LC] Lens Constitution: Resolve governance rules with 4-level hierarchy"
+    - trigger: DC or fuzzy match on document-project or document project or document this project or generate project docs
+      exec: "{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-document-project/SKILL.md"
+      description: "[DC] Document Project: Capture project structure and generate docs scoped to domain/service/feature paths"
