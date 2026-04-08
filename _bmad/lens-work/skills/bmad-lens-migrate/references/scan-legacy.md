@@ -77,19 +77,21 @@ When `--source-repo` is provided, each feature entry also includes a `documents`
       "filename": "prd.md",
       "git_ref": "origin/northstar-migration-feature",
       "git_path": "docs/northstar/migration/feature/finish-northstaret-migration-3a10d3/prd.md",
-      "git_repo": "/path/to/source"
+      "git_repo": "/path/to/source",
+      "commit_ts": 1712000000
     },
     {
       "source_type": "source-docs",
       "source_path": "/path/to/source/Docs/platform/identity/auth-login/prd.md",
       "relative_path": "prd.md",
-      "filename": "prd.md"
+      "filename": "prd.md",
+      "commit_ts": 1700000000
     }
   ]
 }
 ```
 
-Git-based entries include `git_ref`, `git_path`, and `git_repo` fields. Filesystem entries do not.
+Git-based entries include `git_ref`, `git_path`, and `git_repo` fields. Filesystem entries do not. All entries include a `commit_ts` field (Unix epoch of the last commit that touched the file; `0` when unavailable). When the same `relative_path` appears from multiple sources, the most recently committed version is used during migration.
 
 ## Branch Grouping Logic
 

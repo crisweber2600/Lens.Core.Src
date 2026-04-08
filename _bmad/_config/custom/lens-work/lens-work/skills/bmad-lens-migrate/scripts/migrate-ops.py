@@ -169,6 +169,26 @@ def _git_show_file(repo_path: Path, ref: str, path: str) -> bytes | None:
         return None
 
 
+def _git_file_commit_ts(repo_path: Path, ref: str, path: str) -> int | None:
+    """Return the Unix epoch timestamp of the last commit that touched *path* on *ref*.
+
+    Uses ``git log -1 --format=%ct`` so the value reflects actual commit history
+    rather than filesystem mtime.  Returns *None* on any failure.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_path), "log", "-1", "--format=%ct", ref, "--", path],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        if result.returncode != 0 or not result.stdout.strip():
+            return None
+        return int(result.stdout.strip())
+    except (subprocess.TimeoutExpired, OSError, ValueError):
+        return None
+
+
 def _git_list_remote_branches(repo_path: Path, pattern: str = "") -> list[str]:
     """List remote branch names. *pattern* filters with fnmatch-style glob."""
     cmd = ["git", "-C", str(repo_path), "branch", "-r", "--format=%(refname:short)"]
@@ -475,11 +495,14 @@ def discover_documents(
     if legacy_root.is_dir():
         for fpath in sorted(legacy_root.rglob("*")):
             if fpath.is_file():
+                rel_to_repo = str(fpath.relative_to(governance_repo))
+                ts = _git_file_commit_ts(governance_repo, "HEAD", rel_to_repo) or 0
                 discovered.append({
                     "source_type": DOC_SOURCE_GOVERNANCE_LEGACY,
                     "source_path": str(fpath),
                     "relative_path": str(fpath.relative_to(legacy_root)),
                     "filename": fpath.name,
+                    "commit_ts": ts,
                 })
     else:
         # Fall back: read from git branch in governance repo
@@ -490,6 +513,7 @@ def discover_documents(
             for git_path in paths:
                 rel = git_path[len(artifact_prefix):]
                 if rel:
+                    ts = _git_file_commit_ts(governance_repo, ref, git_path) or 0
                     discovered.append({
                         "source_type": DOC_SOURCE_GOVERNANCE_LEGACY,
                         "source_path": f"git:{ref}:{git_path}",
@@ -498,6 +522,7 @@ def discover_documents(
                         "git_ref": ref,
                         "git_path": git_path,
                         "git_repo": str(governance_repo),
+                        "commit_ts": ts,
                     })
 
     if source_repo is not None:
@@ -517,6 +542,7 @@ def discover_documents(
                     for git_path in paths:
                         rel = git_path[len(prefix):]
                         if rel:
+                            ts = _git_file_commit_ts(source_repo, ref, git_path) or 0
                             discovered.append({
                                 "source_type": DOC_SOURCE_BRANCH_DOCS,
                                 "source_path": f"git:{ref}:{git_path}",
@@ -525,6 +551,7 @@ def discover_documents(
                                 "git_ref": ref,
                                 "git_path": git_path,
                                 "git_repo": str(source_repo),
+                                "commit_ts": ts,
                             })
                     break  # Use first matching prefix
 
@@ -534,6 +561,7 @@ def discover_documents(
             for git_path in bmad_paths:
                 rel = git_path[len(bmad_branch_prefix):]
                 if rel:
+                    ts = _git_file_commit_ts(source_repo, ref, git_path) or 0
                     discovered.append({
                         "source_type": DOC_SOURCE_BRANCH_DOCS,
                         "source_path": f"git:{ref}:{git_path}",
@@ -542,6 +570,7 @@ def discover_documents(
                         "git_ref": ref,
                         "git_path": git_path,
                         "git_repo": str(source_repo),
+                        "commit_ts": ts,
                     })
 
         # Source 3: Source repo Docs/{domain}/{service}/{featureId}/ (filesystem)
@@ -551,11 +580,14 @@ def discover_documents(
             if feature_docs.is_dir():
                 for fpath in sorted(feature_docs.rglob("*")):
                     if fpath.is_file():
+                        rel_to_repo = str(fpath.relative_to(source_repo))
+                        ts = _git_file_commit_ts(source_repo, "HEAD", rel_to_repo) or 0
                         discovered.append({
                             "source_type": DOC_SOURCE_REPO_DOCS,
                             "source_path": str(fpath),
                             "relative_path": str(fpath.relative_to(feature_docs)),
                             "filename": fpath.name,
+                            "commit_ts": ts,
                         })
 
         # Source 4: Source repo _bmad-output/lens-work/initiatives/{domain}/{service}/ (filesystem)
@@ -563,11 +595,14 @@ def discover_documents(
         if bmad_output.is_dir():
             for fpath in sorted(bmad_output.rglob("*")):
                 if fpath.is_file():
+                    rel_to_repo = str(fpath.relative_to(source_repo))
+                    ts = _git_file_commit_ts(source_repo, "HEAD", rel_to_repo) or 0
                     discovered.append({
                         "source_type": DOC_SOURCE_BMAD_OUTPUT,
                         "source_path": str(fpath),
                         "relative_path": str(fpath.relative_to(bmad_output)),
                         "filename": fpath.name,
+                        "commit_ts": ts,
                     })
 
     return discovered
@@ -583,7 +618,9 @@ def migrate_documents(
 ) -> tuple[list[str], dict[str, int]]:
     """Copy discovered documents into governance feature docs/ folder.
 
-    Conflict resolution: first source wins per DOC_SOURCE_PRIORITY order.
+    Conflict resolution: when the same relative_path appears in multiple sources,
+    the most recently committed version wins.  Static source priority
+    (DOC_SOURCE_PRIORITY) is the tiebreaker when timestamps are equal.
     Handles both filesystem-based and git-based sources.
     Returns (list of copied relative paths, {source_type: count} dict).
     """
@@ -594,9 +631,9 @@ def migrate_documents(
     target_dir = governance_repo / "features" / domain / service / feature_id / "docs"
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    # Sort by priority so higher-priority sources are copied first
+    # Sort by freshness (newest first), then static priority as tiebreaker
     priority_rank = {src: i for i, src in enumerate(DOC_SOURCE_PRIORITY)}
-    docs.sort(key=lambda d: priority_rank.get(d["source_type"], 99))
+    docs.sort(key=lambda d: (-(d.get("commit_ts") or 0), priority_rank.get(d["source_type"], 99)))
 
     copied: list[str] = []
     source_counts: dict[str, int] = {}
@@ -605,7 +642,7 @@ def migrate_documents(
     for doc in docs:
         rel = doc["relative_path"]
         if rel in seen_targets:
-            continue  # Higher-priority source already placed this file
+            continue  # A newer (or higher-priority) source already placed this file
         seen_targets.add(rel)
 
         target_path = target_dir / rel
