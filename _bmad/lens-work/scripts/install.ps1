@@ -44,7 +44,7 @@ $ErrorActionPreference = 'Stop'
 # -- Paths -------------------------------------------------------------------
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ModuleDir = Split-Path -Parent $ScriptDir
-$ProjectRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $ScriptDir))
+$ProjectRoot = (Resolve-Path (Join-Path $ScriptDir "..\..\..\..")).Path
 
 $SupportedIDEs = @('github-copilot', 'cursor', 'claude', 'codex')
 
