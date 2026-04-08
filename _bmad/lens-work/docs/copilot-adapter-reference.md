@@ -23,6 +23,10 @@ This directory contains the thin VS Code Copilot adapter that wires the `@lens` 
 │   ├── lens-work.discover.prompt.md
 │   └── ... (one stub per module command)
 └── skills/
+    ├── bmad-agent-architect/SKILL.md
+    ├── bmad-quick-dev/SKILL.md
+    ├── gds-create-gdd/SKILL.md
+    ├── ... (one redirect stub per published BMAD skill)
     ├── lens-work-git-state/SKILL.md
     ├── lens-work-git-orchestration/SKILL.md
     ├── lens-work-constitution/SKILL.md
@@ -37,6 +41,7 @@ This directory contains the thin VS Code Copilot adapter that wires the `@lens` 
 - **Auto-propagation** — changes to module skills/workflows propagate automatically
 - **Domain 3** — `@lens` does NOT modify `.github/` during initiative work
 - **Write frequency** — RARELY, only on module version update
+- **Skills: redirect stubs** — `.github/skills/` contains redirect stubs for published BMAD skills plus the lens-work wrappers; the pipeline enforces the stub contract
 - **Prompts: lens-work only** — `.github/prompts/` contains exclusively `lens-work*.prompt.md` stubs; the pipeline enforces this constraint
 
 ## Generated vs. Authored Files

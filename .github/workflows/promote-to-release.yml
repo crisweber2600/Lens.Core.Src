@@ -242,14 +242,11 @@ jobs:
           echo "✅ Synced $SRC_COUNT source agent markdown file(s) into release payload"
 
       # ── 10.5 Overlay source .github skill stubs into release payload ─
-      # The BMAD framework install contributes many .github skill files, but
-      # the lens-work adapter contract publishes only the canonical lens-work
-      # skill stubs from source .github/skills/.
+      # The lens-work installer (step 9) now converts all published BMAD
+      # skills into redirect stubs from skill-manifest.csv. Source .github/
+      # skill stubs overlay the generated set so manual lens-work edits win.
       - name: Overlay source .github skill stubs
         run: |
-          # Replace any BMAD-installed skill content with the exact source
-          # stub set so build-output matches the canonical adapter payload.
-          rm -rf build-output/.github/skills
           mkdir -p build-output/.github/skills
 
           SRC_COUNT=0
@@ -393,19 +390,125 @@ jobs:
             MISSING=1
           fi
 
-          SOURCE_SKILL_COUNT=$(find .github/skills -mindepth 2 -maxdepth 2 -type f -name 'SKILL.md' | wc -l)
-          GITHUB_SKILL_COUNT=$(find build-output/.github/skills -mindepth 2 -maxdepth 2 -type f -name 'SKILL.md' | wc -l)
-          if [ "$GITHUB_SKILL_COUNT" -ne "$SOURCE_SKILL_COUNT" ]; then
-            echo "::error::.github/skills count ($GITHUB_SKILL_COUNT) != source stub count ($SOURCE_SKILL_COUNT)"
+          MANIFEST_SKILLS=$(mktemp)
+          SOURCE_SKILLS=$(mktemp)
+          EXPECTED_SKILLS=$(mktemp)
+          PUBLISHED_SKILLS=$(mktemp)
+
+          sed -n '2,$ s/^"\([^"]*\)".*/\1/p' build-output/_bmad/_config/skill-manifest.csv | sort -u > "$MANIFEST_SKILLS"
+          find .github/skills -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -u > "$SOURCE_SKILLS"
+          cat "$MANIFEST_SKILLS" "$SOURCE_SKILLS" | sed '/^$/d' | sort -u > "$EXPECTED_SKILLS"
+          find build-output/.github/skills -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -u > "$PUBLISHED_SKILLS"
+
+          EXPECTED_SKILL_COUNT=$(wc -l < "$EXPECTED_SKILLS")
+          GITHUB_SKILL_COUNT=$(wc -l < "$PUBLISHED_SKILLS")
+          if [ "$GITHUB_SKILL_COUNT" -ne "$EXPECTED_SKILL_COUNT" ]; then
+            echo "::error::.github/skills count ($GITHUB_SKILL_COUNT) != expected BMAD+lens-work stub count ($EXPECTED_SKILL_COUNT)"
             MISSING=1
           else
-            echo "✅ .github/skills ($GITHUB_SKILL_COUNT) matches source stub count ($SOURCE_SKILL_COUNT)"
+            echo "✅ .github/skills ($GITHUB_SKILL_COUNT) matches expected BMAD+lens-work stub count ($EXPECTED_SKILL_COUNT)"
+          fi
+
+          if ! diff -u "$EXPECTED_SKILLS" "$PUBLISHED_SKILLS" >/tmp/github-skill-diff.txt; then
+            echo "::error::.github/skills published set differs from expected BMAD+lens-work skill stubs"
+            cat /tmp/github-skill-diff.txt
+            MISSING=1
           fi
 
           EXTRA_SKILL_FILES=$(find build-output/.github/skills -type f ! -name 'SKILL.md' -print)
           if [ -n "$EXTRA_SKILL_FILES" ]; then
             echo "::error::Published .github/skills contains non-stub files"
             echo "$EXTRA_SKILL_FILES"
+            MISSING=1
+          fi
+
+          if ! node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+
+          function parseCsvLine(line) {
+            const values = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let index = 0; index < line.length; index++) {
+              const char = line[index];
+
+              if (inQuotes) {
+                if (char === '"') {
+                  if (line[index + 1] === '"') {
+                    current += '"';
+                    index++;
+                  } else {
+                    inQuotes = false;
+                  }
+                } else {
+                  current += char;
+                }
+                continue;
+              }
+
+              if (char === ',') {
+                values.push(current);
+                current = '';
+                continue;
+              }
+
+              if (char === '"') {
+                inQuotes = true;
+                continue;
+              }
+
+              current += char;
+            }
+
+            values.push(current);
+            return values;
+          }
+
+          const manifestPath = path.join('build-output', '_bmad', '_config', 'skill-manifest.csv');
+          const skillsDir = path.join('build-output', '.github', 'skills');
+          const lines = fs.readFileSync(manifestPath, 'utf8').split(/\r?\n/).filter(Boolean);
+          const headers = parseCsvLine(lines[0]);
+          const headerIndex = Object.fromEntries(headers.map((header, index) => [header, index]));
+          let failed = false;
+
+          for (const line of lines.slice(1)) {
+            const row = parseCsvLine(line);
+            const name = row[headerIndex.canonicalId];
+            const installToBmad = row[headerIndex.install_to_bmad];
+            const redirectPath = `lens.core/${row[headerIndex.path]}`;
+            if (!name || installToBmad !== 'true') {
+              continue;
+            }
+
+            const skillFile = path.join(skillsDir, name, 'SKILL.md');
+            if (!fs.existsSync(skillFile)) {
+              console.error(`::error::Missing published BMAD skill stub: ${skillFile}`);
+              failed = true;
+              continue;
+            }
+
+            const content = fs.readFileSync(skillFile, 'utf8');
+            if (!content.includes('(Stub)')) {
+              console.error(`::error::Published BMAD skill is not marked as a stub: ${skillFile}`);
+              failed = true;
+            }
+
+            if (!content.includes('Read and follow all instructions in:')) {
+              console.error(`::error::Published BMAD skill does not contain a redirect instruction: ${skillFile}`);
+              failed = true;
+            }
+
+            if (!content.includes(redirectPath)) {
+              console.error(`::error::Published BMAD skill does not redirect to ${redirectPath}: ${skillFile}`);
+              failed = true;
+            }
+          }
+
+          process.exit(failed ? 1 : 0);
+NODE
+          then
             MISSING=1
           fi
 
