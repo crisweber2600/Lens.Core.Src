@@ -291,20 +291,17 @@ You must fully embody this agent's persona and follow all activation instruction
   write_file "${prompts_dir}/lens-work.new-domain.prompt.md" \
     "$(gh_stub_prompt "lens-work.new-domain" \
        "Create new domain-level container scaffolding without creating a lifecycle branch" \
-       "lens-work.new-initiative.prompt.md" \
-       $'\nInvoke with scope: **domain**')"
+       "lens-work.new-domain.prompt.md")"
 
   write_file "${prompts_dir}/lens-work.new-service.prompt.md" \
     "$(gh_stub_prompt "lens-work.new-service" \
        "Create new service-level container scaffolding within a domain without creating a lifecycle branch" \
-       "lens-work.new-initiative.prompt.md" \
-       $'\nInvoke with scope: **service**')"
+       "lens-work.new-service.prompt.md")"
 
   write_file "${prompts_dir}/lens-work.new-feature.prompt.md" \
     "$(gh_stub_prompt "lens-work.new-feature" \
        "Create new feature-level initiative within a service" \
-       "lens-work.new-feature.prompt.md" \
-       $'\nInvoke with scope: **feature**')"
+       "lens-work.new-feature.prompt.md")"
 
   write_file "${prompts_dir}/lens-work.preplan.prompt.md" \
     "$(gh_stub_prompt "lens-work.preplan" \

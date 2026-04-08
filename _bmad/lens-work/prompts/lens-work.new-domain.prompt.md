@@ -1,47 +1,14 @@
 ---
-model: "{default_model}"
-communication_language: "{communication_language}"
-document_output_language: "{document_output_language}"
-description: "Create a new domain — routes to new-initiative with scope=domain"
+model: Claude Sonnet 4.6 (copilot)
+description: 'Create new domain-level container scaffolding without creating a lifecycle branch.'
 ---
 
-# /new-domain Prompt — LENS Workbench
+# lens-work.new-domain (Stub)
 
-Routes `/new-domain` command to the init-initiative workflow.
+> **This is a stub.** Load and execute the full prompt from the release module.
 
-## What This Prompt Does
+```
+Read and follow all instructions in: lens.core/_bmad/lens-work/prompts/lens-work.new-initiative.prompt.md
+```
 
-Creates a new domain container scaffold with governance-owned metadata. Triggers the same workflow as `/new-initiative` with `scope=domain`.
-
-## Parameters
-
-- **domain**: Domain name (required — collect from user)
-
-## Steps
-
-### Step 0: Run Preflight
-
-Execute `{project-root}/lens.core/_bmad/lens-work/workflows/includes/preflight.md`. Halt if authority repos missing — direct user to `/onboard`.
-
-### Step 1: Collect Domain Name
-
-Prompt user for domain name.
-
-### Step 2: Execute Workflow
-
-Run the init-initiative workflow at `{project-root}/lens.core/_bmad/lens-work/workflows/router/init-initiative/` with:
-- `scope`: `domain`
-- `domain`: The domain name collected from the user
-
-The workflow handles:
-- Slug-safe name validation
-- Cross-initiative sensing (pre-creation)
-- Governance marker creation at `features/{domain}/domain.yaml`
-- Local scaffold creation (no lifecycle branch creation)
-- Response formatting (Context Header -> Primary Content -> Next Step)
-
-## Prerequisites
-
-- User must be authenticated and onboarded (`profile.yaml` exists)
-- Control repo must have a remote configured
-- `lifecycle.yaml` must be accessible
+Invoke with scope: **domain**

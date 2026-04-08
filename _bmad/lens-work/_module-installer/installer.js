@@ -215,9 +215,9 @@ const SKILLS = [
 const STUB_PROMPTS = [
     { file: 'lens-work.onboard.prompt.md', name: 'lens-work.onboard', desc: 'Bootstrap control repo — detect provider, validate auth, create profile, auto-clone TargetProjects', target: 'lens-work.onboard.prompt.md' },
     { file: 'lens-work.new-initiative.prompt.md', name: 'lens-work.new-initiative', desc: 'Create a new initiative (domain, service, or feature)', target: 'lens-work.new-initiative.prompt.md' },
-    { file: 'lens-work.new-domain.prompt.md', name: 'lens-work.new-domain', desc: 'Create new domain-level container scaffolding without creating a lifecycle branch', target: 'lens-work.new-initiative.prompt.md', extra: 'Invoke with scope: **domain**' },
-    { file: 'lens-work.new-service.prompt.md', name: 'lens-work.new-service', desc: 'Create new service-level container scaffolding within a domain without creating a lifecycle branch', target: 'lens-work.new-initiative.prompt.md', extra: 'Invoke with scope: **service**' },
-    { file: 'lens-work.new-feature.prompt.md', name: 'lens-work.new-feature', desc: 'Create new feature-level initiative within a service', target: 'lens-work.new-feature.prompt.md', extra: 'Invoke with scope: **feature**' },
+    { file: 'lens-work.new-domain.prompt.md', name: 'lens-work.new-domain', desc: 'Create new domain-level container scaffolding without creating a lifecycle branch', target: 'lens-work.new-domain.prompt.md' },
+    { file: 'lens-work.new-service.prompt.md', name: 'lens-work.new-service', desc: 'Create new service-level container scaffolding within a domain without creating a lifecycle branch', target: 'lens-work.new-service.prompt.md' },
+    { file: 'lens-work.new-feature.prompt.md', name: 'lens-work.new-feature', desc: 'Create new feature-level initiative within a service', target: 'lens-work.new-feature.prompt.md' },
     { file: 'lens-work.preplan.prompt.md', name: 'lens-work.preplan', desc: 'Start PrePlan phase — brainstorm, research, product brief (Mary/Analyst, small audience)', target: 'lens-work.preplan.prompt.md', noModel: true },
     { file: 'lens-work.businessplan.prompt.md', name: 'lens-work.businessplan', desc: 'Start BusinessPlan phase — PRD creation, UX design (John/PM + Sally/UX, small audience)', target: 'lens-work.businessplan.prompt.md' },
     { file: 'lens-work.techplan.prompt.md', name: 'lens-work.techplan', desc: 'Start TechPlan phase — architecture document, technical decisions (Winston/Architect)', target: 'lens-work.techplan.prompt.md' },
