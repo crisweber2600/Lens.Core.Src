@@ -303,7 +303,7 @@ You must fully embody this agent's persona and follow all activation instruction
   write_file "${prompts_dir}/lens-work.new-feature.prompt.md" \
     "$(gh_stub_prompt "lens-work.new-feature" \
        "Create new feature-level initiative within a service" \
-       "lens-work.new-initiative.prompt.md" \
+       "lens-work.new-feature.prompt.md" \
        $'\nInvoke with scope: **feature**')"
 
   write_file "${prompts_dir}/lens-work.preplan.prompt.md" \
