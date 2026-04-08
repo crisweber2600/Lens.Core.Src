@@ -25,7 +25,7 @@ current_root_segments = current_context != null and current_context.initiative_r
 
 if scope == "domain":
   if primary_name == "":
-    ask: "Provide the domain name for the new domain initiative."
+    ask: "Provide the domain name for the new domain container."
     capture: primary_name
   domain = lower(remove_non_alphanumeric(primary_name))
   initiative_root_pattern = "domain"
@@ -36,10 +36,10 @@ if scope == "service":
   if domain == "" and current_root_segments.length > 0:
     domain = current_root_segments[0]
   if domain == "":
-    ask: "Provide the domain for the new service initiative."
+    ask: "Provide the domain for the new service container."
     capture: domain
   if primary_name == "":
-    ask: "Provide the service name for the new service initiative."
+    ask: "Provide the service name for the new service container."
     capture: primary_name
   domain = lower(remove_non_alphanumeric(domain))
   service = lower(remove_non_alphanumeric(primary_name))

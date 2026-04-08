@@ -8,19 +8,21 @@
 
 ## Overview
 
-The LENS Workbench manages software initiatives through a structured lifecycle of **phases** and **audience tiers**. All state is derived from git — branch existence, PR metadata, and committed artifacts. There is no secondary state store.
+The LENS Workbench manages software initiatives through a structured lifecycle of **phases** and **audience tiers**. In the feature-first model, only features create Lens-managed lifecycle branches; domain and service scopes are structural scaffolds. All state is derived from git, committed artifacts, and feature metadata.
 
 ## Core Concepts
 
 ### Initiatives
 
-An initiative is a unit of work scoped to a domain, service, or feature. Each initiative has its own branch topology in the control repo. **Initiative roots have variable segment counts depending on scope.**
+An initiative is a unit of work scoped to a domain, service, or feature. In the feature-first model, only feature scope creates lifecycle branches in the control repo. Domain and service scopes scaffold containers and config only. **Initiative roots have variable segment counts depending on scope.**
 
 | Scope | Example Root | Created By | Segments |
 |-------|-------------|-----------|----------|
 | Domain | `test` | `/new-domain` | 1 |
 | Service | `test-worker` | `/new-service` | 2 |
 | Feature | `test-worker-oauth` | `/new-feature` | 3 |
+
+> **v3.4 feature-first:** `/new-domain` and `/new-service` do not create lifecycle branches. `/new-feature` is the only init path that creates Lens-managed branches.
 
 ### Phases
 
@@ -50,7 +52,7 @@ Audiences represent levels of review and approval. Initiatives start at `small` 
 
 > **v3.1:** The `dev-complete` milestone closes the gap between `base` (dev-ready) and the close workflow. It confirms all target-project dev work is finished and triggers the `/close` flow.
 
-> **Note:** Domains never have audience branches. Audiences apply only to service-level and feature-level initiatives. A domain branch is the bare root (e.g., `test`), with no `-small` suffix.
+> **Note:** Domains and services do not create lifecycle branches in the feature-first model. Audiences apply only to legacy feature/service topologies and are superseded by the 2-branch feature model.
 
 ### Tracks
 
@@ -74,6 +76,8 @@ Tracks are predefined lifecycle profiles that determine which phases apply.
 ## Branch Topology
 
 ### Naming Convention
+
+> **v3.4 feature-first:** Domain/service commands scaffold containers only. Feature initialization is the only path that creates `{featureId}` and `{featureId}-plan` branches.
 
 Two naming conventions are supported (configured via `lifecycle.yaml → planning_repo.branch_patterns.naming_convention`):
 
