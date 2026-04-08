@@ -8,5 +8,5 @@ description: 'Feature YAML lifecycle operations and validation. Use when a workf
 > **This is a stub.** Load and execute the full prompt from the release module.
 
 ```
-Read and follow all instructions in: lens.core/_bmad/lens-work/skills/bmad-lens-feature-yaml/SKILL.md
+Read and follow all instructions in: lens.core/_bmad/lens-work/prompts/lens-feature-yaml.prompt.md
 ```

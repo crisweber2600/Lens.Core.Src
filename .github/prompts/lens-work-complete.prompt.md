@@ -8,5 +8,5 @@ description: 'Feature lifecycle endpoint. Use when completing and archiving a fe
 > **This is a stub.** Load and execute the full prompt from the release module.
 
 ```
-Read and follow all instructions in: lens.core/_bmad/lens-work/skills/bmad-lens-complete/SKILL.md
+Read and follow all instructions in: lens.core/_bmad/lens-work/prompts/lens-complete.prompt.md
 ```

@@ -8,5 +8,5 @@ description: 'Cross-feature dashboard generator. Use when generating an HTML sta
 > **This is a stub.** Load and execute the full prompt from the release module.
 
 ```
-Read and follow all instructions in: lens.core/_bmad/lens-work/skills/bmad-lens-dashboard/SKILL.md
+Read and follow all instructions in: lens.core/_bmad/lens-work/prompts/lens-dashboard.prompt.md
 ```

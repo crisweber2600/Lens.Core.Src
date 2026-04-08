@@ -1,23 +1,13 @@
 ---
-model: "{default_model}"
-communication_language: "{communication_language}"
-document_output_language: "{document_output_language}"
-description: "Run cross-initiative overlap detection and sensing scan"
+model: Claude Sonnet 4.6 (copilot)
+description: 'Run cross-initiative overlap detection and sensing scan'
 ---
 
-# /sense Prompt
+# lens-work.sense (Stub)
 
-Run cross-initiative overlap detection for the current initiative.
+> **This is a stub.** Load and execute the full prompt from the release module.
+> All `lens.core/_bmad/` paths in the full prompt are relative to `lens.core/` — do NOT resolve paths against the user's main project repo.
 
-## Routing
-
-1. **Preflight**: Execute `{project-root}/lens.core/_bmad/lens-work/workflows/includes/preflight.md`. Halt if authority repos missing — direct user to `/onboard`.
-2. Use `git-state` skill → `current-initiative` to confirm the current initiative context.
-3. Execute `workflows/governance/cross-initiative/workflow.md`.
-
-## Error Handling
-
-| Condition | Response |
-|-----------|----------|
-| Not on an initiative branch | `❌ Not on an initiative branch. Use /switch to select an initiative first.` |
-| Missing authority repos | `❌ Authority repos are not available. Run /onboard first.` |
+```
+Read and follow all instructions in: lens.core/_bmad/lens-work/prompts/lens-work.sense.prompt.md
+```
