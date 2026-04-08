@@ -32,6 +32,14 @@ PROBLEMS_TEMPLATE_PATH = SCRIPT_DIR.parent.parent.parent / "assets" / "templates
 LEGACY_BRANCHES_DIR = "branches"
 LEGACY_ARTIFACTS_DIR = Path("_bmad-output/lens-work/planning-artifacts")
 
+# Document source types for discovery
+DOC_SOURCE_GOVERNANCE_LEGACY = "governance-legacy"
+DOC_SOURCE_REPO_DOCS = "source-docs"
+DOC_SOURCE_BMAD_OUTPUT = "bmad-output"
+
+# Priority order for conflict resolution (first wins)
+DOC_SOURCE_PRIORITY = [DOC_SOURCE_GOVERNANCE_LEGACY, DOC_SOURCE_REPO_DOCS, DOC_SOURCE_BMAD_OUTPUT]
+
 LEGACY_PHASE_MAP = {
     "planning": "preplan",
     "preplan": "preplan",
@@ -305,6 +313,192 @@ def copy_legacy_artifacts(governance_repo: Path, old_id: str, feature_dir: Path)
     return copied
 
 
+# ---------------------------------------------------------------------------
+# Document Discovery & Migration
+# ---------------------------------------------------------------------------
+
+def _find_docs_folder(repo_root: Path) -> Path | None:
+    """Find a Docs or docs folder at the repo root (case-insensitive)."""
+    for name in ("Docs", "docs", "DOCS"):
+        candidate = repo_root / name
+        if candidate.is_dir():
+            return candidate
+    return None
+
+
+def discover_documents(
+    governance_repo: Path,
+    old_id: str,
+    domain: str,
+    service: str,
+    feature_id: str,
+    source_repo: Path | None,
+) -> list[dict]:
+    """Discover documents from all three sources for a feature.
+
+    Returns list of dicts: {source_type, source_path, relative_path, filename}.
+    """
+    discovered: list[dict] = []
+
+    # Source 1: Governance legacy artifacts (branches/{old_id}/_bmad-output/...)
+    legacy_root = governance_repo / LEGACY_BRANCHES_DIR / old_id / LEGACY_ARTIFACTS_DIR
+    if legacy_root.is_dir():
+        for fpath in sorted(legacy_root.rglob("*")):
+            if fpath.is_file():
+                discovered.append({
+                    "source_type": DOC_SOURCE_GOVERNANCE_LEGACY,
+                    "source_path": str(fpath),
+                    "relative_path": str(fpath.relative_to(legacy_root)),
+                    "filename": fpath.name,
+                })
+
+    if source_repo is not None:
+        # Source 2: Source repo Docs/{domain}/{service}/{featureId}/
+        docs_folder = _find_docs_folder(source_repo)
+        if docs_folder is not None:
+            feature_docs = docs_folder / domain / service / feature_id
+            if feature_docs.is_dir():
+                for fpath in sorted(feature_docs.rglob("*")):
+                    if fpath.is_file():
+                        discovered.append({
+                            "source_type": DOC_SOURCE_REPO_DOCS,
+                            "source_path": str(fpath),
+                            "relative_path": str(fpath.relative_to(feature_docs)),
+                            "filename": fpath.name,
+                        })
+
+        # Source 3: Source repo _bmad-output/lens-work/initiatives/{domain}/{service}/
+        bmad_output = source_repo / "_bmad-output" / "lens-work" / "initiatives" / domain / service
+        if bmad_output.is_dir():
+            for fpath in sorted(bmad_output.rglob("*")):
+                if fpath.is_file():
+                    discovered.append({
+                        "source_type": DOC_SOURCE_BMAD_OUTPUT,
+                        "source_path": str(fpath),
+                        "relative_path": str(fpath.relative_to(bmad_output)),
+                        "filename": fpath.name,
+                    })
+
+    return discovered
+
+
+def migrate_documents(
+    governance_repo: Path,
+    old_id: str,
+    domain: str,
+    service: str,
+    feature_id: str,
+    source_repo: Path | None,
+) -> tuple[list[str], dict[str, int]]:
+    """Copy discovered documents into governance feature docs/ folder.
+
+    Conflict resolution: first source wins per DOC_SOURCE_PRIORITY order.
+    Returns (list of copied relative paths, {source_type: count} dict).
+    """
+    docs = discover_documents(governance_repo, old_id, domain, service, feature_id, source_repo)
+    if not docs:
+        return [], {}
+
+    target_dir = governance_repo / "features" / domain / service / feature_id / "docs"
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    # Sort by priority so higher-priority sources are copied first
+    priority_rank = {src: i for i, src in enumerate(DOC_SOURCE_PRIORITY)}
+    docs.sort(key=lambda d: priority_rank.get(d["source_type"], 99))
+
+    copied: list[str] = []
+    source_counts: dict[str, int] = {}
+    seen_targets: set[str] = set()
+
+    for doc in docs:
+        rel = doc["relative_path"]
+        if rel in seen_targets:
+            continue  # Higher-priority source already placed this file
+        seen_targets.add(rel)
+
+        target_path = target_dir / rel
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(doc["source_path"], target_path)
+        copied.append(rel)
+        source_counts[doc["source_type"]] = source_counts.get(doc["source_type"], 0) + 1
+
+    return copied, source_counts
+
+
+# ---------------------------------------------------------------------------
+# Verification
+# ---------------------------------------------------------------------------
+
+def verify_migration(
+    governance_repo: Path,
+    feature_id: str,
+    domain: str,
+    service: str,
+) -> dict:
+    """Verify a migrated feature has all expected artifacts in the governance repo."""
+    checks: list[dict] = []
+    feature_dir = governance_repo / "features" / domain / service / feature_id
+
+    # Check 1: feature.yaml exists and is valid
+    feature_path = feature_dir / "feature.yaml"
+    feature_data = read_yaml_if_exists(feature_path)
+    checks.append({
+        "name": "feature_yaml",
+        "result": "pass" if feature_data else "fail",
+        "details": str(feature_path),
+    })
+
+    # Check 2: feature-index.yaml entry exists
+    index_path = governance_repo / "feature-index.yaml"
+    index_data = read_yaml_if_exists(index_path)
+    index_has_entry = False
+    if index_data and isinstance(index_data.get("features"), list):
+        index_has_entry = any(
+            (e.get("id") == feature_id or e.get("featureId") == feature_id)
+            for e in index_data["features"]
+        )
+    checks.append({
+        "name": "feature_index_entry",
+        "result": "pass" if index_has_entry else "fail",
+        "details": str(index_path),
+    })
+
+    # Check 3: summary.md exists
+    summary_path = feature_dir / "summary.md"
+    checks.append({
+        "name": "summary_md",
+        "result": "pass" if summary_path.is_file() else "fail",
+        "details": str(summary_path),
+    })
+
+    # Check 4: problems.md exists
+    problems_path = feature_dir / "problems.md"
+    checks.append({
+        "name": "problems_md",
+        "result": "pass" if problems_path.is_file() else "fail",
+        "details": str(problems_path),
+    })
+
+    # Check 5: docs/ directory (only if documents were migrated)
+    docs_dir = feature_dir / "docs"
+    if docs_dir.is_dir():
+        doc_count = sum(1 for f in docs_dir.rglob("*") if f.is_file())
+        checks.append({
+            "name": "documents",
+            "result": "pass" if doc_count > 0 else "warn",
+            "details": f"{doc_count} documents at {docs_dir}",
+        })
+
+    overall = "pass" if all(c["result"] in ("pass", "warn") for c in checks) else "fail"
+    return {
+        "status": overall,
+        "feature_id": feature_id,
+        "domain": domain,
+        "service": service,
+        "checks": checks,
+    }
+
+
 def make_migration_summary(feature_id: str, domain: str, service: str, username: str, timestamp: str, old_id: str) -> str:
     """Build a summary stub compatible with the current Lens Next layout."""
     title = feature_id.replace("-", " ").title()
@@ -454,6 +648,11 @@ def cmd_scan(args: argparse.Namespace) -> dict:
         print(f"Error: Governance repo not found: {governance_repo}", file=sys.stderr)
         sys.exit(1)
 
+    source_repo = Path(args.source_repo) if getattr(args, "source_repo", None) else None
+    if source_repo and not source_repo.exists():
+        print(f"Error: Source repo not found: {source_repo}", file=sys.stderr)
+        sys.exit(1)
+
     branches_dir = governance_repo / LEGACY_BRANCHES_DIR
     if not branches_dir.exists():
         return {"status": "pass", "legacy_features": [], "total": 0, "conflicts": []}
@@ -506,6 +705,9 @@ def cmd_scan(args: argparse.Namespace) -> dict:
                     "plan_branch": f"{feature_id}-plan",
                 },
                 "state": state,
+                "documents": discover_documents(
+                    governance_repo, base_name, domain, service, feature_id, source_repo,
+                ),
             }
         )
 
@@ -542,6 +744,7 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
     old_id = args.old_id
     username = args.username or "unknown"
     timestamp = now_iso()
+    source_repo = Path(args.source_repo) if getattr(args, "source_repo", None) else None
 
     feature_dir = governance_repo / "features" / domain / service / feature_id
     feature_path = feature_dir / "feature.yaml"
@@ -582,6 +785,14 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
         if artifact_source.exists():
             planned_actions.append(f"Copy legacy artifacts from {artifact_source}")
 
+        # Document discovery preview
+        docs = discover_documents(governance_repo, old_id, domain, service, feature_id, source_repo)
+        docs_target = governance_repo / "features" / domain / service / feature_id / "docs"
+        for doc in docs:
+            planned_actions.append(
+                f"Copy document [{doc['source_type']}] {doc['relative_path']} → {docs_target / doc['relative_path']}"
+            )
+
         return {
             "status": "pass",
             "feature_id": feature_id,
@@ -590,6 +801,7 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
             "feature_yaml_created": False,
             "index_updated": False,
             "legacy_state_path": legacy_state_path,
+            "documents_discovered": len(docs),
         }
 
     feature_data, legacy_state_path, warnings = build_migrated_feature_data(
@@ -649,6 +861,14 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
     except OSError as e:
         return {"status": "fail", "error": f"Failed to copy legacy artifacts: {e}"}
 
+    # Document migration
+    try:
+        documents_migrated, documents_source = migrate_documents(
+            governance_repo, old_id, domain, service, feature_id, source_repo,
+        )
+    except OSError as e:
+        return {"status": "fail", "error": f"Failed to migrate documents: {e}"}
+
     return {
         "status": "pass",
         "feature_id": feature_id,
@@ -658,6 +878,8 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
         "summary_created": summary_created,
         "problems_created": problems_created,
         "artifacts_copied": artifacts_copied,
+        "documents_migrated": documents_migrated,
+        "documents_source": documents_source,
         "legacy_state_path": legacy_state_path,
         "warnings": sorted(set(warnings)),
     }
@@ -690,6 +912,124 @@ def cmd_check_conflicts(args: argparse.Namespace) -> dict:
     }
 
 
+def cmd_verify(args: argparse.Namespace) -> dict:
+    """Verify a migrated feature has all expected artifacts."""
+    governance_repo = Path(args.governance_repo)
+    if not governance_repo.exists():
+        print(f"Error: Governance repo not found: {governance_repo}", file=sys.stderr)
+        sys.exit(1)
+
+    init_feature_ops = load_init_feature_ops()
+
+    err = init_feature_ops.validate_feature_id(args.feature_id)
+    if err:
+        return {"status": "fail", "error": err}
+
+    for field_name, value in [("domain", args.domain), ("service", args.service)]:
+        err = init_feature_ops.validate_safe_id(value, field_name)
+        if err:
+            return {"status": "fail", "error": err}
+
+    return verify_migration(governance_repo, args.feature_id, args.domain, args.service)
+
+
+def cmd_cleanup(args: argparse.Namespace) -> dict:
+    """Clean up legacy artifacts and source documents after verified migration."""
+    governance_repo = Path(args.governance_repo)
+    if not governance_repo.exists():
+        print(f"Error: Governance repo not found: {governance_repo}", file=sys.stderr)
+        sys.exit(1)
+
+    init_feature_ops = load_init_feature_ops()
+
+    err = init_feature_ops.validate_feature_id(args.feature_id)
+    if err:
+        return {"status": "fail", "error": err}
+
+    for field_name, value in [("domain", args.domain), ("service", args.service)]:
+        err = init_feature_ops.validate_safe_id(value, field_name)
+        if err:
+            return {"status": "fail", "error": err}
+
+    feature_id = args.feature_id
+    domain = args.domain
+    service = args.service
+    old_id = args.old_id
+    dry_run = args.dry_run
+    source_repo = Path(args.source_repo) if getattr(args, "source_repo", None) else None
+
+    # Gate: verify migration passed before allowing cleanup
+    verification = verify_migration(governance_repo, feature_id, domain, service)
+    if verification["status"] != "pass":
+        return {
+            "status": "fail",
+            "error": "Cleanup blocked — migration verification did not pass. Run 'verify' first.",
+            "verification": verification,
+        }
+
+    planned_deletions: list[dict] = []
+
+    # 1. Governance legacy branch directory
+    legacy_dir = governance_repo / LEGACY_BRANCHES_DIR / old_id
+    if legacy_dir.is_dir():
+        planned_deletions.append({
+            "path": str(legacy_dir),
+            "type": "directory",
+            "source": "governance-legacy-branch",
+        })
+
+    # 2. Source repo Docs/{domain}/{service}/{featureId}/
+    if source_repo:
+        docs_folder = _find_docs_folder(source_repo)
+        if docs_folder:
+            source_docs = docs_folder / domain / service / feature_id
+            if source_docs.is_dir():
+                planned_deletions.append({
+                    "path": str(source_docs),
+                    "type": "directory",
+                    "source": "source-repo-docs",
+                })
+
+        # 3. Source repo _bmad-output/lens-work/initiatives/{domain}/{service}/
+        bmad_output = source_repo / "_bmad-output" / "lens-work" / "initiatives" / domain / service
+        if bmad_output.is_dir():
+            planned_deletions.append({
+                "path": str(bmad_output),
+                "type": "directory",
+                "source": "source-bmad-output",
+            })
+
+    if dry_run:
+        return {
+            "status": "pass",
+            "feature_id": feature_id,
+            "dry_run": True,
+            "planned_deletions": planned_deletions,
+        }
+
+    # Execute deletions
+    cleaned: list[dict] = []
+    errors: list[str] = []
+    for deletion in planned_deletions:
+        target = Path(deletion["path"])
+        try:
+            if target.is_dir():
+                shutil.rmtree(target)
+                cleaned.append(deletion)
+        except OSError as e:
+            errors.append(f"Failed to delete {target}: {e}")
+
+    result: dict = {
+        "status": "pass" if not errors else "partial",
+        "feature_id": feature_id,
+        "dry_run": False,
+        "cleaned": cleaned,
+    }
+    if errors:
+        result["errors"] = errors
+    return result
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Migration operations — scan legacy LENS v3 branches and migrate to Lens Next model.",
@@ -698,6 +1038,8 @@ def build_parser() -> argparse.ArgumentParser:
 Examples:
   %(prog)s scan --governance-repo /path/to/repo
   %(prog)s scan --governance-repo /path/to/repo --branch-pattern "^custom-.*$"
+
+  %(prog)s scan --governance-repo /path/to/repo --source-repo /path/to/source
 
   %(prog)s check-conflicts --governance-repo /path/to/repo \\
     --feature-id auth-login --domain platform --service identity
@@ -708,7 +1050,19 @@ Examples:
 
   %(prog)s migrate-feature --governance-repo /path/to/repo \\
     --old-id platform-identity-auth-login --feature-id auth-login \\
-    --domain platform --service identity --username cweber
+    --domain platform --service identity --username cweber \\
+    --source-repo /path/to/source
+
+  %(prog)s verify --governance-repo /path/to/repo \\
+    --feature-id auth-login --domain platform --service identity
+
+  %(prog)s cleanup --governance-repo /path/to/repo \\
+    --old-id platform-identity-auth-login --feature-id auth-login \\
+    --domain platform --service identity --dry-run
+
+  %(prog)s cleanup --governance-repo /path/to/repo \\
+    --old-id platform-identity-auth-login --feature-id auth-login \\
+    --domain platform --service identity --source-repo /path/to/source
 """,
     )
 
@@ -717,6 +1071,7 @@ Examples:
     scan_p = subparsers.add_parser("scan", help="Detect legacy branches and build migration plan")
     scan_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
     scan_p.add_argument("--branch-pattern", help="Optional regex override for branch pattern detection")
+    scan_p.add_argument("--source-repo", help="Path to source repo for document discovery")
 
     mig_p = subparsers.add_parser("migrate-feature", help="Execute migration for a single feature")
     mig_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
@@ -726,12 +1081,28 @@ Examples:
     mig_p.add_argument("--service", required=True, help="Service name")
     mig_p.add_argument("--username", default="unknown", help="Username performing the migration")
     mig_p.add_argument("--dry-run", action="store_true", help="Preview without making changes")
+    mig_p.add_argument("--source-repo", help="Path to source repo for document migration")
 
     cc_p = subparsers.add_parser("check-conflicts", help="Check for naming conflicts before migration")
     cc_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
     cc_p.add_argument("--feature-id", required=True, help="Target feature ID")
     cc_p.add_argument("--domain", required=True, help="Domain name")
     cc_p.add_argument("--service", required=True, help="Service name")
+
+    ver_p = subparsers.add_parser("verify", help="Verify a migrated feature has all expected artifacts")
+    ver_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
+    ver_p.add_argument("--feature-id", required=True, help="Feature ID to verify")
+    ver_p.add_argument("--domain", required=True, help="Domain name")
+    ver_p.add_argument("--service", required=True, help="Service name")
+
+    cl_p = subparsers.add_parser("cleanup", help="Remove legacy branches and source docs after verified migration")
+    cl_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
+    cl_p.add_argument("--old-id", required=True, help="Old branch name (legacy ID)")
+    cl_p.add_argument("--feature-id", required=True, help="Feature ID to clean up")
+    cl_p.add_argument("--domain", required=True, help="Domain name")
+    cl_p.add_argument("--service", required=True, help="Service name")
+    cl_p.add_argument("--source-repo", help="Path to source repo (for Docs/ and _bmad-output cleanup)")
+    cl_p.add_argument("--dry-run", action="store_true", help="Preview deletions without executing")
 
     return parser
 
@@ -744,6 +1115,8 @@ def main() -> None:
         "scan": cmd_scan,
         "migrate-feature": cmd_migrate_feature,
         "check-conflicts": cmd_check_conflicts,
+        "verify": cmd_verify,
+        "cleanup": cmd_cleanup,
     }
 
     result = commands[args.command](args)

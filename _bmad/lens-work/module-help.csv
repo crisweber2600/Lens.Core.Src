@@ -30,6 +30,12 @@ lens-work,lens-work-pause-epic,Pause Epic,PE,"Suspend in-flight epic state to in
 lens-work,lens-work-resume-epic,Resume Epic,RE,"Resume paused epic with re-sensing and validation",,,anytime,,,,,
 lens-work,lens-work-profile,Profile,PF,"View or update your onboarding profile",,,anytime,,,,,
 lens-work,lens-work-audit-all,Audit All Initiatives,AA,"Aggregate compliance dashboard across all active initiatives",,,anytime,,,,,_bmad-output/reports/lens-work/quality-scan,
+lens-work,lens-work-bmad-brainstorming,BMAD Brainstorming,BBS,"Run bmad-brainstorming with Lens domain, service, feature, governance, and repo context",,,preplan,,,false,_bmad-output/planning-artifacts,brainstorming session
+lens-work,lens-work-bmad-create-prd,BMAD Create PRD,BPR,"Run bmad-create-prd with Lens feature, governance, and output-path context",,,businessplan,,,false,_bmad-output/planning-artifacts,prd
+lens-work,lens-work-bmad-create-architecture,BMAD Create Architecture,BAR,"Run bmad-create-architecture with Lens feature, repo, and governance context",,,techplan,,,false,_bmad-output/planning-artifacts,architecture
+lens-work,lens-work-bmad-create-epics-and-stories,BMAD Create Epics and Stories,BES,"Run bmad-create-epics-and-stories with Lens feature, repo, and governance context",,,devproposal,,,false,_bmad-output/planning-artifacts,"epics and stories"
+lens-work,lens-work-bmad-quick-dev,BMAD Quick Dev,BQD,"Run bmad-quick-dev with Lens feature scope, target repo resolution, and write-boundary guidance",,,dev,,,false,_bmad-output/implementation-artifacts,"spec and implementation"
+lens-work,lens-work-bmad-code-review,BMAD Code Review,BCR,"Run bmad-code-review with Lens feature scope, target repo resolution, and governance-aware review context",,,dev,,,false,_bmad-output/implementation-artifacts,review findings
 Lens,bmad-lens-feature-yaml,manage-feature-yaml,FY,Read/write feature.yaml files atomically,read,[subcommand] [--feature-id] [--dry-run],anytime,,,false,,feature.yaml
 Lens,bmad-lens-git-state,read-git-state,GS,Read branch commit and working tree state,feature-state,[--governance-dir] [--feature-id],anytime,,,false,,git state JSON
 Lens,bmad-lens-git-orchestration,orchestrate-git,GO,Execute multi-step git workflows atomically,create-feature-branches,[subcommand] [--feature-id] [--dry-run],anytime,,,false,,git operations log

@@ -9,8 +9,9 @@ For each confirmed feature:
 - Entry added to `{governance_repo}/feature-index.yaml`
 - Summary stub created at `{governance_repo}/features/{domain}/{service}/{featureId}/summary.md`
 - Problems log created at `{governance_repo}/features/{domain}/{service}/{featureId}/problems.md`
+- Documents migrated to `{governance_repo}/features/{domain}/{service}/{featureId}/docs/` (when `--source-repo` is provided or governance-legacy docs exist)
 
-Old branches are NOT deleted at this step. Cleanup is a separate, explicit operation.
+Old branches are NOT deleted at this step. Cleanup is a separate, explicit operation that requires verification first.
 
 ## Pre-execution Checklist
 
@@ -27,8 +28,11 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   --feature-id {feature_id} \
   --domain {domain} \
   --service {service} \
-  --username {username}
+  --username {username} \
+  --source-repo {source_repo}
 ```
+
+`--source-repo` is optional. When provided, the migration also discovers and copies documents from the source repo.
 
 ## Output Shape
 
@@ -42,6 +46,11 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   "summary_created": true,
   "problems_created": true,
   "artifacts_copied": ["tech-plan.md"],
+  "documents_migrated": ["prd.md", "tech-plan.md"],
+  "documents_source": {
+    "prd.md": "source-docs",
+    "tech-plan.md": "governance-legacy"
+  },
   "legacy_state_path": "{governance_repo}/branches/platform-identity-auth-login/initiative-state.yaml",
   "warnings": []
 }
@@ -60,6 +69,17 @@ For each confirmed feature in the migration plan:
   - Copy planning artifacts from `{governance_repo}/branches/{old_id}/_bmad-output/lens-work/planning-artifacts/` when present
 5. Log result: pass / fail / skipped
 6. Continue to next feature — do not abort batch on single failure
+
+### Document Migration
+
+After governance scaffolding, documents are discovered from up to three sources and copied to `{governance_repo}/features/{domain}/{service}/{featureId}/docs/`.
+
+Priority order (highest wins when filenames conflict):
+1. **governance-legacy** — `{governance_repo}/branches/{old_id}/_bmad-output/` files
+2. **source-docs** — `{source_repo}/Docs/{domain}/{service}/{featureId}/` (requires `--source-repo`)
+3. **bmad-output** — `{source_repo}/_bmad-output/lens-work/initiatives/{domain}/{service}/` (requires `--source-repo`)
+
+Duplicate filenames are resolved by priority: the highest-priority source wins and a warning is emitted for the skipped duplicate.
 
 ### Governance Directory Scaffolding (v3.4)
 
@@ -189,7 +209,7 @@ Cleanup is a **separate, explicit operation** and must never happen automaticall
 
 Only run cleanup after:
 1. Migration has completed successfully
-2. New branches and feature.yaml files have been verified
-3. User explicitly confirms: "Delete old branches? (yes/no)"
+2. Verification has passed (see `./references/verify-migration.md`)
+3. User explicitly confirms: "Proceed with cleanup? (yes/no)"
 
-Cleanup deletes the directories under `{governance_repo}/branches/` for migrated features only. Failed or skipped features are not cleaned up.
+See `./references/cleanup.md` for the full cleanup workflow.

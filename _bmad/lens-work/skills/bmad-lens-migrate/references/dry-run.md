@@ -18,8 +18,11 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   --domain {domain} \
   --service {service} \
   --username {username} \
+  --source-repo {source_repo} \
   --dry-run
 ```
+
+`--source-repo` is optional. When provided, the dry run also discovers documents from the source repo's `Docs/` folder and `_bmad-output/` directory.
 
 ## Output Shape
 
@@ -32,11 +35,27 @@ python3 ./scripts/migrate-ops.py migrate-feature \
     "Create feature.yaml at {governance_repo}/features/platform/identity/auth-login/feature.yaml",
     "Update feature-index.yaml at {governance_repo}/feature-index.yaml",
     "Create summary stub at {governance_repo}/features/platform/identity/auth-login/summary.md",
-    "Create problems log at {governance_repo}/features/platform/identity/auth-login/problems.md"
+    "Create problems log at {governance_repo}/features/platform/identity/auth-login/problems.md",
+    "Copy document prd.md from source-docs to features/platform/identity/auth-login/docs/",
+    "Copy document tech-plan.md from governance-legacy to features/platform/identity/auth-login/docs/"
   ],
   "feature_yaml_created": false,
   "index_updated": false,
-  "legacy_state_path": "{governance_repo}/branches/platform-identity-auth-login/initiative-state.yaml"
+  "legacy_state_path": "{governance_repo}/branches/platform-identity-auth-login/initiative-state.yaml",
+  "documents_discovered": [
+    {
+      "source_type": "governance-legacy",
+      "source_path": "branches/platform-identity-auth-login/_bmad-output/tech-plan.md",
+      "relative_path": "tech-plan.md",
+      "filename": "tech-plan.md"
+    },
+    {
+      "source_type": "source-docs",
+      "source_path": "/path/to/source/Docs/platform/identity/auth-login/prd.md",
+      "relative_path": "prd.md",
+      "filename": "prd.md"
+    }
+  ]
 }
 ```
 
@@ -60,7 +79,7 @@ Present a summary table to the user:
 
 | Feature ID | Old Branch | Planned Actions | Conflict |
 |-----------|------------|----------------|---------|
-| auth-login | platform-identity-auth-login | feature.yaml, index entry, summary | No |
+| auth-login | platform-identity-auth-login | feature.yaml, index entry, summary, 2 docs | No |
 
 Then ask for confirmation:
 - "Proceed with migration for all N features? (yes/no)"

@@ -96,3 +96,45 @@ topics:
     phases: [all]
     tracks: [all]
     category: reporting
+
+  - id: bmad-brainstorming
+    command: /bmad-brainstorming
+    description: Run BMAD brainstorming with active Lens feature and repo context
+    phases: [preplan]
+    tracks: [all]
+    category: planning
+
+  - id: bmad-create-prd
+    command: /bmad-create-prd
+    description: Create a PRD using the active Lens feature, governance, and output-path context
+    phases: [businessplan]
+    tracks: [all]
+    category: planning
+
+  - id: bmad-create-architecture
+    command: /bmad-create-architecture
+    description: Create architecture artifacts using the active Lens feature and governance context
+    phases: [techplan]
+    tracks: [all]
+    category: planning
+
+  - id: bmad-create-epics-and-stories
+    command: /bmad-create-epics-and-stories
+    description: Generate epics and stories using the active Lens feature and artifact paths
+    phases: [devproposal]
+    tracks: [all]
+    category: planning
+
+  - id: bmad-quick-dev
+    command: /bmad-quick-dev
+    description: Run quick dev against the active Lens feature and resolved target repo
+    phases: [dev]
+    tracks: [all]
+    category: implementation
+
+  - id: bmad-code-review
+    command: /bmad-code-review
+    description: Run BMAD code review against the active Lens feature and resolved target repo
+    phases: [dev]
+    tracks: [all]
+    category: implementation
