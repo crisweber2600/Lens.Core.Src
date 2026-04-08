@@ -57,6 +57,18 @@ theme: "{theme}"
 
 The `lens.core/_bmad/` directory is created if it does not exist. All writes are atomic (temp file + rename).
 
+## Post-Write Git Sync
+
+After the script confirms `status: ok`, commit and push the written files to the governance remote:
+
+```bash
+git -C {governance_dir} add users/{username}.md lens.core/_bmad/config.user.yaml
+git -C {governance_dir} commit -m "chore: write user config for {username}"
+git -C {governance_dir} push origin main
+```
+
+Skip this section when `--dry-run` is active. If there is no remote configured yet (first onboard before remote is added), report `⚠ Remote not set — push skipped. Add a remote and run: git -C {governance_dir} push origin main` and continue.
+
 ## Output Contract
 
 ```json
