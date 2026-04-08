@@ -241,13 +241,15 @@ jobs:
 
           echo "✅ Synced $SRC_COUNT source agent markdown file(s) into release payload"
 
-      # ── 10.5 Overlay source .github skills into release payload ──────
-      # The lens-work installer (step 9) already generates skill stubs in
-      # build-output/.github/skills/ from the SKILLS array in installer.js.
-      # This step overlays/updates them from the canonical source files in
-      # .github/skills/ so that manual edits to source stubs always win.
-      - name: Overlay source .github skills
+      # ── 10.5 Overlay source .github skill stubs into release payload ─
+      # The BMAD framework install contributes many .github skill files, but
+      # the lens-work adapter contract publishes only the canonical lens-work
+      # skill stubs from source .github/skills/.
+      - name: Overlay source .github skill stubs
         run: |
+          # Replace any BMAD-installed skill content with the exact source
+          # stub set so build-output matches the canonical adapter payload.
+          rm -rf build-output/.github/skills
           mkdir -p build-output/.github/skills
 
           SRC_COUNT=0
@@ -259,7 +261,7 @@ jobs:
             SRC_COUNT=$((SRC_COUNT + 1))
           done
 
-          echo "✅ Overlaid $SRC_COUNT source skill(s) into release payload"
+          echo "✅ Overlaid $SRC_COUNT source skill stub(s) into release payload"
 
       # ── 10.6 Overlay source .github prompt stubs into release payload ─
       # The lens-work installer (step 9) generates GitHub Copilot prompt
@@ -386,22 +388,60 @@ jobs:
             fi
           done
 
-          for skill_dir in .github/skills/*/; do
-            [ -d "$skill_dir" ] || continue
-            skill_name=$(basename "$skill_dir")
-            target="build-output/.github/skills/$skill_name/SKILL.md"
-            if [ ! -f "$target" ]; then
-              echo "::error::Missing published skill file: $target"
-              MISSING=1
-            else
-              echo "✅ $target"
-            fi
-          done
-
           if [ -e "build-output/.github/.git" ]; then
             echo "::error::build-output/.github contains .git; .github must be embedded content, not a nested clone"
             MISSING=1
           fi
+
+          SOURCE_SKILL_COUNT=$(find .github/skills -mindepth 2 -maxdepth 2 -type f -name 'SKILL.md' | wc -l)
+          GITHUB_SKILL_COUNT=$(find build-output/.github/skills -mindepth 2 -maxdepth 2 -type f -name 'SKILL.md' | wc -l)
+          if [ "$GITHUB_SKILL_COUNT" -ne "$SOURCE_SKILL_COUNT" ]; then
+            echo "::error::.github/skills count ($GITHUB_SKILL_COUNT) != source stub count ($SOURCE_SKILL_COUNT)"
+            MISSING=1
+          else
+            echo "✅ .github/skills ($GITHUB_SKILL_COUNT) matches source stub count ($SOURCE_SKILL_COUNT)"
+          fi
+
+          EXTRA_SKILL_FILES=$(find build-output/.github/skills -type f ! -name 'SKILL.md' -print)
+          if [ -n "$EXTRA_SKILL_FILES" ]; then
+            echo "::error::Published .github/skills contains non-stub files"
+            echo "$EXTRA_SKILL_FILES"
+            MISSING=1
+          fi
+
+          for src in .github/skills/*/SKILL.md; do
+            [ -f "$src" ] || continue
+            skill_name=$(basename "$(dirname "$src")")
+            target="build-output/.github/skills/$skill_name/SKILL.md"
+
+            if [ ! -f "$target" ]; then
+              echo "::error::Missing published skill stub: $target"
+              MISSING=1
+              continue
+            fi
+
+            if ! cmp -s "$src" "$target"; then
+              echo "::error::Published skill stub differs from source: $target"
+              MISSING=1
+            else
+              echo "✅ $target matches source stub"
+            fi
+
+            if ! grep -q '(Stub)' "$target"; then
+              echo "::error::Published skill is not marked as a stub: $target"
+              MISSING=1
+            fi
+
+            if ! grep -q 'Read and follow all instructions in:' "$target"; then
+              echo "::error::Published skill does not redirect to module content: $target"
+              MISSING=1
+            fi
+
+            if ! grep -q 'lens.core/_bmad/lens-work/skills/' "$target"; then
+              echo "::error::Published skill does not redirect to lens-work skill content: $target"
+              MISSING=1
+            fi
+          done
 
           SOURCE_PROMPT_COUNT=$(find .github/prompts -maxdepth 1 -type f -name '*.prompt.md' | wc -l)
           GITHUB_COUNT=$(find build-output/.github/prompts -maxdepth 1 -type f -name '*.prompt.md' | wc -l)

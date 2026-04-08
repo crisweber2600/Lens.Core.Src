@@ -99,7 +99,9 @@ name: ${name}
 description: "${description}"
 ---
 
-# ${name}
+# ${name} (Stub)
+
+> **This is a stub.** Load and execute the full skill from the release module.
 
 Read and follow all instructions in:
 
