@@ -1,49 +1,14 @@
 ---
-model: "{default_model}"
-communication_language: "{communication_language}"
-document_output_language: "{document_output_language}"
-description: "Create a new service — routes to new-initiative with scope=service"
+model: Claude Sonnet 4.6 (copilot)
+description: 'Create new service-level container scaffolding within a domain without creating a lifecycle branch.'
 ---
 
-# /new-service Prompt — LENS Workbench
+# lens-work.new-service (Stub)
 
-Routes `/new-service` command to the init-initiative workflow.
+> **This is a stub.** Load and execute the full prompt from the release module.
 
-## What This Prompt Does
+```
+Read and follow all instructions in: lens.core/_bmad/lens-work/prompts/lens-work.new-initiative.prompt.md
+```
 
-Creates a new service container scaffold with governance-owned metadata. Triggers the same workflow as `/new-initiative` with `scope=service`.
-
-## Parameters
-
-- **service**: Service/repo name (required — collect from user)
-
-## Steps
-
-### Step 0: Run Preflight
-
-Execute `{project-root}/lens.core/_bmad/lens-work/workflows/includes/preflight.md`. Halt if authority repos missing — direct user to `/onboard`.
-
-### Step 1: Collect Service Name
-
-Prompt user for service name. The domain is derived from context (current active domain).
-
-### Step 2: Execute Workflow
-
-Run the init-initiative workflow at `{project-root}/lens.core/_bmad/lens-work/workflows/router/init-initiative/` with:
-- `scope`: `service`
-- `service`: The service name collected from the user
-- `domain`: Derived from context (active domain)
-
-The workflow handles:
-- Slug-safe name validation
-- Cross-initiative sensing (pre-creation)
-- Governance marker creation at `features/{domain}/{service}/service.yaml`
-- Local scaffold creation (no lifecycle branch creation)
-- Response formatting (Context Header -> Primary Content -> Next Step)
-
-## Prerequisites
-
-- User must be authenticated and onboarded (`profile.yaml` exists)
-- Control repo must have a remote configured
-- `lifecycle.yaml` must be accessible
-- A domain context must be active or available
+Invoke with scope: **service**
