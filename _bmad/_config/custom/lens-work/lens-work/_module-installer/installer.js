@@ -30,6 +30,46 @@ function readScalarYamlValue(content, key) {
     return rawValue;
 }
 
+function parseCsvLine(line) {
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let index = 0; index < line.length; index++) {
+        const char = line[index];
+
+        if (inQuotes) {
+            if (char === '"') {
+                if (line[index + 1] === '"') {
+                    current += '"';
+                    index++;
+                } else {
+                    inQuotes = false;
+                }
+            } else {
+                current += char;
+            }
+            continue;
+        }
+
+        if (char === ',') {
+            values.push(current);
+            current = '';
+            continue;
+        }
+
+        if (char === '"') {
+            inQuotes = true;
+            continue;
+        }
+
+        current += char;
+    }
+
+    values.push(current);
+    return values;
+}
+
 function toYamlString(value) {
     return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
@@ -67,6 +107,43 @@ async function readInstalledCoreConfig(projectRoot) {
     return {};
 }
 
+async function readInstalledSkillManifest(projectRoot) {
+    const manifestPath = path.join(projectRoot, '_bmad', '_config', 'skill-manifest.csv');
+    if (!(await fsHelpers.pathExists(manifestPath))) {
+        return [];
+    }
+
+    const content = await fsHelpers.readFile(manifestPath);
+    const lines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
+    if (lines.length <= 1) {
+        return [];
+    }
+
+    const headers = parseCsvLine(lines[0]);
+    const indexByHeader = Object.fromEntries(headers.map((header, index) => [header, index]));
+    const skills = [];
+
+    for (const line of lines.slice(1)) {
+        const row = parseCsvLine(line);
+        const name = row[indexByHeader.canonicalId];
+        const description = row[indexByHeader.description];
+        const skillPath = row[indexByHeader.path];
+        const installToBmad = row[indexByHeader.install_to_bmad];
+
+        if (!name || !skillPath || installToBmad !== 'true') {
+            continue;
+        }
+
+        skills.push({
+            name,
+            description,
+            targetPath: `lens.core/${skillPath}`,
+        });
+    }
+
+    return skills;
+}
+
 /**
  * Copy all files from srcDir to destDir, optionally skipping existing files.
  * Only copies files (not subdirectories).
@@ -93,10 +170,10 @@ async function copyDirContents(srcDir, destDir, { skipExisting = true, logger } 
 // Stub generators — thin adapters that redirect to module content by path
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ghSkillStub(name, skill, description) {
+function ghSkillStub(name, description, targetPath) {
     return `---
 name: ${name}
-description: "${description}"
+description: ${toYamlString(description)}
 ---
 
 # ${name} (Stub)
@@ -106,7 +183,7 @@ description: "${description}"
 Read and follow all instructions in:
 
 \`\`\`
-lens.core/_bmad/lens-work/skills/${skill}/SKILL.md
+${targetPath}
 \`\`\`
 `;
 }
@@ -205,7 +282,8 @@ See \`lens.core/_bmad/lens-work/module-help.csv\` for the complete command list.
 // Skill, prompt and command definitions
 // ─────────────────────────────────────────────────────────────────────────────
 
-// GitHub Copilot SKILL.md stubs — one per lens-work skill
+// GitHub Copilot SKILL.md stubs — lens-work wrappers layered on top of
+// the installed BMAD skill manifest.
 const SKILLS = [
     { name: 'lens-work-checklist', skill: 'checklist', desc: "LENS Workbench skill 'checklist' wrapper. Use when lifecycle and orchestration guidance from lens-work is needed." },
     { name: 'lens-work-constitution', skill: 'constitution', desc: "LENS Workbench skill 'constitution' wrapper. Use when lifecycle and orchestration guidance from lens-work is needed." },
@@ -314,12 +392,27 @@ async function installGitHubCopilot(projectRoot, { updateMode, logger }) {
         );
     }
 
-    // Skill stubs
+    const publishedSkills = new Map();
+
+    for (const skill of await readInstalledSkillManifest(projectRoot)) {
+        publishedSkills.set(skill.name, skill);
+    }
+
     for (const s of SKILLS) {
+        publishedSkills.set(s.name, {
+            name: s.name,
+            description: s.desc,
+            targetPath: `lens.core/_bmad/lens-work/skills/${s.skill}/SKILL.md`,
+        });
+    }
+
+    // Replace installed BMAD skill content with thin redirect stubs.
+    for (const skill of publishedSkills.values()) {
+        await fs.rm(path.join(skillsDir, skill.name), { recursive: true, force: true });
         await writeAdapterFile(
-            path.join(skillsDir, s.name, 'SKILL.md'),
-            ghSkillStub(s.name, s.skill, s.desc),
-            { updateMode, logger }
+            path.join(skillsDir, skill.name, 'SKILL.md'),
+            ghSkillStub(skill.name, skill.description, skill.targetPath),
+            { updateMode: true, logger }
         );
     }
 

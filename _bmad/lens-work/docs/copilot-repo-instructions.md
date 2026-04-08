@@ -45,7 +45,7 @@ Each subfolder is an independent git repo with its own `.git/`, branches, and re
 | `_bmad-output/...` | Workspace root `_bmad-output/...` (control repo) |
 | `{target_projects_path}/{domain}/{service}/{repo}/` | The cloned code repo for that initiative |
 | `.github/prompts/lens-work.*.prompt.md` | Stub files — always follow the redirect to `lens.core/_bmad/lens-work/prompts/...` |
-| `.github/skills/lens-work-*/SKILL.md` | Stub files — always follow the redirect to `lens.core/_bmad/lens-work/skills/...` |
+| `.github/skills/*/SKILL.md` | Stub files — always follow the redirect to the referenced `lens.core/_bmad/.../SKILL.md` path |
 
 ## The `/dev` Prompt — Strict Write Scope
 

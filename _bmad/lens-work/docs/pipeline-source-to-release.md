@@ -32,7 +32,7 @@ push to master (bmad.lens.src/lens.core/_bmad/lens-work/**)
   │       (.github/agents/, .github/prompts/, .github/skills/)
   │
   ├─ 10. Sync source .github/agents/*.md into release payload
-  ├─ 10.5 Overlay source .github/skills/*/SKILL.md into release payload
+  ├─ 10.5 Overlay source .github/skills/*/SKILL.md into generated BMAD skill stubs
   ├─ 10.6 Prune .github/prompts to lens-work stubs only
   │
   ├─ 11. Post-process: rename .yaml→.yaml, bmadconfig.yaml→bmadconfig.yaml
@@ -58,7 +58,7 @@ push to master (bmad.lens.src/lens.core/_bmad/lens-work/**)
 1. **Declarative-only scan** — Fail if executable files found outside `scripts/` or `_module-installer/`
 2. **Required files check** — Verify `lifecycle.yaml`, `module.yaml`, `module-help.csv`, `README.md`, `_module-installer/installer.js` exist
 3. **Version read** — Extract version from `module.yaml` for commit message and PR title
-4. **Release payload validation** — Verify required agent, prompt, and skill files exist in build output; enforce no non-lens prompts
+4. **Release payload validation** — Verify required agent, prompt, and skill files exist in build output; enforce no non-lens prompts and no non-stub skill payloads
 
 ## BMAD Framework Build
 
@@ -79,7 +79,7 @@ The lens-work module is overlaid on top of the installed framework, then its `_m
 | `build-output/lens.core/_bmad/` | `lens.core/_bmad/` |
 | `build-output/.github/` | `.github/` |
 | `build-output/.github/agents/` | `.github/agents/` |
-| `build-output/.github/skills/` | `.github/skills/` |
+| `build-output/.github/skills/` | `.github/skills/` (BMAD + lens-work redirect stubs) |
 | `build-output/.github/prompts/` | `.github/prompts/` (lens-work stubs only) |
 
 ### Included in promotion:
