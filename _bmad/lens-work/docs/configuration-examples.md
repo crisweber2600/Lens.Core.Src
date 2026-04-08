@@ -2,6 +2,8 @@
 
 Sample `bmadconfig.yaml` configurations for different team sizes, git providers, and use cases.
 
+> New initiative metadata is governance-first. `governance_repo_path` is the canonical destination for `/new-domain`, `/new-service`, and `/new-feature`. `initiative_output_folder` remains a legacy compatibility path for older workflows and migrations.
+
 ---
 
 ## Solo Developer (GitHub)
@@ -16,6 +18,7 @@ output_folder: "_bmad-output"
 target_projects_path: "../TargetProjects"
 default_git_remote: "github"
 lifecycle_contract: "lens.core/_bmad/lens-work/lifecycle.yaml"
+governance_repo_path: "../TargetProjects/lens/lens-governance"
 initiative_output_folder: "_bmad-output/lens-work/initiatives"
 personal_output_folder: "_bmad-output/lens-work/personal"
 ```
@@ -44,6 +47,7 @@ output_folder: "_bmad-output"
 target_projects_path: "../TargetProjects"
 default_git_remote: "github"
 lifecycle_contract: "lens.core/_bmad/lens-work/lifecycle.yaml"
+governance_repo_path: "../TargetProjects/lens/lens-governance"
 initiative_output_folder: "_bmad-output/lens-work/initiatives"
 personal_output_folder: "_bmad-output/lens-work/personal"
 ```
@@ -75,6 +79,7 @@ output_folder: "_bmad-output"
 target_projects_path: "../TargetProjects"
 default_git_remote: "github"
 lifecycle_contract: "lens.core/_bmad/lens-work/lifecycle.yaml"
+governance_repo_path: "../TargetProjects/lens/lens-governance"
 initiative_output_folder: "_bmad-output/lens-work/initiatives"
 personal_output_folder: "_bmad-output/lens-work/personal"
 ```
@@ -105,6 +110,7 @@ output_folder: "_bmad-output"
 target_projects_path: "../TargetProjects"
 default_git_remote: "azure-devops"
 lifecycle_contract: "lens.core/_bmad/lens-work/lifecycle.yaml"
+governance_repo_path: "../TargetProjects/lens/lens-governance"
 initiative_output_folder: "_bmad-output/lens-work/initiatives"
 personal_output_folder: "_bmad-output/lens-work/personal"
 ```
@@ -123,6 +129,7 @@ output_folder: "_bmad-output"
 target_projects_path: "../TargetProjects"
 default_git_remote: "gitlab"
 lifecycle_contract: "lens.core/_bmad/lens-work/lifecycle.yaml"
+governance_repo_path: "../TargetProjects/lens/lens-governance"
 initiative_output_folder: "_bmad-output/lens-work/initiatives"
 personal_output_folder: "_bmad-output/lens-work/personal"
 ```

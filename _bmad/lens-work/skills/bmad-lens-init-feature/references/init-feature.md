@@ -7,6 +7,7 @@ Initialize a new feature with 2-branch topology, feature.yaml, governance index 
 After this flow completes:
 
 - Branches `{featureId}` and `{featureId}-plan` exist in the control repo
+- Parent governance markers exist at `features/{domain}/domain.yaml` and `features/{domain}/{service}/service.yaml` when they were previously missing
 - `feature.yaml` exists at `{governance-repo}/features/{domain}/{service}/{featureId}/feature.yaml` on the `{featureId}-plan` branch
 - `feature-index.yaml` on `main` has a new entry for `{featureId}`
 - `summary.md` stub exists at `{governance-repo}/features/{domain}/{service}/{featureId}/summary.md` on `main`
@@ -63,10 +64,11 @@ python3 ./scripts/init-feature-ops.py create \
 
 The script:
 
-1. Creates `feature.yaml` at `{governance-repo}/features/{domain}/{service}/{featureId}/feature.yaml`
-2. Adds an entry to `{governance-repo}/feature-index.yaml` (creates if absent)
-3. Creates `{governance-repo}/features/{domain}/{service}/{featureId}/summary.md` stub
-4. Returns `git_commands` and `gh_commands` arrays in the JSON output
+1. Creates parent governance markers at `features/{domain}/domain.yaml` and `features/{domain}/{service}/service.yaml` when they are missing
+2. Creates `feature.yaml` at `{governance-repo}/features/{domain}/{service}/{featureId}/feature.yaml`
+3. Adds an entry to `{governance-repo}/feature-index.yaml` (creates if absent)
+4. Creates `{governance-repo}/features/{domain}/{service}/{featureId}/summary.md` stub
+5. Returns `git_commands` and `gh_commands` arrays in the JSON output
 
 ### Step 4: Execute Git and GitHub Commands
 
@@ -97,6 +99,8 @@ Present the initialization summary to the user:
 | Feature ID | `{featureId}` |
 | Feature Branch | `{featureId}` |
 | Plan Branch | `{featureId}-plan` |
+| Domain Marker | `features/{domain}/domain.yaml` ✓ |
+| Service Marker | `features/{domain}/{service}/service.yaml` ✓ |
 | Feature YAML | `features/{domain}/{service}/{featureId}/feature.yaml` |
 | PR | Planning: {feature name} (`{featureId}-plan` → `{featureId}`) |
 | Index | `feature-index.yaml` ✓ |

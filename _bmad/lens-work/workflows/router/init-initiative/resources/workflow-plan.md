@@ -2,7 +2,7 @@
 
 ## Goal
 
-Create a new domain, service, or feature initiative with validated scope-specific inputs, correct config placement, and feature-only git topology.
+Create a new domain, service, or feature initiative with validated scope-specific inputs, governance-repo metadata, and feature-only git topology.
 
 ## Step Structure
 
@@ -13,17 +13,17 @@ Create a new domain, service, or feature initiative with validated scope-specifi
 2. `steps/step-02-collect-scope.md`
    - Collect only the parameters allowed for the chosen scope
    - Normalize the primary name inputs
-   - Resolve the initiative root and config path
+   - Resolve the initiative root and governance metadata path
 3. `steps/step-03-validate-and-sense.md`
    - Enforce slug-safe naming
    - Validate the selected track for feature scope
    - Run cross-initiative sensing before any branch creation
    - Resolve constitution gates through the wrapped skill response
 4. `steps/step-04-create-initiative.md`
-   - Create the initiative config
+   - Create governance metadata for the selected scope
    - Scaffold TargetProjects folders for domain and service scopes
    - Halt on a dirty working tree before feature branch creation
-   - Create feature branches when scope = feature; otherwise commit scaffold-only config on the current branch
+   - Delegate feature initialization to the tested init-feature script
 5. `steps/step-05-respond.md`
    - Render the scope-specific success message
    - Surface the correct next command
@@ -38,13 +38,15 @@ Create a new domain, service, or feature initiative with validated scope-specifi
 - `track`
 - `initiative_root`
 - `config_path`
+- `governance_repo_path`
 - `target_projects_path`
 - `track_config`
 - `sensing_matches`
 
 ## Output Artifacts
 
-- `_bmad-output/lens-work/initiatives/...` initiative config YAML
+- `features/{domain}/domain.yaml` or `features/{domain}/{service}/service.yaml` on governance `main`
+- `features/{domain}/{service}/{featureId}/feature.yaml` for feature scope
 - Local TargetProjects folder for domain or service scope
 - No lifecycle branches for domain/service scope
 - Feature root + plan branches when scope = feature

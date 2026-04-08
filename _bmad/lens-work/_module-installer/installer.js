@@ -421,6 +421,7 @@ async function install(options) {
 
         const targetProjectsPath = getConfigValue(config, ['target-projects-path', 'target_projects_path'], '../TargetProjects');
         const defaultGitRemote = getConfigValue(config, ['default-git-remote', 'default_git_remote'], 'github');
+        const governanceRepoPath = `${String(targetProjectsPath).replace(/\\/g, '/')}/lens/lens-governance`;
 
         const configFile = path.join(configDir, 'bmadconfig.yaml');
         if (!(await fsHelpers.pathExists(configFile))) {
@@ -438,6 +439,7 @@ async function install(options) {
                 `target_projects_path: ${toYamlString(targetProjectsPath)}`,
                 `default_git_remote: ${toYamlString(defaultGitRemote)}`,
                 'lifecycle_contract: "{project-root}/_bmad/lens-work/lifecycle.yaml"',
+                `governance_repo_path: ${toYamlString(governanceRepoPath)}`,
                 'initiative_output_folder: "{project-root}/_bmad-output/lens-work/initiatives"',
                 'personal_output_folder: "{project-root}/_bmad-output/lens-work/personal"',
                 '',
