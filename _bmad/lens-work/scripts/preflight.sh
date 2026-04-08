@@ -150,6 +150,13 @@ if [ -n "$MISSING" ] || [ -n "$CHANGED" ]; then
   echo -e "${GREEN}  ✓ .github/ synced${NC}"
 fi
 
+# Remove stale lens-work prompt stubs so deletions in the release repo propagate locally.
+if [ -d ".github/prompts" ]; then
+  while IFS= read -r prompt_file; do
+    [ -f "${RELEASE_DIR}/${prompt_file}" ] || rm -f "${prompt_file}"
+  done < <(find .github/prompts -maxdepth 1 -type f -name 'lens-work*.prompt.md')
+fi
+
 # Prompt hygiene: remove non-lens-work prompt files
 if [ -d ".github/prompts" ]; then
   find .github/prompts -type f -name '*.prompt.md' ! -name 'lens-work*.prompt.md' -delete
