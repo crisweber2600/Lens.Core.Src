@@ -280,8 +280,11 @@ def build_container_git_commands(governance_repo: str, rel_paths: list[str], com
     ]
 
 
-def build_gh_commands(control_repo: str, feature_id: str, name: str) -> list[str]:
+def build_gh_commands(control_repo: str, feature_id: str, name: str, track: str) -> list[str]:
     """Return the gh CLI commands for PR creation."""
+    if track == "express":
+        return []
+
     plan_branch = f"{feature_id}-plan"
     return [
         (
@@ -354,7 +357,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
         service,
         container_markers,
     )
-    gh_cmds = build_gh_commands(pr_repo, feature_id, name)
+    gh_cmds = build_gh_commands(pr_repo, feature_id, name, track)
 
     if args.dry_run:
         return {
@@ -367,6 +370,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
             "container_markers": container_markers,
             "git_commands": git_cmds,
             "gh_commands": gh_cmds,
+            "planning_pr_created": bool(gh_cmds),
         }
 
     feature_data = make_feature_yaml(feature_id, domain, service, name, track, username, timestamp)
@@ -410,6 +414,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
         "container_markers": container_markers,
         "git_commands": git_cmds,
         "gh_commands": gh_cmds,
+        "planning_pr_created": bool(gh_cmds),
     }
 
 

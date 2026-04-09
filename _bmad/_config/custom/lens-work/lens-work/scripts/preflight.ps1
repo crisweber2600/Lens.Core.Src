@@ -200,12 +200,13 @@ Write-Host "  ✓ .github/ synced ($updatedCount file(s) updated)" -ForegroundCo
 if (Test-Path ".github/prompts") {
     $releasePromptDir = Join-Path $releaseGithub "prompts"
 
-    Get-ChildItem ".github/prompts" -File -Filter "lens-work*.prompt.md" |
+    Get-ChildItem ".github/prompts" -File |
+        Where-Object { $_.Name -like "lens-work*.prompt.md" -or $_.Name -like "lens-*.prompt.md" } |
         Where-Object { -not (Test-Path (Join-Path $releasePromptDir $_.Name)) } |
         Remove-Item -Force
 
     Get-ChildItem ".github/prompts" -File -Filter "*.prompt.md" |
-        Where-Object { $_.Name -notlike "lens-work*.prompt.md" } |
+        Where-Object { $_.Name -notlike "lens-work*.prompt.md" -and $_.Name -notlike "lens-*.prompt.md" } |
         Remove-Item -Force
 }
 

@@ -25,7 +25,7 @@ Ask the user for the feature vision. Produce a focused product brief covering:
 artifact = produce_artifact("product-brief", template="express")
 save_to: "${docs_path}/product-brief.md"
 
-# v3.4: 2-branch topology uses commit-and-publish (artifacts to plan branch + summary to main)
+# Use the repository's configured planning write path for express artifacts.
 if session.feature_yaml_context != null and session.feature_yaml_context.enabled == true:
   invoke: git-orchestration.commit-and-publish
   params:
@@ -56,7 +56,7 @@ Building on the product brief, produce a focused PRD:
 artifact = produce_artifact("prd", template="express", context=["product-brief"])
 save_to: "${docs_path}/prd.md"
 
-# v3.4: 2-branch topology uses commit-and-publish (artifacts to plan branch + summary to main)
+# Use the repository's configured planning write path for express artifacts.
 if session.feature_yaml_context != null and session.feature_yaml_context.enabled == true:
   invoke: git-orchestration.commit-and-publish
   params:
@@ -87,7 +87,7 @@ Produce a focused architecture document:
 artifact = produce_artifact("architecture", template="express", context=["product-brief", "prd"])
 save_to: "${docs_path}/architecture.md"
 
-# v3.4: 2-branch topology uses commit-and-publish (artifacts to plan branch + summary to main)
+# Use the repository's configured planning write path for express artifacts.
 if session.feature_yaml_context != null and session.feature_yaml_context.enabled == true:
   invoke: git-orchestration.commit-and-publish
   params:

@@ -66,7 +66,7 @@ If full preflight is required, pull ALL authority repos. Otherwise, skip pulls a
 
 ### 3. Sync .github from Release Repo
 
-On every preflight run, verify `.github/` completeness against `{release_repo_root}/.github/` and sync if files are missing. Also sync if release `.github/` changed during pull. Keep prompt hygiene: `.github/prompts/` must only contain `lens-work*.prompt.md` files.
+On every preflight run, verify `.github/` completeness against `{release_repo_root}/.github/` and sync if files are missing. Also sync if release `.github/` changed during pull. Keep prompt hygiene: `.github/prompts/` must only contain published lens-work prompt stubs, currently the `lens-work*.prompt.md` and `lens-*.prompt.md` families.
 
 ### Step 3b: Sync Agent Entry Points
 

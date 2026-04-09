@@ -68,6 +68,7 @@ def test_create_feature():
         assert_true("container markers returned", len(result.get("container_markers", [])) == 2)
         assert_true("git_commands non-empty", len(result.get("git_commands", [])) > 0)
         assert_true("gh_commands non-empty", len(result.get("gh_commands", [])) > 0)
+        assert_eq("planning_pr_created", result.get("planning_pr_created"), True)
 
         domain_marker = Path(tmp) / "features" / "platform" / "domain.yaml"
         service_marker = Path(tmp) / "features" / "platform" / "identity" / "service.yaml"
@@ -254,12 +255,34 @@ def test_dry_run():
         assert_eq("dry run exit code", code, 0)
         assert_true("git_commands present", len(result.get("git_commands", [])) > 0)
         assert_true("gh_commands present", len(result.get("gh_commands", [])) > 0)
+        assert_eq("dry run planning_pr_created", result.get("planning_pr_created"), True)
 
         feature_yaml = Path(tmp) / "features" / "platform" / "identity" / "dry-feature" / "feature.yaml"
         assert_eq("feature.yaml not created", feature_yaml.exists(), False)
 
+
+def test_express_track_defers_planning_pr():
+    """Express track creates branches but defers the empty planning PR until artifacts exist."""
+    print("test_express_track_defers_planning_pr", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        result, code = run([
+            "create",
+            "--governance-repo", tmp,
+            "--feature-id", "express-feature",
+            "--domain", "platform",
+            "--service", "identity",
+            "--name", "Express Feature",
+            "--track", "express",
+            "--username", "cweber",
+        ])
+
+        assert_eq("express create status", result.get("status"), "pass")
+        assert_eq("express create exit code", code, 0)
+        assert_eq("express planning_pr_created", result.get("planning_pr_created"), False)
+        assert_eq("express gh_commands empty", result.get("gh_commands", []), [])
+
         index_path = Path(tmp) / "feature-index.yaml"
-        assert_eq("index not created", index_path.exists(), False)
+        assert_eq("index created", index_path.exists(), True)
 
 
 def test_invalid_feature_id():
@@ -507,6 +530,7 @@ if __name__ == "__main__":
     test_duplicate_domain_service_rejected()
     test_index_created_when_missing()
     test_dry_run()
+    test_express_track_defers_planning_pr()
     test_invalid_feature_id()
     test_invalid_domain_service()
     test_duplicate_feature()

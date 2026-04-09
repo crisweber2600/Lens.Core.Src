@@ -48,6 +48,7 @@ if scope == "feature":
     ✅ Feature initiative created successfully.
     - Code branch: `${initiative_root}` (control repo)
     - Plan branch: `${initiative_root}-plan` (control repo)
+    - Planning PR: ${track == "express" ? 'deferred until planning artifacts exist on the plan branch' : 'created from `${initiative_root}-plan` to `${initiative_root}`'}
     - Feature metadata: `${config_path}`
     - Governance repo: all artifacts committed to `main` (no branches)
 
@@ -61,5 +62,5 @@ if scope == "feature":
   if track == "express":
     output_append: |
 
-      💡 Express track selected — run `/expressplan` to generate all planning artifacts in a single session.
+      💡 Express track selected — run `/expressplan` to generate the first planning artifacts before opening any planning PR.
 ```

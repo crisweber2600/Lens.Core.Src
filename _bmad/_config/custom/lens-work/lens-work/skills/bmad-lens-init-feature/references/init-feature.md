@@ -1,6 +1,6 @@
 # Init Feature Flow
 
-Initialize a new feature with 2-branch topology in the control repo, feature.yaml, governance index entry, and PR.
+Initialize a new feature with 2-branch topology in the control repo, feature.yaml, governance index entry, and track-aware planning PR behavior.
 
 ## Outcome
 
@@ -12,7 +12,8 @@ After this flow completes:
 - `feature-index.yaml` on `main` has a new entry for `{featureId}`
 - `summary.md` stub exists at `{governance-repo}/features/{domain}/{service}/{featureId}/summary.md` on `main`
 - All governance artifacts are committed directly to `main` — the governance repo never leaves `main`
-- A PR exists from `{featureId}-plan` → `{featureId}` titled "Planning: {feature name}" (control repo only)
+- A PR exists from `{featureId}-plan` → `{featureId}` titled "Planning: {feature name}" when the selected track creates a planning PR immediately
+- For the `express` track, the plan branch is created but the planning PR is deferred until planning artifacts exist
 
 ## Process
 
@@ -69,11 +70,11 @@ The script:
 2. Creates `feature.yaml` at `{governance-repo}/features/{domain}/{service}/{featureId}/feature.yaml`
 3. Adds an entry to `{governance-repo}/feature-index.yaml` (creates if absent)
 4. Creates `{governance-repo}/features/{domain}/{service}/{featureId}/summary.md` stub
-5. Returns `git_commands` and `gh_commands` arrays in the JSON output
+5. Returns `git_commands` and `gh_commands` arrays in the JSON output, plus `planning_pr_created` to indicate whether a PR should be opened immediately
 
 ### Step 4: Execute Git and GitHub Commands
 
-Execute the `git_commands` returned by the script in sequence, then the `gh_commands`:
+Execute the `git_commands` returned by the script in sequence, then the `gh_commands` when present:
 
 ```bash
 # Each command in git_commands runs in order
@@ -85,7 +86,8 @@ Execute the `git_commands` returned by the script in sequence, then the `gh_comm
 # git -C {governance_repo} commit -m "feat({domain}/{service}): init {featureId}"
 # git -C {governance_repo} push origin main
 
-# Then gh_commands (PR is in the control repo, not governance):
+# Then gh_commands when `planning_pr_created == true`
+# (PR is in the control repo, not governance):
 # gh pr create --repo {control_repo} --head {featureId}-plan --base {featureId} ...
 ```
 
@@ -103,7 +105,7 @@ Present the initialization summary to the user:
 | Domain Marker | `features/{domain}/domain.yaml` ✓ |
 | Service Marker | `features/{domain}/{service}/service.yaml` ✓ |
 | Feature YAML | `features/{domain}/{service}/{featureId}/feature.yaml` (governance `main`) |
-| PR | Planning: {feature name} (`{featureId}-plan` → `{featureId}`) (control repo) |
+| PR | Immediate planning PR for non-express tracks; deferred for `express` until planning artifacts exist |
 | Index | `feature-index.yaml` (governance `main`) ✓ |
 | Summary | `features/{domain}/{service}/{featureId}/summary.md` (governance `main`) ✓ |
 

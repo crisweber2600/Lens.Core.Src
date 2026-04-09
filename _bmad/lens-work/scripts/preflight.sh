@@ -195,12 +195,12 @@ echo -e "${GREEN}  ✓ .github/ synced (${UPDATED_COUNT} file(s) updated)${NC}"
 if [ -d ".github/prompts" ]; then
   while IFS= read -r prompt_file; do
     [ -f "${RELEASE_DIR}/${prompt_file}" ] || rm -f "${prompt_file}"
-  done < <(find .github/prompts -maxdepth 1 -type f -name 'lens-work*.prompt.md')
+  done < <(find .github/prompts -maxdepth 1 -type f \( -name 'lens-work*.prompt.md' -o -name 'lens-*.prompt.md' \))
 fi
 
-# Prompt hygiene: remove non-lens-work prompt files
+# Prompt hygiene: keep only published lens-work prompt families.
 if [ -d ".github/prompts" ]; then
-  find .github/prompts -type f -name '*.prompt.md' ! -name 'lens-work*.prompt.md' -delete
+  find .github/prompts -type f -name '*.prompt.md' ! \( -name 'lens-work*.prompt.md' -o -name 'lens-*.prompt.md' \) -delete
 fi
 
 # =============================================================================

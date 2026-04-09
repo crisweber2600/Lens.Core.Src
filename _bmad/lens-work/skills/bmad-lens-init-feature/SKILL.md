@@ -7,7 +7,7 @@ description: Feature initialization orchestrator — creates 2-branch topology, 
 
 ## Overview
 
-This skill orchestrates the full initialization of a new feature in the Lens governance framework. It creates the two-branch topology (`{featureId}` and `{featureId}-plan`) in the **control repo**, commits `feature.yaml` to governance `main`, registers the feature in `feature-index.yaml` on `main`, creates a `summary.md` stub on `main`, and opens a PR from the plan branch to the feature branch in the control repo — making the feature immediately visible to the team. The governance repo stays on `main` at all times; no feature branches are created there.
+This skill orchestrates the full initialization of a new feature in the Lens governance framework. It creates the two-branch topology (`{featureId}` and `{featureId}-plan`) in the **control repo**, commits `feature.yaml` to governance `main`, registers the feature in `feature-index.yaml` on `main`, creates a `summary.md` stub on `main`, and opens a PR from the plan branch to the feature branch in the control repo when the selected track uses an immediate planning PR. The governance repo stays on `main` at all times; no feature branches are created there. For the `express` track, the planning PR is deferred until planning artifacts exist on the plan branch.
 
 **Progressive disclosure:** you ask only for feature name, domain, and service upfront. Track, username, and repo paths are resolved from `user-profile.md`, config, and git config.
 
