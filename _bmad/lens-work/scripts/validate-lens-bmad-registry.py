@@ -28,6 +28,11 @@ def load_csv(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
+def prompt_is_supported_by_preflight(prompt_path: str) -> bool:
+    name = Path(prompt_path).name
+    return name.startswith("lens-work") or name.startswith("lens-")
+
+
 def main() -> int:
     module_root = Path(__file__).resolve().parent.parent
 
@@ -53,6 +58,12 @@ def main() -> int:
     adapter_prompts = set(module_yaml.get("adapters", {}).get("github-copilot", {}).get("stub_prompts", []))
     help_commands = {row["skill"] for row in module_help}
     topic_commands = {topic["command"] for topic in help_topics.get("topics", [])}
+
+    for adapter_prompt in adapter_prompts:
+        if not prompt_is_supported_by_preflight(adapter_prompt):
+            failures.append(
+                f"preflight prompt allowlist missing adapter stub family: {adapter_prompt}"
+            )
 
     for skill in registry.get("skills", []):
         prompt_file = skill["promptFile"]
