@@ -339,7 +339,12 @@ def main() -> int:
     _update = args.update
 
     script_dir = Path(__file__).resolve().parent
-    _project_root = script_dir.parents[4]  # .../Lens.Core.Src → workspace root
+    # Find control repo root: the directory that contains lens.core/
+    _cwd = Path.cwd()
+    _project_root = (
+        _cwd if (_cwd / "lens.core").exists()
+        else next(p for p in script_dir.parents if (p / "lens.core").exists())
+    )
 
     ides = args.ides or []
     if args.all_ides:

@@ -28,7 +28,11 @@ def main() -> int:
     args = parser.parse_args()
 
     script_dir = Path(__file__).resolve().parent
-    project_root = script_dir.parents[4]
+    _cwd = Path.cwd()
+    project_root = (
+        _cwd if (_cwd / "lens.core").exists()
+        else next(p for p in script_dir.parents if (p / "lens.core").exists())
+    )
     cache_file = project_root / "docs/lens-work/personal/.preflight-cache"
 
     now = int(time.time())

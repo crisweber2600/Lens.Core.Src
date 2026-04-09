@@ -359,7 +359,11 @@ def main() -> int:
         )
         project_root = Path(result.stdout.strip())
     except Exception:
-        project_root = script_dir.parents[4]
+        _cwd = Path.cwd()
+        project_root = (
+            _cwd if (_cwd / "lens.core").exists()
+            else next(p for p in script_dir.parents if (p / "lens.core").exists())
+        )
 
     if args.control_dir:
         project_root = Path(args.control_dir).resolve()
