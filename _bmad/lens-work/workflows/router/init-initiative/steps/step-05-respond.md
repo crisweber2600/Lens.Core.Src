@@ -46,10 +46,10 @@ if scope == "feature":
     📋 Phases: ${track_config.phases.join(', ')}
 
     ✅ Feature initiative created successfully.
-    - Code branch: `${initiative_root}`
-    - Plan branch: `${initiative_root}-plan`
+    - Code branch: `${initiative_root}` (control repo)
+    - Plan branch: `${initiative_root}-plan` (control repo)
     - Feature metadata: `${config_path}`
-    - Governance repo: `${governance_repo_path}`
+    - Governance repo: all artifacts committed to `main` (no branches)
 
     Visibility metadata on governance main:
     - `feature-index.yaml` entry for `${initiative_root}`

@@ -1,6 +1,6 @@
 # Init Feature Flow
 
-Initialize a new feature with 2-branch topology, feature.yaml, governance index entry, and PR.
+Initialize a new feature with 2-branch topology in the control repo, feature.yaml, governance index entry, and PR.
 
 ## Outcome
 
@@ -8,10 +8,11 @@ After this flow completes:
 
 - Branches `{featureId}` and `{featureId}-plan` exist in the control repo
 - Parent governance markers exist at `features/{domain}/domain.yaml` and `features/{domain}/{service}/service.yaml` when they were previously missing
-- `feature.yaml` exists at `{governance-repo}/features/{domain}/{service}/{featureId}/feature.yaml` on the `{featureId}-plan` branch
+- `feature.yaml` exists at `{governance-repo}/features/{domain}/{service}/{featureId}/feature.yaml` on `main`
 - `feature-index.yaml` on `main` has a new entry for `{featureId}`
 - `summary.md` stub exists at `{governance-repo}/features/{domain}/{service}/{featureId}/summary.md` on `main`
-- A PR exists from `{featureId}-plan` → `{featureId}` titled "Planning: {feature name}"
+- All governance artifacts are committed directly to `main` — the governance repo never leaves `main`
+- A PR exists from `{featureId}-plan` → `{featureId}` titled "Planning: {feature name}" (control repo only)
 
 ## Process
 
@@ -80,18 +81,15 @@ Execute the `git_commands` returned by the script in sequence, then the `gh_comm
 # git -C {control_repo} checkout -b {featureId}
 # git -C {control_repo} checkout -b {featureId}-plan
 # git -C {governance_repo} pull --rebase origin main
-# git -C {governance_repo} checkout -b {featureId}-plan
-# git -C {governance_repo} add features/{domain}/{service}/{featureId}/feature.yaml
-# git -C {governance_repo} commit -m "feat({domain}/{service}): init {featureId} planning artifacts"
-# git -C {governance_repo} push origin {featureId}-plan
-# git -C {governance_repo} checkout main
-# git -C {governance_repo} add feature-index.yaml features/{domain}/{service}/{featureId}/summary.md
-# git -C {governance_repo} commit -m "feat: add {featureId} to feature index"
+# git -C {governance_repo} add features/{domain}/{service}/{featureId}/feature.yaml feature-index.yaml features/{domain}/{service}/{featureId}/summary.md [container markers...]
+# git -C {governance_repo} commit -m "feat({domain}/{service}): init {featureId}"
 # git -C {governance_repo} push origin main
 
-# Then gh_commands:
+# Then gh_commands (PR is in the control repo, not governance):
 # gh pr create --repo {control_repo} --head {featureId}-plan --base {featureId} ...
 ```
+
+> **Note:** The governance repo stays on `main` throughout — no feature branches are created there. The 2-branch topology (`{featureId}` + `{featureId}-plan`) exists only in the control repo.
 
 ### Step 5: Confirm Initialization
 
@@ -100,13 +98,13 @@ Present the initialization summary to the user:
 | Field | Value |
 |-------|-------|
 | Feature ID | `{featureId}` |
-| Feature Branch | `{featureId}` |
-| Plan Branch | `{featureId}-plan` |
+| Feature Branch | `{featureId}` (control repo) |
+| Plan Branch | `{featureId}-plan` (control repo) |
 | Domain Marker | `features/{domain}/domain.yaml` ✓ |
 | Service Marker | `features/{domain}/{service}/service.yaml` ✓ |
-| Feature YAML | `features/{domain}/{service}/{featureId}/feature.yaml` |
-| PR | Planning: {feature name} (`{featureId}-plan` → `{featureId}`) |
-| Index | `feature-index.yaml` ✓ |
-| Summary | `features/{domain}/{service}/{featureId}/summary.md` ✓ |
+| Feature YAML | `features/{domain}/{service}/{featureId}/feature.yaml` (governance `main`) |
+| PR | Planning: {feature name} (`{featureId}-plan` → `{featureId}`) (control repo) |
+| Index | `feature-index.yaml` (governance `main`) ✓ |
+| Summary | `features/{domain}/{service}/{featureId}/summary.md` (governance `main`) ✓ |
 
 Offer to run **Auto-Context Pull** to load domain context before handing off to planning.

@@ -238,12 +238,18 @@ def build_git_commands(
     service: str,
     container_rel_paths: list[str] | None = None,
 ) -> list[str]:
-    """Return the ordered git commands needed to commit the initialized feature."""
+    """Return the ordered git commands needed to commit the initialized feature.
+
+    Governance repo stays on main — all artifacts (feature.yaml, summary.md,
+    feature-index.yaml, container markers) are committed directly to main.
+    The 2-branch topology ({featureId} + {featureId}-plan) only exists in the
+    control repo.
+    """
     gov = governance_repo
     plan_branch = f"{feature_id}-plan"
     feature_yaml_rel = f"features/{domain}/{service}/{feature_id}/feature.yaml"
     summary_rel = f"features/{domain}/{service}/{feature_id}/summary.md"
-    visibility_paths = ["feature-index.yaml", summary_rel, *(container_rel_paths or [])]
+    all_paths = [feature_yaml_rel, "feature-index.yaml", summary_rel, *(container_rel_paths or [])]
 
     cmds: list[str] = []
 
@@ -255,13 +261,8 @@ def build_git_commands(
 
     cmds.extend([
         f"git -C {gov} pull --rebase origin main",
-        f"git -C {gov} checkout -b {plan_branch}",
-        f"git -C {gov} add {feature_yaml_rel}",
-        f'git -C {gov} commit -m "feat({domain}/{service}): init {feature_id} planning artifacts"',
-        f"git -C {gov} push origin {plan_branch}",
-        f"git -C {gov} checkout main",
-        f"git -C {gov} add {' '.join(visibility_paths)}",
-        f'git -C {gov} commit -m "feat: add {feature_id} to feature index"',
+        f"git -C {gov} add {' '.join(all_paths)}",
+        f'git -C {gov} commit -m "feat({domain}/{service}): init {feature_id}"',
         f"git -C {gov} push origin main",
     ])
 
@@ -380,6 +381,8 @@ def cmd_create(args: argparse.Namespace) -> dict:
         "service": service,
         "status": "preplan",
         "owner": username,
+        # plan_branch refers to the control repo branch, not the governance repo.
+        # Governance keeps all artifacts on main.
         "plan_branch": f"{feature_id}-plan",
         "related_features": {"depends_on": [], "blocks": [], "related": []},
         "updated_at": timestamp,

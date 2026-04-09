@@ -175,10 +175,8 @@ def _feature_summary(fid: str, phase: str | None, plan_exists: bool,
         return f"WARNING: {len(discrepancies)} discrepancy(ies) — {discrepancies[0]}"
     if errors:
         return f"ERROR: {errors[0]}"
-    plan_str = "plan branch present" if plan_exists else "no plan branch"
-    dev_str = f", {len(dev_branches)} dev branch(es)" if dev_branches else ""
     phase_str = phase or "unknown phase"
-    return f"Feature '{fid}' is in {phase_str} ({plan_str}{dev_str}), no discrepancies"
+    return f"Feature '{fid}' is in {phase_str}, no discrepancies"
 
 
 # ---------------------------------------------------------------------------
@@ -196,18 +194,17 @@ def cmd_feature_state(args: argparse.Namespace) -> dict:
         "phase": None,
         "track": None,
         "status": None,
-        "base_branch_exists": False,
-        "plan_branch_exists": False,
-        "dev_branches": [],
+        "yaml_on_main": False,
         "discrepancies": [],
         "summary": "",
         "errors": [],
     }
 
-    # --- feature.yaml ---
+    # --- feature.yaml (governance repo keeps everything on main) ---
     yaml_path = find_feature_yaml(repo, fid)
     if yaml_path:
         result["yaml_path"] = str(yaml_path.relative_to(repo))
+        result["yaml_on_main"] = True
         data, err = load_feature_yaml(yaml_path)
         if err:
             result["errors"].append(err)
@@ -220,39 +217,18 @@ def cmd_feature_state(args: argparse.Namespace) -> dict:
             f"feature.yaml not found for '{fid}' — run bmad-lens-feature-yaml to create one"
         )
 
-    # --- branches (batched: one local call covers all three checks) ---
-    local_cache = get_all_local_branches(repo)
-    result["base_branch_exists"] = branch_exists(repo, fid, include_remote, local_cache)
-    result["plan_branch_exists"] = branch_exists(repo, f"{fid}-plan", include_remote, local_cache)
-    dev_branches = list_branches_matching(repo, f"{fid}-dev-*", include_remote)
-    result["dev_branches"] = [b["branch"] for b in dev_branches]
-
     # --- discrepancy detection ---
     discrepancies = []
 
-    early_phases = {"draft", "preplan"}
-    if result["phase"] in early_phases and result["plan_branch_exists"]:
-        discrepancies.append(
-            f"feature.yaml phase is '{result['phase']}' but {fid}-plan branch already exists"
-        )
-
-    active_phases = {"sprintplan", "techplan", "quickplan", "dev", "review", "done"}
-    if result["phase"] in active_phases and not result["base_branch_exists"]:
-        discrepancies.append(
-            f"feature.yaml phase is '{result['phase']}' but base branch '{fid}' does not exist"
-        )
-
-    if result["status"] == "complete" and (
-        result["base_branch_exists"] or result["plan_branch_exists"] or result["dev_branches"]
-    ):
-        discrepancies.append(
-            "feature.yaml status is 'complete' but active branches still exist"
-        )
+    if result["status"] == "complete" and result["yaml_on_main"]:
+        # Complete features should eventually have their feature.yaml removed or archived.
+        # This is informational, not necessarily a hard error.
+        pass
 
     result["discrepancies"] = discrepancies
     result["summary"] = _feature_summary(
-        fid, result["phase"], result["plan_branch_exists"],
-        result["dev_branches"], discrepancies, result["errors"]
+        fid, result["phase"], False,
+        [], discrepancies, result["errors"]
     )
     return result
 
@@ -306,6 +282,11 @@ def cmd_branches(args: argparse.Namespace) -> dict:
 
 
 def cmd_active_features(args: argparse.Namespace) -> dict:
+    """Enumerate features in the governance repo by their feature.yaml metadata.
+
+    The governance repo stays on main — no feature branches exist there.
+    This command scans feature.yaml files and reports their lifecycle state.
+    """
     repo = args.governance_repo
     domain_filter = getattr(args, "domain", None)
     phase_filter = getattr(args, "phase", None)
@@ -317,10 +298,6 @@ def cmd_active_features(args: argparse.Namespace) -> dict:
     repo_path = Path(repo)
     features = []
     ghost_yamls = []
-    unregistered_branches = []
-
-    # Single branch listing call — used to avoid N×3 subprocess overhead (HO-3 fix)
-    local_cache = get_all_local_branches(repo)
 
     # Collect all feature.yaml files
     yaml_files = []
@@ -358,15 +335,8 @@ def cmd_active_features(args: argparse.Namespace) -> dict:
         if status_filter and data.get("status") != status_filter:
             continue
 
-        # Use local_cache for O(1) branch lookups
-        base_exists = branch_exists(repo, fid, include_remote, local_cache)
-        plan_exists = branch_exists(repo, f"{fid}-plan", include_remote, local_cache)
-        dev_branches = [
-            br for br in local_cache if br.startswith(f"{fid}-dev-")
-        ]
-
-        has_active_branches = base_exists or plan_exists or bool(dev_branches)
-        if not has_active_branches and data.get("status") not in ("active", "paused"):
+        # Skip completed/cancelled features unless explicitly filtered
+        if not status_filter and data.get("status") not in ("active", "paused", None):
             continue
 
         features.append({
@@ -376,31 +346,14 @@ def cmd_active_features(args: argparse.Namespace) -> dict:
             "phase": data.get("phase"),
             "track": data.get("track"),
             "status": data.get("status"),
-            "base_branch_exists": base_exists,
-            "plan_branch_exists": plan_exists,
-            "dev_branches": dev_branches,
             "yaml_path": str(yaml_file.relative_to(repo_path)),
         })
 
     if total_scanned > 20:
         print("", file=sys.stderr)  # clear progress line
 
-    # Detect branches with no feature.yaml (MO-3 fix: flag single-branch orphans too)
-    known_ids = {f["feature_id"] for f in features}
-    reserved = {"main", "master", "develop", "HEAD"}
-    for br in local_cache:
-        if "/" not in br and br not in reserved and br not in known_ids:
-            # Not a known -plan or -dev- suffix branch
-            if not any(br.endswith(sfx) for sfx in ("-plan",)) and "-dev-" not in br:
-                has_plan = f"{br}-plan" in local_cache
-                unregistered_branches.append({
-                    "branch": br,
-                    "confidence": "likely-feature" if has_plan else "possible-feature",
-                })
-
     return {
         "features": features,
-        "unregistered_branches": unregistered_branches,
         "ghost_yamls": ghost_yamls,
         "total_active": len(features),
         "scanned": total_scanned,
