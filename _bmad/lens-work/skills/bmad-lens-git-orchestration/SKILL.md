@@ -22,8 +22,8 @@ I am the Git Orchestration skill for Lens — I handle all git write operations 
 
 ## Principles
 
-- **2-branch invariant**: Every feature has exactly `{featureId}` (base) and `{featureId}-plan` (planning) branches. Dev branches (`{featureId}-dev-{username}`) are optional and per-contributor.
-- **Governance first**: `feature.yaml` in the governance repo is the source of truth. Branch creation validates that a feature.yaml exists before proceeding.
+- **2-branch invariant**: Every feature has exactly `{featureId}` (base) and `{featureId}-plan` (planning) branches in the **control repo**. Dev branches (`{featureId}-dev-{username}`) are optional and per-contributor. The governance repo stays on `main` — no feature branches are created there.
+- **Governance main-only**: `feature.yaml` and all governance artifacts live on `main` in the governance repo. Branch topology only exists in the control repo.
 - **Atomic commits**: State file updates and artifact commits are always staged and committed together — never separately.
 - **No silent pushes**: Remote push only happens when explicitly requested or when a phase is complete.
 - **Read before write**: All precondition checks (branch existence, clean state) run before any write.

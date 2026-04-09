@@ -196,67 +196,28 @@ class TestCmdFeatureState:
         a.feature_id = feature_id
         return a
 
-    def test_no_yaml_no_branches(self, repo):
+    def test_no_yaml(self, repo):
         result = ops.cmd_feature_state(self._args(repo, "ghost-feat"))
-        assert result["base_branch_exists"] is False
-        assert result["plan_branch_exists"] is False
-        assert result["dev_branches"] == []
+        assert result["yaml_on_main"] is False
         assert any("not found" in e for e in result["errors"])
 
-    def test_yaml_present_branches_absent(self, repo):
+    def test_yaml_present_on_main(self, repo):
         write_feature_yaml(repo, "my-feat", phase="preplan")
         result = ops.cmd_feature_state(self._args(repo, "my-feat"))
         assert result["phase"] == "preplan"
-        assert result["base_branch_exists"] is False
-        assert result["plan_branch_exists"] is False
+        assert result["yaml_on_main"] is True
         assert result["errors"] == []
 
-    def test_yaml_and_both_branches(self, repo):
-        write_feature_yaml(repo, "my-feat", phase="dev")
-        make_branch(repo, "my-feat")
-        make_branch(repo, "my-feat-plan")
+    def test_yaml_fields_populated(self, repo):
+        write_feature_yaml(repo, "my-feat", phase="dev", track="full", status="active")
         result = ops.cmd_feature_state(self._args(repo, "my-feat"))
-        assert result["base_branch_exists"] is True
-        assert result["plan_branch_exists"] is True
+        assert result["phase"] == "dev"
+        assert result["track"] == "full"
+        assert result["status"] == "active"
+        assert result["yaml_on_main"] is True
 
-    def test_dev_branches_detected(self, repo):
-        write_feature_yaml(repo, "dev-feat", phase="dev")
-        make_branch(repo, "dev-feat")
-        make_branch(repo, "dev-feat-dev-alice")
-        result = ops.cmd_feature_state(self._args(repo, "dev-feat"))
-        assert "dev-feat-dev-alice" in result["dev_branches"]
-
-    def test_multiple_dev_branches(self, repo):
-        write_feature_yaml(repo, "team-feat", phase="dev")
-        make_branch(repo, "team-feat")
-        make_branch(repo, "team-feat-dev-alice")
-        make_branch(repo, "team-feat-dev-bob")
-        result = ops.cmd_feature_state(self._args(repo, "team-feat"))
-        assert len(result["dev_branches"]) == 2
-
-    def test_discrepancy_early_phase_with_plan_branch(self, repo):
-        write_feature_yaml(repo, "early-feat", phase="preplan")
-        make_branch(repo, "early-feat-plan")
-        result = ops.cmd_feature_state(self._args(repo, "early-feat"))
-        assert len(result["discrepancies"]) >= 1
-        assert any("plan branch" in d for d in result["discrepancies"])
-
-    def test_discrepancy_active_phase_missing_base_branch(self, repo):
-        write_feature_yaml(repo, "missing-base", phase="dev")
-        result = ops.cmd_feature_state(self._args(repo, "missing-base"))
-        assert any("base branch" in d.lower() or "does not exist" in d for d in result["discrepancies"])
-
-    def test_discrepancy_complete_with_active_branches(self, repo):
-        write_feature_yaml(repo, "done-feat", phase="done", status="complete")
-        make_branch(repo, "done-feat")
-        make_branch(repo, "done-feat-plan")
-        result = ops.cmd_feature_state(self._args(repo, "done-feat"))
-        assert any("complete" in d for d in result["discrepancies"])
-
-    def test_no_discrepancy_healthy_dev(self, repo):
+    def test_no_discrepancy_normal_feature(self, repo):
         write_feature_yaml(repo, "healthy-feat", phase="dev", status="active")
-        make_branch(repo, "healthy-feat")
-        make_branch(repo, "healthy-feat-plan")
         result = ops.cmd_feature_state(self._args(repo, "healthy-feat"))
         assert result["discrepancies"] == []
 
@@ -361,8 +322,6 @@ class TestCmdActiveFeatures:
 
     def test_finds_active_feature(self, repo):
         write_feature_yaml(repo, "active-feat", phase="dev", status="active")
-        make_branch(repo, "active-feat")
-        make_branch(repo, "active-feat-plan")
         result = ops.cmd_active_features(self._args(repo))
         ids = [f["feature_id"] for f in result["features"]]
         assert "active-feat" in ids
@@ -370,8 +329,6 @@ class TestCmdActiveFeatures:
     def test_filters_by_domain(self, repo):
         write_feature_yaml(repo, "feat-a", domain="billing", service="api", phase="dev", status="active")
         write_feature_yaml(repo, "feat-b", domain="shipping", service="api", phase="dev", status="active")
-        make_branch(repo, "feat-a")
-        make_branch(repo, "feat-b")
         result = ops.cmd_active_features(self._args(repo, domain="billing"))
         ids = [f["feature_id"] for f in result["features"]]
         assert "feat-a" in ids
@@ -380,8 +337,6 @@ class TestCmdActiveFeatures:
     def test_filters_by_phase(self, repo):
         write_feature_yaml(repo, "in-dev", phase="dev", status="active")
         write_feature_yaml(repo, "in-review", phase="review", status="active")
-        make_branch(repo, "in-dev")
-        make_branch(repo, "in-review")
         result = ops.cmd_active_features(self._args(repo, phase="dev"))
         ids = [f["feature_id"] for f in result["features"]]
         assert "in-dev" in ids
@@ -390,20 +345,10 @@ class TestCmdActiveFeatures:
     def test_filters_by_track(self, repo):
         write_feature_yaml(repo, "hotfix-1", track="hotfix", phase="dev", status="active")
         write_feature_yaml(repo, "full-1", track="full", phase="dev", status="active")
-        make_branch(repo, "hotfix-1")
-        make_branch(repo, "full-1")
         result = ops.cmd_active_features(self._args(repo, track="hotfix"))
         ids = [f["feature_id"] for f in result["features"]]
         assert "hotfix-1" in ids
         assert "full-1" not in ids
-
-    def test_detects_unregistered_base_branch(self, repo):
-        # A branch that looks like a feature root but has no feature.yaml
-        make_branch(repo, "orphan-feat")
-        make_branch(repo, "orphan-feat-plan")  # has a -plan branch = looks like feature topology
-        result = ops.cmd_active_features(self._args(repo))
-        branch_names = [b["branch"] for b in result["unregistered_branches"]]
-        assert "orphan-feat" in branch_names
 
     def test_ghost_yaml_for_malformed_yaml(self, repo):
         bad_dir = repo / "features" / "platform" / "api" / "bad-feat"
@@ -416,26 +361,23 @@ class TestCmdActiveFeatures:
         for i in range(3):
             fid = f"feat-{i}"
             write_feature_yaml(repo, fid, service=f"svc{i}", phase="dev", status="active")
-            make_branch(repo, fid)
         result = ops.cmd_active_features(self._args(repo))
         assert result["total_active"] == 3
 
-    def test_complete_feature_without_branches_excluded(self, repo):
+    def test_complete_feature_excluded_by_default(self, repo):
         write_feature_yaml(repo, "finished-feat", phase="done", status="complete")
         result = ops.cmd_active_features(self._args(repo))
         ids = [f["feature_id"] for f in result["features"]]
         assert "finished-feat" not in ids
 
-    def test_paused_feature_with_branches_included(self, repo):
+    def test_paused_feature_included(self, repo):
         write_feature_yaml(repo, "paused-feat", phase="dev", status="paused")
-        make_branch(repo, "paused-feat")
         result = ops.cmd_active_features(self._args(repo))
         ids = [f["feature_id"] for f in result["features"]]
         assert "paused-feat" in ids
 
     def test_result_includes_yaml_path(self, repo):
         write_feature_yaml(repo, "path-check-feat", phase="dev", status="active")
-        make_branch(repo, "path-check-feat")
         result = ops.cmd_active_features(self._args(repo))
         feat = next((f for f in result["features"] if f["feature_id"] == "path-check-feat"), None)
         assert feat is not None
@@ -479,21 +421,13 @@ class TestFeatureStateSummaryField:
 
     def test_summary_present_in_output(self, repo):
         write_feature_yaml(repo, "summ-feat", phase="dev", status="active")
-        make_branch(repo, "summ-feat")
         result = ops.cmd_feature_state(self._args(repo, "summ-feat"))
         assert "summary" in result
         assert isinstance(result["summary"], str)
         assert len(result["summary"]) > 0
 
-    def test_summary_contains_warning_on_discrepancy(self, repo):
-        write_feature_yaml(repo, "disc-feat", phase="dev")  # active phase, no base branch
-        result = ops.cmd_feature_state(self._args(repo, "disc-feat"))
-        assert "WARNING" in result["summary"]
-
     def test_summary_ok_when_healthy(self, repo):
         write_feature_yaml(repo, "ok-feat", phase="dev", status="active")
-        make_branch(repo, "ok-feat")
-        make_branch(repo, "ok-feat-plan")
         result = ops.cmd_feature_state(self._args(repo, "ok-feat"))
         assert result["discrepancies"] == []
         assert "WARNING" not in result["summary"]
@@ -505,23 +439,12 @@ class TestFeatureStateSummaryField:
 
 
 class TestExitCodeDiscrepancy:
-    """Exit code 2 when feature-state finds discrepancies (HO-2)."""
-    def test_exit_2_on_discrepancy(self, repo, tmp_path):
-        import subprocess as sp
-        script = str(Path(__file__).parent.parent / "git-state-ops.py")
-        write_feature_yaml(repo, "disc-exit", phase="dev")  # no base branch → discrepancy
-        proc = sp.run(
-            ["uv", "run", "--script", script, "feature-state",
-             "--governance-repo", str(repo), "--feature-id", "disc-exit"],
-            capture_output=True, text=True
-        )
-        assert proc.returncode == 2
+    """Exit code behavior for feature-state (HO-2)."""
 
     def test_exit_0_when_clean(self, repo):
         import subprocess as sp
         script = str(Path(__file__).parent.parent / "git-state-ops.py")
         write_feature_yaml(repo, "clean-exit", phase="dev", status="active")
-        make_branch(repo, "clean-exit")
         proc = sp.run(
             ["uv", "run", "--script", script, "feature-state",
              "--governance-repo", str(repo), "--feature-id", "clean-exit"],
@@ -580,8 +503,6 @@ class TestActiveFeatureStatusFilter:
     def test_filter_active_only(self, repo):
         write_feature_yaml(repo, "active-s", phase="dev", status="active")
         write_feature_yaml(repo, "paused-s", phase="dev", status="paused")
-        make_branch(repo, "active-s")
-        make_branch(repo, "paused-s")
         result = ops.cmd_active_features(self._args(repo, status="active"))
         ids = [f["feature_id"] for f in result["features"]]
         assert "active-s" in ids
@@ -590,8 +511,6 @@ class TestActiveFeatureStatusFilter:
     def test_filter_paused_only(self, repo):
         write_feature_yaml(repo, "active-t", phase="dev", status="active")
         write_feature_yaml(repo, "paused-t", phase="dev", status="paused")
-        make_branch(repo, "active-t")
-        make_branch(repo, "paused-t")
         result = ops.cmd_active_features(self._args(repo, status="paused"))
         ids = [f["feature_id"] for f in result["features"]]
         assert "paused-t" in ids
@@ -617,7 +536,6 @@ class TestActiveFeatureLimitFlag:
         for i in range(5):
             fid = f"lim-feat-{i}"
             write_feature_yaml(repo, fid, service=f"s{i}", phase="dev", status="active")
-            make_branch(repo, fid)
         result = ops.cmd_active_features(self._args(repo, limit=3))
         assert len(result["features"]) <= 3
         assert result["limited"] is True
@@ -626,48 +544,9 @@ class TestActiveFeatureLimitFlag:
         for i in range(3):
             fid = f"nolim-feat-{i}"
             write_feature_yaml(repo, fid, service=f"s{i}", phase="dev", status="active")
-            make_branch(repo, fid)
         result = ops.cmd_active_features(self._args(repo, limit=None))
         assert result["total_active"] == 3
         assert result["limited"] is False
-
-
-class TestUnregisteredBranchConfidence:
-    """MO-3: unregistered detection with confidence field and single-branch orphans."""
-    def _args(self, repo):
-        class A:
-            pass
-        a = A()
-        a.governance_repo = str(repo)
-        a.domain = None
-        a.phase = None
-        a.track = None
-        a.status = None
-        a.limit = None
-        a.include_remote = False
-        return a
-
-    def test_likely_feature_has_plan_companion(self, repo):
-        make_branch(repo, "orphan-feat")
-        make_branch(repo, "orphan-feat-plan")
-        result = ops.cmd_active_features(self._args(repo))
-        match = next((b for b in result["unregistered_branches"] if b["branch"] == "orphan-feat"), None)
-        assert match is not None
-        assert match["confidence"] == "likely-feature"
-
-    def test_possible_feature_no_plan(self, repo):
-        make_branch(repo, "solo-orphan")
-        result = ops.cmd_active_features(self._args(repo))
-        match = next((b for b in result["unregistered_branches"] if b["branch"] == "solo-orphan"), None)
-        assert match is not None
-        assert match["confidence"] == "possible-feature"
-
-    def test_known_feature_not_flagged_as_unregistered(self, repo):
-        write_feature_yaml(repo, "known-feat", phase="dev", status="active")
-        make_branch(repo, "known-feat")
-        result = ops.cmd_active_features(self._args(repo))
-        branches = [b["branch"] for b in result["unregistered_branches"]]
-        assert "known-feat" not in branches
 
 
 if __name__ == "__main__":
