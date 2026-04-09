@@ -96,7 +96,12 @@ def main() -> int:
     args = parser.parse_args()
 
     script_dir = Path(__file__).resolve().parent
-    project_root = script_dir.parents[4]  # .../Lens.Core.Src → workspace root
+    # Find control repo root: the directory that contains lens.core/
+    _cwd = Path.cwd()
+    project_root = (
+        _cwd if (_cwd / "lens.core").exists()
+        else next(p for p in script_dir.parents if (p / "lens.core").exists())
+    )
     release_dir = project_root / "lens.core"
     timestamp_file = project_root / "docs/lens-work/personal/.preflight-timestamp"
     hash_file = project_root / "docs/lens-work/personal/.github-hashes"
