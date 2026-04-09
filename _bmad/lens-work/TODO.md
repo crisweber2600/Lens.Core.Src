@@ -44,7 +44,7 @@ All workflow directories created with SKILL.md, workflow.md, step files, and pro
 
 ### Script Extraction — ✅ COMPLETED
 
-All scripts extracted to `scripts/` as paired `.sh` + `.ps1` files:
+All scripts extracted to `scripts/` as cross-platform Python (`.py`) files:
 
 **High (done):** `derive-initiative-status`, `scan-active-initiatives`, `load-command-registry`, `validate-phase-artifacts`, `plan-lifecycle-renames`
 

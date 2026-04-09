@@ -2,7 +2,7 @@
 name: 'step-04-closeout'
 description: 'Commit devproposal artifacts, create the devproposal milestone branch, open PR, update state, and report the next command'
 promotionCheckInclude: '../../../includes/promotion-check.md'
-createPrScript: '../../../../scripts/create-pr.ps1'
+createPrScript: '../../../../scripts/create-pr.py'
 ---
 
 # Step 4: Close Out The DevProposal Phase

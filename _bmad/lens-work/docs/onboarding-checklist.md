@@ -21,16 +21,16 @@ A step-by-step guide from zero to your first running initiative. Each section bu
 
 ```bash
 # macOS/Linux:
-./{release_repo_root}/lens.core/_bmad/lens-work/scripts/store-github-pat.sh
+uv run {release_repo_root}/lens.core/_bmad/lens-work/scripts/store-github-pat.py
 
 # Windows:
-powershell .\{release_repo_root}\lens.core\_bmad\lens-work\scripts\store-github-pat.ps1
+powershell uv run {release_repo_root}/lens.core/_bmad/lens-work/scripts/store-github-pat.py
 ```
 
 - [ ] Verify PAT is stored: the script will confirm `GITHUB_PAT` or `GH_TOKEN` is set
 
 > **Troubleshooting:**
-> - "Permission denied" → Make the script executable: `chmod +x scripts/store-github-pat.sh`
+> - "Permission denied" → Make the script executable: `chmod +x scripts/store-github-pat.py`
 > - PAT not persisting across terminals → Add `export GITHUB_PAT=...` to your shell profile (`.bashrc`, `.zshrc`, or PowerShell `$PROFILE`)
 > - PAT resolution order: `GITHUB_PAT` env var → `GH_TOKEN` env var → `profile.yaml` → URL-only fallback
 
@@ -42,10 +42,10 @@ powershell .\{release_repo_root}\lens.core\_bmad\lens-work\scripts\store-github-
 - [ ] Run the setup script:
 
 ```bash
-./setup-control-repo.sh
+uv run setup-control-repo.py
 
 # Windows:
-powershell .\setup-control-repo.ps1
+powershell uv run setup-control-repo.py
 ```
 
 - [ ] Verify the output:
@@ -77,8 +77,8 @@ powershell .\setup-control-repo.ps1
 - [ ] Verify: `profile.yaml` exists and contains your username and provider
 
 > **Troubleshooting:**
-> - "No governance repo found" → Run `setup-control-repo.sh` first (Phase 2)
-> - "PAT validation failed" → Re-run `store-github-pat.sh` (Phase 1)
+> - "No governance repo found" → Run `setup-control-repo.py` first (Phase 2)
+> - "PAT validation failed" → Re-run `store-github-pat.py` (Phase 1)
 > - "TargetProjects path not found" → Check `bmadconfig.yaml` has the correct `target_projects_path`
 
 ---

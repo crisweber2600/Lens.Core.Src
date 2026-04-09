@@ -24,7 +24,7 @@ Before shared preflight, confirm that:
 - `{project-root}/lens.core/` exists
 - `LENS_VERSION` exists in the control repo root
 
-If either prerequisite is missing, stop and direct the user to run `/lens-work.setup-repo` or `setup-control-repo.sh|ps1` first. Do **not** run shared preflight until those bootstrap artifacts exist.
+If either prerequisite is missing, stop and direct the user to run `/lens-work.setup-repo` or `setup-control-repo.py|ps1` first. Do **not** run shared preflight until those bootstrap artifacts exist.
 
 ### Step 1: Run Preflight
 

@@ -45,7 +45,7 @@ The initial v2.0 release established the core contract-driven architecture. The 
 - **6 utility workflows** — onboard, status, next, switch, help, module-management
 - **3 governance workflows** — compliance-check, cross-initiative, resolve-constitution
 - **13 prompts** — one per user-facing command
-- **5 cross-platform scripts** — install, create-pr, promote-branch, setup-control-repo, store-github-pat
+- **4 cross-platform scripts** — install, create-pr, setup-control-repo, store-github-pat
 - **4 IDE adapters** — github-copilot, cursor, claude, codex
 - **Audience-based promotion** — small → medium → large → base
 - **4 tracks** — full, feature, tech-change, hotfix
@@ -461,7 +461,7 @@ A comprehensive quality scan identified 379 issues (4 critical, 62 high, 293 med
 
 ### Script Extraction
 
-Nine new paired `.sh` + `.ps1` scripts extracted from workflow markdown into standalone executables:
+Nine new Python scripts extracted from workflow markdown into standalone executables:
 
 | Script | Source Workflow | Purpose |
 |--------|---------------|---------|
@@ -473,7 +473,7 @@ Nine new paired `.sh` + `.ps1` scripts extracted from workflow markdown into sta
 | `validate-feature-move` | move-feature/step-01 | Validate move target, check conflicts, verify scope |
 | `bootstrap-target-projects` | onboard/step-03 | Clone/verify repos from governance repo-inventory.yaml |
 | `derive-next-action` | next/step-02 | Apply lifecycle decision rules, return next command or gate |
-| `run-preflight-cached` | preflight | Timestamp-cached wrapper around preflight.sh (TTL-based) |
+| `run-preflight-cached` | preflight | Timestamp-cached wrapper around preflight.py (TTL-based) |
 
 ### New Workflows
 
@@ -533,7 +533,7 @@ Five new workflow directories with full step-driven architecture, SKILL.md, and 
 | Workflows | 20+ updated (preflight, init-initiative, expressplan, sprintplan, discover, help, status, dashboard, move-feature, next, cross-initiative + step files); 5 router workflows updated (`inputs: []`); 6 new workflow directories (approval-status, rollback-phase, pause-epic, resume-epic, audit-all, profile) |
 | Documentation | 8 updated (architecture §12 governance requirements, configuration-examples, GETTING-STARTED, onboarding-checklist, pipeline-source-to-release, copilot-repo-instructions, README); 1 added (preflight-strategy.md) |
 | Agents | lens.agent.md, lens.agent.yaml updated (7 new menu items: AS, RB, PE, RE, AA, PF + config diagnostics) |
-| Scripts | preflight.sh, promote-branch.sh fixed; 18 new scripts (9 `.sh` + 9 `.ps1` pairs) |
+| Scripts | All scripts converted to cross-platform Python (`.py`); `promote-branch` removed (v3.4+) |
 | Meta | TODO.md updated — all enhancement roadmap items tracked; module-help.csv updated (6 new entries) |
 
 ---

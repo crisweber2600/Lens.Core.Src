@@ -143,7 +143,7 @@ personal_output_folder: "docs/lens-work/personal"
 If your team uses multiple editors, install adapters for all of them:
 
 ```bash
-./lens.core/_bmad/lens-work/scripts/install.sh --all-ides
+uv run lens.core/_bmad/lens-work/scripts/install.py --all-ides
 ```
 
 This generates adapter files for:
