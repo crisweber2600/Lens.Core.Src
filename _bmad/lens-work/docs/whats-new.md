@@ -1,15 +1,16 @@
-# What's New in LENS Workbench — v2.0 to v3.2.1
+# What's New in LENS Workbench — v2.0 to v4.0
 
-**Date:** April 1, 2026
+**Date:** April 2, 2026
 **Audience:** New and existing LENS users, module developers
 
-This guide summarizes every significant change from the initial v2.0 release through the current v3.2, organized by version milestone. Use the table of contents to jump to the version you're upgrading from.
+This guide summarizes every significant change from the initial v2.0 release through the current v4.0, organized by version milestone. Use the table of contents to jump to the version you're upgrading from.
 
 ---
 
 ## Table of Contents
 
 - [Version Timeline](#version-timeline)
+- [v3.2.1 → v4.0 — Module Audit & Best-Practice Upgrade](#v321--v40--module-audit--best-practice-upgrade)
 - [v2.0 → v2.x — Foundation & Hardening](#v20--v2x--foundation--hardening-mar-9-23-2026)
 - [v2.x → v3.0 — Milestone Architecture](#v2x--v30--milestone-architecture-mar-31-2026)
 - [v3.0 → v3.1 — Lifecycle Improvements](#v30--v31--lifecycle-improvements-apr-1-2026)
@@ -30,6 +31,49 @@ This guide summarizes every significant change from the initial v2.0 release thr
 | **3.1** | 3.1 | Apr 1 | 10 lifecycle improvements — dashboard, templates, gate collapsing, sensing, branch cleanup | 1 (batch) |
 | **3.2** | 3.2 | Apr 1 | Express track, retrospective, feature mobility, onboarding docs | 2 |
 | **3.2.1** | 3.2 | Apr 1 | Quality scan remediation — i18n, efficiency, docs, path correctness | 1 |
+| **4.0** | 3.4 | Apr 2 | Module audit & best-practice upgrade — 125-prompt validation, 44 new stubs, CI/CD fixes | 1 |
+
+---
+
+## v3.2.1 → v4.0 — Module Audit & Best-Practice Upgrade
+
+A comprehensive audit and upgrade pass that brought the module manifest, prompt inventory, adapter stubs, help registry, and CI/CD pipeline into full alignment. Every prompt path was validated end-to-end with zero broken references.
+
+### Module Manifest
+
+- Bumped `module.yaml` `schema_version` from 3.2 to 3.4
+- Added 3 missing prompts to the `module.yaml` prompts section
+- Added 18 missing `stub_prompts` to the `module.yaml` GitHub Copilot adapter
+
+### Prompt Completeness
+
+- Created **21 missing Lens Next prompt files** to close gaps between declared and on-disk prompts
+- Created **44 missing GitHub Copilot adapter stubs** (76 total stubs now synced and validated)
+
+### Workflow Fixes
+
+- Standardized 5 `SKILL.md` name prefixes to `lens-work-*` for consistency
+- Created missing `utility/profile/SKILL.md`
+- Removed deprecated `includes/size-topology.md`
+
+### Help Registry Fixes
+
+- Resolved **16 menu code collisions** in `module-help.csv` (zero remaining)
+
+### CI/CD Pipeline Fixes (`promote-to-release.yml`)
+
+- Fixed version extraction bug
+- Fixed IDE list mismatch between pipeline and module manifest
+- Fixed prompt overlay deletion bug
+- Fixed Output Folder `sed` bug
+- Fixed `.xml` word-boundary match
+- Fixed PR body wds omission
+
+### Validation
+
+- Dry-run validated all **125 prompts** across the module
+- Validated all **160 path references** — 0 broken
+- Validated all **36 workflows** — all step chains intact
 
 ---
 

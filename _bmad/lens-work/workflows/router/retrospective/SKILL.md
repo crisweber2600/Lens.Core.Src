@@ -1,5 +1,5 @@
 ---
-name: retrospective
+name: lens-work-retrospective
 description: retrospective workflow reference
 ---
 

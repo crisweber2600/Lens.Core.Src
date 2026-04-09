@@ -1,8 +1,8 @@
-# LENS Workbench Module — v3.1.0
+# LENS Workbench Module — v4.0.0
 
 **Module Code:** `lens-work`
 **Type:** Standalone BMAD Module
-**Schema Version:** 3.1
+**Schema Version:** 3.4
 
 ## Overview
 
@@ -46,12 +46,12 @@ lens-work/
 ```
 
 
-## Skills (5)
+## Skills (34)
 
 Skills fall into two archetypes:
 
-- **Internal delegation skills** (`git-state`, `git-orchestration`, `constitution`, `sensing`, `checklist`) — invoked by workflows for specific operations. Not directly user-facing.
-- **Workflow skills** (`dashboard`) — thin SKILL.md wrappers that redirect to a workflow. These appear as Copilot skills but execute a full workflow.
+- **Lens Next skills** (28 `bmad-lens-*` skills) — registered in `module.yaml` and exposed as Copilot skills for direct invocation across the lifecycle.
+- **Legacy internal delegation skills** (6: `git-state`, `git-orchestration`, `constitution`, `sensing`, `checklist`, `dashboard`) — invoked by workflows for specific operations or thin SKILL.md wrappers that redirect to a workflow.
 
 | Skill | Purpose |
 |-------|---------|
@@ -60,6 +60,7 @@ Skills fall into two archetypes:
 | `constitution` | Constitutional governance resolution and compliance |
 | `sensing` | Cross-initiative overlap detection at lifecycle gates |
 | `checklist` | Phase gate checklists with progressive validation |
+| `dashboard` | Cross-feature dashboard generator with dependency graphs |
 
 ## Scripts
 
@@ -203,6 +204,8 @@ See `module.yaml` `install_questions` for configuration options (target projects
 - **Utility:** `onboard`, `status`, `next`, `switch`, `help`, `module-management`
 - **Governance:** `compliance-check`, `resolve-constitution`, `cross-initiative`
 
+> See `module.yaml` for the complete manifest of 34 skills, 35 workflows, and 76 prompts.
+
 
 ## Commands
 
@@ -211,7 +214,7 @@ All commands are available via the LENS agent menu. Initiative creation is now c
 - `[UG] Lens Upgrade` — migrate control repo to latest schema version
 
 Menu/command triggers:
-`/onboard`, `/create-initiative` (`/new-domain`, `/new-service`, `/new-feature`), `/preplan`, `/businessplan`, `/techplan`, `/devproposal`, `/sprintplan`, `/dev`, `/status`, `/next`, `/switch`, `/promote`, `/sense`, `/constitution`, `/discover`, `/module-management`, `/help`, `/close`, `/lens-upgrade`
+`/onboard`, `/create-initiative` (`/new-domain`, `/new-service`, `/new-feature`), `/preplan`, `/businessplan`, `/techplan`, `/devproposal`, `/sprintplan`, `/dev`, `/status`, `/next`, `/switch`, `/promote`, `/sense`, `/constitution`, `/discover`, `/module-management`, `/help`, `/close`, `/lens-upgrade`, `/expressplan`, `/retrospective`, `/log-problem`, `/move-feature`, `/split-feature`, `/approval-status`, `/pause-epic`, `/resume-epic`, `/rollback-phase`, `/profile`, `/dashboard`, `/audit-all`
 
 ## Configuration
 
@@ -261,9 +264,9 @@ LENS Workbench is part of the BMad Method ecosystem. See the [BMad Method](https
 - Menu categorization: Opportunity to group menu items by lifecycle phase for clarity.
 - First-run detection: Logic could be refined for more robust onboarding.
 - Sensing workflow: Prompt and step consolidation for efficiency.
-- Workflow validation: Deep validation and migration to step-driven execution is planned (see TODO.md).
+- ~~Workflow validation: Deep validation and migration to step-driven execution.~~ ✅ DONE
 - Dual agent representation: `.md` runtime source and `.yaml` structured companion pattern to be documented.
 
 See [TODO.md](TODO.md) for the full checklist and next steps.
 
-# Updated: Apr 1, 2026
+# Updated: Jul 2025

@@ -1,7 +1,9 @@
 # LENS Workbench — Lifecycle Reference Guide
 
-**Module:** lens-work v3.2  
-**Schema:** 3.2  
+> ⚠️ **Partial Update Notice (v4.0):** The main narrative describes audience tiers and milestone branches as primary. In schema 3.4, the **2-branch topology** is the default. Callout boxes in this doc describe the current model — a full rewrite is planned.
+
+**Module:** lens-work v4.0  
+**Schema:** 3.4  
 **Purpose:** Human-readable reference for the lens-work lifecycle system
 
 ---

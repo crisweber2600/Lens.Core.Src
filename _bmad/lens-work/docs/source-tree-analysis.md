@@ -1,6 +1,8 @@
 # Source Tree Analysis — LENS Workbench Module (lens-work)
 
-**Generated:** 2026-04-01 | **Scan Level:** Deep | **Module Version:** 3.2.0
+> ⚠️ **Partial Update Notice (v4.0):** File tree snapshot is from v3.2. New skills, prompts, and workflows added in v4.0 are not reflected here. See `module.yaml` for the current manifest.
+
+**Generated:** 2026-04-01 | **Scan Level:** Deep | **Module Version:** 4.0.0
 
 ---
 

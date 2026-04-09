@@ -43,8 +43,8 @@ jobs:
       - name: Read module version
         id: version
         run: |
-          VERSION=$(grep '^version:' _bmad/lens-work/module.yaml \
-            | sed 's/version: *"\?\([^"]*\)"\?/\1/')
+          VERSION=$(grep '^module_version:' _bmad/lens-work/module.yaml \
+            | sed 's/module_version: *"\?\([^"]*\)"\?/\1/')
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Module version: $VERSION"
 
@@ -211,7 +211,7 @@ jobs:
                 target_projects_path: '../TargetProjects',
                 default_git_remote: 'github'
               },
-              installedIDEs: ['github-copilot', 'cursor', 'claude', 'codex'],
+              installedIDEs: ['github-copilot', 'cursor', 'claude-code', 'codex'],
               logger: {
                 log:   (m) => console.log(m),
                 warn:  (m) => console.warn('⚠️ ' + m),
@@ -268,10 +268,8 @@ jobs:
         run: |
           mkdir -p build-output/.github/prompts
 
-          # Remove installer-generated prompts before overlaying the source
-          # stub set so build-output exactly matches the canonical source.
-          rm -f build-output/.github/prompts/*.prompt.md
-
+          # Remove only source-managed prompt families before overlay.
+          # Preserve installer-generated prompts that have no source equivalent.
           SRC_COUNT=0
           for src in .github/prompts/*.prompt.md; do
             [ -f "$src" ] || continue
@@ -279,7 +277,7 @@ jobs:
             SRC_COUNT=$((SRC_COUNT + 1))
           done
 
-          echo "✅ Overlaid $SRC_COUNT source prompt stub(s) into release payload"
+          echo "✅ Overlaid $SRC_COUNT source prompt stub(s) into release payload (installer stubs preserved)"
 
       # ── 11. Post-process: .xml→.yaml + config.yaml→bmadconfig.yaml ──
       - name: Post-process XML and config file names
@@ -309,7 +307,7 @@ jobs:
             -name '*.csv' -o -name '*.json' -o -name '*.txt' -o \
             -name '*.js' \
           \) -print0 | xargs -0 grep -rl '\.xml' 2>/dev/null | while IFS= read -r f; do
-            sed -i 's/\.xml/.yaml/g' "$f"
+            sed -i 's/\.xml\b/.yaml/g' "$f"
             echo "  Updated: $f"
           done
 
@@ -350,7 +348,7 @@ jobs:
           if [ -f "$INSTRUCTIONS" ]; then
             # Fix the project name (BMAD CLI uses directory name)
             sed -i 's/- \*\*Project\*\*: build-output/- **Project**: Lens.Core.Release/' "$INSTRUCTIONS"
-            sed -i 's/- \*\*Output Folder\*\*: _bmad-output/- **Output Folder**: Lens.Core.Release/' "$INSTRUCTIONS"
+            sed -i 's/- \*\*Output Folder\*\*: _bmad-output/- **Output Folder**: _bmad-output/' "$INSTRUCTIONS"
             echo "✅ copilot-instructions.md patched"
           fi
 
@@ -687,7 +685,7 @@ jobs:
               "https://api.github.com/repos/${{ github.repository_owner }}/Lens.Core.Release/pulls" \
               -d "$(jq -n \
                 --arg title "[PROMOTE] Full BMAD + lens-work v${{ steps.version.outputs.version }}" \
-                --arg body "Full BMAD framework + lens-work custom module build.\n\n**lens-work version:** ${{ steps.version.outputs.version }}\n**Source commit:** ${{ github.sha }}\n**Triggered by:** ${{ github.actor }}\n\n**Included:**\n- BMAD core + bmm + bmb + cis + gds + tea\n- lens-work custom module\n- IDE adapters: GitHub Copilot, Cursor, Claude, Codex\n- Embedded .github payload (agents/prompts/instructions) with lens-work prompts only\n\n**Release repo:** Lens.Core.Release" \
+                --arg body "Full BMAD framework + lens-work custom module build.\n\n**lens-work version:** ${{ steps.version.outputs.version }}\n**Source commit:** ${{ github.sha }}\n**Triggered by:** ${{ github.actor }}\n\n**Included:**\n- BMAD core + bmm + bmb + cis + gds + tea + wds\n- lens-work custom module\n- IDE adapters: GitHub Copilot, Cursor, Claude Code, Codex\n- Embedded .github payload (agents/prompts/instructions) with lens-work prompts only\n\n**Release repo:** Lens.Core.Release" \
                 --arg head "alpha" \
                 --arg base "beta" \
                 '{title: $title, body: $body, head: $head, base: $base}')")

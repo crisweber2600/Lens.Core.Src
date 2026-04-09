@@ -1,6 +1,6 @@
 # lens-work Script Integration Reference
 
-**Module:** lens-work v3.1  
+**Module:** lens-work v4.0  
 **Policy:** All git operations use direct GitHub/Azure DevOps REST API calls with PAT authentication. The `gh` CLI is never required.
 
 ## Scripts
