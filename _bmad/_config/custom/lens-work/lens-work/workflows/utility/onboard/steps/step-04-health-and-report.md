@@ -18,7 +18,7 @@ health_checks = [
   { name: "Provider auth", status: auth_status.authenticated == true ? "✅ authenticated" : "❌ failed" },
   { name: "Governance repo", status: directory_exists(governance_repo_path) ? "✅ present" : "❌ missing" },
   { name: "Repo inventory", status: file_exists("${governance_repo_path}/repo-inventory.yaml") ? "✅ present" : "❌ missing" },
-  { name: "Workspace structure", status: directory_exists("docs/lens-work") ? "✅ present" : "❌ missing" }
+  { name: "Workspace structure", status: directory_exists(".github/lens-work") ? "✅ present" : "❌ missing" },
 ]
 
 cloned_count = count(clone_results where item.status == "✅ cloned")

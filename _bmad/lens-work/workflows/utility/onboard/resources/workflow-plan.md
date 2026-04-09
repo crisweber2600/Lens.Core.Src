@@ -13,7 +13,7 @@ Bootstrap a contributor into the control repo with verified provider auth, a usa
    - Validate provider authentication
    - Resolve or clone the governance repo
 3. `steps/step-03-profile-and-bootstrap.md`
-   - Write `docs/lens-work/personal/profile.yaml`
+   - Write `.github/lens-work/personal/profile.yaml`
    - Bootstrap inventory-driven target-project clones
 4. `steps/step-04-health-and-report.md`
    - Run health checks
@@ -32,6 +32,6 @@ Bootstrap a contributor into the control repo with verified provider auth, a usa
 
 ## Output Artifacts
 
-- `docs/lens-work/personal/profile.yaml`
+- `.github/lens-work/personal/profile.yaml`
 - Local governance repo clone when missing
 - TargetProjects clones for inventory-listed repositories

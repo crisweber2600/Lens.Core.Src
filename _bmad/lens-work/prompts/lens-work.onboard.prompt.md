@@ -34,14 +34,15 @@ Execute shared preflight from `{project-root}/lens.core/_bmad/lens-work/workflow
 
 ### Step 2: Hydrate Control Repo Structure
 
-Create the workspace directories if they don't exist:
+Create the workspace directory if it doesn't exist:
 
 ```
-docs/
+.github/
 └── lens-work/
-    ├── personal/
-    └── initiatives/
+    └── personal/
 ```
+
+Governance setup file is read from `.github/lens-work/governance-setup.yaml`. Initiative artifacts are written to `docs/{domain}/{service}/{feature}/` by the phase workflows — do not pre-create those directories here.
 
 ### Step 3: Run /onboard
 

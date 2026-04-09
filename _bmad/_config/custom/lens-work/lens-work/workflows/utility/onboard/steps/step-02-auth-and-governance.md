@@ -2,8 +2,8 @@
 name: 'step-02-auth-and-governance'
 description: 'Validate authentication and resolve the governance repo'
 nextStepFile: './step-03-profile-and-bootstrap.md'
-governanceSetupPath: '{project-root}/docs/lens-work/governance-setup.yaml'
-profilePath: '{project-root}/docs/lens-work/personal/profile.yaml'
+governanceSetupPath: '{project-root}/.github/lens-work/governance-setup.yaml'
+profilePath: '{project-root}/.github/lens-work/personal/profile.yaml'
 ---
 
 # Step 2: Authentication And Governance

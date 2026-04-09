@@ -707,7 +707,7 @@ git_state:
 data_zones:
   governance:
     description: "Universal artifacts shared across all initiatives"
-    setup_file: "docs/lens-work/governance-setup.yaml"
+    setup_file: ".github/lens-work/governance-setup.yaml"
     artifacts:
       - constitutions/
       - roster/
@@ -718,14 +718,14 @@ data_zones:
 
   initiative:
     description: "Initiative-scoped planning artifacts in control repo"
-    local_path: docs/lens-work/initiatives/
+    local_path: docs/
     branch_strategy:
       pattern: "{initiative_root}-{milestone}"
       merge_target: "{initiative_root}"
 
   personal:
     description: "User profile and preferences"
-    local_path: docs/lens-work/
+    local_path: .github/lens-work/
     artifacts:
       - profile.yaml
       - governance-setup.yaml
