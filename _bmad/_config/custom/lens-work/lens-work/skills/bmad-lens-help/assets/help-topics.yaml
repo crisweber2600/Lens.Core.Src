@@ -138,3 +138,46 @@ topics:
     phases: [dev]
     tracks: [all]
     category: implementation
+
+  # Lens Next Phase Skills
+  - id: lens-preplan
+    command: /lens-preplan
+    description: Run PrePlan phase with Lens governance (brainstorm, research, product brief)
+    phases: [preplan]
+    tracks: [full, spike]
+    category: planning
+
+  - id: lens-businessplan
+    command: /lens-businessplan
+    description: Run BusinessPlan phase with Lens governance (PRD, UX design)
+    phases: [businessplan]
+    tracks: [full, feature]
+    category: planning
+
+  - id: lens-techplan
+    command: /lens-techplan
+    description: Run TechPlan phase with Lens governance (architecture, technical design)
+    phases: [techplan]
+    tracks: [full, feature, tech-change, hotfix, hotfix-express]
+    category: planning
+
+  - id: lens-devproposal
+    command: /lens-devproposal
+    description: Run DevProposal phase with Lens governance (epics, stories, readiness)
+    phases: [devproposal]
+    tracks: [full, feature, tech-change, quickdev]
+    category: planning
+
+  - id: lens-sprintplan
+    command: /lens-sprintplan
+    description: Run SprintPlan phase with Lens governance (sprint planning, story files)
+    phases: [sprintplan]
+    tracks: [full, feature, tech-change]
+    category: planning
+
+  - id: lens-expressplan
+    command: /lens-expressplan
+    description: Run ExpressPlan phase with Lens governance (all artifacts in one session)
+    phases: [expressplan]
+    tracks: [express]
+    category: planning

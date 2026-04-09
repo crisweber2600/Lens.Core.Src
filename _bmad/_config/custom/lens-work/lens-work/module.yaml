@@ -119,13 +119,28 @@ skills:
     file: skills/bmad-lens-document-project/SKILL.md
     description: "Document active feature/project with domain/service/feature scoped output in control and governance repos"
 
+  # Lens Next Phase Skills (v4.0 — lifecycle phase conductors)
+  - id: bmad-lens-preplan
+    file: skills/bmad-lens-preplan/SKILL.md
+    description: "PrePlan phase — brainstorm, research, and product brief for a feature"
+  - id: bmad-lens-businessplan
+    file: skills/bmad-lens-businessplan/SKILL.md
+    description: "BusinessPlan phase — PRD creation and UX design for a feature"
+  - id: bmad-lens-techplan
+    file: skills/bmad-lens-techplan/SKILL.md
+    description: "TechPlan phase — architecture and technical design for a feature"
+  - id: bmad-lens-devproposal
+    file: skills/bmad-lens-devproposal/SKILL.md
+    description: "DevProposal phase — epics, stories, and implementation readiness for a feature"
+  - id: bmad-lens-sprintplan
+    file: skills/bmad-lens-sprintplan/SKILL.md
+    description: "SprintPlan phase — sprint planning, story files, and dev handoff for a feature"
+  - id: bmad-lens-expressplan
+    file: skills/bmad-lens-expressplan/SKILL.md
+    description: "ExpressPlan phase — all planning artifacts in one session for a feature"
+
   # --- Planned skills (referenced by existing skills but not yet built) ---
-  # These are in the plan.md roadmap (phases 2-4) and referenced in cross-skill
-  # documentation tables. They will be added in future releases.
-  # - bmad-lens-businessplan: Business planning workflow for features
-  # - bmad-lens-techplan: Technical planning workflow for features
   # - bmad-lens-dev-story: Story execution and development workflow
-  # - bmad-lens-document-project: Project documentation capture for features
 
 # Workflows
 workflows:
@@ -358,6 +373,12 @@ prompts:
   - lens-onboard.prompt.md
   - lens-pause-resume.prompt.md
   - lens-quickplan.prompt.md
+  - lens-preplan.prompt.md
+  - lens-businessplan.prompt.md
+  - lens-techplan.prompt.md
+  - lens-devproposal.prompt.md
+  - lens-sprintplan.prompt.md
+  - lens-expressplan.prompt.md
   - lens-retrospective.prompt.md
   - lens-setup.prompt.md
   - lens-split-feature.prompt.md
@@ -413,6 +434,12 @@ adapters:
       - .github/prompts/lens-onboard.prompt.md
       - .github/prompts/lens-pause-resume.prompt.md
       - .github/prompts/lens-quickplan.prompt.md
+      - .github/prompts/lens-preplan.prompt.md
+      - .github/prompts/lens-businessplan.prompt.md
+      - .github/prompts/lens-techplan.prompt.md
+      - .github/prompts/lens-devproposal.prompt.md
+      - .github/prompts/lens-sprintplan.prompt.md
+      - .github/prompts/lens-expressplan.prompt.md
       - .github/prompts/lens-retrospective.prompt.md
       - .github/prompts/lens-setup.prompt.md
       - .github/prompts/lens-split-feature.prompt.md
