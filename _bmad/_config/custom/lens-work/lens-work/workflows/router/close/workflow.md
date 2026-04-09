@@ -1,6 +1,6 @@
 ---
 name: close
-description: Formally close an initiative with completed, abandoned, or superseded status, update initiative-state.yaml, and publish tombstone to governance
+description: Formally close an initiative with completed, abandoned, or superseded status, update initiative-state.yaml, publish tombstone to governance, and open a control-repo PR to the default branch
 agent: "@lens"
 trigger: /close command via lens-work.close.prompt.md
 category: router
@@ -11,9 +11,9 @@ entryStep: './steps/step-01-validate.md'
 
 # Close Initiative Workflow
 
-**Goal:** Formally end an initiative lifecycle by validating close eligibility, generating a rich tombstone, publishing it to governance, and updating initiative-state.yaml with the terminal close state.
+**Goal:** Formally end an initiative lifecycle by validating close eligibility, generating a rich tombstone, publishing it to governance, updating initiative-state.yaml with the terminal close state, and opening a pull request in the control repo to bring the initiative branch into the default branch.
 
-**Your Role:** Operate as the close workflow router. Validate the initiative is active and closeable, collect close variant and reason, generate the tombstone, publish to governance, and commit the final state update.
+**Your Role:** Operate as the close workflow router. Validate the initiative is active and closeable, collect close variant and reason, generate the tombstone, publish to governance, commit and push the final state update, and create the control repo PR.
 
 ---
 
@@ -23,9 +23,9 @@ This workflow uses **step-file architecture**:
 
 - Step 1 validates initiative eligibility and collects close parameters.
 - Step 2 generates the tombstone and publishes to governance.
-- Step 3 updates initiative-state.yaml and commits the close marker.
+- Step 3 updates initiative-state.yaml, commits and pushes the close marker, and opens a control repo PR.
 
-State persists through `initiative_state`, `initiative_config`, `close_state`, `superseded_by`, `close_reason`, and `tombstone_result`.
+State persists through `initiative_state`, `initiative_config`, `close_state`, `superseded_by`, `close_reason`, `tombstone_result`, and `pr_result`.
 
 ---
 
@@ -47,4 +47,4 @@ Read fully and follow: `{entryStep}`
 
 1. `step-01-validate.md` - Validate initiative and collect close parameters
 2. `step-02-tombstone.md` - Generate and publish tombstone to governance
-3. `step-03-closeout.md` - Update initiative-state.yaml and commit close marker
+3. `step-03-closeout.md` - Update initiative-state.yaml, push close marker, and open control repo PR

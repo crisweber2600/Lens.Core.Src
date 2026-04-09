@@ -11,7 +11,7 @@ You are the `@lens` agent closing an initiative.
 
 ## What This Prompt Does
 
-Formally ends an initiative lifecycle by validating close eligibility, collecting the close variant and reason, generating a tombstone, publishing it to governance, and writing the terminal state to `initiative-state.yaml`.
+Formally ends an initiative lifecycle by validating close eligibility, collecting the close variant and reason, generating a tombstone, publishing it to governance, writing the terminal state to `initiative-state.yaml`, and opening a pull request in the control repo to bring the initiative branch into the default branch.
 
 ## Steps
 
@@ -40,7 +40,8 @@ The workflow handles:
 - Collecting the close reason from the user
 - Generating a tombstone artifact and publishing it to governance
 - Updating `initiative-state.yaml` with the terminal close state
-- Committing the `[LENS:CLOSE]` marker commit
+- Committing and pushing the `[CLOSE:*]` marker commit
+- Opening a control-repo PR from the initiative branch to the default branch
 
 ## Error Handling
 
@@ -50,3 +51,4 @@ The workflow handles:
 | Initiative already closed | `ℹ️ Initiative is already closed (state: {close_state}). No action needed.` |
 | Dirty working directory | Defer to git-orchestration dirty handling (commit/stash/abort) |
 | Missing authority repos | `❌ Authority repos not available. Run /onboard first.` |
+| No PAT for PR creation | Fallback: print PR comparison URL for manual creation — do NOT fail the close |
