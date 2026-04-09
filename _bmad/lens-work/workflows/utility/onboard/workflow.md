@@ -20,7 +20,7 @@ entryStep: './steps/step-01-preflight.md'
 First activation → `/onboard` → scaffold governance → create profile → health check → ready.
 
 The agent detects first-run state during activation (step 5) by checking:
-1. `docs/lens-work/personal/profile.yaml` — local user profile
+1. `.github/lens-work/personal/profile.yaml` — local user profile
 2. `{governance_repo_path}/feature-index.yaml` — governance repo initialization
 
 If either is missing, the agent directs the user to run `/onboard`. The onboard workflow then:

@@ -2,7 +2,7 @@
 name: 'step-03-profile-and-bootstrap'
 description: 'Create the non-secret profile and bootstrap TargetProjects clones'
 nextStepFile: './step-04-health-and-report.md'
-profilePath: '{project-root}/docs/lens-work/personal/profile.yaml'
+profilePath: '{project-root}/.github/lens-work/personal/profile.yaml'
 ---
 
 # Step 3: Profile And TargetProjects Bootstrap

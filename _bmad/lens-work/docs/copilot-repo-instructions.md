@@ -13,10 +13,11 @@ This workspace is a **BMAD control repo** that orchestrates planning and develop
 The top-level workspace. This is an **operational workspace**, not a code repo. It contains:
 
 - `.github/` — Copilot adapter stubs (agents, skills, prompts) that reference the release module by path
-- `docs/` — All lens-work runtime state (initiative configs, preflight timestamps, personal profile)
+- `.github/lens-work/` — Personal profile (`profile.yaml`) and governance setup config (`governance-setup.yaml`)
+- `docs/` — All lens-work initiative artifacts, organized as `docs/{domain}/{service}/{feature}/`
 - `setup-control-repo.ps1` — Bootstrap script
 
-**Write rules:** Planning phase prompts write artifacts here (under `docs/lens-work/initiatives/`). The `/dev` prompt writes ONLY state-tracking files here (`docs/` sprint-status, state).
+**Write rules:** Planning phase prompts write initiative artifacts here (under `docs/{domain}/{service}/{feature}/`). The `/dev` prompt writes ONLY state-tracking files here (`docs/` sprint-status, state).
 
 ### 2. Release Repo (`lens.core/`)
 
@@ -79,4 +80,5 @@ The lens-work module manages a 5-phase planning lifecycle with audience-based pr
 - All `.github/prompts/` and `.github/skills/` files are **stubs** that redirect to full implementations in `lens.core/`
 - Never duplicate module content into `.github/` — module updates propagate through path references
 - The `lens.core/` submodule branch matters: on `alpha`, run full preflight at most once per hour; on `beta`, run full preflight at most once every 3 hours
-- Initiative artifacts live at `docs/lens-work/initiatives/{domain}/{service}/{feature}.yaml`
+- Initiative artifacts live at `docs/{domain}/{service}/{feature}/`
+- Lens-work personal config and governance setup live at `.github/lens-work/`
