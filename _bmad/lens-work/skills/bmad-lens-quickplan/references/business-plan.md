@@ -25,7 +25,7 @@ The analyst role (`bmad-agent-analyst`) is responsible for writing the business 
 
 ## Output: `business-plan.md`
 
-Required location: `{governance-repo}/features/{domain}/{service}/{featureId}/business-plan.md` on the `{featureId}-plan` branch.
+Required location: `{governance-repo}/features/{domain}/{service}/{featureId}/business-plan.md` on `main`.
 
 ### Required Frontmatter
 

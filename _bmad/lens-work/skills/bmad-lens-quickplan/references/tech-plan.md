@@ -10,7 +10,7 @@ The architect role (`bmad-agent-architect`) is responsible for writing the tech 
 
 | Input | Source | Required |
 |-------|--------|----------|
-| Business plan | `business-plan.md` from plan branch | Yes |
+| Business plan | `business-plan.md` from governance `main` | Yes |
 | Feature context | `feature.yaml` | Yes |
 | Cross-feature context | Related feature summaries + depends_on full docs | Auto |
 | Domain constitution | Technical constraints and architecture principles | Auto |
@@ -26,7 +26,7 @@ The architect role (`bmad-agent-architect`) is responsible for writing the tech 
 
 ## Output: `tech-plan.md`
 
-Required location: `{governance-repo}/features/{domain}/{service}/{featureId}/tech-plan.md` on the `{featureId}-plan` branch.
+Required location: `{governance-repo}/features/{domain}/{service}/{featureId}/tech-plan.md` on `main`.
 
 ### Required Frontmatter
 

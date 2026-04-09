@@ -1,6 +1,6 @@
 # Feature Status
 
-Get the current detailed status of a specific feature. Reads `feature.yaml` from the plan branch (not from main).
+Get the current detailed status of a specific feature. Reads `feature.yaml` from governance `main`.
 
 ## When to Use
 

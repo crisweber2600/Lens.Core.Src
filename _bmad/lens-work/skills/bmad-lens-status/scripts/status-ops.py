@@ -5,7 +5,7 @@
 # ///
 """Feature status operations — query feature, domain, and portfolio status from governance repo.
 
-Reads feature.yaml from the plan branch for per-feature detail.
+Reads feature.yaml from governance main for per-feature detail.
 Reads feature-index.yaml from main for domain and portfolio views (no branch switching).
 """
 
@@ -47,7 +47,7 @@ def load_feature_index(governance_repo: str) -> tuple[dict | None, str | None]:
 
 
 def cmd_feature(args: argparse.Namespace) -> dict:
-    """Get detailed status for a specific feature. Reads feature.yaml directly (plan branch)."""
+    """Get detailed status for a specific feature. Reads feature.yaml from governance main."""
     for field_name, value in [
         ("feature-id", args.feature_id),
         ("domain", args.domain),

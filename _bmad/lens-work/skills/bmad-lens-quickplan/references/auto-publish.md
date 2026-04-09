@@ -2,36 +2,31 @@
 
 ## Purpose
 
-Auto-publish ensures every planning artifact is committed atomically: the full document lands on the plan branch *and* the extracted summary plus index update land on main in a single logical operation. There is no "commit now, sync later" — if the two-phase commit fails, the artifact is not committed at all.
+Auto-publish ensures every planning artifact is committed atomically to governance `main`: the full document, the extracted summary, and the index update all land in a single logical operation. There is no "commit now, sync later" — if the commit fails, the artifact is not committed at all.
 
-## The Two-Phase Commit
+## The Atomic Commit
 
-Every artifact commit is a two-phase operation coordinated via `bmad-lens-git-orchestration`:
+Every artifact commit is a single atomic operation on governance `main`, coordinated via `bmad-lens-git-orchestration`:
 
-### Phase 1 — Full Artifact to Plan Branch
+### Step 1 — Validate
 
 1. Validate frontmatter (via `quickplan-ops.py validate-frontmatter`).
-2. Ensure the plan branch (`{featureId}-plan`) exists; create it from main if not.
-3. Write the full artifact file to `{governance-repo}/features/{domain}/{service}/{featureId}/{artifact}` on the plan branch.
-4. Commit with message: `feat({featureId}): add {artifact} [phase-1]`
 
-### Phase 2 — Summary and Index to Main
+### Step 2 — Write Full Artifact to Main
 
-Immediately after Phase 1 succeeds:
+1. Write the full artifact file to `{governance-repo}/features/{domain}/{service}/{featureId}/{artifact}` on `main`.
+2. Extract summary from the artifact frontmatter (via `quickplan-ops.py extract-summary`).
+3. Write `{governance-repo}/features/{domain}/{service}/{featureId}/summary.md` on `main` — creating or updating it.
+4. Update `{governance-repo}/feature-index.yaml` on `main` — add or update the feature entry with `phase`, `goal`, `updated_at`, and `doc_types_present`.
+5. Commit all files together with message: `feat({featureId}): add {artifact} + update summary and index`
 
-1. Extract summary from the artifact frontmatter (via `quickplan-ops.py extract-summary`).
-2. Write `{governance-repo}/features/{domain}/{service}/{featureId}/summary.md` on main — creating or updating it.
-3. Update `{governance-repo}/feature-index.yaml` on main — add or update the feature entry with `phase`, `goal`, `updated_at`, and `doc_types_present`.
-4. Commit both files together with message: `feat({featureId}): update summary and index [{artifact}] [phase-2]`
-
-If Phase 2 fails (e.g., merge conflict on main), roll back by reverting the Phase 1 commit on the plan branch, report the error, and halt.
+If the commit fails (e.g., merge conflict on main), report the error and halt.
 
 ## Commit Message Format
 
 | Phase | Format |
 |-------|--------|
-| Phase 1 | `feat({featureId}): add {artifact}` |
-| Phase 2 | `feat({featureId}): update summary and index [{artifact}]` |
+| Artifact commit | `feat({featureId}): add {artifact} + update summary and index` |
 | Stories batch | `feat({featureId}): add {N} stories (sprint {sprintNumber})` |
 
 ## Summary.md Format
@@ -56,7 +51,7 @@ The `summary.md` on main is a lightweight snapshot for cross-feature context loa
 
 ## Artifacts Present
 
-{list of artifact files present on plan branch}
+{list of artifact files present in the feature directory on main}
 ```
 
 ## feature-index.yaml Entry Format
@@ -79,19 +74,18 @@ The `summary.md` on main is a lightweight snapshot for cross-feature context loa
 ## Idempotency
 
 Auto-publish is safe to retry:
-- If Phase 1 already exists (same content), skip Phase 1 and attempt Phase 2.
-- If Phase 2 already reflects the current artifact (same `updated_at`), skip Phase 2.
+- If the artifact already exists with the same content, skip the commit.
+- If the index already reflects the current artifact (same `updated_at`), skip the update.
 - Never create duplicate commits.
 
 ## Error Handling
 
 | Error | Action |
 |-------|--------|
-| Frontmatter validation failure | Halt before Phase 1; report validation errors |
-| Plan branch creation failure | Halt; report error with governance repo and branch name |
-| Phase 1 commit failure | Halt; do not attempt Phase 2 |
-| Phase 2 merge conflict | Roll back Phase 1; report conflict details; suggest `git pull` and retry |
-| Phase 2 partial write (summary OK, index fails) | Attempt index update again; report if it fails twice |
+| Frontmatter validation failure | Halt before commit; report validation errors |
+| Commit failure | Halt; report error with governance repo details |
+| Merge conflict on main | Report conflict details; suggest `git pull` and retry |
+| Partial write (summary OK, index fails) | Attempt index update again; report if it fails twice |
 
 ## Integration
 

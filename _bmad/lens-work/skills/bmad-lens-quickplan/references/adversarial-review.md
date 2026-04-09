@@ -4,14 +4,14 @@
 
 Adversarial review stress-tests both the business plan and tech plan for flaws before stories are created. It is comprehensive — not a rubber stamp — and replaces the traditional PR-per-milestone ceremony. A weak adversarial review that misses real problems is worse than no review.
 
-QuickPlan runs adversarial review autonomously (no external agent invocation). The output is a `adversarial-review.md` artifact committed to the plan branch.
+QuickPlan runs adversarial review autonomously (no external agent invocation). The output is a `adversarial-review.md` artifact committed to governance `main`.
 
 ## Inputs
 
 | Input | Source | Required |
 |-------|--------|----------|
-| Business plan | `business-plan.md` from plan branch | Yes |
-| Tech plan | `tech-plan.md` from plan branch | Yes |
+| Business plan | `business-plan.md` from governance `main` | Yes |
+| Tech plan | `tech-plan.md` from governance `main` | Yes |
 | Cross-feature context | Summaries + full docs for depends_on features | Auto |
 | Domain constitution | Architecture constraints and non-negotiables | Auto |
 
@@ -72,7 +72,7 @@ Look for things taken for granted:
 
 ## Output: `adversarial-review.md`
 
-Required location: `{governance-repo}/features/{domain}/{service}/{featureId}/adversarial-review.md` on the `{featureId}-plan` branch.
+Required location: `{governance-repo}/features/{domain}/{service}/{featureId}/adversarial-review.md` on `main`.
 
 ### Structure
 
