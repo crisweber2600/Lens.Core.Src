@@ -260,7 +260,7 @@ def build_git_commands(
         ])
 
     cmds.extend([
-        f"git -C {gov} pull --rebase origin main",
+        f"git -C {gov} pull --rebase --autostash origin main",
         f"git -C {gov} add {' '.join(all_paths)}",
         f'git -C {gov} commit -m "feat({domain}/{service}): init {feature_id}"',
         f"git -C {gov} push origin main",
@@ -273,7 +273,7 @@ def build_container_git_commands(governance_repo: str, rel_paths: list[str], com
     """Return the ordered git commands needed to commit domain/service markers on main."""
     return [
         f"git -C {governance_repo} checkout main",
-        f"git -C {governance_repo} pull origin main",
+        f"git -C {governance_repo} pull --rebase --autostash origin main",
         f"git -C {governance_repo} add {' '.join(rel_paths)}",
         f'git -C {governance_repo} commit -m "{commit_message}"',
         f"git -C {governance_repo} push origin main",
