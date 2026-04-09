@@ -318,6 +318,13 @@ const STUB_PROMPTS = [
     { file: 'lens-work.bmad-create-epics-and-stories.prompt.md', name: 'lens-work.bmad-create-epics-and-stories', desc: 'Run BMAD create epics and stories with Lens feature, repo, and governance context', target: 'lens-work.bmad-create-epics-and-stories.prompt.md' },
     { file: 'lens-work.bmad-quick-dev.prompt.md', name: 'lens-work.bmad-quick-dev', desc: 'Run BMAD quick dev with Lens feature scope, target repo resolution, and write-boundary guidance', target: 'lens-work.bmad-quick-dev.prompt.md' },
     { file: 'lens-work.bmad-code-review.prompt.md', name: 'lens-work.bmad-code-review', desc: 'Run BMAD code review with Lens feature scope, target repo resolution, and governance-aware review context', target: 'lens-work.bmad-code-review.prompt.md' },
+    // Lens Next phase prompts
+    { file: 'lens-preplan.prompt.md', name: 'lens-preplan', desc: 'Run PrePlan phase with Lens governance (brainstorm, research, product brief)', target: 'lens-preplan.prompt.md' },
+    { file: 'lens-businessplan.prompt.md', name: 'lens-businessplan', desc: 'Run BusinessPlan phase with Lens governance (PRD, UX design)', target: 'lens-businessplan.prompt.md' },
+    { file: 'lens-techplan.prompt.md', name: 'lens-techplan', desc: 'Run TechPlan phase with Lens governance (architecture, technical design)', target: 'lens-techplan.prompt.md' },
+    { file: 'lens-devproposal.prompt.md', name: 'lens-devproposal', desc: 'Run DevProposal phase with Lens governance (epics, stories, readiness)', target: 'lens-devproposal.prompt.md' },
+    { file: 'lens-sprintplan.prompt.md', name: 'lens-sprintplan', desc: 'Run SprintPlan phase with Lens governance (sprint planning, story files)', target: 'lens-sprintplan.prompt.md' },
+    { file: 'lens-expressplan.prompt.md', name: 'lens-expressplan', desc: 'Run ExpressPlan phase with Lens governance (all artifacts in one session)', target: 'lens-expressplan.prompt.md' },
 ];
 
 const IDE_COMMANDS = [
