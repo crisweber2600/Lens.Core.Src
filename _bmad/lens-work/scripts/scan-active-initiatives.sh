@@ -4,7 +4,7 @@
 #
 # PURPOSE:
 #   Discover active initiatives by scanning committed initiative-state.yaml
-#   files under _bmad-output/lens-work/initiatives/. Replaces per-session
+#   files under docs/lens-work/initiatives/. Replaces per-session
 #   agent reasoning with deterministic file enumeration.
 #
 # USAGE:
@@ -27,7 +27,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
-INITIATIVES_DIR="${PROJECT_ROOT}/_bmad-output/lens-work/initiatives"
+INITIATIVES_DIR="${PROJECT_ROOT}/docs/lens-work/initiatives"
 
 # -- Colors ------------------------------------------------------------------
 RED='\033[0;31m'

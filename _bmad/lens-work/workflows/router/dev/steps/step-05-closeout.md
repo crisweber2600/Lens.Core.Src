@@ -16,7 +16,7 @@ Offer the retrospective, persist dev state, append the event log, and complete t
 ### Universal Rules:
 - Read the complete step file before taking action.
 - Persist control-plane state before declaring `/dev` complete.
-- Keep implementation writes in the TargetProject repo and state writes in `_bmad-output/`.
+- Keep implementation writes in the TargetProject repo and state writes in `docs/`.
 
 ### Role Reinforcement:
 - You are the LENS control-plane router.
@@ -33,7 +33,7 @@ Offer the retrospective, persist dev state, append the event log, and complete t
 - Persist phase status, event log, and control-plane commits before evaluating initiative completion.
 
 ## CONTEXT BOUNDARIES:
-- Available context: `initiative`, `story_id`, `constitutional_context`, `session.target_path`, and `_bmad-output` state artifacts.
+- Available context: `initiative`, `story_id`, `constitutional_context`, `session.target_path`, and `docs` state artifacts.
 - Focus: retrospective decision, state persistence, event logging, and initiative closeout.
 - Limits: do not restart story or epic execution from this step.
 - Dependencies: successful epic merge gate.
@@ -69,7 +69,7 @@ Append the `/dev` event-log entry that records initiative id, phase, workflow, s
 If all phases are complete:
 - update the initiative status to `complete`
 - archive initiative state through `state-management.archive`
-- commit and push the final `_bmad-output/lens-work/` state
+- commit and push the final `docs/lens-work/` state
 - display the initiative completion summary
 
 
@@ -82,7 +82,7 @@ Throughout `/dev`, the user may work in TargetProjects for actual coding, but al
 | Write code / create files | TargetProjects/${repo} (session.target_path) | **ONLY here** |
 | Run /dev commands | BMAD directory | Control plane |
 | Read framework files | {release_repo_root}/ | **READ-ONLY - never write here** |
-| State tracking writes | _bmad-output/ | Sprint status, initiative config |
+| State tracking writes | docs/ | Sprint status, initiative config |
 | Code review | BMAD directory | |
 | Status checks | BMAD directory | |
 
@@ -93,13 +93,13 @@ Throughout `/dev`, the user may work in TargetProjects for actual coding, but al
 
 | Artifact | Location |
 |----------|----------|
-| Code Review Report | `_bmad-output/implementation-artifacts/code-review-${id}.md` |
-| Party Mode Review Report | `_bmad-output/implementation-artifacts/party-mode-review-${story_id}.md` |
-| Epic Party Mode Review Report | `_bmad-output/implementation-artifacts/epic-*-party-mode-review.md` |
+| Code Review Report | `docs/implementation-artifacts/code-review-${id}.md` |
+| Party Mode Review Report | `docs/implementation-artifacts/party-mode-review-${story_id}.md` |
+| Epic Party Mode Review Report | `docs/implementation-artifacts/epic-*-party-mode-review.md` |
 | Complexity Tracking | `{bmad_docs}/complexity-tracking.md` |
-| Retro Notes | `_bmad-output/implementation-artifacts/retro-${id}.md` |
-| Initiative State | `_bmad-output/lens-work/initiatives/${id}.yaml` |
-| Event Log | `_bmad-output/lens-work/event-log.jsonl` |
+| Retro Notes | `docs/implementation-artifacts/retro-${id}.md` |
+| Initiative State | `docs/lens-work/initiatives/${id}.yaml` |
+| Event Log | `docs/lens-work/event-log.jsonl` |
 
 
 ## ERROR HANDLING

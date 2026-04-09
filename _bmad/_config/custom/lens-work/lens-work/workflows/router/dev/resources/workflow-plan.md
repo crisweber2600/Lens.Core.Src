@@ -65,9 +65,9 @@ Implement every story in a selected epic inside the TargetProject repo, run cons
 
 ## Output Artifacts
 
-- `_bmad-output/implementation-artifacts/code-review-${id}.md`
-- `_bmad-output/implementation-artifacts/party-mode-review-${story_id}.md`
-- `_bmad-output/implementation-artifacts/epic-*-party-mode-review.md`
-- `_bmad-output/implementation-artifacts/retro-${id}.md`
-- `_bmad-output/lens-work/initiatives/${id}.yaml`
-- `_bmad-output/lens-work/event-log.jsonl`
+- `docs/implementation-artifacts/code-review-${id}.md`
+- `docs/implementation-artifacts/party-mode-review-${story_id}.md`
+- `docs/implementation-artifacts/epic-*-party-mode-review.md`
+- `docs/implementation-artifacts/retro-${id}.md`
+- `docs/lens-work/initiatives/${id}.yaml`
+- `docs/lens-work/event-log.jsonl`

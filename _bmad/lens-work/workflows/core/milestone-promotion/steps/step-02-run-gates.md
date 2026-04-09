@@ -2,7 +2,7 @@
 name: 'step-02-run-gates'
 description: 'Validate promotion gates for required phase completion, artifacts, constitution compliance, and sensing overlaps'
 nextStepFile: './step-03-create-promotion.md'
-artifactsRoot: '../../../_bmad-output/planning-artifacts'
+artifactsRoot: '../../../docs/planning-artifacts'
 ---
 
 # Step 2: Run Promotion Gates

@@ -38,7 +38,7 @@ State persists through `current_initiative_root`, `current_phase`, `target_phase
 
 - **Never delete branches.** Rollback only modifies `initiative-state.yaml`.
 - **Always confirm** the rollback target with the user before executing.
-- **Preserve all artifacts.** Prior phase outputs remain in `_bmad-output/`.
+- **Preserve all artifacts.** Prior phase outputs remain in `docs/`.
 - **Open PRs block rollback.** If a promotion PR is open, it must be closed first.
 
 ---

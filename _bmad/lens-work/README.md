@@ -121,7 +121,7 @@ The setup script will:
 1. **Pull latest** for `lens.core` (or clone if first run)
 2. **Copy `.github/`** from the release module — installs the GitHub Copilot adapter
 3. **Clone your governance repo** (auto-creates it as a private repo if `gh` CLI is available)
-4. **Create output directories** — `_bmad-output/lens-work/initiatives/` and `personal/`
+4. **Create output directories** — `docs/lens-work/initiatives/` and `docs/lens-work/personal/`
 5. **Write `governance-setup.yaml`** — stores governance repo coordinates for preflight and `/onboard`
 6. **Write `LENS_VERSION`** — version compatibility file read by preflight
 7. **Update `.gitignore`** — excludes cloned repos and personal data

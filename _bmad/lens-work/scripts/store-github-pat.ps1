@@ -21,7 +21,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$InventoryFile = Join-Path (Get-Location) '_bmad-output\lens-work\repo-inventory.yaml'
+$InventoryFile = Join-Path (Get-Location) 'docs\lens-work\repo-inventory.yaml'
 
 # -- Banner ---------------------------------------------------
 Write-Host ""

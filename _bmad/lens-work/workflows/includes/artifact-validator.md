@@ -18,7 +18,7 @@ Read `lifecycle.yaml` → `phases.{current_phase}.artifacts` to get the list of 
 
 For each required artifact, check if the file exists at:
 ```
-_bmad-output/lens-work/initiatives/{domain}/{service}/phases/{phase}/{artifact}.md
+docs/lens-work/initiatives/{domain}/{service}/phases/{phase}/{artifact}.md
 ```
 
 ### Step 3: Check Content Quality

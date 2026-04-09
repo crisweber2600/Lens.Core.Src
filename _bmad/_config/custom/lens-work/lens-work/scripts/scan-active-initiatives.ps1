@@ -3,7 +3,7 @@
 #
 # PURPOSE:
 #   Discover active initiatives by scanning committed initiative-state.yaml
-#   files under _bmad-output/lens-work/initiatives/. Replaces per-session
+#   files under docs/lens-work/initiatives/. Replaces per-session
 #   agent reasoning with deterministic file enumeration.
 #
 # USAGE:
@@ -24,7 +24,7 @@ $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = Resolve-Path (Join-Path $ScriptDir "../../..")
-$InitiativesDir = Join-Path $ProjectRoot "_bmad-output/lens-work/initiatives"
+$InitiativesDir = Join-Path $ProjectRoot "docs/lens-work/initiatives"
 
 if ($Help) {
     Get-Help $MyInvocation.MyCommand.Path -Detailed

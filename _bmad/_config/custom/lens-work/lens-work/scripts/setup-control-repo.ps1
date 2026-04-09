@@ -368,7 +368,7 @@ function Ensure-GitIgnoreEntries {
 
     $gitIgnorePath = Join-Path $RootPath ".gitignore"
     $entries = @(
-        "_bmad-output/lens-work/personal/",
+        "docs/lens-work/personal/",
         ".github/",
         "lens.core/",
         "TargetProjects/"
@@ -601,8 +601,8 @@ Invoke-CloneOrPull -RemoteUrl $GovernanceUrl -LocalPath $GovernanceFullPath -Bra
 # -- 4. Output directories --------------------------------------------------
 if (-not $DryRun) {
     $dirs = @(
-        (Join-Path $ProjectRoot "_bmad-output\lens-work\initiatives"),
-        (Join-Path $ProjectRoot "_bmad-output\lens-work\personal")
+        (Join-Path $ProjectRoot "docs\lens-work\initiatives"),
+        (Join-Path $ProjectRoot "docs\lens-work\personal")
     )
     foreach ($dir in $dirs) {
         if (-not (Test-Path $dir)) {
@@ -612,11 +612,11 @@ if (-not $DryRun) {
     Write-Ok "Output directory structure verified"
 }
 else {
-    Write-Info "[DRY-RUN] Would create _bmad-output\lens-work\ directories"
+    Write-Info "[DRY-RUN] Would create docs\lens-work\ directories"
 }
 
 # -- 4b. Write governance-setup.yaml ----------------------------------------
-$GovernanceSetupPath = Join-Path $ProjectRoot "_bmad-output\lens-work\governance-setup.yaml"
+$GovernanceSetupPath = Join-Path $ProjectRoot "docs\lens-work\governance-setup.yaml"
 if (-not $DryRun) {
     $timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
     $yamlContent = @"

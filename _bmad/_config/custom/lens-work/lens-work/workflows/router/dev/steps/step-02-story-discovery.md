@@ -52,8 +52,8 @@ Read `params.epic_number` and optional `params.special_instructions`. Persist th
 Discover candidate story files in this order:
 - `{bmad_docs}/dev-story-{epic_number}-*.md`
 - `{bmad_docs}/*epic-{epic_number}*.md`
-- `_bmad-output/implementation-artifacts/dev-story-{epic_number}-*.md`
-- `_bmad-output/implementation-artifacts/*epic-{epic_number}*.md`
+- `docs/implementation-artifacts/dev-story-{epic_number}-*.md`
+- `docs/implementation-artifacts/*epic-{epic_number}*.md`
 
 Deduplicate the results by story id, sort them into implementation order, and fail with the existing guidance if no story files are found.
 

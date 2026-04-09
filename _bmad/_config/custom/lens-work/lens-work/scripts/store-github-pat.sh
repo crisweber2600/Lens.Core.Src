@@ -20,7 +20,7 @@
 
 set -euo pipefail
 
-INVENTORY_FILE="$(pwd)/_bmad-output/lens-work/repo-inventory.yaml"
+INVENTORY_FILE="$(pwd)/docs/lens-work/repo-inventory.yaml"
 
 # -- Colors --------------------------------------------------
 RED='\033[0;31m'

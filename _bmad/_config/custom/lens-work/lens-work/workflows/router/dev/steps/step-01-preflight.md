@@ -52,7 +52,7 @@ Verify the working directory is clean, derive the active initiative from the cur
 
 Set the `/dev` audience context to `base`, resolve `initiative_root`, derive `phase_branch = {initiative_root}-dev`, and resolve `docs_path`, `repo_docs_path`, and `bmad_docs` from initiative metadata.
 
-If `initiative.docs.path` is missing, fall back to `_bmad-output/planning-artifacts/`, clear `repo_docs_path`, and surface the existing deprecation warning.
+If `initiative.docs.path` is missing, fall back to `docs/planning-artifacts/`, clear `repo_docs_path`, and surface the existing deprecation warning.
 
 Resolve the target repository from `initiative.target_repos[0]`. **If `target_repos` is empty or not configured**, do NOT prompt the user for a path — instead load and execute `{autoDiscoverResource}` completely. That resource runs the discover sub-flow (discover steps 2–4), presents the results to the user for selection, and populates `session.target_repo` and `session.target_path` before returning here. Only after `{autoDiscoverResource}` resolves successfully, continue below. The manual "ask user for a local path" fallback is removed — discovery is always attempted first when `target_repos` is absent.
 

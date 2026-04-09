@@ -158,7 +158,7 @@ function Get-PrUrl {
 
 function Get-ProfileFile {
     $repoRoot = (Invoke-Git -Args @('rev-parse', '--show-toplevel')).Trim()
-    return Join-Path $repoRoot '_bmad-output\lens-work\personal\profile.yaml'
+    return Join-Path $repoRoot 'docs\lens-work\personal\profile.yaml'
 }
 
 function Get-ProfilePat {

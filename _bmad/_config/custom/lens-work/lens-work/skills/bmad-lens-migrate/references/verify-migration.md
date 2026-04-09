@@ -1,10 +1,10 @@
 # Verify Migration
 
-Validate that a migrated feature has all expected artifacts in place before cleanup. This step is mandatory — cleanup will not proceed unless verification passes.
+Validate that a migrated feature has all expected artifacts and proof records in place before cleanup. This step is mandatory — cleanup will not proceed unless verification passes.
 
 ## Outcome
 
-A structured verification report listing each expected artifact and whether it exists. The agent presents the results to the user for confirmation before cleanup can proceed.
+A structured verification report listing each expected governance artifact, dossier artifact, and mirrored document set. Verification also refreshes `migration-record.yaml` with the latest check results.
 
 ## Process
 
@@ -15,7 +15,8 @@ python3 ./scripts/migrate-ops.py verify \
   --governance-repo {governance_repo} \
   --feature-id {feature_id} \
   --domain {domain} \
-  --service {service}
+  --service {service} \
+  --control-repo {control_repo}
 ```
 
 ## Output Shape
@@ -24,27 +25,39 @@ python3 ./scripts/migrate-ops.py verify \
 {
   "status": "pass",
   "feature_id": "auth-login",
+  "dossier_path": "docs/lens-work/migrations/platform/identity/auth-login",
+  "migration_record_path": "docs/lens-work/migrations/platform/identity/auth-login/migration-record.yaml",
   "checks": [
-    { "name": "feature.yaml exists", "passed": true },
-    { "name": "feature-index.yaml entry", "passed": true },
-    { "name": "summary.md exists", "passed": true },
-    { "name": "problems.md exists", "passed": true },
-    { "name": "docs/ directory exists", "passed": true }
+    { "name": "feature_yaml", "result": "pass" },
+    { "name": "feature_index_entry", "result": "pass" },
+    { "name": "summary_md", "result": "pass" },
+    { "name": "problems_md", "result": "pass" },
+    { "name": "dossier_dir", "result": "pass" },
+    { "name": "migration_record", "result": "pass" },
+    { "name": "mirrored_documents", "result": "pass" },
+    { "name": "dossier_docs", "result": "pass" },
+    { "name": "governance_docs", "result": "pass" }
   ]
 }
 ```
 
-If any check fails, `status` is `"fail"` and the failing checks have `"passed": false`.
+If any check fails, `status` is `"fail"`.
 
 ## Checks Performed
 
 | Check | Description |
 |-------|-------------|
-| feature.yaml exists | `{governance_repo}/features/{domain}/{service}/{featureId}/feature.yaml` is present |
-| feature-index.yaml entry | `{governance_repo}/feature-index.yaml` contains an entry with matching `featureId` |
-| summary.md exists | `{governance_repo}/features/{domain}/{service}/{featureId}/summary.md` is present |
-| problems.md exists | `{governance_repo}/features/{domain}/{service}/{featureId}/problems.md` is present |
-| docs/ directory exists | `{governance_repo}/features/{domain}/{service}/{featureId}/docs/` exists (may be empty if no documents were discovered) |
+| feature_yaml | `{governance_repo}/features/{domain}/{service}/{featureId}/feature.yaml` is present |
+| feature_index_entry | `{governance_repo}/feature-index.yaml` contains an entry with matching `featureId` |
+| summary_md | `{governance_repo}/features/{domain}/{service}/{featureId}/summary.md` is present |
+| problems_md | `{governance_repo}/features/{domain}/{service}/{featureId}/problems.md` is present |
+| dossier_dir | `{control_repo}/docs/lens-work/migrations/{domain}/{service}/{featureId}/` exists |
+| migration_record | `migration-record.yaml` exists in the dossier |
+| mirrored_documents | Every discovered legacy document has a mirrored raw copy in the dossier `sources/` tree and its hash matches the recorded hash |
+| dossier_docs | Every canonical winning document exists in the dossier `docs/` tree and its hash matches the recorded hash |
+| governance_docs | Every canonical winning document exists in governance docs and its hash matches the recorded hash |
+
+If no legacy documents were discovered, verification still requires the dossier and migration record to exist so cleanup has durable proof that the feature was checked.
 
 ## Human-in-the-Loop Workflow
 
@@ -52,11 +65,15 @@ After running verification, present a summary table to the user:
 
 | Check | Status |
 |-------|--------|
-| feature.yaml exists | ✓ |
-| feature-index.yaml entry | ✓ |
-| summary.md exists | ✓ |
-| problems.md exists | ✓ |
-| docs/ directory exists | ✓ |
+| feature_yaml | ✓ |
+| feature_index_entry | ✓ |
+| summary_md | ✓ |
+| problems_md | ✓ |
+| dossier_dir | ✓ |
+| migration_record | ✓ |
+| mirrored_documents | ✓ |
+| dossier_docs | ✓ |
+| governance_docs | ✓ |
 
 Then:
 - If all checks pass: "Verification passed. Proceed with cleanup? (yes/no)"
@@ -74,4 +91,4 @@ Verification summary:
   ✗ N features have failing checks (listed below)
 ```
 
-Only features that pass all checks are eligible for cleanup.
+Only features that pass all checks are eligible for cleanup. Cleanup approval and receipt artifacts are written later by the cleanup command, not by verify.

@@ -101,8 +101,8 @@ new_config_path = lifecycle.scope_hierarchy.feature.config_schema.path_patterns.
 if file_exists(new_config_path):
   FAIL("❌ Feature '${feature}' already exists at ${new_domain}/${new_service}. Use a different name or resolve the conflict first.")
 
-old_folder = "_bmad-output/lens-work/initiatives/${old_domain}/${old_service}"
-new_folder = "_bmad-output/lens-work/initiatives/${new_domain}/${new_service}"
+old_folder = "docs/lens-work/initiatives/${old_domain}/${old_service}"
+new_folder = "docs/lens-work/initiatives/${new_domain}/${new_service}"
 
 output: |
   📦 Move Plan

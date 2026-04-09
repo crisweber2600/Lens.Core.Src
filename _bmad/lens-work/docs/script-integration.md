@@ -20,7 +20,7 @@ Both `create-pr.*` and `promote-branch.*` resolve authentication in this order:
 
 1. `GITHUB_PAT` environment variable
 2. `GH_TOKEN` environment variable
-3. `profile.yaml` (in `_bmad-output/lens-work/personal/`)
+3. `profile.yaml` (in `docs/lens-work/personal/`)
 4. URL-only fallback (manual PR creation instructions provided)
 
 ## PR Creation

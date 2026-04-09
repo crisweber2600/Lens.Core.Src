@@ -26,7 +26,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 # Keep the short-lived wrapper cache separate from the ISO full-preflight timestamp.
-CACHE_FILE="${PROJECT_ROOT}/_bmad-output/lens-work/personal/.preflight-cache"
+CACHE_FILE="${PROJECT_ROOT}/docs/lens-work/personal/.preflight-cache"
 
 # -- Colors -------------------------------------------------------------------
 RED='\033[0;31m'

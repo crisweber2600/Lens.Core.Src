@@ -130,7 +130,7 @@ def make_feature_yaml(
         "updated": timestamp,
         "phase_transitions": [{"phase": "preplan", "timestamp": timestamp, "user": username}],
         "docs": {
-            "path": f"_bmad-output/{domain}/{service}/{feature_id}",
+            "path": f"docs/{domain}/{service}/{feature_id}",
             "governance_docs_path": f"features/{domain}/{service}/{feature_id}/docs",
         },
     }

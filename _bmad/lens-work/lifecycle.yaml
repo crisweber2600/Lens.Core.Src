@@ -644,9 +644,9 @@ initiative:
     required_fields: [initiative, scope, domain, track, created, initiative_root]
     optional_fields: [service, feature, language]
     path_patterns:
-      domain: "_bmad-output/lens-work/initiatives/{domain}/initiative.yaml"
-      service: "_bmad-output/lens-work/initiatives/{domain}/{service}/initiative.yaml"
-      feature: "_bmad-output/lens-work/initiatives/{domain}/{service}/{feature}.yaml"
+      domain: "docs/lens-work/initiatives/{domain}/initiative.yaml"
+      service: "docs/lens-work/initiatives/{domain}/{service}/initiative.yaml"
+      feature: "docs/lens-work/initiatives/{domain}/{service}/{feature}.yaml"
 
 # -----------------------------------------------------------------------------
 # CONSTITUTION SCHEMA
@@ -698,7 +698,7 @@ git_state:
 data_zones:
   governance:
     description: "Universal artifacts shared across all initiatives"
-    setup_file: "_bmad-output/lens-work/governance-setup.yaml"
+    setup_file: "docs/lens-work/governance-setup.yaml"
     artifacts:
       - constitutions/
       - roster/
@@ -709,14 +709,14 @@ data_zones:
 
   initiative:
     description: "Initiative-scoped planning artifacts in control repo"
-    local_path: _bmad-output/lens-work/initiatives/
+    local_path: docs/lens-work/initiatives/
     branch_strategy:
       pattern: "{initiative_root}-{milestone}"
       merge_target: "{initiative_root}"
 
   personal:
     description: "User profile and preferences"
-    local_path: _bmad-output/lens-work/
+    local_path: docs/lens-work/
     artifacts:
       - profile.yaml
       - governance-setup.yaml
@@ -790,7 +790,7 @@ required_frontmatter:
 # Backward compatible — existing features.yaml fields are preserved.
 features_registry:
   enabled: false                    # Opt-in — enable via constitution or /lens-upgrade
-  file: "_bmad-output/lens-work/feature-index.yaml"
+  file: "docs/lens-work/feature-index.yaml"
   legacy_file: "_bmad-output/lens-work/features.yaml"  # v3.2 compatibility fallback
   schema:
     features:
@@ -809,7 +809,7 @@ features_registry:
           depends_on: []                      # features this feature depends on
           blocks: []                          # features this feature blocks
           related: []                         # loosely related features
-  summary_file_pattern: "_bmad-output/lens-work/initiatives/{domain}/{service}/{feature}/summary.md"
+  summary_file_pattern: "docs/lens-work/initiatives/{domain}/{service}/{feature}/summary.md"
 
 # -----------------------------------------------------------------------------
 # PROBLEM LOGGING (v3.2)
@@ -818,7 +818,7 @@ features_registry:
 # Used by /log-problem command and consumed by /retrospective workflow.
 problem_logging:
   enabled: true
-  file_pattern: "_bmad-output/lens-work/initiatives/{domain}/{service}/problems.md"
+  file_pattern: "docs/lens-work/initiatives/{domain}/{service}/problems.md"
   entry_format: |
     ## [{severity}] {title}
     **Phase:** {phase} | **Date:** {date}

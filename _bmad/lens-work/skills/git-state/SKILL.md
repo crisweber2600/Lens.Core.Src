@@ -52,15 +52,15 @@ BRANCH=$(git symbolic-ref --short HEAD)
 initiative_root: foo-bar-auth
 branch: foo-bar-auth-techplan
 scope: feature
-config_path: _bmad-output/lens-work/initiatives/foo/bar/auth.yaml
-state_path: _bmad-output/lens-work/initiatives/foo/bar/auth/initiative-state.yaml
+config_path: docs/lens-work/initiatives/foo/bar/auth.yaml
+state_path: docs/lens-work/initiatives/foo/bar/auth/initiative-state.yaml
 ```
 
 **Config path resolution:**
 The config path depends on initiative scope (segment count in root):
-- 1 segment (domain): `_bmad-output/lens-work/initiatives/{domain}/initiative.yaml`
-- 2 segments (service): `_bmad-output/lens-work/initiatives/{domain}/{service}/initiative.yaml`
-- 3 segments (feature): `_bmad-output/lens-work/initiatives/{domain}/{service}/{feature}.yaml`
+- 1 segment (domain): `docs/lens-work/initiatives/{domain}/initiative.yaml`
+- 2 segments (service): `docs/lens-work/initiatives/{domain}/{service}/initiative.yaml`
+- 3 segments (feature): `docs/lens-work/initiatives/{domain}/{service}/{feature}.yaml`
 
 When the config file exists, read the `scope` field to resolve ambiguity.
 
@@ -173,7 +173,7 @@ List all active initiative roots, optionally filtered by domain.
 **Algorithm:**
 ```bash
 # Enumerate committed initiative-state.yaml files under:
-# _bmad-output/lens-work/initiatives/
+# docs/lens-work/initiatives/
 # Filter by lifecycle_status == active and optionally by domain.
 # Branch scanning is not the discovery mechanism in v3.
 ```
@@ -210,7 +210,7 @@ Read `feature-index.yaml` from main, resolve relationships for the current featu
 **Algorithm:**
 ```bash
 # 1. Read feature-index.yaml from main (no checkout, no local state change)
-FEATURE_INDEX=$(git show origin/main:_bmad-output/lens-work/feature-index.yaml 2>/dev/null)
+FEATURE_INDEX=$(git show origin/main:docs/lens-work/feature-index.yaml 2>/dev/null)
 if [ -z "$FEATURE_INDEX" ]:
   return { status: "unavailable", reason: "feature-index.yaml not found on main" }
 
@@ -250,7 +250,7 @@ for rel_type in [depends_on, blocks, related]:
       PLAN_BRANCH = TARGET_ENTRY.plan_branch || "${target_feature}-plan"
       DOCS = {}
       for doc_type in ["tech-plan.md", "architecture.md", "prd.md", "product-brief.md"]:
-        DOC_PATH = "_bmad-output/lens-work/initiatives/${TARGET_ENTRY.domain}/${TARGET_ENTRY.service}/"
+        DOC_PATH = "docs/lens-work/initiatives/${TARGET_ENTRY.domain}/${TARGET_ENTRY.service}/"
         DOC_CONTENT = git show origin/${PLAN_BRANCH}:${DOC_PATH}${doc_type} 2>/dev/null
         if DOC_CONTENT is not null:
           DOCS[doc_type] = DOC_CONTENT
@@ -353,9 +353,9 @@ Read initiative config from a specific branch without switching HEAD.
 ```bash
 # Read config from the initiative root branch
 # Path depends on scope — try each pattern or read scope from config
-git show "${ROOT}:_bmad-output/lens-work/initiatives/${DOMAIN}/initiative.yaml"        # domain scope
-git show "${ROOT}:_bmad-output/lens-work/initiatives/${DOMAIN}/${SERVICE}/initiative.yaml"  # service scope
-git show "${ROOT}:_bmad-output/lens-work/initiatives/${DOMAIN}/${SERVICE}/${FEATURE}.yaml"  # feature scope
+git show "${ROOT}:docs/lens-work/initiatives/${DOMAIN}/initiative.yaml"        # domain scope
+git show "${ROOT}:docs/lens-work/initiatives/${DOMAIN}/${SERVICE}/initiative.yaml"  # service scope
+git show "${ROOT}:docs/lens-work/initiatives/${DOMAIN}/${SERVICE}/${FEATURE}.yaml"  # feature scope
 ```
 
 **Output:**
@@ -379,9 +379,9 @@ List files in a specific phase directory on the current or specified branch.
 **Algorithm:**
 ```bash
 # List artifacts for a phase
-git show "${BRANCH}:_bmad-output/lens-work/initiatives/${DOMAIN}/${SERVICE}/phases/${PHASE}/" 2>/dev/null
+git show "${BRANCH}:docs/lens-work/initiatives/${DOMAIN}/${SERVICE}/phases/${PHASE}/" 2>/dev/null
 # Or on current branch:
-ls _bmad-output/lens-work/initiatives/${DOMAIN}/${SERVICE}/phases/${PHASE}/
+ls docs/lens-work/initiatives/${DOMAIN}/${SERVICE}/phases/${PHASE}/
 ```
 
 **Output:**
@@ -403,7 +403,7 @@ artifact_count: 1
 | Current milestone | N/A | Read `initiative-state.yaml.milestone` |
 | Completed phases | Query merged PRs via provider adapter | Provider PRs + committed phase markers |
 | Promotion status | Query merged PRs via provider adapter | Provider PRs + milestone branch merge status |
-| Active initiatives | `git branch --list` + parse roots | Enumerate `_bmad-output/lens-work/initiatives/**/initiative-state.yaml` |
+| Active initiatives | `git branch --list` + parse roots | Enumerate `docs/lens-work/initiatives/**/initiative-state.yaml` |
 | Initiative config | Dual-written (stale) | Committed on initiative branch (single source) |
 | Event history | `event-log.jsonl` (git-ignored, lost) | PR descriptions + commit messages |
 

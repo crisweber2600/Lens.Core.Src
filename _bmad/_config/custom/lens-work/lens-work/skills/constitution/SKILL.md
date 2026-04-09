@@ -122,7 +122,7 @@ Evaluate initiative artifacts against the resolved constitution.
 resolved_constitution: {from resolve-constitution}
 initiative_root: foo-bar-auth
 phase: businessplan
-artifacts_path: _bmad-output/lens-work/initiatives/foo/bar/phases/businessplan/
+artifacts_path: docs/lens-work/initiatives/foo/bar/phases/businessplan/
 ```
 
 **Algorithm:**
@@ -180,7 +180,7 @@ This operation is the primary entry point called by `preflight.md` and router wo
 If `session.constitutional_context` is already set in the current agent session, return it immediately. This eliminates duplicate resolution when both preflight and a router workflow call `resolve-context` in the same execution.
 
 **Layer 2 — File cache (fast path):**
-Cache the resolved constitution to `_bmad-output/lens-work/personal/.constitution-cache.yaml` with a UTC timestamp. Use branch-aware TTL windows matching the preflight freshness policy:
+Cache the resolved constitution to `docs/lens-work/personal/.constitution-cache.yaml` with a UTC timestamp. Use branch-aware TTL windows matching the preflight freshness policy:
 - `alpha` branch: cache valid for **15 minutes**
 - `beta` branch: cache valid for **1 hour**
 - Otherwise: cache valid for **today** (daily cadence)
@@ -200,7 +200,7 @@ if session.constitutional_context is set and session.constitutional_context.stat
   return session.constitutional_context
 
 # Layer 2: File cache
-cache_path = "_bmad-output/lens-work/personal/.constitution-cache.yaml"
+cache_path = "docs/lens-work/personal/.constitution-cache.yaml"
 if file_exists(cache_path):
   cached = load(cache_path)
   branch = git("branch --show-current")

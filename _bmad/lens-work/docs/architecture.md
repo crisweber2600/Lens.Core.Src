@@ -193,7 +193,7 @@ workflow-name/
 
 | Domain | Location | Owner | Operations |
 |--------|----------|-------|------------|
-| Domain 1 (Control Repo) | `_bmad-output/lens-work/initiatives/` | `@lens` agent | Write initiative artifacts |
+| Domain 1 (Control Repo) | `docs/lens-work/initiatives/` | `@lens` agent | Write initiative artifacts |
 | Domain 2 (Release Module) | `{release_repo_root}/lens.core/_bmad/lens-work/` | Module builder only | Read-only at runtime |
 | Domain 3 (Copilot Adapter) | `.github/` | User only | Not modified during initiative work |
 | Domain 4 (Governance) | `TargetProjects/lens/lens-governance/` | Governance leads only | Cross-repo PRs |

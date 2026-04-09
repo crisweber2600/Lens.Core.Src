@@ -176,7 +176,7 @@ Create the committed `initiative-state.yaml` file for a new initiative.
 
 **Path:**
 ```text
-_bmad-output/lens-work/initiatives/{domain}/{service}/{initiative}/initiative-state.yaml
+docs/lens-work/initiatives/{domain}/{service}/{initiative}/initiative-state.yaml
 ```
 
 **Schema:**
@@ -214,7 +214,7 @@ context:
 
 **Output:**
 ```yaml
-state_file: _bmad-output/lens-work/initiatives/foo/bar/auth/initiative-state.yaml
+state_file: docs/lens-work/initiatives/foo/bar/auth/initiative-state.yaml
 schema_version: 3
 lifecycle_status: active
 phase_status: in-progress
@@ -760,8 +760,8 @@ fi
 status: dirty    # dirty | clean
 files_changed: 3
 files:
-  - _bmad-output/lens-work/initiatives/foo/bar/phases/techplan/architecture.md
-  - _bmad-output/lens-work/initiatives/foo/bar/auth.yaml
+  - docs/lens-work/initiatives/foo/bar/phases/techplan/architecture.md
+  - docs/lens-work/initiatives/foo/bar/auth.yaml
 ```
 
 **When dirty directory detected, present options:**
@@ -1021,7 +1021,7 @@ phase_2:
   branch: main
   feature_index_updated: true
   summary_updated: true
-  summary_path: "_bmad-output/lens-work/initiatives/payments/auth/foo-bar-auth/summary.md"
+  summary_path: "docs/lens-work/initiatives/payments/auth/foo-bar-auth/summary.md"
 ```
 
 **Error handling:**
@@ -1056,7 +1056,7 @@ updated_at: "2026-04-05T23:42:00Z"
 **Algorithm:**
 ```yaml
 feature_index_path = load("lifecycle.yaml").features_registry.file
-# Default: "_bmad-output/lens-work/feature-index.yaml"
+# Default: "docs/lens-work/feature-index.yaml"
 
 # Read existing or initialize
 if file_exists(feature_index_path):
@@ -1092,7 +1092,7 @@ git add "${feature_index_path}"
 ```yaml
 status: updated    # updated | created
 feature: foo-bar-auth
-path: "_bmad-output/lens-work/feature-index.yaml"
+path: "docs/lens-work/feature-index.yaml"
 ```
 
 ---
@@ -1129,7 +1129,7 @@ PR operations require a GitHub PAT. The resolution order is:
 1. **Environment variable (host-specific):**
    - `github.com` → `GITHUB_PAT` → `GH_TOKEN`
    - Enterprise → `GH_ENTERPRISE_TOKEN` → `GH_TOKEN`
-2. **Profile file:** `_bmad-output/lens-work/personal/profile.yaml` → `git_credentials[].pat`
+2. **Profile file:** `docs/lens-work/personal/profile.yaml` → `git_credentials[].pat`
 3. **Fallback:** URL-only mode (prints PR comparison URL for manual creation)
 
 **CRITICAL (NFR4):** PATs are stored ONLY in environment variables or OS-level persistence. They are NEVER written to any git-tracked file. The `store-github-pat` scripts handle secure collection outside of any AI/LLM context.
@@ -1800,10 +1800,10 @@ Before ANY write operation (commit, file creation, file modification), validate 
 
 | Target Path | Rule | Error Message |
 |-------------|------|---------------|
-| `{release_repo_root}/` | ALWAYS blocked for initiative writes | `❌ BLOCK — release repo is read-only at runtime. Write to _bmad-output/lens-work/initiatives/ instead.` |
+| `{release_repo_root}/` | ALWAYS blocked for initiative writes | `❌ BLOCK — release repo is read-only at runtime. Write to docs/lens-work/initiatives/ instead.` |
 | Governance repo path | Blocked except governance PR proposals | `❌ BLOCK — governance lives in its own repo. Propose changes via governance PR.` |
 | `.github/` | Not modified during initiative work | `❌ BLOCK — adapter layer is not modified during initiative work.` |
-| Outside `_bmad-output/lens-work/initiatives/` | Blocked for initiative workflow writes | `❌ BLOCK — initiative artifacts must be written to _bmad-output/lens-work/initiatives/{path}/` |
+| Outside `docs/lens-work/initiatives/` | Blocked for initiative workflow writes | `❌ BLOCK — initiative artifacts must be written to docs/lens-work/initiatives/{path}/` |
 | Outside `session.target_path` during `/dev` | Blocked — dev writes scoped to target repo only | `❌ BLOCK — /dev writes MUST be within target repo: {session.target_path}. Attempted: {path}` |
 
 ### Validation Algorithm
@@ -1816,7 +1816,7 @@ function validate_write_target(path, context):
     if context != "governance-pr-proposal":
       HARD ERROR — governance lives in its own repo
   if context == "initiative-workflow":
-    if path not within "_bmad-output/lens-work/initiatives/":
+    if path not within "docs/lens-work/initiatives/":
       HARD ERROR — initiative artifacts must be in initiative directory
   # Dev Write Guard: /dev phase scopes ALL file writes to the target repo
   if context == "dev-implementation":
@@ -1839,7 +1839,7 @@ This path is resolved from `initiative.target_repos[0].local_path` during Pre-Fl
 
 **Allowed during `/dev`:**
 - File writes inside `session.target_path` (the target repo)
-- Control repo state updates in `_bmad-output/` (sprint-status, initiative config)
+- Control repo state updates in `docs/` (sprint-status, initiative config)
 
 **Blocked during `/dev`:**
 - Writes to any repo folder other than `session.target_path`

@@ -507,10 +507,16 @@ async function install(options) {
         const coreConfig = await readInstalledCoreConfig(projectRoot);
 
         // ── Phase 1: Output directories ─────────────────────────────────
-        const outputDir = path.join(projectRoot, '_bmad-output', 'lens-work');
+        const outputDir = path.join(projectRoot, 'docs');
         await fsHelpers.ensureDir(outputDir);
 
-        const subdirs = ['initiatives', 'personal'];
+        const subdirs = [
+            'planning-artifacts',
+            'implementation-artifacts',
+            path.join('lens-work', 'initiatives'),
+            path.join('lens-work', 'personal'),
+            path.join('reports', 'lens-work', 'quality-scan'),
+        ];
         for (const subdir of subdirs) {
             await fsHelpers.ensureDir(path.join(outputDir, subdir));
         }
@@ -532,8 +538,8 @@ async function install(options) {
                 '',
                 `project_name: ${toYamlString(path.basename(projectRoot))}`,
                 'user_skill_level: intermediate',
-                'planning_artifacts: "{project-root}/_bmad-output/planning-artifacts"',
-                'implementation_artifacts: "{project-root}/_bmad-output/implementation-artifacts"',
+                'planning_artifacts: "{project-root}/docs/planning-artifacts"',
+                'implementation_artifacts: "{project-root}/docs/implementation-artifacts"',
                 'project_knowledge: "{project-root}/docs"',
                 '',
                 '# Lens-work module defaults',
@@ -541,14 +547,14 @@ async function install(options) {
                 `default_git_remote: ${toYamlString(defaultGitRemote)}`,
                 'lifecycle_contract: "{project-root}/_bmad/lens-work/lifecycle.yaml"',
                 `governance_repo_path: ${toYamlString(governanceRepoPath)}`,
-                'initiative_output_folder: "{project-root}/_bmad-output/lens-work/initiatives"',
-                'personal_output_folder: "{project-root}/_bmad-output/lens-work/personal"',
+                'initiative_output_folder: "{project-root}/docs/lens-work/initiatives"',
+                'personal_output_folder: "{project-root}/docs/lens-work/personal"',
                 '',
                 '# Core Configuration Values',
                 `user_name: ${toYamlString(coreConfig.user_name || config.user_name || 'User')}`,
                 `communication_language: ${toYamlString(coreConfig.communication_language || config.communication_language || 'English')}`,
                 `document_output_language: ${toYamlString(coreConfig.document_output_language || config.document_output_language || 'English')}`,
-                `output_folder: ${toYamlString(coreConfig.output_folder || config.output_folder || '{project-root}/_bmad-output')}`,
+                `output_folder: ${toYamlString(coreConfig.output_folder || config.output_folder || '{project-root}/docs')}`,
                 '',
             ].join('\n');
             await fsHelpers.writeFile(configFile, configContent);

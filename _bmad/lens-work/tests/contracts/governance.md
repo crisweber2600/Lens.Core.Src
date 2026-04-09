@@ -84,7 +84,7 @@ Running `resolve-constitution` with identical inputs MUST produce identical outp
 | Write Target | Expected |
 |-------------|----------|
 | `governance-repo/constitutions/` | ❌ HARD ERROR — governance is read-only |
-| `_bmad-output/lens-work/initiatives/` | ✅ Allowed |
+| `docs/lens-work/initiatives/` | ✅ Allowed |
 | `lens.core/` | ❌ HARD ERROR — release is read-only |
 
 ## Verification Method

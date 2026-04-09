@@ -110,9 +110,9 @@ flowchart LR
 
 | Scope | Branch Created | Has Phases? | Config File |
 |-------|---------------|-------------|-------------|
-| Domain | `{domain}` | No | `_bmad-output/lens-work/initiatives/{domain}/initiative.yaml` |
-| Service | `{domain}-{service}` | No | `_bmad-output/lens-work/initiatives/{domain}/{service}/initiative.yaml` |
-| Feature | `{domain}-{service}-{feature}` | **Yes** | `_bmad-output/lens-work/initiatives/{domain}/{service}/{feature}.yaml` |
+| Domain | `{domain}` | No | `docs/lens-work/initiatives/{domain}/initiative.yaml` |
+| Service | `{domain}-{service}` | No | `docs/lens-work/initiatives/{domain}/{service}/initiative.yaml` |
+| Feature | `{domain}-{service}-{feature}` | **Yes** | `docs/lens-work/initiatives/{domain}/{service}/{feature}.yaml` |
 
 **On `/create-initiative` (feature scope):**
 - **Branches created:** `{root}` (initiative root) + `{root}-techplan` (first milestone)
@@ -348,7 +348,7 @@ flowchart LR
 | **Branches created** | `feature/{epic-key}`, `feature/{epic-key}-{story-key}` |
 | **Commits** | Implementation code in target repo only |
 | **PRs created** | Story → Epic (code review), Epic → develop (feature review) |
-| **Control repo updates** | Sprint-status tracking only (in `_bmad-output/`) |
+| **Control repo updates** | Sprint-status tracking only (in `docs/`) |
 
 ---
 
@@ -574,17 +574,17 @@ gantt
 
 | Phase | Artifact | File Pattern | Location |
 |-------|----------|-------------|----------|
-| PrePlan | Product Brief | `product-brief.md` | `_bmad-output/lens-work/initiatives/{path}/` |
-| PrePlan | Research | `research.md` | `_bmad-output/lens-work/initiatives/{path}/` |
-| PrePlan | Brainstorm | `brainstorm.md` | `_bmad-output/lens-work/initiatives/{path}/` |
-| BusinessPlan | PRD | `prd.md` | `_bmad-output/lens-work/initiatives/{path}/` |
-| BusinessPlan | UX Design | `ux-design.md` | `_bmad-output/lens-work/initiatives/{path}/` |
-| TechPlan | Architecture | `architecture.md` | `_bmad-output/lens-work/initiatives/{path}/` |
-| DevProposal | Epics | `epics.md` | `_bmad-output/lens-work/initiatives/{path}/` |
-| DevProposal | Stories | `stories.md` | `_bmad-output/lens-work/initiatives/{path}/` |
-| DevProposal | Readiness | `implementation-readiness.md` | `_bmad-output/lens-work/initiatives/{path}/` |
-| SprintPlan | Sprint Status | `sprint-status.yaml` | `_bmad-output/lens-work/initiatives/{path}/` |
-| SprintPlan | Story Files | `story-{id}.md` | `_bmad-output/lens-work/initiatives/{path}/` |
+| PrePlan | Product Brief | `product-brief.md` | `docs/lens-work/initiatives/{path}/` |
+| PrePlan | Research | `research.md` | `docs/lens-work/initiatives/{path}/` |
+| PrePlan | Brainstorm | `brainstorm.md` | `docs/lens-work/initiatives/{path}/` |
+| BusinessPlan | PRD | `prd.md` | `docs/lens-work/initiatives/{path}/` |
+| BusinessPlan | UX Design | `ux-design.md` | `docs/lens-work/initiatives/{path}/` |
+| TechPlan | Architecture | `architecture.md` | `docs/lens-work/initiatives/{path}/` |
+| DevProposal | Epics | `epics.md` | `docs/lens-work/initiatives/{path}/` |
+| DevProposal | Stories | `stories.md` | `docs/lens-work/initiatives/{path}/` |
+| DevProposal | Readiness | `implementation-readiness.md` | `docs/lens-work/initiatives/{path}/` |
+| SprintPlan | Sprint Status | `sprint-status.yaml` | `docs/lens-work/initiatives/{path}/` |
+| SprintPlan | Story Files | `story-{id}.md` | `docs/lens-work/initiatives/{path}/` |
 
 ---
 

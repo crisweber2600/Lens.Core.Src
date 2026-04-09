@@ -26,8 +26,8 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = (Resolve-Path (Join-Path $ScriptDir "..\..\..\..")).Path
 $ReleaseDir = Join-Path $ProjectRoot "lens.core"
-$TimestampFile = Join-Path $ProjectRoot "_bmad-output/lens-work/personal/.preflight-timestamp"
-$GithubHashFile = Join-Path $ProjectRoot "_bmad-output/lens-work/personal/.github-hashes"
+$TimestampFile = Join-Path $ProjectRoot "docs/lens-work/personal/.preflight-timestamp"
+$GithubHashFile = Join-Path $ProjectRoot "docs/lens-work/personal/.github-hashes"
 $LifecyclePath = Join-Path $ReleaseDir "_bmad/lens-work/lifecycle.yaml"
 
 function Get-PreflightTimestamp {

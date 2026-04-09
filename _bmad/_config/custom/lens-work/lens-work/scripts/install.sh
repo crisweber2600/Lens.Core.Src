@@ -228,9 +228,13 @@ EOF
 install_output_dirs() {
   log_info "Creating output directory structure..."
 
-  ensure_dir "${PROJECT_ROOT}/_bmad-output/lens-work"
-  ensure_dir "${PROJECT_ROOT}/_bmad-output/lens-work/initiatives"
-  ensure_dir "${PROJECT_ROOT}/_bmad-output/lens-work/personal"
+  ensure_dir "${PROJECT_ROOT}/docs"
+  ensure_dir "${PROJECT_ROOT}/docs/planning-artifacts"
+  ensure_dir "${PROJECT_ROOT}/docs/implementation-artifacts"
+  ensure_dir "${PROJECT_ROOT}/docs/lens-work"
+  ensure_dir "${PROJECT_ROOT}/docs/lens-work/initiatives"
+  ensure_dir "${PROJECT_ROOT}/docs/lens-work/personal"
+  ensure_dir "${PROJECT_ROOT}/docs/reports/lens-work/quality-scan"
 }
 
 # =============================================================================

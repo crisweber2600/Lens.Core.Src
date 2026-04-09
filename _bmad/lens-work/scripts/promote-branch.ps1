@@ -279,7 +279,7 @@ function Get-RepoRoot {
 
 function Get-ProfileFile {
     $repoRoot = Get-RepoRoot
-    return Join-Path $repoRoot '_bmad-output\lens-work\personal\profile.yaml'
+    return Join-Path $repoRoot 'docs\lens-work\personal\profile.yaml'
 }
 
 function Get-ProfilePat {

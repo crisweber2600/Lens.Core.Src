@@ -5,8 +5,8 @@ nextStepFile: './step-02-collect-scope.md'
 preflightInclude: '../../../includes/preflight.md'
 lifecycleContract: '../../../../lifecycle.yaml'
 moduleConfigPath: '../../../../bmadconfig.yaml'
-governanceSetupPath: '{project-root}/_bmad-output/lens-work/governance-setup.yaml'
-profilePath: '{project-root}/_bmad-output/lens-work/personal/profile.yaml'
+governanceSetupPath: '{project-root}/docs/lens-work/governance-setup.yaml'
+profilePath: '{project-root}/docs/lens-work/personal/profile.yaml'
 ---
 
 # Step 1: Preflight And Scope Initialization

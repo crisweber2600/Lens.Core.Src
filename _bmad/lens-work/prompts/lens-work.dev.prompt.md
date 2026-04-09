@@ -14,7 +14,7 @@ Orchestrates the full implementation cycle for an epic: iterates all stories, im
 
 **⚠️ CRITICAL:** `{release_repo_root}` is a **READ-ONLY authority repo**. It contains BMAD framework code (agents, workflows, lifecycle definitions). It is **NEVER** the implementation target.
 
-The implementation target is the **TargetProject repo** — resolved from `initiative.target_repos[0].local_path` in the initiative config. ALL writes (file creation, modification, commits) go to the TargetProject repo. The agent MUST NOT modify `{release_repo_root}/`, the control repo (except `_bmad-output/`), the governance repo, or `.github/`. The dev workflow enforces this via a hard gate (Step 3.Nc) that blocks implementation when the working directory resolves outside the TargetProject.
+The implementation target is the **TargetProject repo** — resolved from `initiative.target_repos[0].local_path` in the initiative config. ALL writes (file creation, modification, commits) go to the TargetProject repo. The agent MUST NOT modify `{release_repo_root}/`, the control repo (except `docs/` state artifacts), the governance repo, or `.github/`. The dev workflow enforces this via a hard gate (Step 3.Nc) that blocks implementation when the working directory resolves outside the TargetProject.
 
 ## Inputs
 

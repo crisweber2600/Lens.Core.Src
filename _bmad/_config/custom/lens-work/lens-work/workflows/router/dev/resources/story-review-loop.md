@@ -32,7 +32,7 @@ refreshed_context = invoke("constitution.resolve-context")
 if refreshed_context.status != "parse_error":
   session.constitutional_context = refreshed_context
 
-code_review_path = "_bmad-output/implementation-artifacts/code-review-${id}.md"
+code_review_path = "docs/implementation-artifacts/code-review-${id}.md"
 code_review_compliance = invoke("constitution.compliance-check")
 params:
   artifact_path: ${code_review_path}
@@ -81,14 +81,14 @@ read_and_follow: "lens.core/_bmad/core/skills/bmad-party-mode/workflow.md"
 params:
   input_file: ${code_review_path}
   artifacts_path: ${target_path}
-  output_file: "_bmad-output/implementation-artifacts/party-mode-review-${story_id}.md"
+  output_file: "docs/implementation-artifacts/party-mode-review-${story_id}.md"
   constitutional_context: ${session.constitutional_context}
   complexity_tracking: ${complexity_tracking}
 
 if party_mode.status not in ["pass", "complete"]:
   error: |
     Party mode teardown found unresolved issues for story ${story_id}.
-    Address _bmad-output/implementation-artifacts/party-mode-review-${story_id}.md and fix issues.
+    Address docs/implementation-artifacts/party-mode-review-${story_id}.md and fix issues.
   halt: true
 
 reviewed_story = load(${dev_story_path})
@@ -142,8 +142,8 @@ session.stories_completed.append(story_id)
 invoke: git-orchestration.commit-and-push
 params:
   paths:
-    - "_bmad-output/lens-work/initiatives/${initiative.id}.yaml"
-    - "_bmad-output/implementation-artifacts/"
+    - "docs/lens-work/initiatives/${initiative.id}.yaml"
+    - "docs/implementation-artifacts/"
   message: "[lens-work] /dev: Story ${story_id} complete - ${story_idx + 1}/${session.story_files.length}"
   branch: "${initiative.initiative_root}-dev"
 

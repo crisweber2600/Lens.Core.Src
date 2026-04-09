@@ -27,8 +27,8 @@ Display:
 ### 1. Build Resolver Context
 
 ```yaml
-profile          = load_if_exists("_bmad-output/lens-work/personal/profile.yaml")
-governance_setup = load_if_exists("_bmad-output/lens-work/governance-setup.yaml")
+profile          = load_if_exists("docs/lens-work/personal/profile.yaml")
+governance_setup = load_if_exists("docs/lens-work/governance-setup.yaml")
 
 target_projects_path = profile.target_projects_path || "TargetProjects"
 scan_path = "${target_projects_path}/${initiative.domain}/${initiative.service}"

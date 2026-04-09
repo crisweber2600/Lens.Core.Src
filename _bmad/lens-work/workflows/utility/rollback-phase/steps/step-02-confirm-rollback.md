@@ -43,7 +43,7 @@ output: |
   ### What will happen:
   - `initiative-state.yaml` updated: `phase` → `${target_phase}`
   - All existing branches preserved (no deletions)
-  - All existing artifacts preserved in `_bmad-output/`
+  - All existing artifacts preserved in `docs/`
   - You will re-enter the ${target_phase} phase workflow
 
   ### What will NOT happen:

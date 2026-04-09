@@ -53,5 +53,5 @@ Validate SprintPlan readiness, run sprint planning, create the selected dev-read
 
 - `${initiative.docs.bmad_docs}/sprint-backlog.md`
 - `${initiative.docs.bmad_docs}/dev-story-${id}.md`
-- `_bmad-output/lens-work/initiatives/${id}.yaml`
-- `_bmad-output/lens-work/event-log.jsonl`
+- `docs/lens-work/initiatives/${id}.yaml`
+- `docs/lens-work/event-log.jsonl`

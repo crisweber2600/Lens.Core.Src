@@ -82,7 +82,7 @@ After a successful run, your control repo will look like this:
 ├── TargetProjects/
 │   └── lens/
 │       └── {governance-repo}/                  ← cloned governance repo
-├── _bmad-output/
+├── docs/
 │   └── lens-work/
 │       ├── governance-setup.yaml               ← governance coordinates
 │       ├── initiatives/                        ← initiative state (empty)
@@ -95,7 +95,7 @@ After a successful run, your control repo will look like this:
 
 | File | Purpose | Overwritten on re-run? |
 |---|---|---|
-| `_bmad-output/lens-work/governance-setup.yaml` | Stores governance repo path and remote URL for preflight and `/onboard` | Yes |
+| `docs/lens-work/governance-setup.yaml` | Stores governance repo path and remote URL for preflight and `/onboard` | Yes |
 | `LENS_VERSION` | Version compatibility check — preflight compares this against `lifecycle.yaml` | Yes |
 | `.gitignore` entries | Excludes cloned repos and personal data from version control | Appended (idempotent) |
 | `.github/` | GitHub Copilot adapter files copied from the release module | Replaced |
@@ -123,7 +123,7 @@ The version is extracted from `lens.core/_bmad/lens-work/lifecycle.yaml` (`schem
 The script ensures these entries exist in your `.gitignore`:
 
 ```
-_bmad-output/lens-work/personal/
+docs/lens-work/personal/
 .github/
 lens.core/
 TargetProjects/
@@ -189,7 +189,7 @@ Open VS Code with GitHub Copilot Chat and type:
 The onboard workflow will:
 - Validate your authentication
 - Read `governance-setup.yaml` to locate your governance repo
-- Create your personal profile (`_bmad-output/lens-work/personal/profile.yaml`)
+- Create your personal profile (`docs/lens-work/personal/profile.yaml`)
 - Clone target project repos from the governance `repo-inventory.yaml`
 
 ### 5. (Optional) Install non-Copilot IDE adapters
@@ -212,7 +212,7 @@ Use this when changing `.ps1` scripts from a Linux workstation.
 
 - Install PowerShell 7 (`pwsh`) first if it is not already available.
 - Run validation from the **control repo root** against the promoted `lens.core/` payload, not from `TargetProjects/lens/src/Lens.Core.Src/`.
-- If `LENS_VERSION` or `_bmad-output/lens-work/governance-setup.yaml` are missing, run `setup-control-repo.sh` or `setup-control-repo.ps1` before validating `/onboard` or preflight behavior.
+- If `LENS_VERSION` or `docs/lens-work/governance-setup.yaml` are missing, run `setup-control-repo.sh` or `setup-control-repo.ps1` before validating `/onboard` or preflight behavior.
 
 ```bash
 pwsh -NoLogo -NoProfile -File ./lens.core/_bmad/lens-work/scripts/preflight.ps1
