@@ -20,7 +20,7 @@ lifecycleContract: '../../../../lifecycle.yaml'
 invoke: include
 path: "{preflightInclude}"
 
-initiative = load("_bmad-output/lens-work/initiatives/${inputs.initiative_id}.yaml")
+initiative = load("docs/lens-work/initiatives/${inputs.initiative_id}.yaml")
 lifecycle = load("{lifecycleContract}")
 
 phase_name = inputs.phase_name

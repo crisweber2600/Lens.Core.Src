@@ -55,7 +55,7 @@ Run /lens-upgrade to migrate your control repo to the latest schema.
 
 > See [docs/preflight-strategy.md](../../docs/preflight-strategy.md) for rationale behind freshness windows.
 
-Read `_bmad-output/lens-work/personal/.preflight-timestamp` as the last successful full preflight time (ISO 8601 UTC datetime).
+Read `docs/lens-work/personal/.preflight-timestamp` as the last successful full preflight time (ISO 8601 UTC datetime).
 
 Use branch-aware freshness windows:
 - **If branch is `alpha`:** run full preflight when timestamp is missing or older than **1 hour**.
@@ -169,7 +169,7 @@ All downstream workflow decisions MUST follow `session.constitutional_context`.
 
 ### 6. Update Timestamp
 
-After a successful full preflight, write the current UTC timestamp (ISO 8601 datetime) to `_bmad-output/lens-work/personal/.preflight-timestamp`.
+After a successful full preflight, write the current UTC timestamp (ISO 8601 datetime) to `docs/lens-work/personal/.preflight-timestamp`.
 
 ### 7. Load Cross-Feature Context *(v3.3)*
 
@@ -269,7 +269,7 @@ session.feature_yaml_state = {
 | Repo | Purpose |
 |------|---------|
 | `{release_repo_root}` | Release module with workflows, agents, prompts |
-| `{governance-repo-path}` | Governance settings (from `_bmad-output/lens-work/governance-setup.yaml`) |
+| `{governance-repo-path}` | Governance settings (from `docs/lens-work/governance-setup.yaml`) |
 
 ## Synced Content
 

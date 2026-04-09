@@ -9,9 +9,11 @@ description: Migration bridge between LENS v3 and Lens Next. Use when migrating 
 
 This skill transitions existing features from the LENS v3 branch topology (`{domain}-{service}-{feature}[-{milestone}]`) to the Lens Next 2-branch model (`{featureId}` + `{featureId}-plan`). It scans for old-model branches, derives what they were doing, maps them to the new topology, and proposes a migration plan. In-progress sessions are never lost. Dry-run is mandatory before any execution.
 
+Migration now uses a **dual-write dossier**: every discovered legacy document is mirrored into the control repo under `docs/lens-work/migrations/...` as durable proof while the canonical winning documents are still written into the governance feature docs folder for compatibility.
+
 **The non-negotiable:** In-progress work must not be lost. Dry-run must be shown and confirmed before any execution. Old branches are kept until an explicit cleanup step.
 
-**Args:** Accepts operation as first argument: `scan`, `dry-run`, `migrate`, `verify`, `cleanup`. Pass `--governance-repo <path>` for all operations. Pass `--source-repo <path>` for scan, migrate, verify, and cleanup when document migration is needed.
+**Args:** Accepts operation as first argument: `scan`, `dry-run`, `migrate`, `verify`, `cleanup`. Pass `--governance-repo <path>` for all operations. Pass `--source-repo <path>` for scan, migrate, verify, and cleanup when document migration is needed. Pass `--control-repo <path>` to override control-repo dossier storage when auto-detection is insufficient.
 
 ## Identity
 
@@ -32,6 +34,7 @@ You are the migration bridge between LENS v3 and Lens Next. You scan for old-mod
 - **state-preserving** — in-progress work (files, commits, history on old branches) must not be lost; old branches are kept until cleanup
 - **confirmation-required** — user must confirm each migration (or the full batch) before any writes happen
 - **reversible** — old branches are preserved until the explicit cleanup step, which is always separate and requires its own confirmation
+- **proof-before-destruction** — destructive cleanup must leave approval and receipt artifacts behind; chat history is never the only proof
 - **no partial execution** — if a feature migration fails mid-way, report the failure without silently continuing
 
 ## Vocabulary
@@ -48,9 +51,12 @@ You are the migration bridge between LENS v3 and Lens Next. You scan for old-mod
 | **cleanup** | Separate, explicit step to delete old branches after successful migration + confirmation |
 | **governance repo** | The repository containing Lens feature YAML, index, and summaries |
 | **source repo** | The source code repository that may contain a `Docs/` folder or `_bmad-output/` with feature documents |
-| **document discovery** | Scanning governance-legacy branches, source repo `Docs/`, `_bmad-output/`, and legacy git branches for feature documents. Uses `git ls-tree`/`git show` when filesystem paths do not exist. Each discovered document includes a `commit_ts` (Unix epoch of last commit); duplicates are resolved by freshness (newest wins), with static source priority as tiebreaker. |
-| **branch-docs** | Documents discovered on legacy git branches in the source repo via `git ls-tree`/`git show`. Prioritized between governance-legacy and source-docs. |
-| **verification** | Post-migration check confirming all expected artifacts exist before cleanup is allowed |
+| **control-repo dossier** | The proof surface under `docs/lens-work/migrations/{domain}/{service}/{featureId}/` containing mirrored raw source docs, canonical dossier docs, `migration-record.yaml`, cleanup approval, and cleanup receipt artifacts |
+| **document discovery** | Scanning governance-legacy branches, source repo `Docs/`, `_bmad-output/`, and legacy git branches for feature documents across the base branch and all detected milestone branches. Uses `git ls-tree`/`git show` when filesystem paths do not exist. Each discovered document includes a `commit_ts`; duplicates are resolved by freshness (newest wins), with static source priority as tiebreaker. |
+| **branch-docs** | Documents discovered on the legacy branch family in the source repo via `git ls-tree`/`git show`, including the base branch plus all detected milestone branches. Prioritized between governance-legacy and source-docs. |
+| **verification** | Post-migration check confirming governance artifacts exist, all discovered documents were mirrored into the control-repo dossier, and canonical hashes match before cleanup is allowed |
+| **cleanup approval** | Durable YAML artifact written to the dossier immediately before destructive cleanup executes |
+| **cleanup receipt** | Durable YAML artifact written to the dossier immediately after destructive cleanup completes or partially completes |
 
 ## Branch Pattern Reference
 
@@ -121,6 +127,7 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   --service identity \
   --username cweber \
   --source-repo /path/to/source \
+  --control-repo /path/to/control \
   --dry-run
 
 # Execute migration for a single feature (live)
@@ -131,14 +138,16 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   --domain platform \
   --service identity \
   --username cweber \
-  --source-repo /path/to/source
+  --source-repo /path/to/source \
+  --control-repo /path/to/control
 
 # Verify migration artifacts exist
 python3 ./scripts/migrate-ops.py verify \
   --governance-repo /path/to/repo \
   --feature-id auth-login \
   --domain platform \
-  --service identity
+  --service identity \
+  --control-repo /path/to/control
 
 # Preview cleanup (dry run)
 python3 ./scripts/migrate-ops.py cleanup \
@@ -148,6 +157,7 @@ python3 ./scripts/migrate-ops.py cleanup \
   --domain platform \
   --service identity \
   --source-repo /path/to/source \
+  --control-repo /path/to/control \
   --dry-run
 
 # Execute cleanup (live — requires verification to pass)
@@ -158,6 +168,8 @@ python3 ./scripts/migrate-ops.py cleanup \
   --domain platform \
   --service identity \
   --source-repo /path/to/source
+  --control-repo /path/to/control \
+  --actor cweber \
 ```
 ```
 

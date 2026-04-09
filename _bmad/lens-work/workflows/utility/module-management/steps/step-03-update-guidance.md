@@ -27,7 +27,7 @@ if update_confirmed:
     To update lens-work:
     1. Pull the latest `{release_repo_root}` repo content.
     2. Copy `{release_repo_root}/lens.core/_bmad/lens-work/` into your control repo module location.
-    3. Preserve initiative data under `_bmad-output/`.
+    3. Preserve initiative data under `docs/`.
 else if update_available:
   output: "Update guidance skipped. Run module-management again whenever you want to update."
 ```

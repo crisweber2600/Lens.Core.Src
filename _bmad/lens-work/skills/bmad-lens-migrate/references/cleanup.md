@@ -1,18 +1,19 @@
 # Cleanup
 
-Remove legacy source locations after migration has been verified. This is a destructive operation gated by verification and explicit user confirmation.
+Remove legacy source locations after migration has been verified. This is a destructive operation gated by verification, explicit user confirmation, and durable proof artifacts written into the control-repo dossier.
 
 ## Outcome
 
-Legacy branches, source repo documents, _bmad-output initiative directories, and optionally remote git branches are deleted for verified features. Only sources that were migrated are cleaned up.
+Legacy branches, source repo documents, _bmad-output initiative directories, and optionally remote git branches are deleted for verified features. Cleanup writes both `cleanup-approval.yaml` and `cleanup-receipt.yaml` into the control-repo dossier so the destructive action is independently auditable.
 
 ## Safety Gate
 
-Cleanup will **refuse to run** unless verification passes first. The script runs `verify` internally and aborts if any check fails.
+Cleanup will **refuse to run** unless verification passes first and a `migration-record.yaml` already exists in the control-repo dossier. The script runs `verify` internally and aborts if any check fails.
 
 Hard rules:
 - **NEVER** run cleanup without verification passing
 - **NEVER** run cleanup without explicit user confirmation
+- **NEVER** treat chat history as the only proof of approval — the script must persist approval and receipt artifacts
 - **NEVER** clean up features that were skipped or failed during migration
 - Always offer `--dry-run` first to preview what will be deleted
 
@@ -28,6 +29,7 @@ python3 ./scripts/migrate-ops.py cleanup \
   --domain {domain} \
   --service {service} \
   --source-repo {source_repo} \
+  --control-repo {control_repo} \
   --dry-run
 ```
 
@@ -41,6 +43,7 @@ python3 ./scripts/migrate-ops.py cleanup \
   --domain {domain} \
   --service {service} \
   --source-repo {source_repo} \
+  --control-repo {control_repo} \
   --delete-remote-branches \
   --dry-run
 ```
@@ -54,7 +57,9 @@ python3 ./scripts/migrate-ops.py cleanup \
   --feature-id {feature_id} \
   --domain {domain} \
   --service {service} \
-  --source-repo {source_repo}
+  --source-repo {source_repo} \
+  --control-repo {control_repo} \
+  --actor {username}
 ```
 
 To also delete remote branches:
@@ -67,10 +72,14 @@ python3 ./scripts/migrate-ops.py cleanup \
   --domain {domain} \
   --service {service} \
   --source-repo {source_repo} \
+  --control-repo {control_repo} \
+  --actor {username} \
   --delete-remote-branches
 ```
 
 `--source-repo` is optional. When omitted, only governance-legacy cleanup is performed.
+
+`--control-repo` is optional. When omitted, the script tries to infer the control repo from the workspace and governance repo ancestry.
 
 `--delete-remote-branches` is opt-in for safety. When set, legacy remote branches are discovered and deleted in both governance and source repos (base branch + milestone branches).
 
@@ -81,6 +90,8 @@ python3 ./scripts/migrate-ops.py cleanup \
   "status": "pass",
   "feature_id": "auth-login",
   "dry_run": false,
+  "approval_record_path": "docs/lens-work/migrations/platform/identity/auth-login/cleanup-approval.yaml",
+  "cleanup_receipt_path": "docs/lens-work/migrations/platform/identity/auth-login/cleanup-receipt.yaml",
   "cleaned": [
     {
       "path": "{governance_repo}/branches/platform-identity-auth-login/",
@@ -116,10 +127,10 @@ Paths that do not exist are silently skipped.
 
 ## Agent Workflow
 
-1. Run `cleanup --dry-run` and present the deletion list to the user
+1. Run `cleanup --dry-run` and present the deletion list plus the future approval/receipt paths to the user
 2. If the feature has remote legacy branches, re-run with `--delete-remote-branches --dry-run` to include branch deletions
 3. Ask for confirmation: "The following paths/branches will be permanently deleted. Proceed? (yes/no)"
-4. If confirmed, run `cleanup` (live, with `--delete-remote-branches` if applicable) and show the result
+4. If confirmed, run `cleanup` (live, with `--delete-remote-branches` if applicable). The script writes `cleanup-approval.yaml` before deletion and `cleanup-receipt.yaml` after deletion.
 5. If declined, stop — do not re-prompt
 
 ## After Cleanup
@@ -131,4 +142,6 @@ Cleanup complete:
   ✓ N sources deleted
   - N sources skipped (not found)
   ⚠ N warnings (see above)
+  📄 Approval: docs/lens-work/migrations/.../cleanup-approval.yaml
+  📄 Receipt: docs/lens-work/migrations/.../cleanup-receipt.yaml
 ```

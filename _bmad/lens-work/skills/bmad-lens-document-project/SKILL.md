@@ -5,7 +5,7 @@ description: 'Document the active feature or target project for AI context, scop
 
 # LENS Document Project Skill
 
-**Goal:** Run `bmad-document-project` with feature-aware output paths. Documentation lands in `_bmad-output/{domain}/{service}/{feature}/docs/` in the control repo and `features/{domain}/{service}/{feature}/docs/` in the governance repo.
+**Goal:** Run `bmad-document-project` with feature-aware output paths. Documentation lands in `docs/{domain}/{service}/{feature}/docs/` in the control repo and `features/{domain}/{service}/{feature}/docs/` in the governance repo.
 
 ---
 
@@ -14,7 +14,7 @@ description: 'Document the active feature or target project for AI context, scop
 Load config from `{project-root}/lens.core/_bmad/lens-work/bmadconfig.yaml`. Resolve:
 
 - `{governance_repo_path}` — local path to the governance repo
-- `{output_folder}` — base output path (default: `_bmad-output`)
+- `{output_folder}` — base output path (default: `docs`)
 - `{communication_language}`, `{document_output_language}`
 
 ---
@@ -28,7 +28,7 @@ Check for an active feature context by looking for `feature.yaml` on the current
 ```
 feature_yaml_candidates:
   - {governance_repo_path}/features/<domain>/<service>/<featureId>/feature.yaml  (on current branch)
-  - _bmad-output/<domain>/<service>/<featureId>/feature.yaml                     (fallback local)
+  - docs/<domain>/<service>/<featureId>/feature.yaml                             (fallback local)
 ```
 
 **If feature.yaml is found:**
@@ -46,7 +46,7 @@ feature_yaml_candidates:
   > 3. **Cancel**
 
   - If option 1: collect `domain`, `service`, `featureId` from the user; derive paths as:
-    - `resolved_docs_path = _bmad-output/{domain}/{service}/{featureId}`
+    - `resolved_docs_path = docs/{domain}/{service}/{featureId}`
     - `resolved_governance_docs_path = features/{domain}/{service}/{featureId}/docs`
   - If option 2: set `resolved_docs_path = null` (use skill default), `resolved_governance_docs_path = null`
   - If option 3: exit

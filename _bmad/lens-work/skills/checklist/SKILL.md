@@ -30,7 +30,7 @@ Evaluate a phase gate checklist for the current phase.
 phase: preplan
 track: full
 initiative_root: foo-bar-auth
-artifacts_path: _bmad-output/lens-work/initiatives/foo/bar/phases/preplan/
+artifacts_path: docs/lens-work/initiatives/foo/bar/phases/preplan/
 ```
 
 **Algorithm:**

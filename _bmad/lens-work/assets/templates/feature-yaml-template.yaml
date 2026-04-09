@@ -29,7 +29,7 @@ description: "{description}"
 
 # Artifact Paths (domain/service/feature scoped)
 docs:
-  path: "_bmad-output/{domain}/{service}/{featureId}"
+  path: "docs/{domain}/{service}/{featureId}"
   governance_docs_path: "features/{domain}/{service}/{featureId}/docs"
 
 # Artifact Registry

@@ -72,7 +72,7 @@ powershell .\setup-control-repo.ps1
 - [ ] The onboard workflow will:
   - Detect your git provider (GitHub, GitLab, Azure DevOps)
   - Validate your PAT authentication
-  - Create your user profile at `_bmad-output/lens-work/personal/profile.yaml`
+  - Create your user profile at `docs/lens-work/personal/profile.yaml`
   - Auto-clone any missing TargetProjects repos from the governance inventory
 - [ ] Verify: `profile.yaml` exists and contains your username and provider
 

@@ -10,6 +10,7 @@ to the Lens Next 2-branch model ({featureId} + {featureId}-plan).
 """
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
@@ -32,6 +33,10 @@ INIT_FEATURE_OPS_PATH = SCRIPT_DIR.parent.parent / "bmad-lens-init-feature" / "s
 PROBLEMS_TEMPLATE_PATH = SCRIPT_DIR.parent.parent.parent / "assets" / "templates" / "problems-template.md"
 LEGACY_BRANCHES_DIR = "branches"
 LEGACY_ARTIFACTS_DIR = Path("_bmad-output/lens-work/planning-artifacts")
+MIGRATION_DOSSIER_ROOT = Path("docs/lens-work/migrations")
+MIGRATION_RECORD_FILE = "migration-record.yaml"
+CLEANUP_APPROVAL_FILE = "cleanup-approval.yaml"
+CLEANUP_RECEIPT_FILE = "cleanup-receipt.yaml"
 
 # Document source types for discovery
 DOC_SOURCE_GOVERNANCE_LEGACY = "governance-legacy"
@@ -121,6 +126,203 @@ def read_yaml_if_exists(path: Path) -> dict | None:
     except (yaml.YAMLError, OSError):
         return None
     return data if isinstance(data, dict) else None
+
+
+def sha256_bytes(data: bytes) -> str:
+    """Return the SHA256 hex digest for *data*."""
+    return hashlib.sha256(data).hexdigest()
+
+
+def safe_path_part(value: str | None) -> str:
+    """Normalize free-form values so they are safe for nested dossier paths."""
+    if not value:
+        return "working-tree"
+    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "-", value).strip("-")
+    return cleaned or "working-tree"
+
+
+def write_bytes_file(path: Path, data: bytes) -> None:
+    """Write bytes to *path*, creating parent folders when needed."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+
+
+def relative_to_root(root: Path, path: Path) -> str:
+    """Return *path* relative to *root* when possible, else a normalized string."""
+    try:
+        return str(path.resolve().relative_to(root.resolve()))
+    except ValueError:
+        return str(path)
+
+
+def read_document_bytes(doc: dict) -> bytes | None:
+    """Load a discovered document as bytes, regardless of source type."""
+    if "git_ref" in doc:
+        return _git_show_file(Path(doc["git_repo"]), doc["git_ref"], doc["git_path"])
+
+    try:
+        return Path(doc["source_path"]).read_bytes()
+    except OSError:
+        return None
+
+
+def detect_git_user(repo_path: Path) -> str:
+    """Return the local git user.name for *repo_path* or a safe fallback."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_path), "config", "user.name"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except (subprocess.TimeoutExpired, OSError):
+        pass
+
+    return os.environ.get("GITHUB_ACTOR") or os.environ.get("USER") or "unknown"
+
+
+def looks_like_control_repo(path: Path) -> bool:
+    """Heuristic for detecting the control repo root from a filesystem path."""
+    return path.is_dir() and (path / "lens.core").exists()
+
+
+def resolve_control_repo(
+    control_repo_arg: str | None,
+    governance_repo: Path,
+    source_repo: Path | None,
+) -> tuple[Path, str | None]:
+    """Resolve the control repo root used for migration dossiers.
+
+    If explicit `--control-repo` is not provided, try to infer it from the
+    current working directory and the governance/source repo ancestry. When no
+    control repo marker is found, fall back to the governance repo so tests and
+    standalone executions remain usable.
+    """
+    if control_repo_arg:
+        control_repo = Path(control_repo_arg).resolve()
+        if not control_repo.exists() or not control_repo.is_dir():
+            raise RuntimeError(f"Control repo not found: {control_repo}")
+        return control_repo, None
+
+    search_roots = [Path.cwd().resolve(), governance_repo.resolve()]
+    if source_repo is not None:
+        search_roots.append(source_repo.resolve())
+
+    visited: set[Path] = set()
+    for root in search_roots:
+        for candidate in (root, *root.parents):
+            if candidate in visited:
+                continue
+            visited.add(candidate)
+            if looks_like_control_repo(candidate):
+                return candidate, None
+
+    governance_parts = governance_repo.resolve().parts
+    if "TargetProjects" in governance_parts:
+        idx = governance_parts.index("TargetProjects")
+        if idx > 0:
+            return Path(*governance_parts[:idx]), "Control repo inferred from TargetProjects ancestry."
+
+    return governance_repo.resolve(), "Control repo could not be inferred; storing migration dossier in the governance repo root."
+
+
+def migration_dossier_dir(control_repo: Path, domain: str, service: str, feature_id: str) -> Path:
+    """Return the dossier root for a migrated feature inside the control repo."""
+    return control_repo / MIGRATION_DOSSIER_ROOT / domain / service / feature_id
+
+
+def migration_record_paths(control_repo: Path, domain: str, service: str, feature_id: str) -> tuple[Path, Path, Path, Path]:
+    """Return dossier directory plus record, approval, and receipt paths."""
+    dossier_dir = migration_dossier_dir(control_repo, domain, service, feature_id)
+    return (
+        dossier_dir,
+        dossier_dir / MIGRATION_RECORD_FILE,
+        dossier_dir / CLEANUP_APPROVAL_FILE,
+        dossier_dir / CLEANUP_RECEIPT_FILE,
+    )
+
+
+def build_legacy_branch_variants(old_id: str, governance_repo: Path, source_repo: Path | None) -> list[str]:
+    """Return the base legacy branch plus all detected milestone branch variants."""
+    milestones = set(detect_legacy_milestones(governance_repo, old_id))
+    if source_repo is not None:
+        milestones.update(detect_legacy_milestones(source_repo, old_id))
+
+    branch_names = [old_id]
+    branch_names.extend(f"{old_id}-{milestone}" for milestone in sorted(milestones))
+    return branch_names
+
+
+def build_mirror_relative_path(doc: dict) -> Path:
+    """Build the control-repo dossier path for a raw discovered document."""
+    return Path("sources") / safe_path_part(doc["source_type"]) / safe_path_part(doc.get("source_branch")) / safe_path_part(
+        doc.get("source_location")
+    ) / doc["relative_path"]
+
+
+def serialize_discovered_doc(doc: dict, mirror_rel_path: Path) -> dict:
+    """Project an in-memory discovered document into the persisted dossier record shape."""
+    record = {
+        "source_type": doc["source_type"],
+        "source_branch": doc.get("source_branch"),
+        "source_location": doc.get("source_location"),
+        "relative_path": doc["relative_path"],
+        "filename": doc["filename"],
+        "commit_ts": doc.get("commit_ts") or 0,
+        "sha256": doc["sha256"],
+        "mirror_path": str(mirror_rel_path),
+        "repo_label": doc.get("repo_label"),
+    }
+
+    if "git_ref" in doc:
+        record["git_ref"] = doc["git_ref"]
+        record["git_path"] = doc["git_path"]
+    elif doc.get("repo_relative_path"):
+        record["source_path"] = doc["repo_relative_path"]
+
+    return record
+
+
+def load_migration_record(control_repo: Path, feature_id: str, domain: str, service: str) -> tuple[Path, dict | None]:
+    """Load the persisted migration record for a feature dossier."""
+    _, record_path, _, _ = migration_record_paths(control_repo, domain, service, feature_id)
+    return record_path, read_yaml_if_exists(record_path)
+
+
+def verify_recorded_files(root: Path, entries: list[dict], path_key: str) -> tuple[str, str]:
+    """Verify a recorded file set exists under *root* and matches recorded hashes."""
+    missing: list[str] = []
+    mismatched: list[str] = []
+
+    for entry in entries:
+        rel_path = entry.get(path_key)
+        if not rel_path:
+            missing.append(f"<missing {path_key}>")
+            continue
+
+        target_path = root / rel_path
+        if not target_path.is_file():
+            missing.append(rel_path)
+            continue
+
+        try:
+            actual_hash = sha256_bytes(target_path.read_bytes())
+        except OSError:
+            missing.append(rel_path)
+            continue
+
+        if entry.get("sha256") and actual_hash != entry["sha256"]:
+            mismatched.append(rel_path)
+
+    status = "pass" if not missing and not mismatched else "fail"
+    details = [f"{len(entries) - len(missing) - len(mismatched)}/{len(entries)} verified"]
+    if missing:
+        details.append(f"missing: {', '.join(missing[:3])}{' ...' if len(missing) > 3 else ''}")
+    if mismatched:
+        details.append(f"hash mismatch: {', '.join(mismatched[:3])}{' ...' if len(mismatched) > 3 else ''}")
+    return status, "; ".join(details)
 
 
 # ---------------------------------------------------------------------------
@@ -480,33 +682,37 @@ def discover_documents(
     """Discover documents from all sources for a feature.
 
     Sources checked (in priority order):
-      1. governance-legacy  — filesystem branches/{old_id}/... or git origin/{old_id} in governance repo
-      2. branch-docs        — git origin/{old_id} docs/ tree in source repo
+      1. governance-legacy  — filesystem branches/{old_id}[-milestone]/... or git origin/{old_id}[-milestone] in governance repo
+      2. branch-docs        — git origin/{old_id}[-milestone] docs/ tree in source repo
       3. source-docs        — filesystem Docs/{domain}/{service}/{featureId}/ in source repo
       4. bmad-output        — filesystem _bmad-output/lens-work/initiatives/{domain}/{service}/ in source repo
 
-    Returns list of dicts: {source_type, source_path, relative_path, filename, git_ref?, git_path?}.
+    Returns list of dicts: {source_type, source_path, relative_path, filename, git_ref?, git_path?, source_branch, source_location}.
     """
     discovered: list[dict] = []
+    governance_branches = build_legacy_branch_variants(old_id, governance_repo, None)
 
     # Source 1: Governance legacy artifacts
-    # Try filesystem first, then fall back to git
-    legacy_root = governance_repo / LEGACY_BRANCHES_DIR / old_id / LEGACY_ARTIFACTS_DIR
-    if legacy_root.is_dir():
-        for fpath in sorted(legacy_root.rglob("*")):
-            if fpath.is_file():
-                rel_to_repo = str(fpath.relative_to(governance_repo))
-                ts = _git_file_commit_ts(governance_repo, "HEAD", rel_to_repo) or 0
-                discovered.append({
-                    "source_type": DOC_SOURCE_GOVERNANCE_LEGACY,
-                    "source_path": str(fpath),
-                    "relative_path": str(fpath.relative_to(legacy_root)),
-                    "filename": fpath.name,
-                    "commit_ts": ts,
-                })
-    else:
-        # Fall back: read from git branch in governance repo
-        ref = f"origin/{old_id}"
+    for branch_name in governance_branches:
+        legacy_root = governance_repo / LEGACY_BRANCHES_DIR / branch_name / LEGACY_ARTIFACTS_DIR
+        if legacy_root.is_dir():
+            for fpath in sorted(legacy_root.rglob("*")):
+                if fpath.is_file():
+                    rel_to_repo = str(fpath.relative_to(governance_repo))
+                    ts = _git_file_commit_ts(governance_repo, "HEAD", rel_to_repo) or 0
+                    discovered.append({
+                        "source_type": DOC_SOURCE_GOVERNANCE_LEGACY,
+                        "source_path": str(fpath),
+                        "relative_path": str(fpath.relative_to(legacy_root)),
+                        "filename": fpath.name,
+                        "source_branch": branch_name,
+                        "source_location": "planning-artifacts",
+                        "repo_label": "governance",
+                        "commit_ts": ts,
+                    })
+            continue
+
+        ref = f"origin/{branch_name}"
         if _git_ref_exists(governance_repo, ref):
             artifact_prefix = str(LEGACY_ARTIFACTS_DIR) + "/"
             paths = _git_ls_tree(governance_repo, ref, artifact_prefix)
@@ -522,40 +728,44 @@ def discover_documents(
                         "git_ref": ref,
                         "git_path": git_path,
                         "git_repo": str(governance_repo),
+                        "source_branch": branch_name,
+                        "source_location": "planning-artifacts",
+                        "repo_label": "governance",
                         "commit_ts": ts,
                     })
 
     if source_repo is not None:
-        # Source 2: Branch-docs — documents on the legacy branch in source repo
-        ref = f"origin/{old_id}"
-        if _git_ref_exists(source_repo, ref):
-            # Try both path patterns: with and without 'feature/' intermediary
-            doc_prefixes = [
-                f"docs/{domain}/{service}/feature/{feature_id}/",
-                f"docs/{domain}/{service}/{feature_id}/",
-            ]
-            found_prefix = None
-            for prefix in doc_prefixes:
-                paths = _git_ls_tree(source_repo, ref, prefix)
-                if paths:
-                    found_prefix = prefix
-                    for git_path in paths:
-                        rel = git_path[len(prefix):]
-                        if rel:
-                            ts = _git_file_commit_ts(source_repo, ref, git_path) or 0
-                            discovered.append({
-                                "source_type": DOC_SOURCE_BRANCH_DOCS,
-                                "source_path": f"git:{ref}:{git_path}",
-                                "relative_path": rel,
-                                "filename": Path(rel).name,
-                                "git_ref": ref,
-                                "git_path": git_path,
-                                "git_repo": str(source_repo),
-                                "commit_ts": ts,
-                            })
-                    break  # Use first matching prefix
+        # Source 2: Branch-docs — documents on the legacy branch family in the source repo
+        source_branches = build_legacy_branch_variants(old_id, governance_repo, source_repo)
+        for branch_name in source_branches:
+            ref = f"origin/{branch_name}"
+            if not _git_ref_exists(source_repo, ref):
+                continue
 
-            # Also check _bmad-output on the branch itself
+            doc_prefixes = [
+                (f"docs/{domain}/{service}/feature/{feature_id}/", "branch-docs-feature"),
+                (f"docs/{domain}/{service}/{feature_id}/", "branch-docs-flat"),
+            ]
+            for prefix, location_name in doc_prefixes:
+                paths = _git_ls_tree(source_repo, ref, prefix)
+                for git_path in paths:
+                    rel = git_path[len(prefix):]
+                    if rel:
+                        ts = _git_file_commit_ts(source_repo, ref, git_path) or 0
+                        discovered.append({
+                            "source_type": DOC_SOURCE_BRANCH_DOCS,
+                            "source_path": f"git:{ref}:{git_path}",
+                            "relative_path": rel,
+                            "filename": Path(rel).name,
+                            "git_ref": ref,
+                            "git_path": git_path,
+                            "git_repo": str(source_repo),
+                            "source_branch": branch_name,
+                            "source_location": location_name,
+                            "repo_label": "source",
+                            "commit_ts": ts,
+                        })
+
             bmad_branch_prefix = "_bmad-output/lens-work/"
             bmad_paths = _git_ls_tree(source_repo, ref, bmad_branch_prefix)
             for git_path in bmad_paths:
@@ -570,6 +780,9 @@ def discover_documents(
                         "git_ref": ref,
                         "git_path": git_path,
                         "git_repo": str(source_repo),
+                        "source_branch": branch_name,
+                        "source_location": "branch-bmad-output",
+                        "repo_label": "source",
                         "commit_ts": ts,
                     })
 
@@ -585,8 +798,12 @@ def discover_documents(
                         discovered.append({
                             "source_type": DOC_SOURCE_REPO_DOCS,
                             "source_path": str(fpath),
+                            "repo_relative_path": rel_to_repo,
                             "relative_path": str(fpath.relative_to(feature_docs)),
                             "filename": fpath.name,
+                            "source_branch": "working-tree",
+                            "source_location": "working-tree-docs",
+                            "repo_label": "source",
                             "commit_ts": ts,
                         })
 
@@ -600,8 +817,12 @@ def discover_documents(
                     discovered.append({
                         "source_type": DOC_SOURCE_BMAD_OUTPUT,
                         "source_path": str(fpath),
+                        "repo_relative_path": rel_to_repo,
                         "relative_path": str(fpath.relative_to(bmad_output)),
                         "filename": fpath.name,
+                        "source_branch": "working-tree",
+                        "source_location": "working-tree-bmad-output",
+                        "repo_label": "source",
                         "commit_ts": ts,
                     })
 
@@ -610,58 +831,116 @@ def discover_documents(
 
 def migrate_documents(
     governance_repo: Path,
+    control_repo: Path,
     old_id: str,
     domain: str,
     service: str,
     feature_id: str,
     source_repo: Path | None,
-) -> tuple[list[str], dict[str, int]]:
-    """Copy discovered documents into governance feature docs/ folder.
+) -> dict:
+    """Mirror discovered documents into the control repo dossier and governance docs.
 
     Conflict resolution: when the same relative_path appears in multiple sources,
     the most recently committed version wins.  Static source priority
     (DOC_SOURCE_PRIORITY) is the tiebreaker when timestamps are equal.
-    Handles both filesystem-based and git-based sources.
-    Returns (list of copied relative paths, {source_type: count} dict).
+    All discovered source documents are mirrored into the dossier as proof before
+    the canonical winners are written to governance docs and dossier docs.
     """
     docs = discover_documents(governance_repo, old_id, domain, service, feature_id, source_repo)
-    if not docs:
-        return [], {}
-
+    dossier_dir, _, _, _ = migration_record_paths(control_repo, domain, service, feature_id)
     target_dir = governance_repo / "features" / domain / service / feature_id / "docs"
+    dossier_docs_dir = dossier_dir / "docs"
+
+    dossier_dir.mkdir(parents=True, exist_ok=True)
     target_dir.mkdir(parents=True, exist_ok=True)
+    dossier_docs_dir.mkdir(parents=True, exist_ok=True)
+
+    if not docs:
+        return {
+            "documents_migrated": [],
+            "documents_source": {},
+            "discovered_count": 0,
+            "mirrored_count": 0,
+            "canonical_count": 0,
+            "discovered_records": [],
+            "canonical_records": [],
+            "dossier_dir": str(dossier_dir),
+        }
 
     # Sort by freshness (newest first), then static priority as tiebreaker
     priority_rank = {src: i for i, src in enumerate(DOC_SOURCE_PRIORITY)}
-    docs.sort(key=lambda d: (-(d.get("commit_ts") or 0), priority_rank.get(d["source_type"], 99)))
+    docs_with_content: list[dict] = []
+    discovered_records: list[dict] = []
+    errors: list[str] = []
+
+    for doc in docs:
+        content = read_document_bytes(doc)
+        if content is None:
+            errors.append(
+                f"Failed to read discovered document {doc['relative_path']} from {doc['source_type']}:{doc.get('source_branch') or 'working-tree'}"
+            )
+            continue
+
+        enriched_doc = dict(doc)
+        enriched_doc["sha256"] = sha256_bytes(content)
+        enriched_doc["_content"] = content
+
+        mirror_rel_path = build_mirror_relative_path(enriched_doc)
+        try:
+            write_bytes_file(dossier_dir / mirror_rel_path, content)
+        except OSError as exc:
+            errors.append(f"Failed to mirror {doc['relative_path']} into dossier: {exc}")
+            continue
+
+        discovered_records.append(serialize_discovered_doc(enriched_doc, mirror_rel_path))
+        docs_with_content.append(enriched_doc)
+
+    if errors:
+        raise OSError("; ".join(errors))
+
+    docs_with_content.sort(key=lambda d: (-(d.get("commit_ts") or 0), priority_rank.get(d["source_type"], 99)))
 
     copied: list[str] = []
     source_counts: dict[str, int] = {}
     seen_targets: set[str] = set()
+    canonical_records: list[dict] = []
 
-    for doc in docs:
+    for doc in docs_with_content:
         rel = doc["relative_path"]
         if rel in seen_targets:
             continue  # A newer (or higher-priority) source already placed this file
         seen_targets.add(rel)
 
         target_path = target_dir / rel
-        target_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # Git-based source: extract via git show
-        if "git_ref" in doc:
-            content = _git_show_file(Path(doc["git_repo"]), doc["git_ref"], doc["git_path"])
-            if content is None:
-                continue  # Silently skip files that can't be read
-            target_path.write_bytes(content)
-        else:
-            # Filesystem-based source
-            shutil.copy2(doc["source_path"], target_path)
+        dossier_target_path = dossier_docs_dir / rel
+        try:
+            write_bytes_file(target_path, doc["_content"])
+            write_bytes_file(dossier_target_path, doc["_content"])
+        except OSError as exc:
+            raise OSError(f"Failed to write canonical document {rel}: {exc}") from exc
 
         copied.append(rel)
         source_counts[doc["source_type"]] = source_counts.get(doc["source_type"], 0) + 1
+        canonical_records.append({
+            "relative_path": rel,
+            "source_type": doc["source_type"],
+            "source_branch": doc.get("source_branch"),
+            "source_location": doc.get("source_location"),
+            "sha256": doc["sha256"],
+            "governance_path": relative_to_root(governance_repo, target_path),
+            "dossier_path": relative_to_root(control_repo, dossier_target_path),
+        })
 
-    return copied, source_counts
+    return {
+        "documents_migrated": copied,
+        "documents_source": source_counts,
+        "discovered_count": len(docs),
+        "mirrored_count": len(discovered_records),
+        "canonical_count": len(canonical_records),
+        "discovered_records": discovered_records,
+        "canonical_records": canonical_records,
+        "dossier_dir": str(dossier_dir),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -673,10 +952,12 @@ def verify_migration(
     feature_id: str,
     domain: str,
     service: str,
+    control_repo: Path,
 ) -> dict:
-    """Verify a migrated feature has all expected artifacts in the governance repo."""
+    """Verify governance artifacts plus the control-repo migration dossier."""
     checks: list[dict] = []
     feature_dir = governance_repo / "features" / domain / service / feature_id
+    dossier_dir, record_path, approval_path, receipt_path = migration_record_paths(control_repo, domain, service, feature_id)
 
     # Check 1: feature.yaml exists and is valid
     feature_path = feature_dir / "feature.yaml"
@@ -718,24 +999,74 @@ def verify_migration(
         "details": str(problems_path),
     })
 
-    # Check 5: docs/ directory (only if documents were migrated)
-    docs_dir = feature_dir / "docs"
-    if docs_dir.is_dir():
-        doc_count = sum(1 for f in docs_dir.rglob("*") if f.is_file())
-        checks.append({
-            "name": "documents",
-            "result": "pass" if doc_count > 0 else "warn",
-            "details": f"{doc_count} documents at {docs_dir}",
-        })
+    # Check 5: control-repo dossier exists
+    checks.append({
+        "name": "dossier_dir",
+        "result": "pass" if dossier_dir.is_dir() else "fail",
+        "details": relative_to_root(control_repo, dossier_dir),
+    })
 
-    overall = "pass" if all(c["result"] in ("pass", "warn") for c in checks) else "fail"
-    return {
+    # Check 6: migration record exists
+    record = read_yaml_if_exists(record_path)
+    checks.append({
+        "name": "migration_record",
+        "result": "pass" if record else "fail",
+        "details": relative_to_root(control_repo, record_path),
+    })
+
+    discovered_entries = []
+    canonical_entries = []
+    if record:
+        documents_block = record.get("documents") if isinstance(record, dict) else None
+        if isinstance(documents_block, dict):
+            discovered_entries = documents_block.get("discovered") or []
+            canonical_entries = documents_block.get("canonical") or []
+
+    mirror_status, mirror_details = verify_recorded_files(control_repo, discovered_entries, "mirror_path")
+    checks.append({
+        "name": "mirrored_documents",
+        "result": mirror_status if record else "fail",
+        "details": mirror_details if record else "Migration record missing discovered document inventory",
+    })
+
+    dossier_status, dossier_details = verify_recorded_files(control_repo, canonical_entries, "dossier_path")
+    checks.append({
+        "name": "dossier_docs",
+        "result": dossier_status if record else "fail",
+        "details": dossier_details if record else "Migration record missing canonical dossier inventory",
+    })
+
+    governance_status, governance_details = verify_recorded_files(governance_repo, canonical_entries, "governance_path")
+    checks.append({
+        "name": "governance_docs",
+        "result": governance_status if record else "fail",
+        "details": governance_details if record else "Migration record missing governance document inventory",
+    })
+
+    overall = "pass" if all(c["result"] == "pass" for c in checks) else "fail"
+    result = {
         "status": overall,
         "feature_id": feature_id,
         "domain": domain,
         "service": service,
         "checks": checks,
+        "dossier_path": relative_to_root(control_repo, dossier_dir),
+        "migration_record_path": relative_to_root(control_repo, record_path),
     }
+
+    if record is not None:
+        record["status"] = "verified" if overall == "pass" else "verification-failed"
+        record["updated_at"] = now_iso()
+        record["verification"] = {
+            "status": overall,
+            "verified_at": record["updated_at"],
+            "checks": checks,
+            "approval_path": relative_to_root(control_repo, approval_path) if approval_path.exists() else None,
+            "cleanup_receipt_path": relative_to_root(control_repo, receipt_path) if receipt_path.exists() else None,
+        }
+        atomic_write_yaml(record_path, record)
+
+    return result
 
 
 def make_migration_summary(feature_id: str, domain: str, service: str, username: str, timestamp: str, old_id: str) -> str:
@@ -892,6 +1223,11 @@ def cmd_scan(args: argparse.Namespace) -> dict:
         print(f"Error: Source repo not found: {source_repo}", file=sys.stderr)
         sys.exit(1)
 
+    try:
+        control_repo, control_warning = resolve_control_repo(getattr(args, "control_repo", None), governance_repo, source_repo)
+    except RuntimeError as exc:
+        return {"status": "fail", "error": str(exc)}
+
     branches_dir = governance_repo / LEGACY_BRANCHES_DIR
 
     pattern_str = args.branch_pattern or DEFAULT_BRANCH_PATTERN
@@ -953,18 +1289,23 @@ def cmd_scan(args: argparse.Namespace) -> dict:
                     "plan_branch": f"{feature_id}-plan",
                 },
                 "state": state,
+                "dossier_path": relative_to_root(control_repo, migration_dossier_dir(control_repo, domain, service, feature_id)),
                 "documents": discover_documents(
                     governance_repo, base_name, domain, service, feature_id, source_repo,
                 ),
             }
         )
 
-    return {
+    result = {
         "status": "pass",
         "legacy_features": legacy_features,
         "total": len(legacy_features),
         "conflicts": conflicts,
+        "control_repo": str(control_repo),
     }
+    if control_warning:
+        result["warning"] = control_warning
+    return result
 
 
 def cmd_migrate_feature(args: argparse.Namespace) -> dict:
@@ -993,6 +1334,10 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
     username = args.username or "unknown"
     timestamp = now_iso()
     source_repo = Path(args.source_repo) if getattr(args, "source_repo", None) else None
+    try:
+        control_repo, control_warning = resolve_control_repo(getattr(args, "control_repo", None), governance_repo, source_repo)
+    except RuntimeError as exc:
+        return {"status": "fail", "error": str(exc)}
 
     feature_dir = governance_repo / "features" / domain / service / feature_id
     feature_path = feature_dir / "feature.yaml"
@@ -1000,6 +1345,7 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
     summary_path = feature_dir / "summary.md"
     problems_path = feature_dir / "problems.md"
     artifact_source = governance_repo / LEGACY_BRANCHES_DIR / old_id / LEGACY_ARTIFACTS_DIR
+    dossier_dir, record_path, _, _ = migration_record_paths(control_repo, domain, service, feature_id)
 
     try:
         index_data, _index_exists = init_feature_ops.read_feature_index(str(governance_repo))
@@ -1021,12 +1367,18 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
         if isinstance(raw_phase, str) and raw_phase:
             fallback_phase = raw_phase
 
+    warnings: list[str] = []
+    if control_warning:
+        warnings.append(control_warning)
+
     if dry_run:
         planned_actions = [
             f"Create feature.yaml at {feature_path}",
             f"Update feature-index.yaml at {index_path}",
             f"Create summary stub at {summary_path}",
             f"Create problems log at {problems_path}",
+            f"Write migration dossier at {dossier_dir}",
+            f"Write migration record at {record_path}",
         ]
         if legacy_state_path:
             planned_actions.append(f"Preserve legacy state from {legacy_state_path}")
@@ -1036,9 +1388,16 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
         # Document discovery preview
         docs = discover_documents(governance_repo, old_id, domain, service, feature_id, source_repo)
         docs_target = governance_repo / "features" / domain / service / feature_id / "docs"
+        dossier_docs_target = dossier_dir / "docs"
         for doc in docs:
             planned_actions.append(
                 f"Copy document [{doc['source_type']}] {doc['relative_path']} → {docs_target / doc['relative_path']}"
+            )
+            planned_actions.append(
+                f"Mirror document [{doc['source_type']}:{doc.get('source_branch') or 'working-tree'}] {doc['relative_path']} → {dossier_dir / build_mirror_relative_path(doc)}"
+            )
+            planned_actions.append(
+                f"Write canonical dossier doc {doc['relative_path']} → {dossier_docs_target / doc['relative_path']}"
             )
 
         return {
@@ -1049,10 +1408,14 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
             "feature_yaml_created": False,
             "index_updated": False,
             "legacy_state_path": legacy_state_path,
-            "documents_discovered": len(docs),
+            "documents_discovered": docs,
+            "documents_discovered_count": len(docs),
+            "dossier_path": str(dossier_dir),
+            "migration_record_path": str(record_path),
+            "warnings": warnings,
         }
 
-    feature_data, legacy_state_path, warnings = build_migrated_feature_data(
+    feature_data, legacy_state_path, feature_warnings = build_migrated_feature_data(
         governance_repo,
         old_id,
         feature_id,
@@ -1062,6 +1425,7 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
         timestamp,
         fallback_phase,
     )
+    warnings.extend(feature_warnings)
 
     feature_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1111,11 +1475,59 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
 
     # Document migration
     try:
-        documents_migrated, documents_source = migrate_documents(
-            governance_repo, old_id, domain, service, feature_id, source_repo,
+        documents_result = migrate_documents(
+            governance_repo, control_repo, old_id, domain, service, feature_id, source_repo,
         )
     except OSError as e:
         return {"status": "fail", "error": f"Failed to migrate documents: {e}"}
+
+    migration_record = {
+        "version": 1,
+        "feature_id": feature_id,
+        "old_id": old_id,
+        "domain": domain,
+        "service": service,
+        "status": "migrated",
+        "migrated_at": timestamp,
+        "updated_at": timestamp,
+        "repos": {
+            "governance": str(governance_repo),
+            "source": str(source_repo) if source_repo else None,
+            "control": str(control_repo),
+        },
+        "branch_refs": {
+            "governance": build_legacy_branch_variants(old_id, governance_repo, None),
+            "source": build_legacy_branch_variants(old_id, governance_repo, source_repo) if source_repo else [],
+        },
+        "documents": {
+            "discovered_count": documents_result["discovered_count"],
+            "mirrored_count": documents_result["mirrored_count"],
+            "canonical_count": documents_result["canonical_count"],
+            "discovered": documents_result["discovered_records"],
+            "canonical": documents_result["canonical_records"],
+        },
+        "verification": {
+            "status": "pending",
+            "verified_at": None,
+            "checks": [],
+            "approval_path": None,
+            "cleanup_receipt_path": None,
+        },
+        "cleanup": {
+            "status": "pending",
+            "approval_path": None,
+            "receipt_path": None,
+            "approved_at": None,
+            "approved_by": None,
+            "executed_at": None,
+        },
+    }
+
+    try:
+        record_path.parent.mkdir(parents=True, exist_ok=True)
+        atomic_write_yaml(record_path, migration_record)
+    except OSError as e:
+        return {"status": "fail", "error": f"Failed to write migration record: {e}"}
 
     return {
         "status": "pass",
@@ -1126,8 +1538,13 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
         "summary_created": summary_created,
         "problems_created": problems_created,
         "artifacts_copied": artifacts_copied,
-        "documents_migrated": documents_migrated,
-        "documents_source": documents_source,
+        "documents_migrated": documents_result["documents_migrated"],
+        "documents_source": documents_result["documents_source"],
+        "documents_discovered_count": documents_result["discovered_count"],
+        "documents_mirrored_count": documents_result["mirrored_count"],
+        "canonical_documents_count": documents_result["canonical_count"],
+        "dossier_path": documents_result["dossier_dir"],
+        "migration_record_path": str(record_path),
         "legacy_state_path": legacy_state_path,
         "warnings": sorted(set(warnings)),
     }
@@ -1178,7 +1595,16 @@ def cmd_verify(args: argparse.Namespace) -> dict:
         if err:
             return {"status": "fail", "error": err}
 
-    return verify_migration(governance_repo, args.feature_id, args.domain, args.service)
+    source_repo = Path(args.source_repo) if getattr(args, "source_repo", None) else None
+    try:
+        control_repo, control_warning = resolve_control_repo(getattr(args, "control_repo", None), governance_repo, source_repo)
+    except RuntimeError as exc:
+        return {"status": "fail", "error": str(exc)}
+
+    result = verify_migration(governance_repo, args.feature_id, args.domain, args.service, control_repo)
+    if control_warning:
+        result.setdefault("warnings", []).append(control_warning)
+    return result
 
 
 def cmd_cleanup(args: argparse.Namespace) -> dict:
@@ -1205,9 +1631,21 @@ def cmd_cleanup(args: argparse.Namespace) -> dict:
     old_id = args.old_id
     dry_run = args.dry_run
     source_repo = Path(args.source_repo) if getattr(args, "source_repo", None) else None
+    try:
+        control_repo, control_warning = resolve_control_repo(getattr(args, "control_repo", None), governance_repo, source_repo)
+    except RuntimeError as exc:
+        return {"status": "fail", "error": str(exc)}
+    dossier_dir, record_path, approval_path, receipt_path = migration_record_paths(control_repo, domain, service, feature_id)
+    record = read_yaml_if_exists(record_path)
+    if record is None:
+        return {
+            "status": "fail",
+            "error": "Cleanup blocked — migration record is missing. Re-run migrate before cleanup.",
+            "migration_record_path": relative_to_root(control_repo, record_path),
+        }
 
     # Gate: verify migration passed before allowing cleanup
-    verification = verify_migration(governance_repo, feature_id, domain, service)
+    verification = verify_migration(governance_repo, feature_id, domain, service, control_repo)
     if verification["status"] != "pass":
         return {
             "status": "fail",
@@ -1298,10 +1736,35 @@ def cmd_cleanup(args: argparse.Namespace) -> dict:
             "feature_id": feature_id,
             "dry_run": True,
             "planned_deletions": planned_deletions,
+            "approval_record_path": relative_to_root(control_repo, approval_path),
+            "cleanup_receipt_path": relative_to_root(control_repo, receipt_path),
+            "dossier_path": relative_to_root(control_repo, dossier_dir),
         }
         if planned_branch_deletions:
             result["planned_branch_deletions"] = planned_branch_deletions
+        if control_warning:
+            result["warning"] = control_warning
         return result
+
+    actor = args.actor or detect_git_user(control_repo)
+    approval_record = {
+        "feature_id": feature_id,
+        "old_id": old_id,
+        "domain": domain,
+        "service": service,
+        "approved_at": now_iso(),
+        "approved_by": actor,
+        "verification_status": verification["status"],
+        "migration_record_path": relative_to_root(control_repo, record_path),
+        "planned_deletions": planned_deletions,
+        "planned_branch_deletions": planned_branch_deletions,
+    }
+
+    try:
+        approval_path.parent.mkdir(parents=True, exist_ok=True)
+        atomic_write_yaml(approval_path, approval_record)
+    except OSError as e:
+        return {"status": "fail", "error": f"Failed to write cleanup approval artifact: {e}"}
 
     # Execute filesystem deletions
     cleaned: list[dict] = []
@@ -1342,6 +1805,53 @@ def cmd_cleanup(args: argparse.Namespace) -> dict:
         result["branches_deleted"] = branches_deleted
     if errors:
         result["errors"] = errors
+
+    cleanup_receipt = {
+        "feature_id": feature_id,
+        "old_id": old_id,
+        "domain": domain,
+        "service": service,
+        "executed_at": now_iso(),
+        "executed_by": actor,
+        "approval_path": relative_to_root(control_repo, approval_path),
+        "migration_record_path": relative_to_root(control_repo, record_path),
+        "status": result["status"],
+        "cleaned": cleaned,
+        "branches_deleted": branches_deleted,
+        "errors": errors,
+    }
+
+    try:
+        atomic_write_yaml(receipt_path, cleanup_receipt)
+    except OSError as e:
+        return {"status": "fail", "error": f"Cleanup completed but receipt write failed: {e}", "partial_result": result}
+
+    record = read_yaml_if_exists(record_path) or record
+    record["status"] = "cleanup-complete" if result["status"] == "pass" else "cleanup-partial"
+    record["updated_at"] = cleanup_receipt["executed_at"]
+    record.setdefault("cleanup", {})
+    record["cleanup"].update({
+        "status": record["status"],
+        "approval_path": relative_to_root(control_repo, approval_path),
+        "receipt_path": relative_to_root(control_repo, receipt_path),
+        "approved_at": approval_record["approved_at"],
+        "approved_by": actor,
+        "executed_at": cleanup_receipt["executed_at"],
+    })
+    record.setdefault("verification", {})
+    record["verification"]["approval_path"] = relative_to_root(control_repo, approval_path)
+    record["verification"]["cleanup_receipt_path"] = relative_to_root(control_repo, receipt_path)
+
+    try:
+        atomic_write_yaml(record_path, record)
+    except OSError as e:
+        return {"status": "fail", "error": f"Cleanup completed but migration record update failed: {e}", "partial_result": result}
+
+    result["approval_record_path"] = relative_to_root(control_repo, approval_path)
+    result["cleanup_receipt_path"] = relative_to_root(control_repo, receipt_path)
+    result["migration_record_path"] = relative_to_root(control_repo, record_path)
+    if control_warning:
+        result["warning"] = control_warning
     return result
 
 
@@ -1387,6 +1897,7 @@ Examples:
     scan_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
     scan_p.add_argument("--branch-pattern", help="Optional regex override for branch pattern detection")
     scan_p.add_argument("--source-repo", help="Path to source repo for document discovery")
+    scan_p.add_argument("--control-repo", help="Optional control repo root for migration dossier preview")
 
     mig_p = subparsers.add_parser("migrate-feature", help="Execute migration for a single feature")
     mig_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
@@ -1397,6 +1908,7 @@ Examples:
     mig_p.add_argument("--username", default="unknown", help="Username performing the migration")
     mig_p.add_argument("--dry-run", action="store_true", help="Preview without making changes")
     mig_p.add_argument("--source-repo", help="Path to source repo for document migration")
+    mig_p.add_argument("--control-repo", help="Optional control repo root for dossier storage")
 
     cc_p = subparsers.add_parser("check-conflicts", help="Check for naming conflicts before migration")
     cc_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
@@ -1409,6 +1921,8 @@ Examples:
     ver_p.add_argument("--feature-id", required=True, help="Feature ID to verify")
     ver_p.add_argument("--domain", required=True, help="Domain name")
     ver_p.add_argument("--service", required=True, help="Service name")
+    ver_p.add_argument("--source-repo", help="Optional source repo used to help infer control repo")
+    ver_p.add_argument("--control-repo", help="Optional control repo root for dossier verification")
 
     cl_p = subparsers.add_parser("cleanup", help="Remove legacy branches and source docs after verified migration")
     cl_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
@@ -1417,6 +1931,8 @@ Examples:
     cl_p.add_argument("--domain", required=True, help="Domain name")
     cl_p.add_argument("--service", required=True, help="Service name")
     cl_p.add_argument("--source-repo", help="Path to source repo (for Docs/ and _bmad-output cleanup)")
+    cl_p.add_argument("--control-repo", help="Optional control repo root for dossier records")
+    cl_p.add_argument("--actor", help="Actor recorded in cleanup approval and receipt artifacts")
     cl_p.add_argument("--delete-remote-branches", action="store_true",
                        help="Also delete legacy remote branches (governance + source repo)")
     cl_p.add_argument("--dry-run", action="store_true", help="Preview deletions without executing")

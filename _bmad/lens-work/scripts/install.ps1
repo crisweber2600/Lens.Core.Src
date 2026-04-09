@@ -201,9 +201,13 @@ IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL @lens.core/_bmad/lens
 
 function Install-OutputDirs {
     Write-Info "Creating output directory structure..."
-    Ensure-Directory (Join-Path $ProjectRoot '_bmad-output/lens-work')
-    Ensure-Directory (Join-Path $ProjectRoot '_bmad-output/lens-work/initiatives')
-    Ensure-Directory (Join-Path $ProjectRoot '_bmad-output/lens-work/personal')
+    Ensure-Directory (Join-Path $ProjectRoot 'docs')
+    Ensure-Directory (Join-Path $ProjectRoot 'docs/planning-artifacts')
+    Ensure-Directory (Join-Path $ProjectRoot 'docs/implementation-artifacts')
+    Ensure-Directory (Join-Path $ProjectRoot 'docs/lens-work')
+    Ensure-Directory (Join-Path $ProjectRoot 'docs/lens-work/initiatives')
+    Ensure-Directory (Join-Path $ProjectRoot 'docs/lens-work/personal')
+    Ensure-Directory (Join-Path $ProjectRoot 'docs/reports/lens-work/quality-scan')
 }
 
 # =============================================================================

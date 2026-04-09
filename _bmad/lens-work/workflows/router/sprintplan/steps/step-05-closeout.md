@@ -175,8 +175,8 @@ Load and apply `{promotionCheckInclude}` so LENS can determine whether the initi
 |----------|----------|
 | Dev Story | `${initiative.docs.bmad_docs}/dev-story-${id}.md` |
 | Sprint Backlog | `${initiative.docs.bmad_docs}/sprint-backlog.md` |
-| Initiative State | `_bmad-output/lens-work/initiatives/${id}.yaml` |
-| Event Log | `_bmad-output/lens-work/event-log.jsonl` |
+| Initiative State | `docs/lens-work/initiatives/${id}.yaml` |
+| Event Log | `docs/lens-work/event-log.jsonl` |
 
 
 ## ERROR HANDLING

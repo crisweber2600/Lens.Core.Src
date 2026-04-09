@@ -113,8 +113,8 @@ When any prompt or skill references `lens.core/_bmad/lens-work/...`, resolve it 
 
 ## Write Scope
 
-- Planning artifacts → `_bmad-output/lens-work/initiatives/`
-- Personal profile → `_bmad-output/lens-work/personal/`
+- Planning artifacts → `docs/lens-work/initiatives/`
+- Personal profile → `docs/lens-work/personal/`
 - Implementation code → target repos under the configured `target_projects_path`
 - DO NOT modify `lens.core/`, `.github/`, or the control repo root
 <!-- /LENS-WORK INSTRUCTIONS -->

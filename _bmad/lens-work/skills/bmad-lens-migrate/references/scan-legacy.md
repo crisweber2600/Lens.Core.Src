@@ -34,10 +34,12 @@ python3 ./scripts/migrate-ops.py scan \
 The script scans `{governance_repo}/branches/` for directories matching the legacy pattern `^([a-z0-9-]+)-([a-z0-9-]+)-([a-z0-9-]+)(?:-([a-z0-9-]+))?$`. When `branches/` does not exist on the filesystem, it falls back to listing remote branches via `git branch -r` and filtering by the same pattern. It groups milestone branches under their base branch, derives domain/service/featureId, and detects conflicts.
 
 When `--source-repo` is provided, the scan also discovers documents from up to four sources per feature:
-1. **governance-legacy** — `{governance_repo}/branches/{old_id}/_bmad-output/lens-work/planning-artifacts/` (filesystem) or `origin/{old_id}` branch in governance repo (git fallback)
-2. **branch-docs** — `origin/{old_id}` branch in source repo: `docs/{domain}/{service}/feature/{featureId}/` or `docs/{domain}/{service}/{featureId}/`, plus `_bmad-output/lens-work/` on the branch
+1. **governance-legacy** — `{governance_repo}/branches/{old_id}[-milestone]/_bmad-output/lens-work/planning-artifacts/` (filesystem) or `origin/{old_id}[-milestone]` branch in governance repo (git fallback)
+2. **branch-docs** — `origin/{old_id}[-milestone]` branch family in source repo: `docs/{domain}/{service}/feature/{featureId}/` or `docs/{domain}/{service}/{featureId}/`, plus `_bmad-output/lens-work/` on the branch
 3. **source-docs** — `{source_repo}/Docs/{domain}/{service}/{featureId}/` (filesystem, case-insensitive Docs/docs)
 4. **bmad-output** — `{source_repo}/_bmad-output/lens-work/initiatives/{domain}/{service}/` (filesystem)
+
+Scan output now also includes the inferred control-repo dossier path for each feature so dry-run and migrate can show where mirrored proof artifacts will be written.
 
 **Prerequisite:** Ensure `git fetch` has been run on both the governance repo and source repo so remote branch refs are current.
 

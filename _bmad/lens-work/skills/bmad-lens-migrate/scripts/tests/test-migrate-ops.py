@@ -52,6 +52,45 @@ def make_branch_dir(tmp: str, branch_name: str) -> Path:
     return d
 
 
+def run_git(repo: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess:
+    """Run a git command inside *repo*."""
+    result = subprocess.run(
+        ["git", "-C", str(repo), *args],
+        capture_output=True,
+        text=True,
+    )
+    if check and result.returncode != 0:
+        raise RuntimeError(f"git {' '.join(args)} failed: {result.stderr}")
+    return result
+
+
+def init_remote_source_repo(tmp: str) -> Path:
+    """Create a git source repo with an origin remote for branch-doc tests."""
+    remote = Path(tmp) / "remote.git"
+    source = Path(tmp) / "source"
+    subprocess.run(["git", "init", "--bare", str(remote)], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "clone", str(remote), str(source)], check=True, capture_output=True, text=True)
+    run_git(source, "config", "user.name", "testuser")
+    run_git(source, "config", "user.email", "test@example.com")
+
+    (source / "README.md").write_text("seed\n", encoding="utf-8")
+    run_git(source, "add", "README.md")
+    run_git(source, "commit", "-m", "seed")
+    run_git(source, "push", "-u", "origin", "HEAD:main")
+    return source
+
+
+def create_remote_branch_with_file(source: Path, branch_name: str, relative_path: str, content: str) -> None:
+    """Create or update a remote branch with a single tracked file."""
+    run_git(source, "checkout", "-B", branch_name, "origin/main")
+    target = source / relative_path
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(content, encoding="utf-8")
+    run_git(source, "add", relative_path)
+    run_git(source, "commit", "-m", f"add {branch_name} doc")
+    run_git(source, "push", "-u", "origin", branch_name)
+
+
 def test_scan_detects_legacy():
     """scan detects legacy feature directories."""
     print("test_scan_detects_legacy", file=sys.stderr)
@@ -433,6 +472,145 @@ def test_migrate_feature_copies_legacy_artifacts():
         assert_eq("copied artifact content", copied_artifact.read_text(encoding="utf-8"), "legacy tech plan")
 
 
+def test_migrate_feature_mirrors_base_and_milestone_branch_docs():
+    """migrate-feature mirrors docs from the base and milestone legacy branches into the dossier."""
+    print("test_migrate_feature_mirrors_base_and_milestone_branch_docs", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        governance = Path(tmp) / "governance"
+        governance.mkdir(parents=True, exist_ok=True)
+        source = init_remote_source_repo(tmp)
+        create_remote_branch_with_file(
+            source,
+            "platform-identity-auth-login",
+            "docs/platform/identity/feature/auth-login/base.md",
+            "base branch doc\n",
+        )
+        create_remote_branch_with_file(
+            source,
+            "platform-identity-auth-login-dev",
+            "docs/platform/identity/feature/auth-login/dev.md",
+            "dev branch doc\n",
+        )
+
+        result, code = run([
+            "migrate-feature",
+            "--governance-repo", str(governance),
+            "--old-id", "platform-identity-auth-login",
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--username", "testuser",
+            "--source-repo", str(source),
+            "--control-repo", tmp,
+        ])
+        assert_eq("migrate status", result["status"], "pass")
+        assert_eq("migrate exit code", code, 0)
+        assert_true("documents discovered from both branches", result["documents_discovered_count"] >= 2)
+
+        dossier = Path(tmp) / "docs" / "lens-work" / "migrations" / "platform" / "identity" / "auth-login"
+        base_mirror = dossier / "sources" / "branch-docs" / "platform-identity-auth-login" / "branch-docs-feature" / "base.md"
+        dev_mirror = dossier / "sources" / "branch-docs" / "platform-identity-auth-login-dev" / "branch-docs-feature" / "dev.md"
+        assert_eq("base branch mirrored", base_mirror.exists(), True)
+        assert_eq("dev branch mirrored", dev_mirror.exists(), True)
+
+        record_path = dossier / "migration-record.yaml"
+        record = yaml.safe_load(record_path.read_text(encoding="utf-8"))
+        assert_eq("record discovered count", record["documents"]["discovered_count"], 2)
+        assert_eq("record canonical count", record["documents"]["canonical_count"], 2)
+
+
+def test_verify_fails_when_dossier_mirror_is_missing():
+    """verify fails when a recorded mirrored source file is missing from the control-repo dossier."""
+    print("test_verify_fails_when_dossier_mirror_is_missing", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        governance = Path(tmp) / "governance"
+        governance.mkdir(parents=True, exist_ok=True)
+        source = init_remote_source_repo(tmp)
+        create_remote_branch_with_file(
+            source,
+            "platform-identity-auth-login",
+            "docs/platform/identity/feature/auth-login/prd.md",
+            "prd\n",
+        )
+
+        migrate_result, migrate_code = run([
+            "migrate-feature",
+            "--governance-repo", str(governance),
+            "--old-id", "platform-identity-auth-login",
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--username", "testuser",
+            "--source-repo", str(source),
+            "--control-repo", tmp,
+        ])
+        assert_eq("migrate status", migrate_result["status"], "pass")
+        assert_eq("migrate exit code", migrate_code, 0)
+
+        dossier = Path(tmp) / "docs" / "lens-work" / "migrations" / "platform" / "identity" / "auth-login"
+        mirror_path = dossier / "sources" / "branch-docs" / "platform-identity-auth-login" / "branch-docs-feature" / "prd.md"
+        mirror_path.unlink()
+
+        verify_result, verify_code = run([
+            "verify",
+            "--governance-repo", str(governance),
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--source-repo", str(source),
+            "--control-repo", tmp,
+        ])
+        assert_eq("verify status", verify_result["status"], "fail")
+        assert_eq("verify exit code", verify_code, 1)
+        mirror_check = next(c for c in verify_result["checks"] if c["name"] == "mirrored_documents")
+        assert_eq("mirror check fails", mirror_check["result"], "fail")
+
+
+def test_cleanup_writes_approval_and_receipt_artifacts():
+    """cleanup writes durable approval and receipt artifacts before and after deletion."""
+    print("test_cleanup_writes_approval_and_receipt_artifacts", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        governance = Path(tmp) / "governance"
+        governance.mkdir(parents=True, exist_ok=True)
+        make_branch_dir(str(governance), "platform-identity-auth-login")
+
+        migrate_result, migrate_code = run([
+            "migrate-feature",
+            "--governance-repo", str(governance),
+            "--old-id", "platform-identity-auth-login",
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--username", "testuser",
+            "--control-repo", tmp,
+        ])
+        assert_eq("migrate status", migrate_result["status"], "pass")
+        assert_eq("migrate exit code", migrate_code, 0)
+
+        cleanup_result, cleanup_code = run([
+            "cleanup",
+            "--governance-repo", str(governance),
+            "--old-id", "platform-identity-auth-login",
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--control-repo", tmp,
+            "--actor", "testuser",
+        ])
+        assert_eq("cleanup exit code", cleanup_code, 0)
+        assert_true("approval path returned", bool(cleanup_result.get("approval_record_path")))
+        assert_true("receipt path returned", bool(cleanup_result.get("cleanup_receipt_path")))
+
+        approval_path = Path(tmp) / cleanup_result["approval_record_path"]
+        receipt_path = Path(tmp) / cleanup_result["cleanup_receipt_path"]
+        assert_eq("approval file exists", approval_path.exists(), True)
+        assert_eq("receipt file exists", receipt_path.exists(), True)
+
+        receipt = yaml.safe_load(receipt_path.read_text(encoding="utf-8"))
+        assert_eq("receipt actor", receipt["executed_by"], "testuser")
+        assert_true("legacy branch directory deleted", not (governance / "branches" / "platform-identity-auth-login").exists())
+
+
 if __name__ == "__main__":
     test_scan_detects_legacy()
     test_scan_derives_components()
@@ -451,6 +629,9 @@ if __name__ == "__main__":
     test_migrate_feature_preserves_legacy_state()
     test_migrate_feature_creates_summary_and_problems_in_feature_dir()
     test_migrate_feature_copies_legacy_artifacts()
+    test_migrate_feature_mirrors_base_and_milestone_branch_docs()
+    test_verify_fails_when_dossier_mirror_is_missing()
+    test_cleanup_writes_approval_and_receipt_artifacts()
 
     print(f"\n{'='*40}", file=sys.stderr)
     print(f"Results: {PASS} passed, {FAIL} failed", file=sys.stderr)

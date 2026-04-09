@@ -38,7 +38,7 @@ That setup script is the supported bootstrap path. It:
 
 - Syncs `.github/` from the release payload
 - Clones or updates the governance repo
-- Writes `_bmad-output/lens-work/governance-setup.yaml`
+- Writes `docs/lens-work/governance-setup.yaml`
 - Writes `LENS_VERSION`
 - Updates `.gitignore`
 

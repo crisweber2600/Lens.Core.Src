@@ -23,7 +23,7 @@ Use relative paths from the repo root:
 
 Example:
 ```markdown
-[`product-brief.md`](_bmad-output/lens-work/initiatives/payments/auth/phases/preplan/product-brief.md)
+[`product-brief.md`](docs/lens-work/initiatives/payments/auth/phases/preplan/product-brief.md)
 ```
 
 ### Branch Links

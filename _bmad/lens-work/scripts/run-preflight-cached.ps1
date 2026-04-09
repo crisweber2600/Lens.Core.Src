@@ -39,7 +39,7 @@ $ErrorActionPreference = "Stop"
 
 $ScriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = (Resolve-Path (Join-Path $ScriptDir "..\..\..\..")).Path
-$CacheFile   = Join-Path $ProjectRoot "_bmad-output/lens-work/personal/.preflight-cache"
+$CacheFile   = Join-Path $ProjectRoot "docs/lens-work/personal/.preflight-cache"
 
 # =============================================================================
 # Cache check

@@ -14,13 +14,13 @@ The simplest setup — one developer, one repo, express track by default.
 # lens.core/_bmad/lens-work/bmadconfig.yaml
 user_name: "Alice"
 communication_language: "english"
-output_folder: "_bmad-output"
+output_folder: "docs"
 target_projects_path: "../TargetProjects"
 default_git_remote: "github"
 lifecycle_contract: "lens.core/_bmad/lens-work/lifecycle.yaml"
 governance_repo_path: "../TargetProjects/lens/lens-governance"
-initiative_output_folder: "_bmad-output/lens-work/initiatives"
-personal_output_folder: "_bmad-output/lens-work/personal"
+initiative_output_folder: "docs/lens-work/initiatives"
+personal_output_folder: "docs/lens-work/personal"
 ```
 
 **Recommended constitution settings:**
@@ -43,13 +43,13 @@ Standard setup with feature tracks and PR-based review gates.
 # lens.core/_bmad/lens-work/bmadconfig.yaml
 user_name: "Bob"
 communication_language: "english"
-output_folder: "_bmad-output"
+output_folder: "docs"
 target_projects_path: "../TargetProjects"
 default_git_remote: "github"
 lifecycle_contract: "lens.core/_bmad/lens-work/lifecycle.yaml"
 governance_repo_path: "../TargetProjects/lens/lens-governance"
-initiative_output_folder: "_bmad-output/lens-work/initiatives"
-personal_output_folder: "_bmad-output/lens-work/personal"
+initiative_output_folder: "docs/lens-work/initiatives"
+personal_output_folder: "docs/lens-work/personal"
 ```
 
 **Recommended constitution settings:**
@@ -75,13 +75,13 @@ Full governance with mandatory stakeholder approval and all gates enforced.
 # lens.core/_bmad/lens-work/bmadconfig.yaml
 user_name: "Carol"
 communication_language: "english"
-output_folder: "_bmad-output"
+output_folder: "docs"
 target_projects_path: "../TargetProjects"
 default_git_remote: "github"
 lifecycle_contract: "lens.core/_bmad/lens-work/lifecycle.yaml"
 governance_repo_path: "../TargetProjects/lens/lens-governance"
-initiative_output_folder: "_bmad-output/lens-work/initiatives"
-personal_output_folder: "_bmad-output/lens-work/personal"
+initiative_output_folder: "docs/lens-work/initiatives"
+personal_output_folder: "docs/lens-work/personal"
 ```
 
 **Recommended constitution settings:**
@@ -106,13 +106,13 @@ Same module — different git provider target.
 # lens.core/_bmad/lens-work/bmadconfig.yaml
 user_name: "Dave"
 communication_language: "english"
-output_folder: "_bmad-output"
+output_folder: "docs"
 target_projects_path: "../TargetProjects"
 default_git_remote: "azure-devops"
 lifecycle_contract: "lens.core/_bmad/lens-work/lifecycle.yaml"
 governance_repo_path: "../TargetProjects/lens/lens-governance"
-initiative_output_folder: "_bmad-output/lens-work/initiatives"
-personal_output_folder: "_bmad-output/lens-work/personal"
+initiative_output_folder: "docs/lens-work/initiatives"
+personal_output_folder: "docs/lens-work/personal"
 ```
 
 > **Note:** Azure DevOps uses the same REST API PR creation scripts. PAT scope requires `Code (Read & Write)` and `Pull Request Threads (Read & Write)`.
@@ -125,13 +125,13 @@ personal_output_folder: "_bmad-output/lens-work/personal"
 # lens.core/_bmad/lens-work/bmadconfig.yaml
 user_name: "Eve"
 communication_language: "english"
-output_folder: "_bmad-output"
+output_folder: "docs"
 target_projects_path: "../TargetProjects"
 default_git_remote: "gitlab"
 lifecycle_contract: "lens.core/_bmad/lens-work/lifecycle.yaml"
 governance_repo_path: "../TargetProjects/lens/lens-governance"
-initiative_output_folder: "_bmad-output/lens-work/initiatives"
-personal_output_folder: "_bmad-output/lens-work/personal"
+initiative_output_folder: "docs/lens-work/initiatives"
+personal_output_folder: "docs/lens-work/personal"
 ```
 
 > **Note:** GitLab PAT requires `api` scope. The provider adapter detects GitLab URLs and uses the GitLab REST API for merge request creation.

@@ -9,7 +9,9 @@ For each confirmed feature:
 - Entry added to `{governance_repo}/feature-index.yaml`
 - Summary stub created at `{governance_repo}/features/{domain}/{service}/{featureId}/summary.md`
 - Problems log created at `{governance_repo}/features/{domain}/{service}/{featureId}/problems.md`
-- Documents migrated to `{governance_repo}/features/{domain}/{service}/{featureId}/docs/` (when `--source-repo` is provided or governance-legacy docs exist)
+- Raw discovered documents mirrored to `{control_repo}/docs/lens-work/migrations/{domain}/{service}/{featureId}/sources/`
+- Canonical winning documents written to both `{governance_repo}/features/{domain}/{service}/{featureId}/docs/` and `{control_repo}/docs/lens-work/migrations/{domain}/{service}/{featureId}/docs/`
+- `migration-record.yaml` written to the control-repo dossier as durable proof of what was discovered, mirrored, and selected
 
 Old branches are NOT deleted at this step. Cleanup is a separate, explicit operation that requires verification first.
 
@@ -34,6 +36,8 @@ python3 ./scripts/migrate-ops.py migrate-feature \
 
 `--source-repo` is optional. When provided, the migration also discovers and copies documents from the source repo (filesystem and git branches).
 
+`--control-repo` is optional. When omitted, the script attempts to infer the control repo from the current workspace and governance repo ancestry.
+
 ## Output Shape
 
 ```json
@@ -45,12 +49,17 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   "index_updated": true,
   "summary_created": true,
   "problems_created": true,
+  "documents_discovered_count": 2,
+  "documents_mirrored_count": 2,
+  "canonical_documents_count": 2,
   "artifacts_copied": ["tech-plan.md"],
   "documents_migrated": ["prd.md", "tech-plan.md"],
   "documents_source": {
     "prd.md": "branch-docs",
     "tech-plan.md": "governance-legacy"
   },
+  "dossier_path": "{control_repo}/docs/lens-work/migrations/platform/identity/auth-login",
+  "migration_record_path": "{control_repo}/docs/lens-work/migrations/platform/identity/auth-login/migration-record.yaml",
   "legacy_state_path": "{governance_repo}/branches/platform-identity-auth-login/initiative-state.yaml",
   "warnings": []
 }
@@ -72,15 +81,20 @@ For each confirmed feature in the migration plan:
 
 ### Document Migration
 
-After governance scaffolding, documents are discovered from up to four sources and copied to `{governance_repo}/features/{domain}/{service}/{featureId}/docs/`.
+After governance scaffolding, documents are discovered from up to four sources and dual-written:
+
+- every discovered source file is mirrored into the control-repo dossier under `sources/` for auditability
+- the canonical winning file for each relative path is written to both governance docs and dossier `docs/`
 
 Priority order (highest wins when filenames conflict):
-1. **governance-legacy** — `{governance_repo}/branches/{old_id}/_bmad-output/` files (filesystem, or git `origin/{old_id}` branch fallback)
-2. **branch-docs** — `origin/{old_id}` branch in source repo: `docs/{domain}/{service}/feature/{featureId}/` or `docs/{domain}/{service}/{featureId}/`, plus `_bmad-output/lens-work/` on the branch (git-only, requires `--source-repo`)
+1. **governance-legacy** — `{governance_repo}/branches/{old_id}[-milestone]/_bmad-output/` files (filesystem, or git `origin/{old_id}[-milestone]` branch fallback)
+2. **branch-docs** — `origin/{old_id}[-milestone]` branch family in source repo: `docs/{domain}/{service}/feature/{featureId}/` or `docs/{domain}/{service}/{featureId}/`, plus `_bmad-output/lens-work/` on each branch (git-only, requires `--source-repo`)
 3. **source-docs** — `{source_repo}/Docs/{domain}/{service}/{featureId}/` (filesystem, requires `--source-repo`)
 4. **bmad-output** — `{source_repo}/_bmad-output/lens-work/initiatives/{domain}/{service}/` (filesystem, requires `--source-repo`)
 
 Git-based sources use `git ls-tree` to enumerate files and `git show` to extract content. Ensure `git fetch` has been run before migration.
+
+Migration is not complete until every discovered document has a mirrored raw copy in the control-repo dossier and every canonical winner exists in both governance docs and dossier docs.
 
 Duplicate filenames are resolved by freshness: the most recently committed version wins. When commit timestamps are equal (or unavailable), the static source priority above is used as a tiebreaker.
 
@@ -203,7 +217,7 @@ Migration complete:
   ✗ N features failed (see errors above)
   ⚠ N features skipped (conflicts)
 
-Old branches preserved. To remove them, run cleanup explicitly.
+Old branches preserved. To remove them, run cleanup explicitly after verification passes and approval/receipt artifacts can be written.
 ```
 
 ## Cleanup Step

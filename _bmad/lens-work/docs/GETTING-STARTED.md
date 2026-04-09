@@ -114,7 +114,7 @@ LENS reads defaults from `{release_repo_root}/lens.core/_bmad/lens-work/bmadconf
 ```yaml
 user_name: "Your Name"
 communication_language: "english"
-output_folder: "_bmad-output"
+output_folder: "docs"
 target_projects_path: "../TargetProjects"
 default_git_remote: "github"
 governance_repo_path: "../TargetProjects/lens/lens-governance"

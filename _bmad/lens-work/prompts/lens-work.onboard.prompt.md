@@ -12,7 +12,7 @@ You are the `@lens` agent finishing onboarding for a control repo that has alrea
 ## What This Prompt Does
 
 1. **Verifies bootstrap prerequisites** — confirms the release payload and `LENS_VERSION` already exist
-2. **Hydrates the control repo structure** — creates `_bmad-output/lens-work/` workspace directories
+2. **Hydrates the control repo structure** — creates `docs/lens-work/` workspace directories
 3. **Chains to /onboard** — runs the full onboarding workflow
 
 ## Steps
@@ -37,7 +37,7 @@ Execute shared preflight from `{project-root}/lens.core/_bmad/lens-work/workflow
 Create the workspace directories if they don't exist:
 
 ```
-_bmad-output/
+docs/
 └── lens-work/
     ├── personal/
     └── initiatives/
@@ -51,7 +51,7 @@ The onboard workflow handles:
 - Provider detection from git remote URL
 - Authentication validation
 - Governance repo verification/clone
-- Profile creation (`_bmad-output/lens-work/personal/profile.yaml`)
+- Profile creation (`docs/lens-work/personal/profile.yaml`)
 - TargetProjects bootstrap from governance `repo-inventory.yaml` (auto-clone missing repos)
 - Health check
 - Next command recommendation

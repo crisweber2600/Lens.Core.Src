@@ -29,7 +29,7 @@ for artifact in required_artifacts:
   else if artifact == "research":
     artifact_candidates = ["${planning_docs_root}/research.md"]
   else if artifact == "brainstorm":
-    artifact_candidates = ["${planning_docs_root}/brainstorm.md", "_bmad-output/brainstorming/*.md"]
+    artifact_candidates = ["${planning_docs_root}/brainstorm.md", "{output_folder}/brainstorming/*.md"]
   else if artifact == "prd":
     artifact_candidates = ["${planning_docs_root}/prd.md"]
   else if artifact == "ux-design":
