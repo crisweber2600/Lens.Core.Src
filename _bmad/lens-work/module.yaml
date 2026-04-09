@@ -19,7 +19,7 @@ global: false
 # Lifecycle Contract
 lifecycle:
   file: lifecycle.yaml
-  schema_version: 3.2
+  schema_version: 3.4
 
 # Dependencies
 dependencies:
@@ -311,6 +311,9 @@ install_questions:
 prompts:
   - lens-work.onboard.prompt.md
   - lens-work.new-initiative.prompt.md
+  - lens-work.new-domain.prompt.md
+  - lens-work.new-service.prompt.md
+  - lens-work.new-feature.prompt.md
   - lens-work.preplan.prompt.md
   - lens-work.expressplan.prompt.md
   - lens-work.businessplan.prompt.md
@@ -409,6 +412,24 @@ adapters:
       - .github/prompts/lens-work.techplan.prompt.md
       - .github/prompts/lens-work.devproposal.prompt.md
       - .github/prompts/lens-work.sprintplan.prompt.md
+      - .github/prompts/lens-work.dev.prompt.md
+      - .github/prompts/lens-work.close.prompt.md
+      - .github/prompts/lens-work.expressplan.prompt.md
+      - .github/prompts/lens-work.compliance-check.prompt.md
+      - .github/prompts/lens-work.sense.prompt.md
+      - .github/prompts/lens-work.setup-repo.prompt.md
+      - .github/prompts/lens-work.module-management.prompt.md
+      - .github/prompts/lens-work.upgrade.prompt.md
+      - .github/prompts/lens-work.retrospective.prompt.md
+      - .github/prompts/lens-work.log-problem.prompt.md
+      - .github/prompts/lens-work.move-feature.prompt.md
+      - .github/prompts/lens-work.split-feature.prompt.md
+      - .github/prompts/lens-work.approval-status.prompt.md
+      - .github/prompts/lens-work.rollback-phase.prompt.md
+      - .github/prompts/lens-work.pause-epic.prompt.md
+      - .github/prompts/lens-work.resume-epic.prompt.md
+      - .github/prompts/lens-work.profile.prompt.md
+      - .github/prompts/lens-work.audit-all-initiatives.prompt.md
       # Lens Next stub prompts
       - .github/prompts/lens-complete.prompt.md
       - .github/prompts/lens-constitution.prompt.md

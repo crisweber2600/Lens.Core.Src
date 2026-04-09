@@ -1,5 +1,5 @@
 ---
-name: log-problem
+name: lens-work-log-problem
 description: log-problem workflow reference
 ---
 

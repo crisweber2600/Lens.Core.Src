@@ -1,7 +1,9 @@
 # LENS Workbench — Lifecycle Visual Guide
 
-**Module:** lens-work v3.2  
-**Schema Version:** 3.2  
+> ⚠️ **Partial Update Notice (v4.0):** Mermaid diagrams show the v3.x 4-5 milestone branch topology. The current model uses **2-branch topology** (schema 3.4). Diagrams will be rebuilt in a future update.
+
+**Module:** lens-work v4.0  
+**Schema Version:** 3.4  
 **Last Updated:** April 1, 2026
 
 This guide provides a complete visual reference for the LENS Workbench lifecycle — from initiative creation through dev-ready execution, including every slash command, branch, commit, artifact, and PR along the way.

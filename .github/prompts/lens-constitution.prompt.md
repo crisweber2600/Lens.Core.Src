@@ -1,0 +1,12 @@
+---
+model: Claude Sonnet 4.6 (copilot)
+description: 'Governance rules resolution with 4-level additive hierarchy'
+---
+
+# lens-constitution (Stub)
+
+> **This is a stub.** Load and execute the full prompt from the release module.
+
+```
+Read and follow all instructions in: lens.core/_bmad/lens-work/prompts/lens-constitution.prompt.md
+```

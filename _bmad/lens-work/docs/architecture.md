@@ -1,6 +1,8 @@
 # Architecture — LENS Workbench Module (lens-work)
 
-**Generated:** 2026-04-01 | **Scan Level:** Deep | **Module Version:** 3.2.0
+> ⚠️ **Partial Update Notice (v4.0):** This document's branch topology diagrams still reflect the v3.x 5-branch lazy-creation model. The current architecture uses a **2-branch feature model** (schema 3.4). Core architectural patterns (skills, workflows, delegation) remain accurate.
+
+**Generated:** 2026-04-01 | **Scan Level:** Deep | **Module Version:** 4.0.0
 
 ---
 

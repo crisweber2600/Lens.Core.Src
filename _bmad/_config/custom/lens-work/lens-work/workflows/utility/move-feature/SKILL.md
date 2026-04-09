@@ -1,5 +1,5 @@
 ---
-name: move-feature
+name: lens-work-move-feature
 description: move-feature workflow reference
 ---
 

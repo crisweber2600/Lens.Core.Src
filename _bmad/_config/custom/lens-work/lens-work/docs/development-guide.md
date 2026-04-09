@@ -1,6 +1,6 @@
 # Development Guide — LENS Workbench Module (lens-work)
 
-**Generated:** 2026-04-01 | **Scan Level:** Deep | **Module Version:** 3.2.0
+**Generated:** 2026-04-01 | **Scan Level:** Deep | **Module Version:** 4.0.0
 
 ---
 

@@ -4,6 +4,8 @@ applyTo: "**"
 
 # Repository Topology — BMAD Control Repo
 
+> ⚠️ **Partial Update Notice (v4.0):** Audience tier references reflect the v3.x promotion model. The current architecture uses **2-branch topology** (schema 3.4).
+
 This workspace is a **BMAD control repo** that orchestrates planning and development across multiple nested repositories. Understanding this topology is critical — every agent, prompt, and workflow must respect these boundaries.
 
 ## Three Repository Zones

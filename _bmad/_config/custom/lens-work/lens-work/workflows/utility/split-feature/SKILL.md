@@ -1,5 +1,5 @@
 ---
-name: split-feature
+name: lens-work-split-feature
 description: Split a feature initiative into multiple child features
 ---
 

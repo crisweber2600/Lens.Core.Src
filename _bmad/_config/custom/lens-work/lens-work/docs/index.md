@@ -1,6 +1,6 @@
 # LENS Workbench Module — Documentation Index
 
-**Module:** lens-work v3.2.0 | **Type:** CLI / Toolkit | **Last Updated:** 2026-04-01
+**Module:** lens-work v4.0.0 | **Type:** CLI / Toolkit | **Last Updated:** 2026-04-01
 
 ---
 
@@ -44,7 +44,7 @@
 | [Project Overview](./project-overview.md) | High-level project summary, tech stack, architecture classification | ✅ Generated |
 | [Architecture](./architecture.md) | Design axioms, patterns, workflow/skills architecture, deployment | ✅ Generated |
 | [Source Tree Analysis](./source-tree-analysis.md) | Full annotated directory tree with critical folder descriptions | ✅ Generated |
-| [Component Inventory](./component-inventory.md) | Complete inventory: 6 skills, 35 workflows, 32 prompts, 15 script pairs, 1 agent | ✅ Generated |
+| [Component Inventory](./component-inventory.md) | Complete inventory: 34 skills, 35 workflows, 76 prompts, 15 script pairs, 1 agent | ✅ Generated |
 | [Development Guide](./development-guide.md) | Prerequisites, installation, environment setup, scripts reference, testing | ✅ Generated |
 
 ---
@@ -82,7 +82,7 @@
 | `lifecycle.yaml` | **THE CONTRACT** — phases, audiences, tracks, validation rules |
 | `module.yaml` | Module registry — version, skills, workflows |
 | `bmadconfig.yaml` | Runtime configuration template |
-| `module-help.csv` | Command index (32 entries, 13 columns) |
+| `module-help.csv` | Command index (89 entries, 13 columns) |
 | `README.md` | Module overview with design axioms |
 | `TODO.md` | Development checklist |
 | `agents/lens.agent.md` | Agent persona and 28-item menu |
