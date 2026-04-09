@@ -14,10 +14,10 @@ LENS is an AI-powered planning assistant that turns ideas into implementation-re
 
 ```bash
 # Clone or create your control repo, then run:
-./setup-control-repo.sh
+uv run setup-control-repo.py
 
 # Windows:
-powershell .\setup-control-repo.ps1
+powershell uv run setup-control-repo.py
 ```
 
 This clones the governance repo and sets up the `TargetProjects/` folder where your code repos will live.

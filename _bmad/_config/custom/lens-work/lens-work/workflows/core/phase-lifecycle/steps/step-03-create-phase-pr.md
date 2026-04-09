@@ -3,7 +3,7 @@ name: 'step-03-create-phase-pr'
 description: 'Generate the phase PR body, create the PR, and report promotion readiness'
 nextStepFile: './step-04-cleanup.md'
 promotionCheckInclude: '../../../includes/promotion-check.md'
-createPrScript: '../../../../scripts/create-pr.ps1'
+createPrScript: '../../../../scripts/create-pr.py'
 ---
 
 # Step 3: Create The Phase PR

@@ -231,13 +231,12 @@
 
 ## 4. Scripts (5 Cross-Platform)
 
-| Script | Files | Purpose |
-|--------|-------|---------|
-| **install** | `install.sh` / `install.ps1` | Standalone module installer — creates output directory structure, IDE adapter files, copilot-instructions.md. Safe to re-run |
-| **create-pr** | `create-pr.sh` / `create-pr.ps1` | Generic PR creation via GitHub/Azure DevOps REST API + PAT. No `gh` CLI dependency |
-| **promote-branch** | `promote-branch.sh` / `promote-branch.ps1` | Branch promotion, PR creation, branch cleanup (local/remote). Supports audience/phase/workflow promotion |
-| **store-github-pat** | `store-github-pat.sh` / `store-github-pat.ps1` | Secure PAT collection into env vars. **Must run OUTSIDE AI context** |
-| **setup-control-repo** | `setup-control-repo.sh` / `setup-control-repo.ps1` | Control repo bootstrap — clones governance, release, copilot repos. Safe to re-run |
+| Script | File | Purpose |
+|--------|------|---------|
+| **install** | `install.py` | Standalone module installer — creates output directory structure, IDE adapter files, copilot-instructions.md. Safe to re-run |
+| **create-pr** | `create-pr.py` | Generic PR creation via GitHub/Azure DevOps REST API + PAT. No `gh` CLI dependency |
+| **store-github-pat** | `store-github-pat.py` | Secure PAT collection into env vars. **Must run OUTSIDE AI context** |
+| **setup-control-repo** | `setup-control-repo.py` | Control repo bootstrap — clones governance, release, copilot repos. Safe to re-run |
 
 ---
 

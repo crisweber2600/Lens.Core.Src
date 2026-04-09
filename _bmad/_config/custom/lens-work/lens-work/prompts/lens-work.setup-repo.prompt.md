@@ -26,12 +26,12 @@ Use the release payload's setup script instead of manually copying `.github`, cl
 
 ```bash
 # Bash
-./{release_repo_root}/_bmad/lens-work/scripts/setup-control-repo.sh
+uv run {release_repo_root}/_bmad/lens-work/scripts/setup-control-repo.py
 ```
 
 ```powershell
 # PowerShell
-.\{release_repo_root}\_bmad\lens-work\scripts\setup-control-repo.ps1
+uv run {release_repo_root}/_bmad/lens-work/scripts/setup-control-repo.py
 ```
 
 That setup script is the supported bootstrap path. It:

@@ -24,7 +24,7 @@ From `lifecycle.yaml`, read the current phase's configuration:
 - `auto_advance_promote` (boolean) — indicates if promotion is available after this phase
 - `branching_audience` (string) — the next audience tier to promote to
 
-**Important:** All promotion operations in lens-work use PAT + GitHub REST API directly via scripts (`promote-branch.ps1/sh`, `create-pr.ps1/sh`). The `gh` CLI is never required or used.
+**Important:** All promotion operations in lens-work use PAT + GitHub REST API directly via `create-pr.py`. The `gh` CLI is never required or used.
 
 **Phase Mapping:**
 | Phase | auto_advance_promote | branching_audience |
@@ -93,33 +93,25 @@ Continue with: /${next_phase}
 If user selects **[P]** (Promote):
 
 #### Option A: Use Promote Workflow (Recommended — Uses PAT + API)
-Invoke the audience-promotion workflow using the shell (which internally uses promote-branch script with PAT + GitHub API):
+#### Option A: Use Promote Workflow (Recommended — Uses PAT + API)
+Invoke the audience-promotion workflow:
 ```bash
-# For PowerShell:
-& .\lens.core\_bmad\lens-work\workflows\core\audience-promotion\workflow.md
-
-# For Bash:
-bash ./lens.core/_bmad/lens-work/workflows/core/audience-promotion/workflow.md
+# Follow the audience-promotion workflow steps at:
+# lens.core/_bmad/lens-work/workflows/core/audience-promotion/workflow.md
 ```
 
-The promote workflow internally calls `promote-branch.ps1` or `promote-branch.sh`, which uses your PAT from `profile.yaml` to create PRs via GitHub REST API. No `gh` CLI required.
+The promote workflow uses `create-pr.py` with your PAT from `profile.yaml` to create PRs via GitHub REST API. No `gh` CLI required.
 
-#### Option B: Use Promote Script Directly (Direct — Uses PAT + API)
-If preferred, call the promote script directly with PAT support:
+#### Option B: Use create-pr Script Directly (Direct — Uses PAT + API)
+If preferred, call the create-pr script directly:
 ```bash
-# For PowerShell:
-& .\.\lens.core\_bmad\lens-work\scripts\promote-branch.ps1 `
-  -SourceBranch "${initiative.id}-${audience}" `
-  -CreatePR `
-  -Cleanup
-
-# For Bash:
-./lens.core/_bmad/lens-work/scripts/promote-branch.sh \
-  -s "${initiative.id}-${audience}" \
-  --no-pr  # skip PR if you manually create via API
+uv run lens.core/_bmad/lens-work/scripts/create-pr.py \
+  --source-branch "${initiative.id}-${audience}" \
+  --target-branch "${initiative.id}-${branching_audience}" \
+  --title "[PROMOTE] ${initiative.id} — ${audience} → ${branching_audience}"
 ```
 
-Both scripts use PAT from `profile.yaml` or `$GITHUB_TOKEN` / `$GH_TOKEN` environment variables. **Never relies on `gh` CLI.**
+Uses PAT from `profile.yaml` or `$GITHUB_TOKEN` / `$GH_TOKEN` environment variables. **Never relies on `gh` CLI.**
 
 ### Step 6: Output Result
 

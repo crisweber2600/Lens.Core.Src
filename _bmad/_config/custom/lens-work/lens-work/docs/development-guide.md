@@ -9,8 +9,7 @@
 | Requirement | Version | Purpose |
 |-------------|---------|---------|
 | Git | 2.28+ | Branch operations, state derivation, commits |
-| Bash | 4+ | Unix script execution (install, create-pr, promote, setup, PAT) |
-| PowerShell | 5+ | Windows script execution (equivalent .ps1 scripts) |
+| Bash / uv | 4+ / any | Script execution (install, create-pr, setup, PAT) |
 | Node.js | 16+ | CI/CD installer only (`_module-installer/installer.js`) |
 | curl | any | REST API calls in scripts (GitHub/Azure DevOps) |
 | jq | any (optional) | JSON parsing in scripts |
@@ -24,29 +23,29 @@
 
 ```bash
 # From control repo root
-bash lens.core/_bmad/lens-work/scripts/install.sh
+bash lens.core/_bmad/lens-work/scripts/install.py
 ```
 
 ### Multi-IDE Installation
 
 ```bash
 # Install for specific IDE
-bash lens.core/_bmad/lens-work/scripts/install.sh --ide cursor
+bash lens.core/_bmad/lens-work/scripts/install.py --ide cursor
 
 # Install for all supported IDEs
-bash lens.core/_bmad/lens-work/scripts/install.sh --all-ides
+bash lens.core/_bmad/lens-work/scripts/install.py --all-ides
 ```
 
 ### Update Existing Installation
 
 ```bash
-bash lens.core/_bmad/lens-work/scripts/install.sh --update
+bash lens.core/_bmad/lens-work/scripts/install.py --update
 ```
 
 ### Dry Run (Preview)
 
 ```bash
-bash lens.core/_bmad/lens-work/scripts/install.sh --dry-run
+bash lens.core/_bmad/lens-work/scripts/install.py --dry-run
 ```
 
 **Supported IDEs:** `github-copilot` (default), `cursor`, `claude`, `codex`
@@ -67,10 +66,10 @@ bash lens.core/_bmad/lens-work/scripts/install.sh --dry-run
 
 ```bash
 # Unix
-bash lens.core/_bmad/lens-work/scripts/store-github-pat.sh
+bash lens.core/_bmad/lens-work/scripts/store-github-pat.py
 
 # Windows
-powershell lens.core/_bmad/lens-work/scripts/store-github-pat.ps1
+powershell lens.core/_bmad/lens-work/scripts/store-github-pat.py
 ```
 
 Sets `GITHUB_PAT`, `GH_TOKEN`, and `GH_ENTERPRISE_TOKEN` in environment + shell profile.
@@ -79,7 +78,7 @@ Sets `GITHUB_PAT`, `GH_TOKEN`, and `GH_ENTERPRISE_TOKEN` in environment + shell 
 
 ```bash
 # Clone governance and release repos into TargetProjects
-bash lens.core/_bmad/lens-work/scripts/setup-control-repo.sh
+bash lens.core/_bmad/lens-work/scripts/setup-control-repo.py
 ```
 
 Options: `--org`, `--release-org`, `--release-repo`, `--release-branch`, `--base-url`, `--dry-run`
@@ -142,11 +141,10 @@ governance_repo_path: "../TargetProjects/lens/lens-governance" # Canonical gover
 
 | Script | Purpose | Key Flags |
 |--------|---------|-----------|
-| `install.sh/.ps1` | Module installer | `--ide`, `--all-ides`, `--update`, `--dry-run` |
-| `create-pr.sh/.ps1` | Create PR via REST API | `-s/--source`, `-t/--target`, `-T/--title`, `-b/--body`, `--url-only` |
-| `promote-branch.sh/.ps1` | Branch promotion | `-s/--source`, `-t/--target`, `-C/--cleanup`, `--no-pr` |
-| `setup-control-repo.sh/.ps1` | Bootstrap repos | `--org`, `--release-branch`, `--dry-run` |
-| `store-github-pat.sh/.ps1` | PAT management | (interactive, run outside AI context) |
+| `install.py` | Module installer | `--ide`, `--all-ides`, `--update`, `--dry-run` |
+| `create-pr.py` | Create PR via REST API | `--source-branch`, `--target-branch`, `--title`, `--body`, `--url-only` |
+| `setup-control-repo.py` | Bootstrap repos | `--org`, `--release-branch`, `--dry-run` |
+| `store-github-pat.py` | PAT management | (interactive, run outside AI context) |
 
 ---
 
@@ -171,7 +169,7 @@ cat tests/contracts/sensing.md           # Overlap detection scenarios
 2. **Required files check:** `lifecycle.yaml`, `module.yaml`, `bmadconfig.yaml` must exist
 3. **Manifest validation:** `module.yaml` references all skills, workflows correctly
 4. **Help CSV alignment:** `module-help.csv` matches agent menu items
-5. **Installer smoke test:** Run `install.sh --dry-run` for all IDEs
+5. **Installer smoke test:** Run `install.py --dry-run` for all IDEs
 
 ### Development TODOs (from TODO.md)
 

@@ -15,7 +15,7 @@ The top-level workspace. This is an **operational workspace**, not a code repo. 
 - `.github/` — Copilot adapter stubs (agents, skills, prompts) that reference the release module by path
 - `.github/lens-work/` — Personal profile (`profile.yaml`) and governance setup config (`governance-setup.yaml`)
 - `docs/` — All lens-work initiative artifacts, organized as `docs/{domain}/{service}/{feature}/`
-- `setup-control-repo.ps1` — Bootstrap script
+- `setup-control-repo.py` — Bootstrap script
 
 **Write rules:** Planning phase prompts write initiative artifacts here (under `docs/{domain}/{service}/{feature}/`). The `/dev` prompt writes ONLY state-tracking files here (`docs/` sprint-status, state).
 

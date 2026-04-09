@@ -15,20 +15,20 @@
 ## Preflight Steps
 
 > **Script implementation:** The full logic for Steps 1–4b is implemented in
-> [`scripts/preflight.sh`](../../scripts/preflight.sh) (Bash) and
-> [`scripts/preflight.ps1`](../../scripts/preflight.ps1) (PowerShell).
+> [`scripts/preflight.py`](.uv run ../scripts/preflight.py) (Bash) and
+> [`scripts/preflight.py`](../../scripts/preflight.py) (PowerShell).
 > The steps below describe the algorithm. Run the script to execute all checks:
 >
 > ```bash
-> bash {release_repo_root}/lens.core/_bmad/lens-work/scripts/preflight.sh                    # default
-> bash {release_repo_root}/lens.core/_bmad/lens-work/scripts/preflight.sh --caller onboard   # from /onboard
-> bash {release_repo_root}/lens.core/_bmad/lens-work/scripts/preflight.sh --skip-constitution
+> bash {release_repo_root}/lens.core/_bmad/lens-work/scripts/preflight.py                    # default
+> bash {release_repo_root}/lens.core/_bmad/lens-work/scripts/preflight.py --caller onboard   # from /onboard
+> bash {release_repo_root}/lens.core/_bmad/lens-work/scripts/preflight.py --skip-constitution
 > ```
 >
 > ```powershell
-> .\{release_repo_root}\lens.core\_bmad\lens-work\scripts\preflight.ps1                      # default
-> .\{release_repo_root}\lens.core\_bmad\lens-work\scripts\preflight.ps1 -Caller onboard      # from /onboard
-> .\{release_repo_root}\lens.core\_bmad\lens-work\scripts\preflight.ps1 -SkipConstitution
+> uv run {release_repo_root}/lens.core/_bmad/lens-work/scripts/preflight.py                      # default
+> uv run {release_repo_root}/lens.core/_bmad/lens-work/scripts/preflight.py -Caller onboard      # from /onboard
+> uv run {release_repo_root}/lens.core/_bmad/lens-work/scripts/preflight.py -SkipConstitution
 > ```
 
 ### 1. Check Release Branch

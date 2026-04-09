@@ -1111,7 +1111,7 @@ path: "docs/lens-work/feature-index.yaml"
 
 ## Provider Operations
 
-Git-orchestration includes provider adapter operations that abstract PR management behind a common interface. MVP implements GitHub via the `promote-branch` script + GitHub REST API with PAT-based authentication. The `gh` CLI is NOT required — all PR operations use direct REST API calls. Azure DevOps support is post-MVP.
+Git-orchestration includes provider adapter operations that abstract PR management behind a common interface. MVP implements GitHub via `create-pr.py` + GitHub REST API with PAT-based authentication. The `gh` CLI is NOT required — all PR operations use direct REST API calls. Azure DevOps support is post-MVP.
 
 ### Scripts
 
@@ -1119,8 +1119,8 @@ The module includes cross-platform scripts in `scripts/` that handle PR creation
 
 | Script | Purpose |
 |--------|--------|
-| `promote-branch.ps1` / `promote-branch.sh` | Branch promotion, PR creation via REST API, branch cleanup |
-| `store-github-pat.ps1` / `store-github-pat.sh` | Secure PAT collection into environment variables (run outside AI context) |
+| `create-pr.py` | PR creation via REST API |
+| `store-github-pat.py` | Secure PAT collection into environment variables (run outside AI context) |
 
 ### PAT Resolution Order
 
@@ -1167,7 +1167,7 @@ org: user
 repo: repo
 ```
 
-The `promote-branch` scripts include full URL parsing for GitHub, GitLab, and Azure DevOps (HTTPS and SSH formats).
+`create-pr.py` includes full URL parsing for GitHub, GitLab, and Azure DevOps (HTTPS and SSH formats).
 
 ---
 
@@ -1193,8 +1193,7 @@ fi
 **If auth fails:** Guide user to set up PAT:
 ```
 No PAT found. Run the store-github-pat script outside of this chat:
-  Windows: .\lens.core\_bmad\lens-work\scripts\store-github-pat.ps1
-  macOS/Linux: ./lens.core/_bmad/lens-work/scripts/store-github-pat.sh
+    uv run lens.core/_bmad/lens-work/scripts/store-github-pat.py
 Then restart your terminal and try again.
 ```
 
@@ -1207,14 +1206,14 @@ Then restart your terminal and try again.
 
 ### `create-pr`
 
-Create a pull request via the `promote-branch` script or direct REST API call.
+Create a pull request via `create-pr.py` or direct REST API call.
 
-**Preferred method — promote-branch script:**
+**Preferred method — create-pr.py:**
 ```bash
-# The script handles PAT resolution, branch push, PR creation, and cleanup
-./lens.core/_bmad/lens-work/scripts/promote-branch.sh \
-  -s "${SOURCE_BRANCH}" \
-  -t "${TARGET_BRANCH}"
+uv run lens.core/_bmad/lens-work/scripts/create-pr.py \
+  --source-branch "${SOURCE_BRANCH}" \
+  --target-branch "${TARGET_BRANCH}" \
+  --title "${TITLE}"
 ```
 
 **Direct REST API method (used by the script internally):**
@@ -1244,7 +1243,7 @@ Use `source_branch` and `target_branch` when invoking `create-pr`. Do not pass `
 
 **Output:** `{ url: string, number?: integer, fallback?: boolean }`
 
-`url` is the only field guaranteed by the promote-branch scripts today. `number` is optional when the caller can derive it. If no PAT is available, the operation should set `fallback: true` and print the PR comparison URL for manual creation in the browser.
+`url` is the only field guaranteed by `create-pr.py` today. `number` is optional when the caller can derive it. If no PAT is available, the operation should set `fallback: true` and print the PR comparison URL for manual creation in the browser.
 
 ---
 
@@ -1398,7 +1397,7 @@ curl -s -H "Authorization: token ${PAT}" \
 - If auth fails, guide user to run the `store-github-pat` script in a separate terminal
 
 **Dependencies:**
-- `curl` + `jq` — used by promote-branch scripts for REST API calls (widely available)
+- `uv` / Python 3.11+ — used by scripts for REST API calls
 - `git` — required for all operations
 - No `gh` CLI required — all GitHub operations use REST API with PAT
 - `az` CLI — optional for Azure DevOps operations (post-MVP)

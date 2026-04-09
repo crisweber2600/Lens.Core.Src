@@ -1,7 +1,7 @@
 ---
 name: 'step-04-closeout'
 description: 'Commit techplan artifacts, create milestone branch and PR, update state, and report the next command'
-createPrScript: '../../../../scripts/create-pr.ps1'
+createPrScript: '../../../../scripts/create-pr.py'
 ---
 
 # Step 4: Close Out The TechPlan Phase

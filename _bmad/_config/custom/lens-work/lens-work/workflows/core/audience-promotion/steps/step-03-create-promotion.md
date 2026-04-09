@@ -2,7 +2,7 @@
 name: 'step-03-create-promotion'
 description: 'Create the next-audience branch if needed, assemble the promotion PR body, and create the PR'
 nextStepFile: './step-04-render-result.md'
-createPrScript: '../../../scripts/create-pr.ps1'
+createPrScript: '../../../scripts/create-pr.py'
 sensingReportInclude: '../../includes/sensing-report.md'
 ---
 

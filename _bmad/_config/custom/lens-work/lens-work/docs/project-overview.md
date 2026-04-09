@@ -48,7 +48,7 @@ lens-work/
 ├── skills/          # 5 core skills (git-state, git-orchestration, constitution, sensing, checklist)
 ├── workflows/       # 35 workflows across 4 categories (core/router/utility/governance)
 ├── prompts/         # 32 user-facing prompt trigger files
-├── scripts/         # Cross-platform operational scripts (15 paired .sh/.ps1)
+├── scripts/         # Cross-platform Python scripts (.py)
 ├── docs/            # Reference documentation (22 files)
 ├── tests/           # Contract test specifications (4 markdown files)
 ├── assets/          # Template assets
