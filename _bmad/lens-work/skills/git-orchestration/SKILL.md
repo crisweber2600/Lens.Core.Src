@@ -331,6 +331,77 @@ commit_marker: "[CLOSE:COMPLETED] foo-bar-auth — Feature shipped to production
 
 ---
 
+### `create-control-repo-close-pr`
+
+After committing and pushing the close marker, open a pull request in the **control repo**
+from the initiative branch into the default branch (e.g., `main`). This gives reviewers
+visibility into all planning artifacts produced during the initiative lifecycle and provides
+a clean merge record.
+
+**When to invoke:** Called by the close workflow (`step-03-closeout.md`) immediately after
+`push` confirms the `[CLOSE:*]` commit is on the remote.
+
+**Input:**
+```yaml
+initiative: foo-bar-auth          # initiative slug
+close_state: completed            # completed | abandoned | superseded
+close_reason: "Feature shipped to production and verified"
+tombstone_path: "tombstones/payments/auth/foo-bar-auth-tombstone.md"  # or null if skipped
+```
+
+**PR metadata:**
+- **Title:** `[CLOSE:{CLOSE_STATE}] {initiative}`
+- **Body:** Initiative close summary including status, reason, and tombstone path
+
+**Algorithm:**
+```bash
+# 1. Resolve current branch as the initiative (source) branch
+SOURCE_BRANCH=$(git symbolic-ref --short HEAD)
+
+# 2. Detect the control repo default branch
+DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null \
+  | sed 's|refs/remotes/origin/||' || echo "main")
+
+# 3. Build PR title and body
+TITLE="[CLOSE:${close_state.upper()}] ${initiative}"
+
+BODY="## Initiative Closed: ${initiative}
+
+| Field | Value |
+|-------|-------|
+| Status | ${close_state} |
+| Reason | ${close_reason} |
+| Tombstone | ${tombstone_path || 'N/A'} |
+
+This PR merges all planning artifacts produced during the initiative lifecycle
+into the default branch. Review and merge to archive the initiative."
+
+# 4. Create PR via provider adapter
+pr_result = invoke: create-pr
+params:
+  source_branch: "${SOURCE_BRANCH}"
+  target_branch: "${DEFAULT_BRANCH}"
+  title: "${TITLE}"
+  body: "${BODY}"
+```
+
+**Fallback (no PAT available):**
+Print the PR comparison URL so the user can open it manually in a browser. Do NOT fail
+the close workflow — the initiative is already closed locally.
+
+**Output:**
+```yaml
+status: created   # created | skipped | fallback
+url: "https://github.com/org/control-repo/pull/42"
+fallback: false   # true if PAT unavailable, URL printed for manual creation
+```
+
+**Skip conditions:**
+- `branching_strategy: trunk-based` — no PRs in this strategy; return `{ status: skipped, reason: trunk-based }`
+- Track has `pr_creation: disabled` (e.g., `express` track) — return `{ status: skipped, reason: pr_creation_disabled }`
+
+---
+
 ### `update-lens-upgrade`
 
 Record a module upgrade / schema transition.
