@@ -138,12 +138,12 @@ def collect_data(governance_repo: str) -> dict:
         if stale:
             stale_count += 1
 
-        # Plan branch deep content (graceful degradation)
-        plan_branch = f"plan/{fid}"
-        problems_content = git_show(governance_repo, plan_branch, "problems.md")
-        retro_content = git_show(governance_repo, plan_branch, "retrospective.md")
+        # Deep content from governance main (graceful degradation)
+        feature_dir = f"features/{domain}/{service}/{fid}"
+        problems_content = git_show(governance_repo, "main", f"{feature_dir}/problems.md")
+        retro_content = git_show(governance_repo, "main", f"{feature_dir}/retrospective.md")
         summary_content = git_show(
-            governance_repo, "main", f"features/{domain}/{service}/{fid}/summary.md"
+            governance_repo, "main", f"{feature_dir}/summary.md"
         )
 
         if problems_content and phase:
@@ -295,7 +295,7 @@ def build_dependency_svg(nodes: list[dict], edges: list[dict]) -> str:
 def build_problem_heatmap_table(problems_by_phase: dict) -> str:
     """Generate the problem heatmap HTML table."""
     if not problems_by_phase:
-        return '<p class="empty">No problem data available from plan branches.</p>'
+        return '<p class="empty">No problem data available.</p>'
     rows = []
     max_count = max(problems_by_phase.values(), default=1)
     for phase, count in sorted(problems_by_phase.items(), key=lambda x: -x[1]):
@@ -342,8 +342,8 @@ def build_sprint_progress_table(features: list[dict]) -> str:
 
 
 def build_team_view_table(_features: list[dict]) -> str:
-    """Generate the team view section (requires user daily logs from plan branches)."""
-    return '<p class="empty">Team view requires user daily logs from plan branches (unavailable in this run).</p>'
+    """Generate the team view section (requires user daily logs)."""
+    return '<p class="empty">Team view requires user daily logs (unavailable in this run).</p>'
 
 
 def build_retro_trends_table(features: list[dict]) -> str:
@@ -351,7 +351,7 @@ def build_retro_trends_table(features: list[dict]) -> str:
     with_retro = [f for f in features if f.get("has_retro")]
     without_retro = [f for f in features if not f.get("has_retro") and f.get("phase") not in {"preplan", "complete"}]
     if not with_retro:
-        return '<p class="empty">No retrospective data available from plan branches.</p>'
+        return '<p class="empty">No retrospective data available.</p>'
     rows = []
     for f in with_retro:
         rows.append(

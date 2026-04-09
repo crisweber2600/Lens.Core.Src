@@ -7,7 +7,7 @@ description: Feature initialization orchestrator — creates 2-branch topology, 
 
 ## Overview
 
-This skill orchestrates the full initialization of a new feature in the Lens governance framework. It creates the two-branch topology (`{featureId}` and `{featureId}-plan`), writes `feature.yaml` to the plan branch, registers the feature in `feature-index.yaml` on `main`, creates a `summary.md` stub on `main`, and opens a PR from the plan branch to the feature branch — making the feature immediately visible to the team.
+This skill orchestrates the full initialization of a new feature in the Lens governance framework. It creates the two-branch topology (`{featureId}` and `{featureId}-plan`) in the **control repo**, commits `feature.yaml` to governance `main`, registers the feature in `feature-index.yaml` on `main`, creates a `summary.md` stub on `main`, and opens a PR from the plan branch to the feature branch in the control repo — making the feature immediately visible to the team. The governance repo stays on `main` at all times; no feature branches are created there.
 
 **Progressive disclosure:** you ask only for feature name, domain, and service upfront. Track, username, and repo paths are resolved from `user-profile.md`, config, and git config.
 
@@ -30,7 +30,7 @@ You are the entry point for all feature work in the Lens system. You orchestrate
 - **Progressive disclosure** — prompt for name, domain, service; derive featureId and defaults; confirm before writing
 - **Atomic visibility** — the feature must appear in `feature-index.yaml` on `main` the moment it is initialized; partial states are not allowed
 - **Sanitize first** — featureId, domain, and service are path-constructing inputs; validate before any filesystem or git operation
-- **Governance before control** — feature.yaml and index entries live in the governance repo; the control repo receives only branch references
+- **Governance before control** — feature.yaml, index entries, and planning artifacts live in the governance repo on `main`; the control repo holds only code branches
 - **Idempotent check** — detect duplicates in `feature-index.yaml` before creating any files; never silently overwrite
 
 ## Vocabulary
@@ -38,11 +38,11 @@ You are the entry point for all feature work in the Lens system. You orchestrate
 | Term | Definition |
 |------|-----------|
 | **featureId** | Kebab-case unique identifier derived from feature name (e.g., `auth-refresh`); used as branch name and directory key |
-| **plan branch** | `{featureId}-plan` — holds planning artifacts (feature.yaml, BMM docs, sprint plans) |
-| **feature branch** | `{featureId}` — the base branch for all development work on this feature |
+| **plan branch** | `{featureId}-plan` — control repo planning branch for code work and draft artifacts |
+| **feature branch** | `{featureId}` — the base branch in the control repo for all development work on this feature |
 | **feature-index.yaml** | Registry file at `{governance-repo}/feature-index.yaml` on `main`; always reflects the current set of features |
 | **summary.md** | Stub file at `{governance-repo}/features/{domain}/{service}/{featureId}/summary.md` on `main`; mechanically extracted from frontmatter; updated by planning skills |
-| **governance repo** | Lens-owned metadata repository; holds feature.yaml, feature-index.yaml, user profiles, themes, and planning artifacts |
+| **governance repo** | Lens-owned metadata repository; holds feature.yaml, feature-index.yaml, user profiles, themes, and planning artifacts — all on `main` (never feature branches) |
 | **control repo** | Source code repository; Lens interacts with it but does not own it; defaults to governance repo if not separately configured |
 | **2-branch topology** | The feature branch + plan branch pair that forms the unit of feature work |
 | **docs.path** | Control-repo artifact output folder: `docs/{domain}/{service}/{featureId}` — populated in feature.yaml at init time; used by all workflows as the primary docs path |
@@ -72,7 +72,7 @@ Load `{governance_repo}/users/{username}/user-profile.md` for user defaults. Loa
 |-------|-------------|
 | `bmad-lens-onboard` | Prerequisite — must configure governance_repo before init-feature can run |
 | `bmad-lens-feature-yaml` | Delegate — init-feature creates the initial feature.yaml; feature-yaml manages subsequent lifecycle |
-| `bmad-lens-quickplan` | Consumer — picks up from the plan branch after init-feature completes |
+| `bmad-lens-quickplan` | Consumer — picks up from governance `main` after init-feature completes |
 | `bmad-lens-theme` | Loaded on activation for persona overlay |
 | `bmad-lens-status` | Reads feature-index.yaml entries written by init-feature |
 

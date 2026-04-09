@@ -332,7 +332,7 @@ if stale_features.length > 0:
 **Edge cases:**
 - `feature-index.yaml` not found on main: return `{ status: "unavailable" }` — non-fatal
 - Feature not in index: return `{ status: "not_indexed" }` — non-fatal, likely new feature
-- Related feature's plan branch doesn't exist: skip doc fetch, include summary from main only
+- Related feature's plan branch (control repo) doesn't exist: skip doc fetch, include summary from main only
 - No relationships defined: return empty context with `is_stale: false`
 - Governance repo not configured: read from current repo's main branch instead
 

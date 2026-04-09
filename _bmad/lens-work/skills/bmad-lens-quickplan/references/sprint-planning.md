@@ -8,7 +8,7 @@ Sprint planning converts the tech plan and adversarial review findings into an o
 
 | Input | Source | Required |
 |-------|--------|----------|
-| Tech plan | `tech-plan.md` from plan branch | Yes |
+| Tech plan | `tech-plan.md` from governance `main` | Yes |
 | Business plan | `business-plan.md` — for success criteria and scope boundaries | Yes |
 | Adversarial review | `adversarial-review.md` — high findings become explicit sprint risks | Yes |
 | Feature context | `feature.yaml` — track, priority, and team | Yes |

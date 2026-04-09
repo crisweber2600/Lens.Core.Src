@@ -40,14 +40,14 @@ Returns JSON on completion:
 |---------|--------|--------|
 | Feature Overview | `feature-index.yaml` | `main` |
 | Dependency Graph | `feature-index.yaml` | `main` |
-| Problem Heatmap | `problems.md` per feature | `plan/{feature-id}` |
-| Sprint Progress | `summary.md` per feature | `main` |
-| Team View | User daily logs | `plan/{feature-id}` |
-| Retrospective Trends | `retrospective.md` per feature | `plan/{feature-id}` |
+| Problem Heatmap | `features/{domain}/{service}/{feature-id}/problems.md` | `main` |
+| Sprint Progress | `features/{domain}/{service}/{feature-id}/summary.md` | `main` |
+| Team View | User daily logs | `main` |
+| Retrospective Trends | `features/{domain}/{service}/{feature-id}/retrospective.md` | `main` |
 
 ## Graceful Degradation
 
-When a plan branch (`plan/{feature-id}`) is not accessible, the corresponding section shows "unavailable" rather than an error. The `generate` command always produces a valid HTML file regardless of plan branch availability.
+When a feature's deep content files (`problems.md`, `retrospective.md`) are not found on `main`, the corresponding section shows "unavailable" rather than an error. The `generate` command always produces a valid HTML file regardless of file availability.
 
 ## Template Placeholders
 

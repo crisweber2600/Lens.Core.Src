@@ -540,11 +540,14 @@ planning_repo:
 # BRANCH TOPOLOGY — 2-BRANCH MODEL (v3.4)
 # -----------------------------------------------------------------------------
 # Simplified branch topology for tracks with topology: 2-branch.
-# Replaces the 4-level milestone branch chain with two branches:
-#   - {featureId}       — code branch in governance repo (planning artifacts)
-#   - {featureId}-plan  — planning branch in governance repo (working drafts)
-# A single PR from {featureId} to main replaces the multi-PR promotion chain.
-# feature.yaml on the code branch is the authoritative state source.
+# Replaces the 4-level milestone branch chain with two branches in the CONTROL REPO:
+#   - {featureId}       — code branch in the control repo
+#   - {featureId}-plan  — planning branch in the control repo (working drafts)
+# A single PR from {featureId}-plan to {featureId} in the control repo replaces the
+# multi-PR promotion chain.
+# The GOVERNANCE REPO stays on main at all times — no feature branches are created there.
+# All governance artifacts (feature.yaml, feature-index.yaml, summaries, planning docs)
+# are committed directly to governance main.
 two_branch_topology:
   branch_patterns:
     code: "{featureId}"
@@ -556,24 +559,30 @@ two_branch_topology:
       gate: constitution-gate
       description: "Single PR replaces multi-milestone promotion chain"
   artifacts:
-    code_branch:
+    # Control-repo branches only — governance repo has no feature branches.
+    code_branch:                       # control repo {featureId}
       - feature.yaml                 # Authoritative feature state
       - "artifacts/**"               # Published planning artifacts (approved)
-    plan_branch:
+    plan_branch:                       # control repo {featureId}-plan
       - "drafts/**"                  # Working draft artifacts
       - "reviews/**"                 # Review reports
+    governance_main:                   # governance repo — always main
+      - feature.yaml                 # Canonical feature state
+      - feature-index.yaml           # Portfolio index
+      - "features/{domain}/{service}/{featureId}/**"  # Planning artifacts
   phase_mapping:
     description: >
       Existing phases map to the 2-branch model unchanged. Phases still execute
-      in sequence, but artifacts land on the plan branch as drafts and are
-      promoted to the code branch via commit-and-publish when approved.
+      in sequence, but artifacts land on the control repo plan branch as drafts
+      and are promoted to the control repo code branch via commit-and-publish
+      when approved. Governance artifacts are always committed to governance main.
       Milestones become logical checkpoints in feature.yaml rather than branches.
-    preplan: { branch: plan, folder: "drafts/" }
-    businessplan: { branch: plan, folder: "drafts/" }
-    techplan: { branch: plan, folder: "drafts/" }
-    devproposal: { branch: plan, folder: "drafts/" }
-    sprintplan: { branch: plan, folder: "drafts/" }
-    expressplan: { branch: code, folder: "artifacts/" }
+    preplan: { branch: plan, folder: "drafts/" }        # control repo
+    businessplan: { branch: plan, folder: "drafts/" }   # control repo
+    techplan: { branch: plan, folder: "drafts/" }       # control repo
+    devproposal: { branch: plan, folder: "drafts/" }    # control repo
+    sprintplan: { branch: plan, folder: "drafts/" }     # control repo
+    expressplan: { branch: code, folder: "artifacts/" } # control repo
   milestone_tracking:
     description: >
       Milestones are tracked as fields in feature.yaml instead of separate branches.
@@ -945,7 +954,7 @@ migrations:
       - type: add_operation
         path: git-orchestration
         value: commit-and-publish
-        description: "Atomic two-phase write: plan branch commit + main visibility update"
+        description: "Atomic commit: artifact + summary + index update to governance main"
       - type: add_query
         path: git-state
         value: cross-feature-context
