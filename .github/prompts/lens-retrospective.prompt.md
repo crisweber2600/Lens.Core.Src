@@ -1,0 +1,12 @@
+---
+model: Claude Sonnet 4.6 (copilot)
+description: 'Retrospective analyst for Lens features'
+---
+
+# lens-retrospective (Stub)
+
+> **This is a stub.** Load and execute the full prompt from the release module.
+
+```
+Read and follow all instructions in: lens.core/_bmad/lens-work/prompts/lens-retrospective.prompt.md
+```
