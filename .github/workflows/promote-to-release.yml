@@ -160,7 +160,7 @@ jobs:
       - name: Fetch BMB module source (no longer in external-official-modules.yaml)
         run: |
           # bmad-builder npm package contains the BMB module source at /src/
-          # The BMAD installer needs --custom-source pointing to the dir with module.yaml
+          # The BMAD installer needs --custom-content pointing to the dir with module.yaml
           mkdir -p /tmp/bmb-src
           npm pack bmad-builder@latest --pack-destination /tmp/bmb-src 2>/dev/null
           tar xzf /tmp/bmb-src/bmad-builder-*.tgz -C /tmp/bmb-src
@@ -174,7 +174,7 @@ jobs:
           npx bmad-method@6.2.2 install \
             --directory . \
             --modules "core,bmm,bmb,cis,gds,tea,wds" \
-            --custom-source "$BMB_SRC" \
+            --custom-content "$BMB_SRC" \
             --tools "github-copilot,cursor,claude-code" \
             --action install \
             --user-name "CrisWeber" \
