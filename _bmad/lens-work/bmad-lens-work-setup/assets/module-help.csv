@@ -1,6 +1,6 @@
 module,skill,display-name,menu-code,description,action,args,phase,after,before,required,output-location,outputs
 Lens,bmad-lens-onboard,Onboard,OB,"Bootstrap control repo — detect provider validate auth create profile and auto-clone TargetProjects",,,anytime,,,,docs/lens-work/personal,profile.yaml
-Lens,bmad-lens-init-feature,Create Feature,IF,"Initialize a new feature with 2-branch topology and governance entries",create,<featureId> [--domain] [--service] [--track] [--dry-run],anytime,bmad-lens-onboard:scaffold,bmad-lens-quickplan:plan,false,,"feature.yaml feature-index.yaml entry"
+Lens,bmad-lens-init-feature,Create Feature,IF,"Initialize a new feature with 2-branch topology and governance entries",create,<featureId> [--domain] [--service] --track <track> [--dry-run],anytime,bmad-lens-onboard:scaffold,bmad-lens-quickplan:plan,false,,"feature.yaml feature-index.yaml entry"
 Lens,bmad-lens-switch,Switch,SW,"Switch to a different feature via git checkout",,,anytime,,,,,
 Lens,bmad-lens-status,Status,ST,"Show current feature state derived from git",,,anytime,,,,,
 Lens,bmad-lens-next,Next,NX,"Recommend next action based on lifecycle state",,,anytime,,,,,

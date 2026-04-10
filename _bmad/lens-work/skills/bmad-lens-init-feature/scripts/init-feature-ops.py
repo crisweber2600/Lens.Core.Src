@@ -316,6 +316,12 @@ def cmd_create(args: argparse.Namespace) -> dict:
     track = args.track
     username = args.username
 
+    if not track:
+        return {
+            "status": "fail",
+            "error": "Track must be selected explicitly. Re-run with --track <track>.",
+        }
+
     try:
         index_data, _index_exists = read_feature_index(governance_repo)
     except RuntimeError as e:
@@ -656,9 +662,9 @@ Examples:
     create_p.add_argument("--name", required=True, help="Human-friendly feature name")
     create_p.add_argument(
         "--track",
-        default="quickplan",
+        default=None,
         choices=VALID_TRACKS,
-        help="Lifecycle track (default: quickplan)",
+        help="Lifecycle track (must be selected explicitly)",
     )
     create_p.add_argument("--username", required=True, help="Username of the creator")
     create_p.add_argument(
