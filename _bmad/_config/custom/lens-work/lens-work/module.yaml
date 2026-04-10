@@ -202,6 +202,7 @@ install_questions:
 # Prompts — Lens Next only
 prompts:
   - lens-onboard.prompt.md
+  - lens-preflight.prompt.md
   - lens-init-feature.prompt.md
   - lens-new-domain.prompt.md
   - lens-new-service.prompt.md
@@ -256,6 +257,7 @@ adapters:
     instructions: .github/lens-work-instructions.md
     stub_prompts:
       - .github/prompts/lens-onboard.prompt.md
+      - .github/prompts/lens-preflight.prompt.md
       - .github/prompts/lens-init-feature.prompt.md
       - .github/prompts/lens-new-domain.prompt.md
       - .github/prompts/lens-new-service.prompt.md
