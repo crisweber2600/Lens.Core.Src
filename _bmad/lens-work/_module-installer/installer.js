@@ -288,6 +288,7 @@ const SKILLS = [];
 
 const STUB_PROMPTS = [
     { file: 'lens-onboard.prompt.md', name: 'lens-onboard', desc: 'Bootstrap control repo — detect provider, validate auth, create profile, auto-clone TargetProjects', target: 'lens-onboard.prompt.md' },
+    { file: 'lens-preflight.prompt.md', name: 'lens-preflight', desc: 'Run on-demand governance preflight checks without onboarding scaffold', target: 'lens-preflight.prompt.md' },
     { file: 'lens-init-feature.prompt.md', name: 'lens-init-feature', desc: 'Create a new feature with 2-branch topology', target: 'lens-init-feature.prompt.md' },
     { file: 'lens-new-domain.prompt.md', name: 'lens-new-domain', desc: 'Create new domain-level constitution scaffolding', target: 'lens-new-domain.prompt.md' },
     { file: 'lens-new-service.prompt.md', name: 'lens-new-service', desc: 'Create new service-level constitution scaffolding within a domain', target: 'lens-new-service.prompt.md' },

@@ -35,6 +35,7 @@ Lens,bmad-lens-dashboard,collect-data,CD,Collect cross-feature data from feature
 Lens,bmad-lens-dashboard,dependency-graph,DG,Build dependency graph data for all features,dependency-data,[--governance-dir],anytime,,bmad-lens-dashboard:generate,false,,dependency graph JSON
 Lens,bmad-lens-dashboard,generate-dashboard,GD,Generate self-contained HTML dashboard for all features,generate,[--governance-dir] --output <path>,anytime,bmad-lens-dashboard:collect,,false,output_folder,dashboard.html
 Lens,bmad-lens-onboard,preflight,PK,Check prerequisites before governance repo setup,preflight,--governance-dir <path>,anytime,,bmad-lens-onboard:scaffold,true,,preflight check results
+Lens,bmad-lens-onboard,preflight-only,PO,Run on-demand preflight checks without onboarding scaffold,preflight,--governance-dir <path>,anytime,,,false,,preflight check results
 Lens,bmad-lens-onboard,onboard,NB,Scaffold governance repo and write initial config,scaffold,--governance-dir <path> --owner <username> [--dry-run],anytime,bmad-lens-onboard:preflight,bmad-lens-init-feature:create,true,,governance repo structure
 Lens,bmad-lens-onboard,write-config,WC,Write user preferences to user-profile.md and config.user.yaml,write-config,--governance-dir <path> --username <n> [--dry-run],anytime,bmad-lens-onboard:scaffold,,false,,"user-profile.md, config.user.yaml"
 Lens,bmad-lens-migrate,scan-legacy,SC,Scan for legacy LENS v3 branches and build migration plan,scan,[--governance-dir],anytime,,bmad-lens-migrate:migrate-feature,false,,migration plan JSON
