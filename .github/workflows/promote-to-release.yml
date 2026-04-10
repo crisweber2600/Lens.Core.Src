@@ -171,7 +171,7 @@ jobs:
       - name: Install BMAD framework (all modules + IDEs)
         working-directory: build-output
         run: |
-          npx bmad-method install \
+          npx bmad-method@6.2.2 install \
             --directory . \
             --modules "core,bmm,bmb,cis,gds,tea,wds" \
             --custom-source "$BMB_SRC" \
