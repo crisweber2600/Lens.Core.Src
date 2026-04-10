@@ -1,6 +1,6 @@
 ---
 model: Claude Sonnet 4.6 (copilot)
-description: 'On-demand governance preflight checks'
+description: 'On-demand workspace preflight sync and validation'
 ---
 
 # lens-preflight (Stub)
@@ -8,7 +8,10 @@ description: 'On-demand governance preflight checks'
 > **This is a stub.** Load and execute the full prompt from the release module.
 
 ```
-Read and follow all instructions in: lens.core/_bmad/lens-work/skills/bmad-lens-onboard/SKILL.md
+Run the shared preflight script from the workspace root:
 
-Preflight-only operation: run only preflight checks. Do not run scaffold or write-config unless explicitly requested.
+uv run ./lens.core/_bmad/lens-work/scripts/preflight.py
+
+This command runs release/control preflight checks and .github sync.
+Do not run onboarding scaffold or write-config flows for this command.
 ```

@@ -1,6 +1,6 @@
 ---
 model: Claude Sonnet 4.6 (copilot)
-description: 'Run on-demand governance preflight checks without onboarding scaffold'
+description: 'Run shared workspace preflight sync and validation'
 ---
 
 # lens-preflight (Stub)
