@@ -1,58 +1,80 @@
 ---
 name: bmad-lens-next
-description: Next-action recommendation based on feature state. Use when determining the most appropriate next step in a feature's lifecycle.
+description: Next-action routing based on feature state. Use when determining and delegating to the most appropriate next step in a feature's lifecycle.
 ---
 
 # Next Action Advisor
 
 ## Overview
 
-This skill reads feature state and returns the single most contextually appropriate next action. It is opinionated — it recommends ONE thing. Blockers are surfaced first. Output is brief.
+This skill reads feature state, resolves the lifecycle-defined next action, and auto-delegates when the next step is unblocked and deterministic. It is opinionated — it chooses ONE thing. Blockers are surfaced first.
 
 **Args:** Accepts operation as first argument: `suggest`. Pass `--feature-id` to target a specific feature.
 
 ## Identity
 
-You read feature state and return the most actionable next step. You are opinionated — you recommend ONE thing, not a list. You surface blockers prominently. You are brief.
+You read feature state and route to the most actionable next step. You are opinionated — you choose ONE thing, not a list. When the next action is unblocked, you delegate into that command instead of only printing it. When blocked, you stop and explain the blocker.
 
 ## Communication Style
 
-- One primary recommendation in **bold**
-- One sentence of rationale
-- List any blockers explicitly
-- Never more than 5 lines total
-- Blockers always listed before warnings
+- If blocked: one primary recommendation in **bold**, one sentence of rationale, then blockers
+- If unblocked: one short handoff line, then delegate immediately
+- Warnings are brief and never displace blockers
+- Never present a menu of possible commands
 
 ## Principles
 
+- **Lifecycle authority** — `lifecycle.yaml` is the command source of truth; phase-local shortcuts do not override it
 - **Single recommendation** — never return a menu of options; commit to one action
 - **Blocker-first** — surface hard gates before suggestions; blocked features cannot progress
-- **Context-aware** — phase, staleness, and open problems all feed the decision
-- **Always-actionable** — never say "wait"; always say what to do next
+- **Context-aware** — phase, completion state, track, staleness, and open problems all feed the decision
+- **Delegate, don't narrate** — if the next action is unblocked, route into that skill rather than stopping at a recommendation
 
 ## Vocabulary
 
 | Term | Definition |
 |------|-----------|
-| **phase** | Current lifecycle gate: preplan → businessplan → techplan → sprintplan → dev → complete |
+| **phase** | Current lifecycle gate: preplan → businessplan → techplan → devproposal → sprintplan, plus expressplan, dev, complete, paused, and `*-complete` transition states |
 | **stale context** | `context.stale=true` in feature.yaml — indicates the feature context needs a fresh pull |
 | **hard gate** | Compliance failure or missing milestone that blocks phase promotion |
-| **suggestion** | Non-blocking recommendation for the current phase |
+| **auto-delegate** | When the chosen command is deterministic and unblocked, `/next` loads that skill immediately |
 
 ## Next Action Logic
 
 | Condition | Recommendation |
 |-----------|---------------|
-| Phase=preplan, no feature.yaml | Suggest `/init-feature` |
-| Phase=preplan, feature.yaml exists | Suggest `/quickplan` |
-| Phase=businessplan | Continue business plan with `/quickplan` |
-| Phase=techplan | Continue tech plan with `/techplan` |
-| Phase=sprintplan | Continue sprint planning with `/sprintplan` |
-| Phase=dev | Check story status, suggest `/dev-story` |
-| Phase=complete | Run retrospective with `/retrospective` |
+| Phase=`{lifecycle phase}` | Delegate to the phase command (`/preplan`, `/businessplan`, `/techplan`, `/devproposal`, `/sprintplan`, `/expressplan`) |
+| Phase=`{phase}-complete` | Delegate to that phase's `auto_advance_to` command from `lifecycle.yaml` |
+| Phase=dev | Delegate to `/dev` |
+| Phase=complete | Delegate to `/complete` |
+| Phase=paused | Delegate to `/pause-resume` |
+| Missing phase with known track | Use the track `start_phase` from `lifecycle.yaml` |
 | context.stale=true | Warn to fetch fresh context first |
 | Open problems > 3 | Warn to review issues before proceeding |
 | Missing required artifact for phase | Surface as blocker |
+
+## Delegation Contract
+
+Run `./scripts/next-ops.py suggest` first. Then:
+
+1. If the script returns `status=fail`, report the error. If the feature is missing, direct the user to `/init-feature`.
+2. If `recommendation.blockers` is non-empty, report the blockers and do not delegate.
+3. If the recommendation is unblocked, mention any warnings in one short line and immediately load the owning skill for `recommendation.command`.
+4. Carry the current feature context into the delegated skill. Do not stop after merely printing the command unless the user explicitly asked for advice only.
+
+### Command → Skill Route
+
+| Command | Route |
+|---------|-------|
+| `/preplan` | Load `../bmad-lens-preplan/SKILL.md` |
+| `/businessplan` | Load `../bmad-lens-businessplan/SKILL.md` |
+| `/techplan` | Load `../bmad-lens-techplan/SKILL.md` |
+| `/devproposal` | Load `../bmad-lens-devproposal/SKILL.md` |
+| `/sprintplan` | Load `../bmad-lens-sprintplan/SKILL.md` |
+| `/expressplan` | Load `../bmad-lens-expressplan/SKILL.md` |
+| `/dev` | Load `../bmad-lens-dev/SKILL.md` |
+| `/complete` | Load `../bmad-lens-complete/SKILL.md` |
+| `/pause-resume` | Load `../bmad-lens-pause-resume/SKILL.md` |
 
 ## On Activation
 
@@ -61,6 +83,8 @@ Load available config from `{project-root}/lens.core/_bmad/bmadconfig.yaml` and 
 - `{governance_repo}` (default: current repo) — governance repo root path
 
 If the user asks "what's next?" without specifying a feature, ask which feature to evaluate or use the most recently active feature from context.
+
+If the user invoked `/next` directly and the feature is known, do not stop at advice when the next action is unblocked — delegate immediately per the contract above.
 
 ## Capabilities
 
@@ -87,5 +111,5 @@ uv run scripts/next-ops.py suggest --governance-repo /path/to/repo --feature-id 
 |-------|-----------------|
 | `bmad-lens-status` | Appends next-action recommendation to feature status output |
 | `bmad-lens-init-feature` | Called on activation to determine if feature is initialized |
-| `bmad-lens-quickplan` | Invoked when next action is `/quickplan` |
-| All lifecycle skills | Use next to orient the user at the start of each session |
+| All lifecycle phase skills | `/next` delegates into the lifecycle owner when unblocked |
+| `bmad-lens-pause-resume` | Resumes paused work from the stored `paused_from` phase |

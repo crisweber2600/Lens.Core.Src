@@ -10,6 +10,7 @@ based on lifecycle phase, track type, outstanding issues, and staleness flags.
 """
 
 import argparse
+from functools import lru_cache
 import json
 import re
 import sys
@@ -19,53 +20,140 @@ import yaml
 
 
 SAFE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
+COMPLETE_SUFFIX = "-complete"
+LIFECYCLE_PATH = Path(__file__).resolve().parents[3] / "lifecycle.yaml"
 
-# Phase → action, command, and rationale
-PHASE_ACTIONS: dict[str, tuple[str, str, str]] = {
-    "preplan": (
-        "quickplan",
-        "/quickplan",
-        "Feature is in preplan phase with feature.yaml created — ready to start planning",
-    ),
-    "businessplan": (
-        "continue-businessplan",
-        "/quickplan",
-        "Business plan is in progress — continue defining the business case",
-    ),
-    "techplan": (
-        "continue-techplan",
-        "/techplan",
-        "Technical planning is in progress — continue defining the technical approach",
-    ),
-    "sprintplan": (
-        "continue-sprintplan",
-        "/sprintplan",
-        "Sprint planning is in progress — continue breaking down into stories",
-    ),
-    "dev": (
-        "dev-next-story",
-        "/dev-story",
-        "Feature is in development — check story status and implement the next story",
-    ),
-    "complete": (
-        "retrospective",
-        "/retrospective",
-        "Feature is complete — run the retrospective to capture learnings",
-    ),
-    "paused": (
-        "resume",
-        "/resume",
-        "Feature is paused — review current state and decide whether to resume or close",
-    ),
+# Legacy track names still appear in existing feature.yaml files.
+LEGACY_TRACK_ALIASES: dict[str, str] = {
+    "quickplan": "feature",
 }
 
-# Required milestones that must be non-null before entering each phase
-PHASE_ENTRY_MILESTONES: dict[str, tuple[str, str]] = {
-    "techplan": ("businessplan", "Business plan milestone not completed"),
-    "sprintplan": ("techplan", "Tech plan milestone not completed"),
-    "dev": ("sprintplan", "Sprint plan milestone not completed"),
-    "complete": ("dev-complete", "Dev-complete milestone not set"),
+# Next-phase gates that can be inferred from feature.yaml milestones.
+# Some phases, such as businessplan and sprintplan, are validated through phase state
+# rather than a dedicated milestone field in feature.yaml.
+ENTRY_MILESTONE_RULES: dict[str, tuple[str, str, str | None]] = {
+    "techplan": ("businessplan", "Business plan milestone not completed", "businessplan"),
+    "devproposal": ("techplan", "Tech plan milestone not completed", "techplan"),
+    "dev": ("sprintplan", "Sprint plan milestone not completed", "sprintplan"),
+    "complete": ("dev-complete", "Dev-complete milestone not set", None),
 }
+
+
+@lru_cache(maxsize=1)
+def load_lifecycle() -> dict:
+    """Load and cache the lifecycle contract."""
+    try:
+        with open(LIFECYCLE_PATH) as f:
+            data = yaml.safe_load(f)
+    except (yaml.YAMLError, OSError) as exc:
+        raise RuntimeError(f"Failed to read lifecycle.yaml: {exc}") from exc
+
+    if not isinstance(data, dict):
+        raise RuntimeError("Failed to read lifecycle.yaml: expected a top-level mapping")
+
+    return data
+
+
+def normalize_track(track: str, lifecycle: dict) -> str:
+    """Map feature.yaml track names onto lifecycle track keys."""
+    tracks = lifecycle.get("tracks") or {}
+    if track in tracks:
+        return track
+    return LEGACY_TRACK_ALIASES.get(track, track)
+
+
+def get_track_definition(track: str, lifecycle: dict) -> dict:
+    """Return the lifecycle track definition, accounting for legacy aliases."""
+    tracks = lifecycle.get("tracks") or {}
+    return tracks.get(normalize_track(track, lifecycle), {})
+
+
+def get_effective_phase(data: dict, lifecycle: dict) -> str:
+    """Return the current phase, falling back to the lifecycle start phase for the track."""
+    phase = (data.get("phase") or "").strip()
+    if phase:
+        return phase
+
+    track_def = get_track_definition(str(data.get("track") or ""), lifecycle)
+    return str(track_def.get("start_phase") or "preplan")
+
+
+def build_phase_recommendation(data: dict, phase: str, lifecycle: dict) -> dict:
+    """Resolve the action/command pair from lifecycle phase state."""
+    phases = lifecycle.get("phases") or {}
+
+    if phase.endswith(COMPLETE_SUFFIX):
+        completed_phase = phase[: -len(COMPLETE_SUFFIX)]
+        phase_meta = phases.get(completed_phase) or {}
+        next_command = phase_meta.get("auto_advance_to")
+        if next_command:
+            next_action = str(next_command).lstrip("/")
+            display_name = phase_meta.get("display_name", completed_phase.replace("-", " ").title())
+            promote_note = " with promotion" if phase_meta.get("auto_advance_promote") else ""
+            return {
+                "action": next_action,
+                "command": str(next_command),
+                "rationale": f"{display_name} is complete — continue with {next_command}{promote_note}",
+                "gate_phase": next_action,
+            }
+
+    phase_meta = phases.get(phase) or {}
+    if phase_meta:
+        display_name = phase_meta.get("display_name", phase.replace("-", " ").title())
+        return {
+            "action": phase,
+            "command": f"/{phase}",
+            "rationale": f"Feature is in {display_name} — continue the {display_name} workflow",
+            "gate_phase": phase,
+        }
+
+    if phase == "dev":
+        return {
+            "action": "dev",
+            "command": "/dev",
+            "rationale": "Feature is in dev execution — continue implementation and story flow",
+            "gate_phase": "dev",
+        }
+
+    if phase == "complete":
+        return {
+            "action": "complete",
+            "command": "/complete",
+            "rationale": "Feature is at lifecycle closeout — finalize retrospective, documentation, and archival",
+            "gate_phase": "complete",
+        }
+
+    if phase == "paused":
+        paused_from = data.get("paused_from")
+        from_text = f" from {paused_from}" if paused_from else ""
+        return {
+            "action": "pause-resume",
+            "command": "/pause-resume",
+            "rationale": f"Feature is paused{from_text} — resume when ready",
+            "gate_phase": "pause-resume",
+        }
+
+    return {
+        "action": "check-status",
+        "command": "/status",
+        "rationale": f"Feature is in {phase} phase — check current status",
+        "gate_phase": "status",
+    }
+
+
+def apply_entry_blockers(blockers: list[str], gate_phase: str, track_def: dict, milestones: dict) -> None:
+    """Add hard gates for lifecycle entry when feature.yaml exposes the needed milestone."""
+    rule = ENTRY_MILESTONE_RULES.get(gate_phase)
+    if not rule:
+        return
+
+    milestone_key, message, required_track_phase = rule
+    track_phases = track_def.get("phases") or []
+    if required_track_phase and track_phases and required_track_phase not in track_phases:
+        return
+
+    if not milestones.get(milestone_key):
+        blockers.append(message)
 
 
 def validate_identifier(value: str, field_name: str) -> str | None:
@@ -115,9 +203,10 @@ def find_feature_via_index(governance_repo: str, feature_id: str) -> tuple[str, 
     return None
 
 
-def build_recommendation(data: dict) -> dict:
+def build_recommendation(data: dict, lifecycle: dict) -> tuple[str, dict]:
     """Derive the next action recommendation from feature state."""
-    phase = data.get("phase", "preplan")
+    phase = get_effective_phase(data, lifecycle)
+    track_def = get_track_definition(str(data.get("track") or ""), lifecycle)
     milestones = data.get("milestones") or {}
     context = data.get("context") or {}
     links = data.get("links") or {}
@@ -125,11 +214,8 @@ def build_recommendation(data: dict) -> dict:
     blockers: list[str] = []
     warnings: list[str] = []
 
-    # Check for missing required entry milestone (hard gate)
-    if phase in PHASE_ENTRY_MILESTONES:
-        milestone_key, msg = PHASE_ENTRY_MILESTONES[phase]
-        if not milestones.get(milestone_key):
-            blockers.append(msg)
+    recommendation = build_phase_recommendation(data, phase, lifecycle)
+    apply_entry_blockers(blockers, recommendation["gate_phase"], track_def, milestones)
 
     # Stale context warning
     if context.get("stale"):
@@ -140,15 +226,10 @@ def build_recommendation(data: dict) -> dict:
     if len(issues) > 3:
         warnings.append(f"{len(issues)} open issues — consider reviewing before proceeding")
 
-    action, command, rationale = PHASE_ACTIONS.get(
-        phase,
-        ("check-status", "/status", f"Feature is in {phase} phase — check current status"),
-    )
-
-    return {
-        "action": action,
-        "rationale": rationale,
-        "command": command,
+    return phase, {
+        "action": recommendation["action"],
+        "rationale": recommendation["rationale"],
+        "command": recommendation["command"],
         "blockers": blockers,
         "warnings": warnings,
     }
@@ -180,6 +261,11 @@ def resolve_feature_path(args: argparse.Namespace) -> Path | None:
 
 def cmd_suggest(args: argparse.Namespace) -> dict:
     """Return the next recommended action for a feature."""
+    try:
+        lifecycle = load_lifecycle()
+    except RuntimeError as exc:
+        return {"status": "fail", "error": str(exc)}
+
     err = validate_identifier(args.feature_id, "feature-id")
     if err:
         return {"status": "fail", "error": err}
@@ -204,12 +290,12 @@ def cmd_suggest(args: argparse.Namespace) -> dict:
     except (yaml.YAMLError, OSError) as e:
         return {"status": "fail", "error": f"Failed to read feature.yaml: {e}"}
 
-    recommendation = build_recommendation(data)
+    phase, recommendation = build_recommendation(data, lifecycle)
 
     return {
         "status": "pass",
         "featureId": data.get("featureId", args.feature_id),
-        "phase": data.get("phase", "preplan"),
+        "phase": phase,
         "track": data.get("track", "quickplan"),
         "path": str(feature_path),
         "recommendation": recommendation,

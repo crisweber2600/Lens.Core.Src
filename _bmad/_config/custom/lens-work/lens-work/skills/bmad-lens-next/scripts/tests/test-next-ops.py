@@ -49,7 +49,7 @@ def make_feature(
     tmp: str,
     feature_id: str,
     phase: str = "preplan",
-    track: str = "quickplan",
+    track: str = "full",
     extra: dict | None = None,
 ) -> Path:
     """Write a minimal feature.yaml into the temp governance repo."""
@@ -94,20 +94,20 @@ def make_feature(
 
 
 def test_preplan_phase():
-    """Preplan phase → recommends quickplan."""
+    """Preplan phase → recommends preplan."""
     print("test_preplan_phase", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
         make_feature(tmp, "preplan-feat", phase="preplan")
         result, code = run(["suggest", "--governance-repo", tmp, "--feature-id", "preplan-feat"])
         assert_eq("status pass", result["status"], "pass")
         assert_eq("exit code 0", code, 0)
-        assert_eq("action quickplan", result["recommendation"]["action"], "quickplan")
-        assert_eq("command", result["recommendation"]["command"], "/quickplan")
+        assert_eq("action preplan", result["recommendation"]["action"], "preplan")
+        assert_eq("command", result["recommendation"]["command"], "/preplan")
         assert_eq("no blockers", result["recommendation"]["blockers"], [])
 
 
 def test_dev_phase():
-    """Dev phase → recommends dev-next-story."""
+    """Dev phase → recommends dev."""
     print("test_dev_phase", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
         make_feature(
@@ -127,13 +127,13 @@ def test_dev_phase():
         result, code = run(["suggest", "--governance-repo", tmp, "--feature-id", "dev-feat"])
         assert_eq("status pass", result["status"], "pass")
         assert_eq("exit code 0", code, 0)
-        assert_eq("action dev-next-story", result["recommendation"]["action"], "dev-next-story")
-        assert_eq("command", result["recommendation"]["command"], "/dev-story")
+        assert_eq("action dev", result["recommendation"]["action"], "dev")
+        assert_eq("command", result["recommendation"]["command"], "/dev")
         assert_eq("phase in output", result["phase"], "dev")
 
 
 def test_complete_phase():
-    """Complete phase → recommends retrospective."""
+    """Complete phase → recommends complete."""
     print("test_complete_phase", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
         make_feature(
@@ -153,8 +153,67 @@ def test_complete_phase():
         result, code = run(["suggest", "--governance-repo", tmp, "--feature-id", "done-feat"])
         assert_eq("status pass", result["status"], "pass")
         assert_eq("exit code 0", code, 0)
-        assert_eq("action retrospective", result["recommendation"]["action"], "retrospective")
-        assert_eq("command", result["recommendation"]["command"], "/retrospective")
+        assert_eq("action complete", result["recommendation"]["action"], "complete")
+        assert_eq("command", result["recommendation"]["command"], "/complete")
+        assert_eq("no blockers", result["recommendation"]["blockers"], [])
+
+
+def test_preplan_complete_auto_advance():
+    """preplan-complete → auto-advances to businessplan."""
+    print("test_preplan_complete_auto_advance", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        make_feature(tmp, "advance-feat", phase="preplan-complete")
+        result, code = run(["suggest", "--governance-repo", tmp, "--feature-id", "advance-feat"])
+        assert_eq("status pass", result["status"], "pass")
+        assert_eq("exit code 0", code, 0)
+        assert_eq("action businessplan", result["recommendation"]["action"], "businessplan")
+        assert_eq("command", result["recommendation"]["command"], "/businessplan")
+
+
+def test_expressplan_phase():
+    """ExpressPlan phase → recommends expressplan."""
+    print("test_expressplan_phase", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        make_feature(tmp, "express-feat", phase="expressplan", track="express")
+        result, code = run(["suggest", "--governance-repo", tmp, "--feature-id", "express-feat"])
+        assert_eq("status pass", result["status"], "pass")
+        assert_eq("exit code 0", code, 0)
+        assert_eq("action expressplan", result["recommendation"]["action"], "expressplan")
+        assert_eq("command", result["recommendation"]["command"], "/expressplan")
+
+
+def test_paused_phase():
+    """Paused phase → recommends pause-resume."""
+    print("test_paused_phase", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        make_feature(tmp, "paused-feat", phase="paused", extra={"paused_from": "techplan"})
+        result, code = run(["suggest", "--governance-repo", tmp, "--feature-id", "paused-feat"])
+        assert_eq("status pass", result["status"], "pass")
+        assert_eq("exit code 0", code, 0)
+        assert_eq("action pause-resume", result["recommendation"]["action"], "pause-resume")
+        assert_eq("command", result["recommendation"]["command"], "/pause-resume")
+
+
+def test_missing_phase_uses_track_start_phase():
+    """Missing phase falls back to the lifecycle start phase for the track."""
+    print("test_missing_phase_uses_track_start_phase", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        make_feature(tmp, "missing-phase-feat", phase="", track="express")
+        result, code = run(["suggest", "--governance-repo", tmp, "--feature-id", "missing-phase-feat"])
+        assert_eq("status pass", result["status"], "pass")
+        assert_eq("exit code 0", code, 0)
+        assert_eq("phase expressplan", result["phase"], "expressplan")
+        assert_eq("action expressplan", result["recommendation"]["action"], "expressplan")
+
+
+def test_hotfix_track_skips_businessplan_blocker():
+    """Techplan on a hotfix track should not require a businessplan milestone."""
+    print("test_hotfix_track_skips_businessplan_blocker", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        make_feature(tmp, "hotfix-feat", phase="techplan", track="hotfix")
+        result, code = run(["suggest", "--governance-repo", tmp, "--feature-id", "hotfix-feat"])
+        assert_eq("status pass", result["status"], "pass")
+        assert_eq("exit code 0", code, 0)
         assert_eq("no blockers", result["recommendation"]["blockers"], [])
 
 
@@ -216,18 +275,18 @@ def test_valid_action_command_returned():
 
 
 def test_businessplan_phase():
-    """Businessplan phase → action=continue-businessplan."""
+    """Businessplan phase → action=businessplan."""
     print("test_businessplan_phase", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
         make_feature(tmp, "bp-feat", phase="businessplan")
         result, code = run(["suggest", "--governance-repo", tmp, "--feature-id", "bp-feat"])
         assert_eq("status pass", result["status"], "pass")
-        assert_eq("action", result["recommendation"]["action"], "continue-businessplan")
-        assert_eq("command", result["recommendation"]["command"], "/quickplan")
+        assert_eq("action", result["recommendation"]["action"], "businessplan")
+        assert_eq("command", result["recommendation"]["command"], "/businessplan")
 
 
 def test_techplan_phase():
-    """Techplan phase → action=continue-techplan."""
+    """Techplan phase → action=techplan."""
     print("test_techplan_phase", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
         make_feature(
@@ -246,9 +305,35 @@ def test_techplan_phase():
         )
         result, code = run(["suggest", "--governance-repo", tmp, "--feature-id", "tp-feat"])
         assert_eq("status pass", result["status"], "pass")
-        assert_eq("action", result["recommendation"]["action"], "continue-techplan")
+        assert_eq("action", result["recommendation"]["action"], "techplan")
         assert_eq("command", result["recommendation"]["command"], "/techplan")
         assert_eq("no blockers (businessplan milestone set)", result["recommendation"]["blockers"], [])
+
+
+def test_devproposal_phase():
+    """DevProposal phase → action=devproposal."""
+    print("test_devproposal_phase", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        make_feature(
+            tmp,
+            "dp-feat",
+            phase="devproposal",
+            extra={
+                "milestones": {
+                    "businessplan": "2026-04-01T00:00:00Z",
+                    "techplan": "2026-04-02T00:00:00Z",
+                    "sprintplan": None,
+                    "dev-ready": None,
+                    "dev-complete": None,
+                }
+            },
+        )
+        result, code = run(["suggest", "--governance-repo", tmp, "--feature-id", "dp-feat"])
+        assert_eq("status pass", result["status"], "pass")
+        assert_eq("exit code 0", code, 0)
+        assert_eq("action", result["recommendation"]["action"], "devproposal")
+        assert_eq("command", result["recommendation"]["command"], "/devproposal")
+        assert_eq("no blockers (techplan milestone set)", result["recommendation"]["blockers"], [])
 
 
 def test_missing_entry_milestone_blocker():
@@ -305,7 +390,7 @@ def test_domain_service_fast_path():
             "--service", "api",
         ])
         assert_eq("status pass", result["status"], "pass")
-        assert_eq("action", result["recommendation"]["action"], "continue-sprintplan")
+        assert_eq("action", result["recommendation"]["action"], "sprintplan")
 
 
 def test_feature_index_lookup():
@@ -322,19 +407,25 @@ def test_feature_index_lookup():
             )
         result, code = run(["suggest", "--governance-repo", tmp, "--feature-id", "indexed-feat"])
         assert_eq("status pass", result["status"], "pass")
-        assert_eq("action quickplan", result["recommendation"]["action"], "quickplan")
+        assert_eq("action preplan", result["recommendation"]["action"], "preplan")
 
 
 if __name__ == "__main__":
     test_preplan_phase()
     test_dev_phase()
     test_complete_phase()
+    test_preplan_complete_auto_advance()
+    test_expressplan_phase()
+    test_paused_phase()
+    test_missing_phase_uses_track_start_phase()
+    test_hotfix_track_skips_businessplan_blocker()
     test_stale_context_warning()
     test_feature_not_found()
     test_path_traversal_rejected()
     test_valid_action_command_returned()
     test_businessplan_phase()
     test_techplan_phase()
+    test_devproposal_phase()
     test_missing_entry_milestone_blocker()
     test_open_issues_warning()
     test_domain_service_fast_path()
