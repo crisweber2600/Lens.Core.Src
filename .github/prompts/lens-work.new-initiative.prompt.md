@@ -3,7 +3,7 @@ model: Claude Sonnet 4.6 (copilot)
 description: 'Create a new initiative (domain, service, or feature)'
 ---
 
-# lens-work.new-initiative (Compatibility Stub)
+# lens-work.new-initiative (Stub)
 
 > **This is a backward-compatible alias.** Load the current Lens Next init prompt from the release module and clarify the requested scope before creating anything.
 

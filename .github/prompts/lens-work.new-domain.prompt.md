@@ -3,7 +3,7 @@ model: Claude Sonnet 4.6 (copilot)
 description: 'Create new domain-level initiative with domain-only branch and folder scaffolding'
 ---
 
-# lens-work.new-domain (Compatibility Stub)
+# lens-work.new-domain (Stub)
 
 > **This is a backward-compatible alias.** Load and execute the current Lens Next prompt from the release module.
 

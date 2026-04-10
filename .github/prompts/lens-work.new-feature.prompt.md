@@ -3,7 +3,7 @@ model: Claude Sonnet 4.6 (copilot)
 description: 'Create new feature-level initiative within a service'
 ---
 
-# lens-work.new-feature (Compatibility Stub)
+# lens-work.new-feature (Stub)
 
 > **This is a backward-compatible alias.** Load and execute the current Lens Next prompt from the release module.
 
