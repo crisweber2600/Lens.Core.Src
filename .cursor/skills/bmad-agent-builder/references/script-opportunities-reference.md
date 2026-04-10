@@ -1,10 +1,8 @@
 # Quality Scan Script Opportunities — Reference Guide
 
-**Reference: `./references/script-standards.md` for script creation guidelines.**
+**Reference: `references/script-standards.md` for script creation guidelines.**
 
 This document identifies deterministic operations that should be offloaded from the LLM into scripts for quality validation of BMad agents.
-
-> **Implementation Status:** Many of the scripts described below have been implemented as prepass scripts and scanners. See the status notes on each entry. The implemented scripts live in `./scripts/` and follow the prepass architecture (structured JSON output consumed by LLM scanners) rather than the standalone validator pattern originally envisioned here.
 
 ---
 
@@ -19,20 +17,16 @@ Scripts validate structure and syntax (deterministic). Prompts evaluate semantic
 During build, walk through every capability/operation and apply these tests:
 
 ### The Determinism Test
-
 For each operation the agent performs, ask:
-
 - Given identical input, will this ALWAYS produce identical output? → Script
 - Does this require interpreting meaning, tone, context, or ambiguity? → Prompt
 - Could you write a unit test with expected output for every input? → Script
 
 ### The Judgment Boundary
-
 Scripts handle: fetch, transform, validate, count, parse, compare, extract, format, check structure
 Prompts handle: interpret, classify with ambiguity, create, decide with incomplete info, evaluate quality, synthesize meaning
 
 ### Pattern Recognition Checklist
-
 Table of signal verbs/patterns mapping to script types:
 | Signal Verb/Pattern | Script Type |
 |---------------------|-------------|
@@ -47,26 +41,22 @@ Table of signal verbs/patterns mapping to script types:
 | "graph", "map dependencies" | Dependency analysis script |
 
 ### The Outside-the-Box Test
-
 Beyond obvious validation, consider:
-
 - Could any data gathering step be a script that returns structured JSON for the LLM to interpret?
 - Could pre-processing reduce what the LLM needs to read?
 - Could post-processing validate what the LLM produced?
 - Could metric collection feed into LLM decision-making without the LLM doing the counting?
 
 ### Your Toolbox
-
-**Python is the default** for all script logic (cross-platform: macOS, Linux, Windows/WSL). See `./references/script-standards.md` for full rationale.
-
-- **Python:** Standard library (`json`, `pathlib`, `re`, `argparse`, `collections`, `difflib`, `ast`, `csv`, `xml`, etc.) plus PEP 723 inline-declared dependencies (`tiktoken`, `jsonschema`, `pyyaml`, etc.)
-- **Safe shell commands:** `git`, `gh`, `uv run`, `npm`/`npx`/`pnpm`, `mkdir -p` (invocation only, not logic)
+Scripts have access to full capabilities — think broadly:
+- **Bash**: Full shell — `jq`, `grep`, `awk`, `sed`, `find`, `diff`, `wc`, `sort`, `uniq`, `curl`, plus piping and composition
+- **Python**: Standard library (`json`, `yaml`, `pathlib`, `re`, `argparse`, `collections`, `difflib`, `ast`, `csv`, `xml`, etc.) plus PEP 723 inline-declared dependencies (`tiktoken`, `jsonschema`, `pyyaml`, etc.)
+- **System tools**: `git` commands for history/diff/blame, filesystem operations, process execution
 
 If you can express the logic as deterministic code, it's a script candidate.
 
 ### The --help Pattern
-
-All scripts use PEP 723 and `--help`. When a skill's prompt needs to invoke a script, it can say "Run `./scripts/foo.py --help` to understand inputs/outputs, then invoke appropriately" instead of inlining the script's interface. This saves tokens in prompts and keeps a single source of truth for the script's API.
+All scripts use PEP 723 and `--help`. When a skill's prompt needs to invoke a script, it can say "Run `scripts/foo.py --help` to understand inputs/outputs, then invoke appropriately" instead of inlining the script's interface. This saves tokens in prompts and keeps a single source of truth for the script's API.
 
 ---
 
@@ -74,14 +64,11 @@ All scripts use PEP 723 and `--help`. When a skill's prompt needs to invoke a sc
 
 ### 1. Frontmatter Validator
 
-> **Status: IMPLEMENTED** in `./scripts/prepass-structure-capabilities.py`. Handles frontmatter parsing, name validation (kebab-case, agent naming convention), description presence, and field validation as part of the structure prepass.
-
 **What:** Validate SKILL.md frontmatter structure and content
 
 **Why:** Frontmatter is the #1 factor in skill triggering. Catch errors early.
 
 **Checks:**
-
 ```python
 # checks:
 - name exists and is kebab-case
@@ -96,9 +83,19 @@ All scripts use PEP 723 and `--help`. When a skill's prompt needs to invoke a sc
 
 ---
 
-### 2. Template Artifact Scanner
+### 2. Manifest Schema Validator
 
-> **Status: IMPLEMENTED** in `./scripts/prepass-structure-capabilities.py`. Detects orphaned template substitution artifacts (`{if-...}`, `{displayName}`, etc.) as part of the structure prepass.
+**Status:** ✅ Already exists at `scripts/manifest.py` (create, add-capability, update, read, validate)
+
+**Enhancement opportunities:**
+- Add `--agent-path` flag for auto-discovery
+- Check menu code uniqueness within agent
+- Verify prompt files exist for `type: "prompt"` capabilities
+- Verify external skill names are registered (could check against skill registry)
+
+---
+
+### 3. Template Artifact Scanner
 
 **What:** Scan for orphaned template substitution artifacts
 
@@ -106,26 +103,23 @@ All scripts use PEP 723 and `--help`. When a skill's prompt needs to invoke a sc
 
 **Output:** JSON with file path, line number, artifact type
 
-**Implementation:** Python script with JSON output
+**Implementation:** Bash script with JSON output via jq
 
 ---
 
-### 3. Access Boundaries Extractor
-
-> **Status: PARTIALLY SUPERSEDED.** The memory-system.md file this script targets belongs to the legacy stateless-agent memory architecture. Path validation is now handled by `./scripts/scan-path-standards.py`. The sanctum architecture uses different structural patterns validated by `./scripts/prepass-sanctum-architecture.py`.
+### 4. Access Boundaries Extractor
 
 **What:** Extract and validate access boundaries from memory-system.md
 
 **Why:** Security critical — must be defined before file operations
 
 **Checks:**
-
 ```python
 # Parse memory-system.md for:
 - ## Read Access section exists
 - ## Write Access section exists
 - ## Deny Zones section exists (can be empty)
-- Paths use placeholders correctly ({project-root} for project-scope paths, ./ for skill-internal)
+- Paths use placeholders correctly ({project-root} for _bmad paths, relative for skill-internal)
 ```
 
 **Output:** Structured JSON of read/write/deny zones
@@ -134,20 +128,36 @@ All scripts use PEP 723 and `--help`. When a skill's prompt needs to invoke a sc
 
 ---
 
+### 5. Prompt Frontmatter Comparator
+
+**What:** Compare prompt file frontmatter against bmad-manifest.json
+
+**Why:** Capability misalignment causes runtime errors
+
+**Checks:**
+```python
+# For each prompt .md file at skill root:
+- Has frontmatter (name, description, menu-code)
+- name matches manifest capability name
+- menu-code matches manifest (case-insensitive)
+- description is present
+```
+
+**Output:** JSON with mismatches, missing files
+
+**Implementation:** Python, reads bmad-manifest.json and all prompt .md files at skill root
+
 ---
 
 ## Priority 2: Analysis Scripts
 
-### 4. Token Counter
-
-> **Status: IMPLEMENTED** in `./scripts/prepass-prompt-metrics.py`. Computes file-level token estimates (chars / 4 approximation), section sizes, and content density metrics as part of the prompt craft prepass.
+### 6. Token Counter
 
 **What:** Count tokens in each file of an agent
 
 **Why:** Identify verbose files that need optimization
 
 **Checks:**
-
 ```python
 # For each .md file:
 - Total tokens (approximate: chars / 4)
@@ -161,19 +171,16 @@ All scripts use PEP 723 and `--help`. When a skill's prompt needs to invoke a sc
 
 ---
 
-### 5. Dependency Graph Generator
-
-> **Status: IMPLEMENTED** in `./scripts/prepass-execution-deps.py`. Builds dependency graphs from skill structure, detects circular dependencies, transitive redundancy, and identifies parallelizable stage groups.
+### 7. Dependency Graph Generator
 
 **What:** Map skill → external skill dependencies
 
 **Why:** Understand agent's dependency surface
 
 **Checks:**
-
 ```python
+# Parse bmad-manifest.json for external skills
 # Parse SKILL.md for skill invocation patterns
-# Parse prompt files for external skill references
 # Build dependency graph
 ```
 
@@ -183,17 +190,24 @@ All scripts use PEP 723 and `--help`. When a skill's prompt needs to invoke a sc
 
 ---
 
-### 6. Activation Flow Analyzer
-
-> **Status: IMPLEMENTED** in `./scripts/prepass-structure-capabilities.py`. Extracts the On Activation section inventory, detects required agent sections, and validates structure for both stateless and memory agent bootloader patterns.
+### 8. Activation Flow Analyzer
 
 **What:** Parse SKILL.md On Activation section for sequence
 
 **Why:** Validate activation order matches best practices
 
 **Checks:**
-
-Validate that the activation sequence is logically ordered (e.g., config loads before config is used, memory loads before memory is referenced).
+```python
+# Look for steps in order:
+1. Activation mode detection
+2. Config loading
+3. First-run check
+4. Access boundaries load
+5. Memory load
+6. Manifest load
+7. Greet
+8. Present menu
+```
 
 **Output:** JSON with detected steps, missing steps, out-of-order warnings
 
@@ -201,16 +215,13 @@ Validate that the activation sequence is logically ordered (e.g., config loads b
 
 ---
 
-### 7. Memory Structure Validator
-
-> **Status: SUPERSEDED** by `./scripts/prepass-sanctum-architecture.py`. The sanctum architecture replaced the old memory-system.md pattern. The prepass validates sanctum template inventory (PERSONA, CREED, BOND, etc.), section inventories, init script parameters, and first-breath structure.
+### 9. Memory Structure Validator
 
 **What:** Validate memory-system.md structure
 
 **Why:** Memory files have specific requirements
 
 **Checks:**
-
 ```python
 # Required sections:
 - ## Core Principle
@@ -225,16 +236,13 @@ Validate that the activation sequence is logically ordered (e.g., config loads b
 
 ---
 
-### 8. Subagent Pattern Detector
-
-> **Status: IMPLEMENTED** in `./scripts/prepass-execution-deps.py`. Detects subagent-from-subagent patterns, multi-source operation detection, loop patterns, and sequential processing patterns that indicate subagent delegation needs.
+### 10. Subagent Pattern Detector
 
 **What:** Detect if agent uses BMAD Advanced Context Pattern
 
 **Why:** Agents processing 5+ sources MUST use subagents
 
 **Checks:**
-
 ```python
 # Pattern detection in SKILL.md:
 - "DO NOT read sources yourself"
@@ -251,9 +259,7 @@ Validate that the activation sequence is logically ordered (e.g., config loads b
 
 ## Priority 3: Composite Scripts
 
-### 9. Agent Health Check
-
-> **Status: IMPLEMENTED** via `./scripts/generate-html-report.py`. Reads aggregated report-data.json (produced by the quality analysis workflow) and generates an interactive HTML report with branding, capability dashboards, findings, and opportunity themes.
+### 11. Agent Health Check
 
 **What:** Run all validation scripts and aggregate results
 
@@ -263,19 +269,18 @@ Validate that the activation sequence is logically ordered (e.g., config loads b
 
 **Output:** Structured health report with severity levels
 
-**Implementation:** Python script orchestrating other Python scripts via subprocess, JSON aggregation
+**Implementation:** Bash script orchestrating Python scripts, jq for aggregation
 
 ---
 
-### 10. Comparison Validator
+### 12. Comparison Validator
 
 **What:** Compare two versions of an agent for differences
 
 **Why:** Validate changes during iteration
 
 **Checks:**
-
-```python
+```bash
 # Git diff with structure awareness:
 - Frontmatter changes
 - Capability additions/removals
@@ -285,7 +290,7 @@ Validate that the activation sequence is logically ordered (e.g., config loads b
 
 **Output:** JSON with categorized changes
 
-**Implementation:** Python with subprocess for git commands, JSON output
+**Implementation:** Bash with git, jq, python for analysis
 
 ---
 
@@ -304,7 +309,7 @@ All scripts MUST output structured JSON for agent consumption:
     {
       "severity": "critical|high|medium|low|info",
       "category": "structure|security|performance|consistency",
-      "location": { "file": "SKILL.md", "line": 42 },
+      "location": {"file": "SKILL.md", "line": 42},
       "issue": "Clear description",
       "fix": "Specific action to resolve"
     }
@@ -331,62 +336,50 @@ When creating validation scripts:
 - [ ] Writes diagnostics to stderr
 - [ ] Returns meaningful exit codes (0=pass, 1=fail, 2=error)
 - [ ] Includes `--verbose` flag for debugging
-- [ ] Has tests in `./scripts/tests/` subfolder
+- [ ] Has tests in `scripts/tests/` subfolder
 - [ ] Self-contained (PEP 723 for Python)
 - [ ] No interactive prompts
 
 ---
 
-## Integration with Quality Analysis
+## Integration with Quality Optimizer
 
-The Quality Analysis skill should:
+The Quality Optimizer should:
 
 1. **First**: Run available scripts for fast, deterministic checks
 2. **Then**: Use sub-agents for semantic analysis (requires judgment)
 3. **Finally**: Synthesize both sources into report
 
 **Example flow:**
-
 ```bash
-# Run prepass scripts for fast, deterministic checks
-uv run ./scripts/prepass-structure-capabilities.py --agent-path {path}
-uv run ./scripts/prepass-prompt-metrics.py --agent-path {path}
-uv run ./scripts/prepass-execution-deps.py --agent-path {path}
-uv run ./scripts/prepass-sanctum-architecture.py --agent-path {path}
-uv run ./scripts/scan-path-standards.py --agent-path {path}
-uv run ./scripts/scan-scripts.py --agent-path {path}
+# Run all validation scripts
+python scripts/validate-frontmatter.py --agent-path {path}
+bash scripts/scan-template-artifacts.sh --agent-path {path}
+python scripts/compare-prompts-manifest.py --agent-path {path}
 
 # Collect JSON outputs
 # Spawn sub-agents only for semantic checks
-# Synthesize complete report, then generate HTML:
-uv run ./scripts/generate-html-report.py {quality-report-dir}
+# Synthesize complete report
 ```
 
 ---
 
 ## Script Creation Priorities
 
-**Phase 1 (Immediate value):** DONE
+**Phase 1 (Immediate value):**
+1. Template Artifact Scanner (Bash + jq)
+2. Prompt Frontmatter Comparator (Python)
+3. Access Boundaries Extractor (Python)
 
-1. Template Artifact Scanner -- implemented in `prepass-structure-capabilities.py`
-2. Access Boundaries Extractor -- superseded by `scan-path-standards.py` and `prepass-sanctum-architecture.py`
+**Phase 2 (Enhanced validation):**
+4. Token Counter (Python)
+5. Subagent Pattern Detector (Python)
+6. Activation Flow Analyzer (Python)
 
-**Phase 2 (Enhanced validation):** DONE
+**Phase 3 (Advanced features):**
+7. Dependency Graph Generator (Python)
+8. Memory Structure Validator (Python)
+9. Agent Health Check orchestrator (Bash)
 
-4. Token Counter -- implemented in `prepass-prompt-metrics.py`
-5. Subagent Pattern Detector -- implemented in `prepass-execution-deps.py`
-6. Activation Flow Analyzer -- implemented in `prepass-structure-capabilities.py`
-
-**Phase 3 (Advanced features):** DONE
-
-7. Dependency Graph Generator -- implemented in `prepass-execution-deps.py`
-8. Memory Structure Validator -- superseded by `prepass-sanctum-architecture.py`
-9. Agent Health Check orchestrator -- implemented in `generate-html-report.py`
-
-**Phase 4 (Comparison tools):** NOT YET IMPLEMENTED
-
-10. Comparison Validator (Python) -- still a future opportunity
-
-Additional implemented scripts not in original plan:
-- `scan-scripts.py` -- validates script quality (PEP 723, agentic design, linting)
-- `scan-path-standards.py` -- validates path conventions across all skill files
+**Phase 4 (Comparison tools):**
+10. Comparison Validator (Bash + Python)

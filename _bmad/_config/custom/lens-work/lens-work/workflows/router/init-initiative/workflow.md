@@ -16,7 +16,7 @@ inputs:
     required: false
     default: ""
   name:
-    description: The primary name argument supplied with the command
+    description: Primary command argument. For feature scope supports `<feature>`, `<service> <feature>`, or `<domain> <service> <feature>`.
     required: false
     default: ""
   domain:
@@ -38,6 +38,8 @@ inputs:
 **Goal:** Create a new initiative with the correct scope, validated slug-safe naming, governance-repo metadata, and feature-only git branch topology.
 
 **Your Role:** Operate as the initiative bootstrap router. Collect only the inputs allowed for the selected scope, validate them against lifecycle and naming rules, then create governance metadata, local scaffolding, and feature topology without over-collecting data.
+
+For `/new-feature`, explicit arguments override inferred context. A service created earlier in the same chat is reused once before the workflow falls back to git-branch context.
 
 ---
 
@@ -74,8 +76,18 @@ Capture the selection and set `command_name` accordingly. If `command_name` is a
 This workflow uses **step-file architecture**:
 
 - Each step handles one stage of initiative creation: preflight, scope collection, validation, creation, and response.
-- State persists through `command_name`, `scope`, `domain`, `service`, `feature`, `track`, `initiative_root`, `config_path`, `governance_repo_path`, `target_projects_path`, `track_config`, `sensing_matches`, `lifecycle`, `module_config`, `profile`, and `current_context`.
+- State persists through `command_name`, `scope`, `domain`, `service`, `feature`, `feature_display_name`, `feature_arg_mode`, `track`, `initiative_root`, `config_path`, `governance_repo_path`, `target_projects_path`, `track_config`, `sensing_matches`, `lifecycle`, `module_config`, `profile`, `current_context`, and `pending_container_context`.
 - Domain and service scope remain lightweight governance containers; feature scope is the only path that creates lifecycle branches and reads lifecycle tracks and audiences.
+
+### Feature Context Precedence
+
+When the user runs `/new-feature`, resolve domain and service in this order:
+
+1. Explicit command inputs or multi-argument feature forms
+2. One-shot service context from the most recent successful `/new-service` in the same chat
+3. The current initiative context derived from git
+
+If a single `/new-feature` argument repeats the just-created service id, treat that as a follow-up cue and ask for the real feature name instead of reusing the token as the feature id.
 
 ---
 

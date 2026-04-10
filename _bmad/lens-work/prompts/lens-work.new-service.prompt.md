@@ -12,3 +12,5 @@ Read and follow all instructions in: lens.core/_bmad/lens-work/prompts/lens-work
 ```
 
 Invoke with scope: **service**
+
+After a successful service create, cache the new domain/service as one-shot follow-up context for the next `/new-feature <feature-name>` in the same chat.
