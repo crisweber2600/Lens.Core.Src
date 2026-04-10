@@ -1,6 +1,6 @@
 ---
 model: Claude Sonnet 4.6 (copilot)
-description: 'Next-action recommendation based on feature state'
+description: 'Next-action routing and auto-delegation based on feature state'
 ---
 
 # lens-next (Stub)

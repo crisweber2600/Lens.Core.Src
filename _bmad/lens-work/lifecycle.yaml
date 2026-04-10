@@ -176,15 +176,7 @@ phases:
     auto_advance_to: /dev
     auto_advance_promote: true
 
-# Phase ordering (canonical sequence for full track)
-# NOTE: 'dev' is NOT a lifecycle phase — it is a delegation command that hands off
-# to implementation agents in target projects. It exists as a router workflow but
-# is not part of the phase ordering or milestone promotion chain.
-# NOTE: 'expressplan' is NOT in phase_order — it is a standalone single-phase track
-# that produces all artifacts in one session. It has its own phase definition below.
-phase_order: [preplan, businessplan, techplan, devproposal, sprintplan]
-
-# Standalone phase — not part of phase_order, used only by express track
+  # Standalone phase — not part of phase_order, used only by express track
   expressplan:
     display_name: "ExpressPlan"
     agent: lens
@@ -202,6 +194,14 @@ phase_order: [preplan, businessplan, techplan, devproposal, sprintplan]
     milestone: dev-ready
     auto_advance_to: /dev
     auto_advance_promote: false
+
+# Phase ordering (canonical sequence for full track)
+# NOTE: 'dev' is NOT a lifecycle phase — it is a delegation command that hands off
+# to implementation agents in target projects. It exists as a router workflow but
+# is not part of the phase ordering or milestone promotion chain.
+# NOTE: 'expressplan' is NOT in phase_order — it is a standalone single-phase track
+# that produces all artifacts in one session. It has its own phase definition below.
+phase_order: [preplan, businessplan, techplan, devproposal, sprintplan]
 
 # -----------------------------------------------------------------------------
 # TRACKS (predefined lifecycle profiles)
