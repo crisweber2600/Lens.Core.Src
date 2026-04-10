@@ -258,6 +258,12 @@ jobs:
             SRC_COUNT=$((SRC_COUNT + 1))
           done
 
+          # Strip any non-SKILL.md files left by the BMAD framework install
+          # (e.g. bmad-agent-builder/assets/ added by the bmb module).
+          # Validator requires .github/skills to contain only SKILL.md stubs.
+          find build-output/.github/skills -mindepth 2 -type f ! -name 'SKILL.md' -delete
+          find build-output/.github/skills -mindepth 2 -maxdepth 2 -type d -empty -delete
+
           echo "✅ Overlaid $SRC_COUNT source skill stub(s) into release payload"
 
       # ── 10.6 Overlay source .github prompt stubs into release payload ─
