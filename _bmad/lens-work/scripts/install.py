@@ -97,23 +97,23 @@ IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL @lens.core/_bmad/lens
 # ---------------------------------------------------------------------------
 
 COMMANDS = [
-    ("bmad-lens-work-onboard.md", "onboard", "Create profile + run bootstrap + auto-clone TargetProjects", "workflows/utility/onboard/workflow.md"),
-    ("bmad-lens-work-init-initiative.md", "init-initiative", "Create new initiative scaffolding (feature scope creates branches)", "workflows/router/init-initiative/workflow.md"),
-    ("bmad-lens-work-preplan.md", "preplan", "Launch PrePlan phase (brainstorm/research/product brief)", "workflows/router/preplan/workflow.md"),
-    ("bmad-lens-work-businessplan.md", "businessplan", "Launch BusinessPlan phase (PRD/UX design)", "workflows/router/businessplan/workflow.md"),
-    ("bmad-lens-work-techplan.md", "techplan", "Launch TechPlan phase (architecture/technical decisions)", "workflows/router/techplan/workflow.md"),
-    ("bmad-lens-work-devproposal.md", "devproposal", "Launch DevProposal phase (epics/stories/readiness check)", "workflows/router/devproposal/workflow.md"),
-    ("bmad-lens-work-sprintplan.md", "sprintplan", "Launch SprintPlan phase (sprint-status/story files)", "workflows/router/sprintplan/workflow.md"),
-    ("bmad-lens-work-dev.md", "dev", "Delegate to implementation agents in target projects", "workflows/router/dev/workflow.md"),
-    ("bmad-lens-work-status.md", "status", "Display current state, blocks, topology, next steps", "workflows/utility/status/workflow.md"),
-    ("bmad-lens-work-next.md", "next", "Recommend next action based on lifecycle state", "workflows/utility/next/workflow.md"),
-    ("bmad-lens-work-switch.md", "switch", "Switch to different initiative branch", "workflows/utility/switch/workflow.md"),
-    ("bmad-lens-work-help.md", "help", "Show available commands and usage reference", "workflows/utility/help/workflow.md"),
-    ("bmad-lens-work-promote.md", "promote", "Promote current audience to next tier with gate checks", "workflows/core/audience-promotion/workflow.md"),
-    ("bmad-lens-work-constitution.md", "constitution", "Resolve and display constitutional governance", "workflows/governance/resolve-constitution/workflow.md"),
-    ("bmad-lens-work-compliance.md", "compliance", "Run constitution compliance check on current initiative", "workflows/governance/compliance-check/workflow.md"),
-    ("bmad-lens-work-sense.md", "sense", "Cross-initiative overlap detection on demand", "workflows/governance/cross-initiative/workflow.md"),
-    ("bmad-lens-work-module-management.md", "module-management", "Check module version and guide self-service updates", "workflows/utility/module-management/workflow.md"),
+    ("bmad-lens-onboard.md", "onboard", "Create profile + run bootstrap + auto-clone TargetProjects", "skills/bmad-lens-onboard/SKILL.md"),
+    ("bmad-lens-init-feature.md", "init-feature", "Create new feature with 2-branch topology", "skills/bmad-lens-init-feature/SKILL.md"),
+    ("bmad-lens-preplan.md", "preplan", "Launch PrePlan phase (brainstorm/research/product brief)", "skills/bmad-lens-preplan/SKILL.md"),
+    ("bmad-lens-businessplan.md", "businessplan", "Launch BusinessPlan phase (PRD/UX design)", "skills/bmad-lens-businessplan/SKILL.md"),
+    ("bmad-lens-techplan.md", "techplan", "Launch TechPlan phase (architecture/technical design)", "skills/bmad-lens-techplan/SKILL.md"),
+    ("bmad-lens-devproposal.md", "devproposal", "Launch DevProposal phase (epics/stories/readiness)", "skills/bmad-lens-devproposal/SKILL.md"),
+    ("bmad-lens-sprintplan.md", "sprintplan", "Launch SprintPlan phase (sprint planning/story files)", "skills/bmad-lens-sprintplan/SKILL.md"),
+    ("bmad-lens-dev.md", "dev", "Launch Dev phase — epic-level implementation loop", "skills/bmad-lens-dev/SKILL.md"),
+    ("bmad-lens-status.md", "status", "Show consolidated status report across all active features", "skills/bmad-lens-status/SKILL.md"),
+    ("bmad-lens-next.md", "next", "Recommend next action based on lifecycle state", "skills/bmad-lens-next/SKILL.md"),
+    ("bmad-lens-switch.md", "switch", "Switch to different feature branch", "skills/bmad-lens-switch/SKILL.md"),
+    ("bmad-lens-help.md", "help", "Show available commands and usage reference", "skills/bmad-lens-help/SKILL.md"),
+    ("bmad-lens-promote.md", "promote", "Promote feature through next lifecycle milestone", "skills/bmad-lens-git-orchestration/SKILL.md"),
+    ("bmad-lens-constitution.md", "constitution", "Resolve and display constitutional governance", "skills/bmad-lens-constitution/SKILL.md"),
+    ("bmad-lens-audit.md", "audit", "Run cross-initiative compliance audit dashboard", "skills/bmad-lens-audit/SKILL.md"),
+    ("bmad-lens-sensing.md", "sensing", "Cross-initiative overlap detection on demand", "skills/bmad-lens-sensing/SKILL.md"),
+    ("bmad-lens-module-management.md", "module-management", "Check module version and guide self-service updates", "skills/bmad-lens-module-management/SKILL.md"),
 ]
 
 
@@ -181,22 +181,19 @@ You must fully embody this agent's persona and follow all activation instruction
 
     # Stub prompts
     prompts = [
-        ("lens-work.onboard.prompt.md", "lens-work.onboard", "Bootstrap control repo — detect provider, validate auth, create profile, auto-clone TargetProjects", "lens-work.onboard.prompt.md"),
-        ("lens-work.new-initiative.prompt.md", "lens-work.new-initiative", "Create a new initiative (domain, service, or feature)", "lens-work.new-initiative.prompt.md"),
-        ("lens-work.new-domain.prompt.md", "lens-work.new-domain", "Create new domain-level container scaffolding without creating a lifecycle branch", "lens-work.new-domain.prompt.md"),
-        ("lens-work.new-service.prompt.md", "lens-work.new-service", "Create new service-level container scaffolding within a domain without creating a lifecycle branch", "lens-work.new-service.prompt.md"),
-        ("lens-work.new-feature.prompt.md", "lens-work.new-feature", "Create new feature-level initiative within a service", "lens-work.new-feature.prompt.md"),
-        ("lens-work.preplan.prompt.md", "lens-work.preplan", "Start PrePlan phase — brainstorm, research, product brief (Mary/Analyst, small audience)", "lens-work.preplan.prompt.md"),
-        ("lens-work.businessplan.prompt.md", "lens-work.businessplan", "Start BusinessPlan phase — PRD creation, UX design (John/PM + Sally/UX, small audience)", "lens-work.businessplan.prompt.md"),
-        ("lens-work.techplan.prompt.md", "lens-work.techplan", "Start TechPlan phase — architecture document, technical decisions (Winston/Architect)", "lens-work.techplan.prompt.md"),
-        ("lens-work.devproposal.prompt.md", "lens-work.devproposal", "Start DevProposal phase — epics, stories, readiness check (John/PM, medium audience)", "lens-work.devproposal.prompt.md"),
-        ("lens-work.sprintplan.prompt.md", "lens-work.sprintplan", "Start SprintPlan phase — sprint-status, story files (Bob/Scrum Master, large audience)", "lens-work.sprintplan.prompt.md"),
-        ("lens-work.status.prompt.md", "lens-work.status", "Show consolidated status report across all active initiatives", "lens-work.status.prompt.md"),
-        ("lens-work.next.prompt.md", "lens-work.next", "Recommend next action based on lifecycle state", "lens-work.next.prompt.md"),
-        ("lens-work.switch.prompt.md", "lens-work.switch", "Switch to a different initiative via git checkout", "lens-work.switch.prompt.md"),
-        ("lens-work.promote.prompt.md", "lens-work.promote", "Promote current audience to next level with gate checks", "lens-work.promote.prompt.md"),
-        ("lens-work.constitution.prompt.md", "lens-work.constitution", "Resolve and display constitutional governance", "lens-work.constitution.prompt.md"),
-        ("lens-work.help.prompt.md", "lens-work.help", "Show available commands and usage", "lens-work.help.prompt.md"),
+        ("lens-onboard.prompt.md", "lens-onboard", "Bootstrap control repo — detect provider, validate auth, create profile, auto-clone TargetProjects", "lens-onboard.prompt.md"),
+        ("lens-init-feature.prompt.md", "lens-init-feature", "Create a new feature with 2-branch topology", "lens-init-feature.prompt.md"),
+        ("lens-preplan.prompt.md", "lens-preplan", "Run PrePlan phase (brainstorm, research, product brief)", "lens-preplan.prompt.md"),
+        ("lens-businessplan.prompt.md", "lens-businessplan", "Run BusinessPlan phase (PRD, UX design)", "lens-businessplan.prompt.md"),
+        ("lens-techplan.prompt.md", "lens-techplan", "Run TechPlan phase (architecture, technical design)", "lens-techplan.prompt.md"),
+        ("lens-devproposal.prompt.md", "lens-devproposal", "Run DevProposal phase (epics, stories, readiness)", "lens-devproposal.prompt.md"),
+        ("lens-sprintplan.prompt.md", "lens-sprintplan", "Run SprintPlan phase (sprint planning, story files)", "lens-sprintplan.prompt.md"),
+        ("lens-status.prompt.md", "lens-status", "Show consolidated status report across all active features", "lens-status.prompt.md"),
+        ("lens-next.prompt.md", "lens-next", "Recommend next action based on lifecycle state", "lens-next.prompt.md"),
+        ("lens-switch.prompt.md", "lens-switch", "Switch to a different feature via git checkout", "lens-switch.prompt.md"),
+        ("lens-promote.prompt.md", "lens-promote", "Promote feature through next lifecycle milestone", "lens-promote.prompt.md"),
+        ("lens-constitution.prompt.md", "lens-constitution", "Resolve and display constitutional governance", "lens-constitution.prompt.md"),
+        ("lens-help.prompt.md", "lens-help", "Show available commands and usage", "lens-help.prompt.md"),
     ]
 
     for file_name, name, desc, target in prompts:
@@ -224,11 +221,11 @@ the module agent at `lens.core/_bmad/lens-work/agents/lens.agent.md`.
 
 | Skill | Path |
 |-------|------|
-| git-state | `lens.core/_bmad/lens-work/skills/git-state/SKILL.md` |
-| git-orchestration | `lens.core/_bmad/lens-work/skills/git-orchestration/SKILL.md` |
-| constitution | `lens.core/_bmad/lens-work/skills/constitution/SKILL.md` |
-| sensing | `lens.core/_bmad/lens-work/skills/sensing/SKILL.md` |
-| checklist | `lens.core/_bmad/lens-work/skills/checklist/SKILL.md` |
+| bmad-lens-git-state | `lens.core/_bmad/lens-work/skills/bmad-lens-git-state/SKILL.md` |
+| bmad-lens-git-orchestration | `lens.core/_bmad/lens-work/skills/bmad-lens-git-orchestration/SKILL.md` |
+| bmad-lens-constitution | `lens.core/_bmad/lens-work/skills/bmad-lens-constitution/SKILL.md` |
+| bmad-lens-sensing | `lens.core/_bmad/lens-work/skills/bmad-lens-sensing/SKILL.md` |
+| bmad-lens-checklist | `lens.core/_bmad/lens-work/skills/bmad-lens-checklist/SKILL.md` |
 
 ## Important
 
@@ -302,11 +299,11 @@ See `lens.core/_bmad/lens-work/module-help.csv` for the complete command list.
 
 | Skill | Path |
 |-------|------|
-| git-state | `lens.core/_bmad/lens-work/skills/git-state/SKILL.md` |
-| git-orchestration | `lens.core/_bmad/lens-work/skills/git-orchestration/SKILL.md` |
-| constitution | `lens.core/_bmad/lens-work/skills/constitution/SKILL.md` |
-| sensing | `lens.core/_bmad/lens-work/skills/sensing/SKILL.md` |
-| checklist | `lens.core/_bmad/lens-work/skills/checklist/SKILL.md` |
+| bmad-lens-git-state | `lens.core/_bmad/lens-work/skills/bmad-lens-git-state/SKILL.md` |
+| bmad-lens-git-orchestration | `lens.core/_bmad/lens-work/skills/bmad-lens-git-orchestration/SKILL.md` |
+| bmad-lens-constitution | `lens.core/_bmad/lens-work/skills/bmad-lens-constitution/SKILL.md` |
+| bmad-lens-sensing | `lens.core/_bmad/lens-work/skills/bmad-lens-sensing/SKILL.md` |
+| bmad-lens-checklist | `lens.core/_bmad/lens-work/skills/bmad-lens-checklist/SKILL.md` |
 """
     write_adapter_file(_project_root / "AGENTS.md", agents_md)
 

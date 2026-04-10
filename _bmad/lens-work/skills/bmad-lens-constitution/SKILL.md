@@ -68,6 +68,7 @@ required_artifacts:
   dev:
     - stories
 gate_mode: informational   # informational | hard
+sensing_gate_mode: informational  # informational | hard — controls bmad-lens-sensing overlap enforcement
 additional_review_participants: []
 enforce_stories: true
 enforce_review: true
@@ -83,6 +84,7 @@ Any free-form guidance for feature authors in this scope...
 | `permitted_tracks` | **Intersection** — a track must be permitted at ALL levels |
 | `required_artifacts` | **Union** — any level can add required artifacts |
 | `gate_mode` | **Strongest wins** — `hard` overrides `informational` |
+| `sensing_gate_mode` | **Strongest wins** — `hard` overrides `informational` |
 | `additional_review_participants` | **Union** — all named reviewers accumulate |
 | `enforce_stories` | **Strongest wins** — `true` overrides `false` |
 | `enforce_review` | **Strongest wins** — `true` overrides `false` |
@@ -130,6 +132,7 @@ Returns a context-filtered constitution view for the current phase and/or track.
 - **quickplan / full-plan** — Calls `check-compliance` at plan-commit time to gate promotion
 - **complete** — Calls `check-compliance` against `complete` phase requirements before archiving
 - **dashboard** — Calls `resolve` to surface active governance rules in the portfolio view
+- **sensing** — Calls `resolve` to read `sensing_gate_mode`; controls advisory vs hard-gate overlap enforcement
 
 ## Script Reference
 
