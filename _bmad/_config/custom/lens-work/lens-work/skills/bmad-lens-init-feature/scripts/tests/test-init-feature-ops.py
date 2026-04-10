@@ -598,6 +598,164 @@ def test_fetch_context_service_refs_include_service_context():
         assert_true("service summary included", any("features/platform/payments/invoice-sync/summary.md" in p for p in service_paths))
 
 
+def test_fetch_context_service_ref_text_detects_service_context():
+    """fetch-context can infer service refs from recent conversation text."""
+    print("test_fetch_context_service_ref_text_detects_service_context", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        run([
+            "create",
+            "--governance-repo", tmp,
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--name", "Auth Login",
+            "--track", "quickplan",
+            "--username", "cweber",
+        ])
+
+        service_dir = Path(tmp) / "features" / "platform" / "payments"
+        service_dir.mkdir(parents=True, exist_ok=True)
+        (service_dir / "service.yaml").write_text("kind: service\nid: platform-payments\n", encoding="utf-8")
+        docs_dir = service_dir / "docs"
+        docs_dir.mkdir(parents=True, exist_ok=True)
+        (docs_dir / "handoff.md").write_text("# Payments Handoff\n", encoding="utf-8")
+
+        result, code = run([
+            "fetch-context",
+            "--governance-repo", tmp,
+            "--feature-id", "auth-login",
+            "--service-ref-text", "We need to coordinate the payments service before drafting the processor plan.",
+        ])
+        assert_eq("service text status", result.get("status"), "pass")
+        assert_eq("service text exit code", code, 0)
+        assert_eq("detected service ref", result.get("detected_service_refs"), ["payments"])
+        assert_eq("service refs include detected service", result.get("service_refs"), ["payments"])
+        service_paths = result.get("service_context_paths", [])
+        assert_true("detected service docs included", any("features/platform/payments/docs/handoff.md" in p for p in service_paths))
+        assert_eq("no missing service refs", result.get("missing_service_refs"), [])
+
+
+def test_fetch_context_reports_missing_detected_service_context():
+    """fetch-context reports detected services that have no governance docs yet."""
+    print("test_fetch_context_reports_missing_detected_service_context", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        feature_index = {
+            "features": [
+                {
+                    "id": "auth-login",
+                    "domain": "platform",
+                    "service": "identity",
+                    "status": "preplan",
+                    "owner": "cweber",
+                },
+                {
+                    "id": "payments-shell",
+                    "domain": "platform",
+                    "service": "payments",
+                    "status": "preplan",
+                    "owner": "cweber",
+                },
+            ]
+        }
+        Path(tmp, "feature-index.yaml").write_text(
+            yaml.dump(feature_index, sort_keys=False),
+            encoding="utf-8",
+        )
+
+        target_feature_dir = Path(tmp) / "features" / "platform" / "identity" / "auth-login"
+        target_feature_dir.mkdir(parents=True, exist_ok=True)
+        target_feature = make_feature_yaml_fixture("auth-login", "platform", "identity")
+        (target_feature_dir / "feature.yaml").write_text(
+            yaml.dump(target_feature, sort_keys=False),
+            encoding="utf-8",
+        )
+
+        result, code = run([
+            "fetch-context",
+            "--governance-repo", tmp,
+            "--feature-id", "auth-login",
+            "--service-ref-text", "Payments must be grounded before we continue.",
+        ])
+        assert_eq("missing detected service status", result.get("status"), "pass")
+        assert_eq("missing detected service exit code", code, 0)
+        assert_eq("missing detected service ref", result.get("detected_service_refs"), ["payments"])
+        assert_eq("missing service refs reported", result.get("missing_service_refs"), ["payments"])
+        assert_eq("no service context paths when missing", result.get("service_context_paths"), [])
+
+
+def test_fetch_context_service_ref_text_scopes_to_target_domain():
+    """fetch-context only loads service context from the target feature's domain."""
+    print("test_fetch_context_service_ref_text_scopes_to_target_domain", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        run([
+            "create",
+            "--governance-repo", tmp,
+            "--feature-id", "platform-auth",
+            "--domain", "platform",
+            "--service", "identity",
+            "--name", "Platform Auth",
+            "--track", "quickplan",
+            "--username", "cweber",
+        ])
+
+        for domain in ["platform", "core"]:
+            service_dir = Path(tmp) / "features" / domain / "payments"
+            service_dir.mkdir(parents=True, exist_ok=True)
+            (service_dir / "service.yaml").write_text(
+                f"kind: service\nid: {domain}-payments\n",
+                encoding="utf-8",
+            )
+            docs_dir = service_dir / "docs"
+            docs_dir.mkdir(parents=True, exist_ok=True)
+            (docs_dir / f"{domain}.md").write_text(f"# {domain} payments\n", encoding="utf-8")
+
+        result, code = run([
+            "fetch-context",
+            "--governance-repo", tmp,
+            "--feature-id", "platform-auth",
+            "--service-ref-text", "We also need the payments service in scope.",
+        ])
+        assert_eq("domain-scoped service status", result.get("status"), "pass")
+        assert_eq("domain-scoped service exit code", code, 0)
+        service_paths = result.get("service_context_paths", [])
+        assert_true("platform service docs included", any("features/platform/payments/docs/platform.md" in p for p in service_paths))
+        assert_true("core service docs excluded", all("features/core/payments/" not in p for p in service_paths))
+
+
+def test_fetch_context_service_context_without_service_marker():
+    """fetch-context can still load child summaries when a service marker is missing."""
+    print("test_fetch_context_service_context_without_service_marker", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        run([
+            "create",
+            "--governance-repo", tmp,
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--name", "Auth Login",
+            "--track", "quickplan",
+            "--username", "cweber",
+        ])
+
+        payments_feature_dir = Path(tmp) / "features" / "platform" / "payments" / "invoice-sync"
+        payments_feature_dir.mkdir(parents=True, exist_ok=True)
+        (payments_feature_dir / "summary.md").write_text("# Invoice Sync\n", encoding="utf-8")
+
+        result, code = run([
+            "fetch-context",
+            "--governance-repo", tmp,
+            "--feature-id", "auth-login",
+            "--service-ref", "payments",
+        ])
+        assert_eq("summary-only service status", result.get("status"), "pass")
+        assert_eq("summary-only service exit code", code, 0)
+        assert_true(
+            "summary-only service included",
+            any("features/platform/payments/invoice-sync/summary.md" in p for p in result.get("service_context_paths", [])),
+        )
+        assert_eq("summary-only service not marked missing", result.get("missing_service_refs"), [])
+
+
 def test_control_repo_git_commands():
     """When control-repo differs from governance-repo, git commands include both repos."""
     print("test_control_repo_git_commands", file=sys.stderr)
@@ -631,6 +789,32 @@ def test_control_repo_git_commands():
             )
 
 
+def make_feature_yaml_fixture(feature_id: str, domain: str, service: str) -> dict:
+    """Return a minimal feature.yaml payload for fetch-context tests."""
+    return {
+        "name": feature_id.replace("-", " ").title(),
+        "description": "",
+        "featureId": feature_id,
+        "domain": domain,
+        "service": service,
+        "phase": "preplan",
+        "track": "quickplan",
+        "milestones": {},
+        "team": [{"username": "cweber", "role": "lead"}],
+        "dependencies": {"depends_on": [], "depended_by": []},
+        "target_repos": [],
+        "links": {"retrospective": None, "issues": [], "pull_request": None},
+        "priority": "medium",
+        "created": "2026-04-10T00:00:00Z",
+        "updated": "2026-04-10T00:00:00Z",
+        "phase_transitions": [],
+        "docs": {
+            "path": f"docs/{domain}/{service}/{feature_id}",
+            "governance_docs_path": f"features/{domain}/{service}/{feature_id}/docs",
+        },
+    }
+
+
 if __name__ == "__main__":
     test_create_feature()
     test_create_domain_marker()
@@ -650,6 +834,10 @@ if __name__ == "__main__":
     test_fetch_context_no_index()
     test_fetch_context_uses_feature_yaml_dependencies()
     test_fetch_context_service_refs_include_service_context()
+    test_fetch_context_service_ref_text_detects_service_context()
+    test_fetch_context_reports_missing_detected_service_context()
+    test_fetch_context_service_ref_text_scopes_to_target_domain()
+    test_fetch_context_service_context_without_service_marker()
     test_control_repo_git_commands()
 
     print(f"\nResults: {PASS} passed, {FAIL} failed", file=sys.stderr)

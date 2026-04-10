@@ -9,7 +9,7 @@ After this process, the agent has loaded:
 - Domain constitution rules (if present at `{governance-repo}/domains/{domain}/constitution.md`)
 - Summaries for all other features in the same domain (from `feature-index.yaml` → `summary.md` files on `main`)
 - Full feature docs for all `depends_on` and `blocks` entries (full `feature.yaml` plus any available mirrored governance docs)
-- Optional governance context for explicitly named services referenced in the current conversation
+- Optional governance context for services that emerge during the current conversation
 - Retrospective insights from `{governance-repo}/retrospectives/{domain}/` if present
 
 ## Process
@@ -47,9 +47,18 @@ python3 ./scripts/init-feature-ops.py fetch-context \
 
 Read and incorporate the full `feature.yaml` content and any mirrored governance docs for each `depends_on` or `blocks` feature. This ensures the new feature's planning respects the constraints and interfaces of its dependencies.
 
-### Step 3b: Load Named Service Context When Referenced
+### Step 3b: Load Named Service Context As The Session Unfolds
 
-If the user names other services in the request or chat history, ask which of those services should be grounded before drafting. Then run:
+If the user names other services in the request, brainstorm answers, or follow-up discussion, load that governance context as part of the working session instead of asking a dedicated upfront service-selection question. Pass recent user text when service names need to be detected implicitly:
+
+```bash
+python3 ./scripts/init-feature-ops.py fetch-context \
+  --governance-repo {governance_repo} \
+  --feature-id {featureId} \
+  --service-ref-text "{recent_user_text}"
+```
+
+When the service name is already clear, pass it directly:
 
 ```bash
 python3 ./scripts/init-feature-ops.py fetch-context \
@@ -58,7 +67,13 @@ python3 ./scripts/init-feature-ops.py fetch-context \
   --service-ref {service_name}
 ```
 
-Use `service_context_paths` from the result to load matching governance service files, service docs, and child feature summaries for the selected service.
+Use the result fields as follows:
+
+- `detected_service_refs` — services inferred from the recent conversation text
+- `service_context_paths` — matching governance service files, service docs, and child feature summaries
+- `missing_service_refs` — services that were requested or detected but have no governance context available
+
+If `missing_service_refs` is non-empty, tell the user those governance docs are missing and continue without falling back to source-code inspection.
 
 ### Step 4: Load Domain Constitution
 
@@ -87,6 +102,7 @@ After loading all context, present a brief summary:
 - N related features in domain (list featureIds)
 - N depends-on / blocks features (list featureIds)
 - N named-service governance contexts loaded (list service names)
+- Missing governance service contexts: list service names, if any
 - Constitution loaded: yes/no
 - Retrospective insights: yes/no (date of most recent)
 
