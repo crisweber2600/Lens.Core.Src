@@ -220,7 +220,7 @@ def main() -> int:
         release_prompts = release_github / "prompts"
         for pf in list(prompts_dir.iterdir()):
             name = pf.name
-            if re.match(r"^lens-work.*\.prompt\.md$", name) or re.match(r"^lens-.*\.prompt\.md$", name):
+            if re.match(r"^lens-.*\.prompt\.md$", name):
                 if not (release_prompts / name).exists():
                     pf.unlink()
             elif name.endswith(".prompt.md"):

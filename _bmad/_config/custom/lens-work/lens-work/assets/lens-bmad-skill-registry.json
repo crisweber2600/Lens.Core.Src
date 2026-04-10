@@ -4,7 +4,7 @@
     {
       "id": "bmad-brainstorming",
       "command": "/bmad-brainstorming",
-      "promptFile": "lens-work.bmad-brainstorming.prompt.md",
+      "promptFile": "lens-bmad-brainstorming.prompt.md",
       "displayName": "BMAD Brainstorming",
       "description": "Run guided brainstorming with Lens domain, service, feature, governance, and repo context.",
       "entryPath": "lens.core/_bmad/core/bmad-brainstorming/SKILL.md",
@@ -16,7 +16,7 @@
     {
       "id": "bmad-create-prd",
       "command": "/bmad-create-prd",
-      "promptFile": "lens-work.bmad-create-prd.prompt.md",
+      "promptFile": "lens-bmad-create-prd.prompt.md",
       "displayName": "BMAD Create PRD",
       "description": "Create or refine a PRD with Lens-aware domain, service, feature, governance, and output-path context.",
       "entryPath": "lens.core/_bmad/bmm/2-plan-workflows/bmad-create-prd/SKILL.md",
@@ -28,7 +28,7 @@
     {
       "id": "bmad-create-architecture",
       "command": "/bmad-create-architecture",
-      "promptFile": "lens-work.bmad-create-architecture.prompt.md",
+      "promptFile": "lens-bmad-create-architecture.prompt.md",
       "displayName": "BMAD Create Architecture",
       "description": "Create architecture deliverables with Lens-aware feature, repo, and governance context.",
       "entryPath": "lens.core/_bmad/bmm/3-solutioning/bmad-create-architecture/SKILL.md",
@@ -40,7 +40,7 @@
     {
       "id": "bmad-create-epics-and-stories",
       "command": "/bmad-create-epics-and-stories",
-      "promptFile": "lens-work.bmad-create-epics-and-stories.prompt.md",
+      "promptFile": "lens-bmad-create-epics-and-stories.prompt.md",
       "displayName": "BMAD Create Epics and Stories",
       "description": "Generate epics and stories with Lens-aware feature scope, governance, and artifact paths.",
       "entryPath": "lens.core/_bmad/bmm/3-solutioning/bmad-create-epics-and-stories/SKILL.md",
@@ -52,7 +52,7 @@
     {
       "id": "bmad-quick-dev",
       "command": "/bmad-quick-dev",
-      "promptFile": "lens-work.bmad-quick-dev.prompt.md",
+      "promptFile": "lens-bmad-quick-dev.prompt.md",
       "displayName": "BMAD Quick Dev",
       "description": "Run quick dev with Lens feature scope, target repo resolution, and write-boundary guidance.",
       "entryPath": "lens.core/_bmad/bmm/4-implementation/bmad-quick-dev/SKILL.md",
@@ -64,7 +64,7 @@
     {
       "id": "bmad-code-review",
       "command": "/bmad-code-review",
-      "promptFile": "lens-work.bmad-code-review.prompt.md",
+      "promptFile": "lens-bmad-code-review.prompt.md",
       "displayName": "BMAD Code Review",
       "description": "Run code review with Lens feature scope, target repo resolution, and governance-aware review context.",
       "entryPath": "lens.core/_bmad/bmm/4-implementation/bmad-code-review/SKILL.md",

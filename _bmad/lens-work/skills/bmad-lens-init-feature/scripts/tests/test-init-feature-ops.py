@@ -226,6 +226,7 @@ def test_index_created_when_missing():
             "--domain", "core",
             "--service", "api",
             "--name", "New Feature",
+            "--track", "quickplan",
             "--username", "testuser",
         ])
         assert_eq("create status", result.get("status"), "pass")
@@ -247,6 +248,7 @@ def test_dry_run():
             "--domain", "platform",
             "--service", "identity",
             "--name", "Dry Feature",
+            "--track", "quickplan",
             "--username", "cweber",
             "--dry-run",
         ])
@@ -294,6 +296,7 @@ def test_invalid_feature_id():
             "--domain", "core",
             "--service", "api",
             "--name", "Bad",
+            "--track", "quickplan",
             "--username", "testuser",
         ]
 
@@ -326,6 +329,7 @@ def test_invalid_domain_service():
             "--domain", "../evil",
             "--service", "api",
             "--name", "Bad",
+            "--track", "quickplan",
             "--username", "testuser",
         ])
         assert_eq("bad domain rejected", result.get("status"), "fail")
@@ -338,6 +342,7 @@ def test_invalid_domain_service():
             "--domain", "core",
             "--service", "../../etc",
             "--name", "Bad",
+            "--track", "quickplan",
             "--username", "testuser",
         ])
         assert_eq("bad service rejected", result.get("status"), "fail")
@@ -354,6 +359,7 @@ def test_duplicate_feature():
             "--domain", "platform",
             "--service", "identity",
             "--name", "Dup Check",
+            "--track", "quickplan",
             "--username", "cweber",
         ]
         first, code1 = run(args)
@@ -384,10 +390,29 @@ def test_missing_required_args():
             "--domain", "platform",
             "--service", "identity",
             "--name", "No ID",
+            "--track", "quickplan",
             "--username", "cweber",
             # missing --feature-id
         ])
         assert_true("missing feature-id fails", code != 0)
+
+
+def test_track_must_be_explicit():
+    """Feature creation fails with a clear error when track is omitted."""
+    print("test_track_must_be_explicit", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        result, code = run([
+            "create",
+            "--governance-repo", tmp,
+            "--feature-id", "missing-track",
+            "--domain", "platform",
+            "--service", "identity",
+            "--name", "Missing Track",
+            "--username", "cweber",
+        ])
+        assert_eq("missing track status", result.get("status"), "fail")
+        assert_eq("missing track exit code", code, 1)
+        assert_true("missing track error mentions track", "track" in result.get("error", "").lower())
 
 
 def test_fetch_context_with_existing_index():
@@ -406,6 +431,7 @@ def test_fetch_context_with_existing_index():
                 "--domain", domain,
                 "--service", service,
                 "--name", fid.replace("-", " ").title(),
+                "--track", "quickplan",
                 "--username", "cweber",
             ])
 
@@ -441,6 +467,7 @@ def test_fetch_context_full_depth():
                 "--domain", "core",
                 "--service", "svc",
                 "--name", fid.replace("-", " ").title(),
+                "--track", "quickplan",
                 "--username", "cweber",
             ])
 
@@ -466,6 +493,7 @@ def test_fetch_context_feature_not_found():
             "--domain", "core",
             "--service", "api",
             "--name", "Some Feature",
+            "--track", "quickplan",
             "--username", "cweber",
         ])
 
@@ -504,6 +532,7 @@ def test_control_repo_git_commands():
                 "--domain", "platform",
                 "--service", "svc",
                 "--name", "Control Repo Test",
+                "--track", "quickplan",
                 "--username", "cweber",
                 "--dry-run",
             ])
@@ -535,6 +564,7 @@ if __name__ == "__main__":
     test_invalid_domain_service()
     test_duplicate_feature()
     test_missing_required_args()
+    test_track_must_be_explicit()
     test_fetch_context_with_existing_index()
     test_fetch_context_full_depth()
     test_fetch_context_feature_not_found()

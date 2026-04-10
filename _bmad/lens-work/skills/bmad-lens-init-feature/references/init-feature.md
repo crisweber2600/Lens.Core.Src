@@ -24,14 +24,14 @@ Prompt for (if not already provided):
 1. **Feature name** — human-readable, used to derive featureId (e.g., "Auth Token Refresh" → `auth-refresh`)
 2. **Domain** — organizational domain (e.g., `platform`, `commerce`)
 3. **Service** — service within the domain (e.g., `identity`, `payments`)
+4. **Track** — present the lifecycle track choices explicitly and require the user to choose one before creation. If `{default_track}` exists, label it as the preferred track only; do not apply it without explicit confirmation.
 
 Derive:
 
 - **featureId** — slugify the feature name: lowercase, replace spaces with `-`, strip non-alphanumeric
-- **track** — from `{default_track}` in user-profile.md or config (default: `quickplan`)
 - **username** — from `{username}` resolved on activation
 
-Confirm the derived featureId with the user before proceeding.
+Confirm the derived featureId and the explicitly chosen track with the user before proceeding.
 
 ### Step 2: Validate with Dry Run
 
