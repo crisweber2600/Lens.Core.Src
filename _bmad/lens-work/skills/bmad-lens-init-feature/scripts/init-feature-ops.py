@@ -38,6 +38,7 @@ VALID_TRACKS = [
     "tech-change",
 ]
 CONTEXT_DOC_SUFFIXES = {".md", ".yaml", ".yml"}
+AMBIGUOUS_SERVICE_NAMES = {"api", "auth", "common", "core", "data", "identity"}
 
 
 def validate_feature_id(value: str) -> str | None:
@@ -273,17 +274,32 @@ def collect_feature_context_paths(governance_repo: str, entry: dict) -> list[str
     return unique_paths(paths)
 
 
-def collect_service_context_paths(governance_repo: str, service_name: str, exclude_feature_id: str) -> list[str]:
+def collect_service_context_paths(
+    governance_repo: str,
+    service_name: str,
+    exclude_feature_id: str,
+    domain: str | None = None,
+) -> list[str]:
     """Collect service-level governance files and child feature summaries for a named service."""
     features_root = Path(governance_repo) / "features"
     if not features_root.exists():
         return []
 
     matches: list[str] = []
-    for service_yaml in sorted(features_root.glob(f"*/{service_name}/service.yaml")):
-        service_dir = service_yaml.parent
-        matches.append(str(service_yaml))
+    search_domains: list[str]
+    if domain:
+        search_domains = [domain]
+    else:
+        search_domains = [path.name for path in sorted(features_root.iterdir()) if path.is_dir()]
 
+    for domain_name in search_domains:
+        service_dir = features_root / domain_name / service_name
+        if not service_dir.exists() or not service_dir.is_dir():
+            continue
+
+        service_yaml = service_dir / "service.yaml"
+        if service_yaml.exists():
+            matches.append(str(service_yaml))
         docs_dir = service_dir / "docs"
         matches.extend(collect_doc_files(docs_dir))
 
@@ -292,6 +308,65 @@ def collect_service_context_paths(governance_repo: str, service_name: str, exclu
                 matches.append(str(summary_path))
 
     return unique_paths(matches)
+
+
+def normalize_lookup_text(value: str) -> str:
+    """Normalize freeform text for identifier lookups."""
+    normalized = re.sub(r"[^a-z0-9]+", " ", value.lower())
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return f" {normalized} " if normalized else ""
+
+
+def available_service_names(governance_repo: str, features: list[dict], domain: str | None = None) -> list[str]:
+    """Return known service names from governance markers and feature index entries."""
+    names: set[str] = set()
+    features_root = Path(governance_repo) / "features"
+
+    if features_root.exists():
+        pattern = f"{domain}/*/service.yaml" if domain else "*/*/service.yaml"
+        for service_yaml in sorted(features_root.glob(pattern)):
+            if service_yaml.is_file():
+                names.add(service_yaml.parent.name.lower())
+
+    for feature in features:
+        feature_domain = str(feature.get("domain", "")).strip().lower()
+        if domain and feature_domain != domain.lower():
+            continue
+        service_name = str(feature.get("service", "")).strip().lower()
+        if service_name:
+            names.add(service_name)
+
+    return sorted(names)
+
+
+def detect_service_refs_from_texts(texts: list[str], candidate_services: list[str]) -> list[str]:
+    """Detect known governance service names mentioned in freeform text."""
+    haystacks = [normalize_lookup_text(text) for text in texts if normalize_lookup_text(text)]
+    if not haystacks:
+        return []
+
+    detected: list[str] = []
+    for service_name in candidate_services:
+        needle = normalize_lookup_text(service_name)
+        if not needle:
+            continue
+
+        service_key = service_name.lower()
+        cue_matches = [
+            f" {service_key} service ",
+            f" service {service_key} ",
+            f" {service_key} svc ",
+            f" svc {service_key} ",
+            f" {service_key} api ",
+            f" api {service_key} ",
+        ]
+        has_cue_match = any(any(cue in haystack for cue in cue_matches) for haystack in haystacks)
+        has_bare_match = any(needle in haystack for haystack in haystacks)
+
+        if has_cue_match or (has_bare_match and service_key not in AMBIGUOUS_SERVICE_NAMES):
+            detected.append(service_name)
+
+    return unique_paths(detected)
 
 
 def build_git_commands(
@@ -603,7 +678,10 @@ def cmd_fetch_context(args: argparse.Namespace) -> dict:
     governance_repo = args.governance_repo
     feature_id = args.feature_id
     depth = args.depth
-    service_refs = [service.strip() for service in getattr(args, "service_ref", []) if service.strip()]
+    explicit_service_refs = unique_paths([
+        service.strip().lower() for service in getattr(args, "service_ref", []) if service.strip()
+    ])
+    service_ref_texts = [text.strip() for text in getattr(args, "service_ref_text", []) if text.strip()]
 
     try:
         index_data, index_exists = read_feature_index(governance_repo)
@@ -636,6 +714,7 @@ def cmd_fetch_context(args: argparse.Namespace) -> dict:
         return {"status": "fail", "error": f"Failed to read feature.yaml: {e}"}
 
     target_domain = target.get("domain", "")
+    target_service = str(feature_data.get("service") or target.get("service") or "").strip().lower()
     dependencies = feature_data.get("dependencies") or {}
     depends_on_ids = list(dependencies.get("depends_on") or [])
     blocks_ids = list(dependencies.get("blocks") or [])
@@ -643,6 +722,16 @@ def cmd_fetch_context(args: argparse.Namespace) -> dict:
     related = [f for f in features if f.get("domain") == target_domain and f.get("id") != feature_id]
     depends_on = [index_by_id[dep_id] for dep_id in depends_on_ids if dep_id in index_by_id]
     blocks = [index_by_id[dep_id] for dep_id in blocks_ids if dep_id in index_by_id]
+    candidate_services = [
+        service_name
+        for service_name in available_service_names(governance_repo, features, target_domain)
+        if service_name != target_service
+    ]
+    detected_service_refs = detect_service_refs_from_texts(
+        service_ref_texts,
+        candidate_services,
+    )
+    service_refs = unique_paths(explicit_service_refs + detected_service_refs)
     context_paths: list[str] = []
 
     for f in related:
@@ -658,8 +747,18 @@ def cmd_fetch_context(args: argparse.Namespace) -> dict:
         context_paths.extend(collect_feature_context_paths(governance_repo, f))
 
     service_context_paths: list[str] = []
+    missing_service_refs: list[str] = []
     for service_name in service_refs:
-        service_context_paths.extend(collect_service_context_paths(governance_repo, service_name, feature_id))
+        matched_paths = collect_service_context_paths(
+            governance_repo,
+            service_name,
+            feature_id,
+            target_domain,
+        )
+        if matched_paths:
+            service_context_paths.extend(matched_paths)
+        else:
+            missing_service_refs.append(service_name)
 
     context_paths = unique_paths(context_paths + service_context_paths)
 
@@ -669,6 +768,8 @@ def cmd_fetch_context(args: argparse.Namespace) -> dict:
         "depends_on": [f.get("id") for f in depends_on],
         "blocks": [f.get("id") for f in blocks],
         "service_refs": service_refs,
+        "detected_service_refs": detected_service_refs,
+        "missing_service_refs": missing_service_refs,
         "context_paths": context_paths,
         "service_context_paths": unique_paths(service_context_paths),
     }
@@ -772,6 +873,12 @@ Examples:
         action="append",
         default=[],
         help="Named service reference to load governance context for (repeatable)",
+    )
+    fetch_p.add_argument(
+        "--service-ref-text",
+        action="append",
+        default=[],
+        help="Freeform conversation text used to detect named services implicitly (repeatable)",
     )
 
     return parser
