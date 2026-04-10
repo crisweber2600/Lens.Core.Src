@@ -73,11 +73,16 @@ def write_feature_yaml(repo_path: Path, feature_id: str, *, domain: str = "platf
     feat_dir.mkdir(parents=True, exist_ok=True)
     yaml_path = feat_dir / "feature.yaml"
     yaml_path.write_text(yaml.dump({
+        "featureId": feature_id,
         "feature_id": feature_id,
         "domain": domain,
         "service": service,
         "phase": phase,
         "status": status,
+        "docs": {
+            "path": f"docs/{domain}/{service}/{feature_id}",
+            "governance_docs_path": f"features/{domain}/{service}/{feature_id}/docs",
+        },
     }))
     return yaml_path
 
@@ -450,6 +455,59 @@ class TestPush:
         ))
         assert code == 0
         assert result["branch"] == "main"
+
+
+class TestPublishToGovernance:
+    def test_publish_to_governance_copies_phase_artifacts(self, tmp_path):
+        governance = tmp_path / "governance"
+        control = tmp_path / "control"
+        governance.mkdir()
+        control.mkdir()
+
+        write_feature_yaml(governance, "publish-feat", domain="platform", service="identity", phase="preplan")
+
+        control_docs = control / "docs" / "platform" / "identity" / "publish-feat"
+        control_docs.mkdir(parents=True, exist_ok=True)
+        (control_docs / "product-brief.md").write_text("# Product Brief\n")
+        (control_docs / "research.md").write_text("# Research\n")
+
+        result, code = ops.cmd_publish_to_governance(_no_args(
+            governance_repo=str(governance),
+            control_repo=str(control),
+            feature_id="publish-feat",
+            phase="preplan",
+            artifact=[],
+            dry_run=False,
+        ))
+        assert code == 0
+        assert (governance / "features" / "platform" / "identity" / "publish-feat" / "docs" / "product-brief.md").exists()
+        assert (governance / "features" / "platform" / "identity" / "publish-feat" / "docs" / "research.md").exists()
+        assert "brainstorm" in result["missing_artifacts"]
+
+    def test_publish_to_governance_dry_run_reports_targets(self, tmp_path):
+        governance = tmp_path / "governance"
+        control = tmp_path / "control"
+        governance.mkdir()
+        control.mkdir()
+
+        write_feature_yaml(governance, "dry-publish", domain="platform", service="identity", phase="businessplan")
+
+        control_docs = control / "docs" / "platform" / "identity" / "dry-publish"
+        control_docs.mkdir(parents=True, exist_ok=True)
+        (control_docs / "prd.md").write_text("# PRD\n")
+
+        result, code = ops.cmd_publish_to_governance(_no_args(
+            governance_repo=str(governance),
+            control_repo=str(control),
+            feature_id="dry-publish",
+            phase="businessplan",
+            artifact=[],
+            dry_run=True,
+        ))
+        assert code == 0
+        assert result["dry_run"] is True
+        assert any(path.endswith("features/platform/identity/dry-publish/docs/prd.md") for path in result["published_files"])
+        assert not (governance / "features" / "platform" / "identity" / "dry-publish" / "docs" / "prd.md").exists()
 
 
 # ---------------------------------------------------------------------------

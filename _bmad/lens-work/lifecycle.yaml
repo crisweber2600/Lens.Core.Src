@@ -546,8 +546,8 @@ planning_repo:
 # A single PR from {featureId}-plan to {featureId} in the control repo replaces the
 # multi-PR promotion chain.
 # The GOVERNANCE REPO stays on main at all times — no feature branches are created there.
-# All governance artifacts (feature.yaml, feature-index.yaml, summaries, planning docs)
-# are committed directly to governance main.
+# Feature state and summaries live on governance main, while planning docs are staged in
+# the control repo first and mirrored to governance main at phase handoff or explicit publish.
 two_branch_topology:
   branch_patterns:
     code: "{featureId}"
@@ -569,13 +569,15 @@ two_branch_topology:
     governance_main:                   # governance repo — always main
       - feature.yaml                 # Canonical feature state
       - feature-index.yaml           # Portfolio index
-      - "features/{domain}/{service}/{featureId}/**"  # Planning artifacts
+      - "features/{domain}/{service}/{featureId}/summary.md"  # Published snapshot
+      - "features/{domain}/{service}/{featureId}/docs/**"     # Mirrored approved planning artifacts
   phase_mapping:
     description: >
       Existing phases map to the 2-branch model unchanged. Phases still execute
-      in sequence, but artifacts land on the control repo plan branch as drafts
-      and are promoted to the control repo code branch via commit-and-publish
-      when approved. Governance artifacts are always committed to governance main.
+      in sequence, but artifacts land in the control repo docs path first.
+      The successor phase publishes reviewed predecessor artifacts into the
+      governance docs mirror before continuing so cross-feature consumers only
+      see approved material on governance main.
       Milestones become logical checkpoints in feature.yaml rather than branches.
     preplan: { branch: plan, folder: "drafts/" }        # control repo
     businessplan: { branch: plan, folder: "drafts/" }   # control repo

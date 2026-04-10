@@ -66,6 +66,16 @@ def test_create_and_read():
         assert_eq("service", result["data"]["service"], "identity")
         assert_eq("track", result["data"]["track"], "quickplan")
         assert_eq("team lead", result["data"]["team"][0]["role"], "lead")
+        assert_eq(
+            "docs.path",
+            result["data"].get("docs", {}).get("path"),
+            "docs/platform/identity/auth-login",
+        )
+        assert_eq(
+            "docs.governance_docs_path",
+            result["data"].get("docs", {}).get("governance_docs_path"),
+            "features/platform/identity/auth-login/docs",
+        )
 
         # Verify file exists
         feature_path = Path(tmp) / "features" / "platform" / "identity" / "auth-login" / "feature.yaml"
