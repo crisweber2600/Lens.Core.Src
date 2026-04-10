@@ -11,6 +11,7 @@ Subcommands:
   commit-artifacts         Stage and commit files with a structured message
   create-dev-branch        Create {featureId}-dev-{username} branch
   merge-plan               Merge {featureId}-plan into {featureId}
+    publish-to-governance    Copy staged planning docs into governance docs path
   push                     Push current (or named) branch to remote
 
 Exit codes:
@@ -24,12 +25,31 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+
+PHASE_ARTIFACTS: dict[str, list[str]] = {
+    "preplan": ["product-brief", "research", "brainstorm"],
+    "businessplan": ["prd", "ux-design"],
+    "techplan": ["architecture"],
+    "devproposal": ["epics", "stories", "implementation-readiness"],
+    "sprintplan": ["sprint-status", "story-files"],
+    "expressplan": [
+        "product-brief",
+        "prd",
+        "architecture",
+        "epics",
+        "stories",
+        "sprint-status",
+        "review-report",
+    ],
+}
 
 
 # ---------------------------------------------------------------------------
@@ -109,7 +129,7 @@ def find_feature_yaml(governance_repo: str, feature_id: str) -> Path | None:
     for yaml_file in root.rglob("feature.yaml"):
         try:
             data = yaml.safe_load(yaml_file.read_text())
-            if isinstance(data, dict) and data.get("feature_id") == feature_id:
+            if isinstance(data, dict) and (data.get("featureId") == feature_id or data.get("feature_id") == feature_id):
                 return yaml_file
         except Exception:
             continue
@@ -123,6 +143,63 @@ def load_feature_yaml(path: Path) -> dict | None:
         return data if isinstance(data, dict) else None
     except Exception:
         return None
+
+
+def feature_identifier(data: dict) -> str | None:
+    """Return the supported feature identifier from a feature.yaml payload."""
+    return data.get("featureId") or data.get("feature_id")
+
+
+def resolve_docs_roots(control_repo: str, governance_repo: str, feature_data: dict, feature_id: str) -> tuple[Path, Path]:
+    """Resolve control staging and governance mirror directories for feature docs."""
+    domain = feature_data.get("domain", "")
+    service = feature_data.get("service", "")
+    docs_data = feature_data.get("docs") or {}
+
+    control_rel = docs_data.get("path") or f"docs/{domain}/{service}/{feature_id}"
+    governance_rel = docs_data.get("governance_docs_path") or f"features/{domain}/{service}/{feature_id}/docs"
+
+    return Path(control_repo) / control_rel, Path(governance_repo) / governance_rel
+
+
+def artifact_candidates(docs_root: Path, name: str) -> list[Path]:
+    """Return candidate files for a named lifecycle artifact."""
+    match name:
+        case "product-brief":
+            candidates = [docs_root / "product-brief.md"]
+            candidates += list(docs_root.glob("product-brief-*.md"))
+        case "research":
+            candidates = [docs_root / "research.md"]
+            candidates += list(docs_root.glob("research-*.md"))
+        case "brainstorm":
+            candidates = [docs_root / "brainstorm.md"]
+        case "prd":
+            candidates = [docs_root / "prd.md"]
+        case "ux-design":
+            candidates = [docs_root / "ux-design.md", docs_root / "ux-design-specification.md"]
+        case "architecture":
+            candidates = [docs_root / "architecture.md"]
+            candidates += list(docs_root.glob("*architecture*.md"))
+        case "epics":
+            candidates = [docs_root / "epics.md"]
+        case "stories":
+            candidates = [docs_root / "stories.md"]
+        case "implementation-readiness":
+            candidates = [docs_root / "readiness-checklist.md", docs_root / "implementation-readiness.md"]
+        case "sprint-status":
+            candidates = [docs_root / "sprint-status.yaml", docs_root / "sprint-backlog.md"]
+        case "story-files":
+            candidates = list(docs_root.glob("dev-story-*.md"))
+        case "review-report":
+            candidates = [docs_root / "review-report.md", docs_root / "adversarial-review.md"]
+        case _:
+            candidates = [docs_root / f"{name}.md"]
+    return candidates
+
+
+def existing_artifact_files(docs_root: Path, artifact_name: str) -> list[Path]:
+    """Return existing non-empty files for an artifact name."""
+    return [candidate for candidate in artifact_candidates(docs_root, artifact_name) if candidate.exists() and candidate.stat().st_size > 0]
 
 
 # ---------------------------------------------------------------------------
@@ -449,6 +526,80 @@ def cmd_push(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     }, 0
 
 
+def cmd_publish_to_governance(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    feature_id = args.feature_id
+    governance_repo = args.governance_repo
+    control_repo = args.control_repo
+
+    err = validate_slug(feature_id, "feature_id")
+    if err:
+        return {"error": "invalid_feature_id", "detail": err}, 1
+
+    yaml_path = find_feature_yaml(governance_repo, feature_id)
+    if yaml_path is None:
+        return {"error": "feature_yaml_not_found", "feature_id": feature_id}, 1
+
+    feature_data = load_feature_yaml(yaml_path)
+    if not feature_data:
+        return {"error": "invalid_feature_yaml", "path": str(yaml_path)}, 1
+
+    resolved_feature_id = feature_identifier(feature_data) or feature_id
+    control_docs_root, governance_docs_root = resolve_docs_roots(
+        control_repo, governance_repo, feature_data, resolved_feature_id
+    )
+
+    if not control_docs_root.exists():
+        return {
+            "error": "control_docs_not_found",
+            "control_docs_path": str(control_docs_root),
+        }, 1
+
+    requested_artifacts = list(args.artifact or PHASE_ARTIFACTS.get(args.phase, []))
+    if not requested_artifacts:
+        return {"error": "no_artifacts_for_phase", "phase": args.phase}, 1
+
+    published_files: list[str] = []
+    missing_artifacts: list[str] = []
+    copied_from: list[str] = []
+
+    for artifact_name in requested_artifacts:
+        source_files = existing_artifact_files(control_docs_root, artifact_name)
+        if not source_files:
+            missing_artifacts.append(artifact_name)
+            continue
+
+        for source_path in source_files:
+            destination_path = governance_docs_root / source_path.name
+            copied_from.append(str(source_path))
+            published_files.append(str(destination_path))
+            if not args.dry_run:
+                destination_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source_path, destination_path)
+
+    if not published_files:
+        return {
+            "error": "no_artifacts_published",
+            "feature_id": resolved_feature_id,
+            "phase": args.phase,
+            "control_docs_path": str(control_docs_root),
+            "governance_docs_path": str(governance_docs_root),
+            "missing_artifacts": missing_artifacts,
+            "requested_artifacts": requested_artifacts,
+        }, 1
+
+    return {
+        "feature_id": resolved_feature_id,
+        "phase": args.phase,
+        "requested_artifacts": requested_artifacts,
+        "control_docs_path": str(control_docs_root),
+        "governance_docs_path": str(governance_docs_root),
+        "copied_from": copied_from,
+        "published_files": published_files,
+        "missing_artifacts": missing_artifacts,
+        "dry_run": args.dry_run,
+    }, 0
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -503,6 +654,20 @@ def build_parser() -> argparse.ArgumentParser:
     pu.add_argument("--branch", default=None)
     pu.add_argument("--dry-run", action="store_true")
 
+    # publish-to-governance
+    ptg = sub.add_parser("publish-to-governance", help="Copy staged planning artifacts into governance docs path")
+    ptg.add_argument("--governance-repo", required=True)
+    ptg.add_argument("--control-repo", required=True)
+    ptg.add_argument("--feature-id", required=True)
+    ptg.add_argument("--phase", required=True, choices=sorted(PHASE_ARTIFACTS.keys()))
+    ptg.add_argument(
+        "--artifact",
+        action="append",
+        default=[],
+        help="Specific artifact name to publish (repeatable, defaults to the phase artifact set)",
+    )
+    ptg.add_argument("--dry-run", action="store_true")
+
     return p
 
 
@@ -520,6 +685,7 @@ def main() -> int:
         "commit-artifacts": cmd_commit_artifacts,
         "create-dev-branch": cmd_create_dev_branch,
         "merge-plan": cmd_merge_plan,
+        "publish-to-governance": cmd_publish_to_governance,
         "push": cmd_push,
     }
 

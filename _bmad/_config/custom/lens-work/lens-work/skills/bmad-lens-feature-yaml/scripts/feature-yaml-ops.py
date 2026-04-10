@@ -202,6 +202,10 @@ def cmd_create(args: argparse.Namespace) -> dict:
     data["updated"] = timestamp
     data["team"] = [{"username": args.username, "role": "lead"}]
     data["phase_transitions"] = [{"phase": "preplan", "timestamp": timestamp, "user": args.username}]
+    data["docs"] = {
+        "path": f"docs/{args.domain}/{args.service}/{args.feature_id}",
+        "governance_docs_path": f"features/{args.domain}/{args.service}/{args.feature_id}/docs",
+    }
 
     if args.target_repos:
         data["target_repos"] = [{"url": url.strip(), "branch": ""} for url in args.target_repos.split(",")]

@@ -103,6 +103,19 @@ Load `./references/merge-plan.md` for full guidance.
 
 Load `./references/push.md` for full guidance.
 
+### publish-to-governance
+
+**Outcome:** Reviewed planning artifacts staged in the control repo docs path are mirrored into the feature's governance docs folder on `main`.
+
+**Process:**
+1. Resolve the feature's staged docs path from `feature.yaml.docs.path` (fallback: `docs/{domain}/{service}/{featureId}`)
+2. Resolve the governance mirror path from `feature.yaml.docs.governance_docs_path` (fallback: `features/{domain}/{service}/{featureId}/docs`)
+3. Select the phase artifact set (or explicit artifact overrides)
+4. Copy existing staged artifacts into the governance docs mirror; report any missing optional artifacts explicitly
+5. Return copied source and destination paths so the caller can stage and commit them in governance as needed
+
+Load `./references/publish-to-governance.md` for full guidance.
+
 ## Script Reference
 
 All git write operations run through `./scripts/git-orchestration-ops.py`. Requires Git 2.28+ and `gh` CLI (for PR operations) on the PATH.

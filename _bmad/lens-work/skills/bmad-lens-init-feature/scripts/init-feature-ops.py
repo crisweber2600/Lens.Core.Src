@@ -37,6 +37,7 @@ VALID_TRACKS = [
     "spike",
     "tech-change",
 ]
+CONTEXT_DOC_SUFFIXES = {".md", ".yaml", ".yml"}
 
 
 def validate_feature_id(value: str) -> str | None:
@@ -228,6 +229,69 @@ def ensure_container_markers(
             )
 
     return created
+
+
+def unique_paths(paths: list[str]) -> list[str]:
+    """Return a stable, de-duplicated list of path strings."""
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for path in paths:
+        if path not in seen:
+            seen.add(path)
+            ordered.append(path)
+    return ordered
+
+
+def feature_dir_from_entry(governance_repo: str, entry: dict) -> Path:
+    """Return the feature directory for an index entry."""
+    return Path(governance_repo) / "features" / entry.get("domain", "") / entry.get("service", "") / entry.get("id", "")
+
+
+def collect_doc_files(root: Path) -> list[str]:
+    """Collect supported doc files under a directory in stable order."""
+    if not root.exists() or not root.is_dir():
+        return []
+
+    collected: list[str] = []
+    for path in sorted(root.rglob("*")):
+        if path.is_file() and path.suffix.lower() in CONTEXT_DOC_SUFFIXES:
+            collected.append(str(path))
+    return collected
+
+
+def collect_feature_context_paths(governance_repo: str, entry: dict) -> list[str]:
+    """Collect feature.yaml and any mirrored governance docs for a feature."""
+    feature_dir = feature_dir_from_entry(governance_repo, entry)
+    paths: list[str] = []
+
+    feature_yaml = feature_dir / "feature.yaml"
+    if feature_yaml.exists():
+        paths.append(str(feature_yaml))
+
+    docs_dir = feature_dir / "docs"
+    paths.extend(collect_doc_files(docs_dir))
+    return unique_paths(paths)
+
+
+def collect_service_context_paths(governance_repo: str, service_name: str, exclude_feature_id: str) -> list[str]:
+    """Collect service-level governance files and child feature summaries for a named service."""
+    features_root = Path(governance_repo) / "features"
+    if not features_root.exists():
+        return []
+
+    matches: list[str] = []
+    for service_yaml in sorted(features_root.glob(f"*/{service_name}/service.yaml")):
+        service_dir = service_yaml.parent
+        matches.append(str(service_yaml))
+
+        docs_dir = service_dir / "docs"
+        matches.extend(collect_doc_files(docs_dir))
+
+        for summary_path in sorted(service_dir.glob("*/summary.md")):
+            if summary_path.parent.name != exclude_feature_id:
+                matches.append(str(summary_path))
+
+    return unique_paths(matches)
 
 
 def build_git_commands(
@@ -539,6 +603,7 @@ def cmd_fetch_context(args: argparse.Namespace) -> dict:
     governance_repo = args.governance_repo
     feature_id = args.feature_id
     depth = args.depth
+    service_refs = [service.strip() for service in getattr(args, "service_ref", []) if service.strip()]
 
     try:
         index_data, index_exists = read_feature_index(governance_repo)
@@ -549,21 +614,35 @@ def cmd_fetch_context(args: argparse.Namespace) -> dict:
         return {"status": "fail", "error": "feature-index.yaml not found"}
 
     features = index_data.get("features", [])
+    index_by_id = {feature.get("id"): feature for feature in features if feature.get("id")}
 
-    target = next((f for f in features if f.get("id") == feature_id), None)
+    target = index_by_id.get(feature_id)
     if target is None:
         return {
             "status": "fail",
             "error": f"Feature '{feature_id}' not found in feature-index.yaml",
         }
 
+    target_feature_path = feature_dir_from_entry(governance_repo, target) / "feature.yaml"
+    if not target_feature_path.exists():
+        return {
+            "status": "fail",
+            "error": f"feature.yaml not found for '{feature_id}'",
+        }
+
+    try:
+        feature_data = yaml.safe_load(target_feature_path.read_text(encoding="utf-8")) or {}
+    except (yaml.YAMLError, OSError) as e:
+        return {"status": "fail", "error": f"Failed to read feature.yaml: {e}"}
+
     target_domain = target.get("domain", "")
-    depends_on_ids = target.get("related_features", {}).get("depends_on", [])
+    dependencies = feature_data.get("dependencies") or {}
+    depends_on_ids = list(dependencies.get("depends_on") or [])
+    blocks_ids = list(dependencies.get("blocks") or [])
 
     related = [f for f in features if f.get("domain") == target_domain and f.get("id") != feature_id]
-    depends_on = [f for f in features if f.get("id") in depends_on_ids]
-
-    gov = Path(governance_repo)
+    depends_on = [index_by_id[dep_id] for dep_id in depends_on_ids if dep_id in index_by_id]
+    blocks = [index_by_id[dep_id] for dep_id in blocks_ids if dep_id in index_by_id]
     context_paths: list[str] = []
 
     for f in related:
@@ -571,21 +650,27 @@ def cmd_fetch_context(args: argparse.Namespace) -> dict:
         dom = f.get("domain", "")
         svc = f.get("service", "")
         if depth == "full":
-            context_paths.append(str(gov / "features" / dom / svc / fid / "feature.yaml"))
+            context_paths.extend(collect_feature_context_paths(governance_repo, f))
         else:
-            context_paths.append(str(gov / "features" / dom / svc / fid / "summary.md"))
+            context_paths.append(str(Path(governance_repo) / "features" / dom / svc / fid / "summary.md"))
 
-    for f in depends_on:
-        fid = f.get("id", "")
-        dom = f.get("domain", "")
-        svc = f.get("service", "")
-        context_paths.append(str(gov / "features" / dom / svc / fid / "feature.yaml"))
+    for f in depends_on + blocks:
+        context_paths.extend(collect_feature_context_paths(governance_repo, f))
+
+    service_context_paths: list[str] = []
+    for service_name in service_refs:
+        service_context_paths.extend(collect_service_context_paths(governance_repo, service_name, feature_id))
+
+    context_paths = unique_paths(context_paths + service_context_paths)
 
     return {
         "status": "pass",
         "related": [f.get("id") for f in related],
         "depends_on": [f.get("id") for f in depends_on],
+        "blocks": [f.get("id") for f in blocks],
+        "service_refs": service_refs,
         "context_paths": context_paths,
+        "service_context_paths": unique_paths(service_context_paths),
     }
 
 
@@ -681,6 +766,12 @@ Examples:
         default="summaries",
         choices=["summaries", "full"],
         help="Context depth: summaries (default) or full",
+    )
+    fetch_p.add_argument(
+        "--service-ref",
+        action="append",
+        default=[],
+        help="Named service reference to load governance context for (repeatable)",
     )
 
     return parser

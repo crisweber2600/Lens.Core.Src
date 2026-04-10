@@ -519,6 +519,85 @@ def test_fetch_context_no_index():
         assert_eq("no index exit code", code, 1)
 
 
+def test_fetch_context_uses_feature_yaml_dependencies():
+    """fetch-context reads depends_on from feature.yaml instead of stale index metadata."""
+    print("test_fetch_context_uses_feature_yaml_dependencies", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        for fid in ["feat-a", "feat-b"]:
+            run([
+                "create",
+                "--governance-repo", tmp,
+                "--feature-id", fid,
+                "--domain", "core",
+                "--service", "svc",
+                "--name", fid.replace("-", " ").title(),
+                "--track", "quickplan",
+                "--username", "cweber",
+            ])
+
+        feature_path = Path(tmp) / "features" / "core" / "svc" / "feat-a" / "feature.yaml"
+        feature_data = yaml.safe_load(feature_path.read_text(encoding="utf-8"))
+        feature_data.setdefault("dependencies", {})["depends_on"] = ["feat-b"]
+        feature_path.write_text(yaml.dump(feature_data, sort_keys=False), encoding="utf-8")
+
+        dep_docs = Path(tmp) / "features" / "core" / "svc" / "feat-b" / "docs"
+        dep_docs.mkdir(parents=True, exist_ok=True)
+        (dep_docs / "prd.md").write_text("# Dep PRD\n", encoding="utf-8")
+
+        result, code = run([
+            "fetch-context",
+            "--governance-repo", tmp,
+            "--feature-id", "feat-a",
+            "--depth", "full",
+        ])
+        assert_eq("feature yaml dep status", result.get("status"), "pass")
+        assert_eq("feature yaml dep exit code", code, 0)
+        assert_true("depends_on contains feat-b", "feat-b" in result.get("depends_on", []))
+        paths = result.get("context_paths", [])
+        assert_true("dependency feature yaml included", any("feat-b/feature.yaml" in p for p in paths))
+        assert_true("dependency docs included", any("feat-b/docs/prd.md" in p for p in paths))
+
+
+def test_fetch_context_service_refs_include_service_context():
+    """fetch-context returns governance files for explicitly named services."""
+    print("test_fetch_context_service_refs_include_service_context", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        run([
+            "create",
+            "--governance-repo", tmp,
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--name", "Auth Login",
+            "--track", "quickplan",
+            "--username", "cweber",
+        ])
+
+        service_dir = Path(tmp) / "features" / "platform" / "payments"
+        service_dir.mkdir(parents=True, exist_ok=True)
+        (service_dir / "service.yaml").write_text("kind: service\nid: platform-payments\n", encoding="utf-8")
+        docs_dir = service_dir / "docs"
+        docs_dir.mkdir(parents=True, exist_ok=True)
+        (docs_dir / "overview.md").write_text("# Payments\n", encoding="utf-8")
+        feature_dir = service_dir / "invoice-sync"
+        feature_dir.mkdir(parents=True, exist_ok=True)
+        (feature_dir / "summary.md").write_text("# Invoice Sync\n", encoding="utf-8")
+
+        result, code = run([
+            "fetch-context",
+            "--governance-repo", tmp,
+            "--feature-id", "auth-login",
+            "--service-ref", "payments",
+        ])
+        assert_eq("service ref status", result.get("status"), "pass")
+        assert_eq("service ref exit code", code, 0)
+        assert_eq("service ref echoed", result.get("service_refs"), ["payments"])
+        service_paths = result.get("service_context_paths", [])
+        assert_true("service yaml included", any("features/platform/payments/service.yaml" in p for p in service_paths))
+        assert_true("service docs included", any("features/platform/payments/docs/overview.md" in p for p in service_paths))
+        assert_true("service summary included", any("features/platform/payments/invoice-sync/summary.md" in p for p in service_paths))
+
+
 def test_control_repo_git_commands():
     """When control-repo differs from governance-repo, git commands include both repos."""
     print("test_control_repo_git_commands", file=sys.stderr)
@@ -569,6 +648,8 @@ if __name__ == "__main__":
     test_fetch_context_full_depth()
     test_fetch_context_feature_not_found()
     test_fetch_context_no_index()
+    test_fetch_context_uses_feature_yaml_dependencies()
+    test_fetch_context_service_refs_include_service_context()
     test_control_repo_git_commands()
 
     print(f"\nResults: {PASS} passed, {FAIL} failed", file=sys.stderr)

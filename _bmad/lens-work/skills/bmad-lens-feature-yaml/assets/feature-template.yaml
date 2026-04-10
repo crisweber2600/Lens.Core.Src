@@ -40,6 +40,12 @@ dependencies:
 target_repos: []
 # Each entry: { url: "", branch: "" }
 
+# --- Docs ---
+docs:
+  path: ""
+  governance_docs_path: ""
+# Control-repo staging path and governance mirror path
+
 # --- Links ---
 links:
   retrospective: null
