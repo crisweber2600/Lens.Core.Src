@@ -552,11 +552,12 @@ jobs:
 
           SOURCE_PROMPT_COUNT=$(find .github/prompts -maxdepth 1 -type f -name '*.prompt.md' | wc -l)
           GITHUB_COUNT=$(find build-output/.github/prompts -maxdepth 1 -type f -name '*.prompt.md' | wc -l)
-          if [ "$GITHUB_COUNT" -ne "$SOURCE_PROMPT_COUNT" ]; then
-            echo "::error::.github/prompts count ($GITHUB_COUNT) != source stub count ($SOURCE_PROMPT_COUNT)"
+          if [ "$GITHUB_COUNT" -lt "$SOURCE_PROMPT_COUNT" ]; then
+            echo "::error::.github/prompts count ($GITHUB_COUNT) is less than source stub count ($SOURCE_PROMPT_COUNT)"
             MISSING=1
           else
-            echo "✅ .github/prompts ($GITHUB_COUNT) matches source stub count ($SOURCE_PROMPT_COUNT)"
+            EXTRA_PROMPT_COUNT=$((GITHUB_COUNT - SOURCE_PROMPT_COUNT))
+            echo "✅ .github/prompts includes all source stubs ($SOURCE_PROMPT_COUNT) plus $EXTRA_PROMPT_COUNT preserved installer-generated prompt(s)"
           fi
 
           for src in .github/prompts/*.prompt.md; do

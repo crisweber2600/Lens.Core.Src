@@ -5,10 +5,10 @@ description: 'Create a new initiative (domain, service, or feature)'
 
 # lens-work.new-initiative (Compatibility Stub)
 
-> **This is a backward-compatible alias.** The dedicated `lens-work.new-initiative` prompt no longer exists in Lens Next.
+> **This is a backward-compatible alias.** Load the current Lens Next init prompt from the release module and clarify the requested scope before creating anything.
 
 ```
-Read and follow all instructions in: lens.core/_bmad/lens-work/skills/bmad-lens-init-feature/SKILL.md
+Read and follow all instructions in: lens.core/_bmad/lens-work/prompts/lens-init-feature.prompt.md
 ```
 
 Before creating anything, determine the requested scope first:
