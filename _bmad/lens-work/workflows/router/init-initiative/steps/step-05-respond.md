@@ -35,8 +35,9 @@ if scope == "service":
     - TargetProjects folder: `${target_projects_path}/${domain}/${service}/`
     - Governance marker: `${config_path}`
     - Governance commit: recorded on `main` in `${governance_repo_path}`
+    - Follow-up context: the next `/new-feature <feature-name>` in this chat reuses `${domain}/${service}` once
 
-    ▶️ Next: clone your service repos into `${target_projects_path}/${domain}/${service}/`, then run `/discover`.
+    ▶️ Next: run `/new-feature <feature-name>` to create work under `${domain}/${service}`, or use `/new-feature <service> <feature>` / `/new-feature <domain> <service> <feature>` to override context explicitly.
 
 if scope == "feature":
   output: |

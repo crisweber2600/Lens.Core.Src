@@ -43,6 +43,7 @@ if scope == "domain":
     invoke_command(command)
 
   created_marker_paths = domain_result.created_marker_paths || []
+  session.pending_container_context = null
 
 if scope == "service":
   service_result = run_json_command("python3 ${init_ops_script} create-service --governance-repo ${governance_repo_path} --domain ${domain} --service ${service} --name '${inputs.name || service}' --username ${user_name}")
@@ -53,9 +54,16 @@ if scope == "service":
     invoke_command(command)
 
   created_marker_paths = service_result.created_marker_paths || []
+  session.pending_container_context = {
+    scope: "service",
+    domain: ${domain},
+    service: ${service},
+    initiative_root: ${initiative_root},
+    source_command: ${command_name}
+  }
 
 if scope == "feature":
-  feature_result = run_json_command("python3 ${init_ops_script} create --governance-repo ${governance_repo_path} --control-repo ${control_repo_path} --feature-id ${initiative_root} --domain ${domain} --service ${service} --name '${inputs.name || feature}' --track ${track} --username ${user_name}")
+  feature_result = run_json_command("python3 ${init_ops_script} create --governance-repo ${governance_repo_path} --control-repo ${control_repo_path} --feature-id ${initiative_root} --domain ${domain} --service ${service} --name '${feature_display_name || feature}' --track ${track} --username ${user_name}")
   if feature_result.status != "pass":
     FAIL("❌ Failed to initialize feature `${initiative_root}`: ${feature_result.error || 'unknown error'}")
 
@@ -66,6 +74,7 @@ if scope == "feature":
     invoke_command(command)
 
   created_marker_paths = feature_result.container_markers || []
+  session.pending_container_context = null
 ```
 
 ---

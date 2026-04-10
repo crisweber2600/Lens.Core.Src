@@ -16,12 +16,18 @@ nextStepFile: './step-03-validate-and-sense.md'
 
 ```yaml
 primary_name = inputs.name || ""
+feature_display_name = ""
 domain = inputs.domain || ""
 service = inputs.service || ""
 track = lower(replace(replace(inputs.track || "", "_", "-"), " ", "-"))
 feature = ""
 initiative_root_pattern = ""
 current_root_segments = current_context != null and current_context.initiative_root != null ? split(current_context.initiative_root, "-") : []
+pending_container_context = session.pending_container_context != null and session.pending_container_context.scope == "service" ? session.pending_container_context : null
+provided_name_parts = trim(primary_name) == "" ? [] : split(trim(primary_name), " ")
+normalized_name_parts = map(provided_name_parts, part -> lower(remove_non_alphanumeric(part)))
+feature_arg_mode = "single-feature"
+used_pending_service_context = false
 
 if scope == "domain":
   if primary_name == "":
@@ -48,6 +54,46 @@ if scope == "service":
   config_path = "${governance_repo_path}/features/${domain}/${service}/service.yaml"
 
 if scope == "feature":
+  inferred_domain = domain
+
+  if provided_name_parts.length >= 3:
+    if domain == "":
+      domain = normalized_name_parts[0]
+    if service == "":
+      service = normalized_name_parts[1]
+    primary_name = provided_name_parts.slice(2).join(" ")
+    feature_arg_mode = "domain-service-feature"
+
+  else if provided_name_parts.length == 2:
+    if inferred_domain == "" and pending_container_context != null:
+      inferred_domain = pending_container_context.domain || ""
+    if inferred_domain == "" and current_root_segments.length > 0:
+      inferred_domain = current_root_segments[0]
+    if domain == "" and inferred_domain != "":
+      domain = inferred_domain
+    if service == "":
+      service = normalized_name_parts[0]
+    primary_name = provided_name_parts[1]
+    feature_arg_mode = "service-feature"
+
+  if provided_name_parts.length <= 1 and pending_container_context != null and (domain == "" or domain == pending_container_context.domain):
+    if domain == "" and pending_container_context.domain != null and pending_container_context.domain != "":
+      domain = pending_container_context.domain
+      used_pending_service_context = true
+    if service == "" and pending_container_context.service != null and pending_container_context.service != "":
+      service = pending_container_context.service
+      used_pending_service_context = true
+    if used_pending_service_context:
+      feature_arg_mode = "recent-service-follow-up"
+      if primary_name == "" or normalized_name_parts[0] == service:
+        output: |
+          🔁 Reusing the service you just created
+          ├── Domain: ${domain}
+          └── Service: ${service}
+
+          Provide the feature name so LENS does not reuse `${service}` as the feature id.
+        primary_name = ""
+
   if domain == "" and current_root_segments.length > 0:
     domain = current_root_segments[0]
   if service == "" and current_root_segments.length > 1:
@@ -61,9 +107,10 @@ if scope == "feature":
   if primary_name == "":
     ask: "Provide the feature name for the new feature initiative."
     capture: primary_name
+  feature_display_name = primary_name
   domain = lower(remove_non_alphanumeric(domain))
   service = lower(remove_non_alphanumeric(service))
-  feature = lower(remove_non_alphanumeric(primary_name))
+  feature = lower(remove_non_alphanumeric(feature_display_name))
 
   # Resolve constitutional naming + track constraints once and reuse.
   constitution_result = invoke_if_possible: constitution.resolve-constitution
@@ -113,6 +160,7 @@ output: |
   ✅ Scope inputs collected
   ├── Initiative root: ${initiative_root}
   ├── Root pattern: ${initiative_root_pattern}
+  ├── Feature args: ${scope == "feature" ? feature_arg_mode : "n/a"}
   └── Governance path: ${config_path}
 ```
 
