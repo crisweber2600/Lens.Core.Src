@@ -105,7 +105,7 @@ def find_feature_via_index(governance_repo: str, feature_id: str) -> tuple[str, 
         if not index or "features" not in index:
             return None
         for entry in index.get("features", []):
-            if entry.get("featureId") == feature_id:
+            if (entry.get("featureId") or entry.get("id")) == feature_id:
                 domain = entry.get("domain", "")
                 service = entry.get("service", "")
                 if domain and service:

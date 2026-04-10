@@ -281,7 +281,7 @@ def cmd_finalize(args: argparse.Namespace) -> dict:
 
     features_list = index_data.get("features", [])
     for entry in features_list:
-        if entry.get("featureId") == feature_id:
+        if (entry.get("featureId") or entry.get("id")) == feature_id:
             entry["status"] = ARCHIVED_STATUS
             entry["updated_at"] = archived_at
             index_updated = True

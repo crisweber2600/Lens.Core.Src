@@ -381,6 +381,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
 
     new_entry = {
         "id": feature_id,
+        "featureId": feature_id,
         "domain": domain,
         "service": service,
         "status": "preplan",
