@@ -24,6 +24,7 @@ SUPPORTED_IDES = ["github-copilot", "cursor", "claude", "codex"]
 _created = 0
 _skipped = 0
 _errors = 0
+_removed = 0
 _dry_run = False
 _update = False
 _project_root: Path = Path(".")
@@ -58,6 +59,24 @@ def ensure_dir(path: Path) -> None:
         else:
             path.mkdir(parents=True, exist_ok=True)
             print(f"[OK]   Created directory: {path.relative_to(_project_root)}")
+
+
+def remove_stale_adapter_files(dir_path: Path, predicate, label: str) -> None:
+    global _removed, _dry_run
+    if not dir_path.exists():
+        return
+
+    for child in sorted(dir_path.iterdir()):
+        if not child.is_file() or not predicate(child.name):
+            continue
+
+        rel = child.relative_to(_project_root)
+        if _dry_run:
+            print(f"[INFO] Would remove stale {label}: {rel}")
+        else:
+            child.unlink()
+            print(f"[OK]   Removed stale {label}: {rel}")
+        _removed += 1
 
 
 # ---------------------------------------------------------------------------
@@ -152,6 +171,11 @@ def install_github_copilot() -> None:
 
     ensure_dir(agents_dir)
     ensure_dir(prompts_dir)
+    remove_stale_adapter_files(
+        prompts_dir,
+        lambda name: name.startswith("lens-work") and name.endswith(".prompt.md"),
+        "prompt alias",
+    )
 
     # Agent stub
     agent_content = """\
@@ -246,6 +270,11 @@ def install_cursor() -> None:
     print("[INFO] Installing Cursor adapter...")
     cursor_dir = _project_root / ".cursor/commands"
     ensure_dir(cursor_dir)
+    remove_stale_adapter_files(
+        cursor_dir,
+        lambda name: name.startswith("bmad-lens-work-") and name.endswith(".md"),
+        "command alias",
+    )
     for fname, name, desc, wf in COMMANDS:
         write_adapter_file(cursor_dir / fname, ide_command(name, desc, wf))
     print("[OK]   Cursor adapter complete")
@@ -259,6 +288,11 @@ def install_claude() -> None:
     print("[INFO] Installing Claude Code adapter...")
     claude_dir = _project_root / ".claude/commands"
     ensure_dir(claude_dir)
+    remove_stale_adapter_files(
+        claude_dir,
+        lambda name: name.startswith("bmad-lens-work-") and name.endswith(".md"),
+        "command alias",
+    )
     for fname, name, desc, wf in COMMANDS:
         write_adapter_file(claude_dir / fname, ide_command(name, desc, wf))
     print("[OK]   Claude Code adapter complete")
@@ -309,6 +343,11 @@ See `lens.core/_bmad/lens-work/module-help.csv` for the complete command list.
 
     codex_dir = _project_root / ".codex/commands"
     ensure_dir(codex_dir)
+    remove_stale_adapter_files(
+        codex_dir,
+        lambda name: name.startswith("bmad-lens-work-") and name.endswith(".md"),
+        "command alias",
+    )
     for fname, name, desc, wf in COMMANDS:
         write_adapter_file(codex_dir / fname, ide_command(name, desc, wf))
 
@@ -379,6 +418,7 @@ def main() -> int:
     print()
     print("Summary")
     print(f"  Created: {_created}")
+    print(f"  Removed: {_removed}")
     print(f"  Skipped: {_skipped}")
     if _errors:
         print(f"  Errors:  {_errors}")
