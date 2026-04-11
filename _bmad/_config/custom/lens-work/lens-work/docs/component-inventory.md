@@ -13,7 +13,7 @@
 | Prompts | 32 |
 | Scripts | 5 (cross-platform Bash + PowerShell) |
 | Agents | 1 (lens agent with 28 menu items) |
-| IDE Adapters | 4 (github-copilot, cursor, claude, codex) |
+| IDE Adapters | 5 (github-copilot, cursor, claude, codex, opencode) |
 | Step Files | ~70–90 across all workflows |
 
 ---
@@ -270,14 +270,15 @@
 
 ---
 
-## 7. IDE Adapters (4)
+## 7. IDE Adapters (5)
 
 | IDE | Output Location | Generated Artifacts |
 |-----|-----------------|---------------------|
 | **github-copilot** | `.github/` | Agent stub, instructions, 17 prompt stubs |
-| **cursor** | `.cursor/commands/` | 17 command stubs |
-| **claude** | `.claude/commands/` | 17 command stubs |
-| **codex** | `.codex/commands/` | 17 command stubs |
+| **cursor** | `.cursor/commands/` | 19 command stubs |
+| **claude** | `.claude/commands/` | 19 command stubs |
+| **codex** | `.codex/commands/` | 19 command stubs |
+| **opencode** | `.opencode/commands/` | 19 command stubs |
 
 ---
 

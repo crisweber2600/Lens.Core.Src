@@ -35,9 +35,9 @@ The script scans `{governance_repo}/branches/` for directories matching the lega
 
 When `--source-repo` is provided, the scan also discovers documents from up to four sources per feature:
 1. **governance-legacy** — `{governance_repo}/branches/{old_id}[-milestone]/_bmad-output/lens-work/planning-artifacts/` (filesystem) or `origin/{old_id}[-milestone]` branch in governance repo (git fallback)
-2. **branch-docs** — `origin/{old_id}[-milestone]` branch family in source repo: `docs/{domain}/{service}/feature/{featureId}/` or `docs/{domain}/{service}/{featureId}/`, plus `_bmad-output/lens-work/` on the branch
-3. **source-docs** — `{source_repo}/Docs/{domain}/{service}/{featureId}/` (filesystem, case-insensitive Docs/docs)
-4. **bmad-output** — `{source_repo}/_bmad-output/lens-work/initiatives/{domain}/{service}/` (filesystem)
+2. **branch-docs** — `origin/{old_id}[-milestone]` branch family in source repo using the derived `legacy_feature`: `docs/{domain}/{service}/{legacyFeature}/` first, then `docs/{domain}/{service}/feature/{legacyFeature}/` as a compatibility fallback
+3. **branch-bmad-output** — feature-scoped branch `_bmad-output` only: `_bmad-output/lens-work/initiatives/{domain}/{service}/{legacyFeature}.yaml` plus `_bmad-output/lens-work/initiatives/{domain}/{service}/{legacyFeature}/**`
+4. **working-tree fallback** — `{source_repo}/Docs|docs/{domain}/{service}/{legacyFeature}/` and feature-scoped `_bmad-output` only when the branch family produced no docs or no `_bmad-output` entries for that feature
 
 Scan output now also includes the inferred control-repo dossier path for each feature plus a `document_audit` block showing per-branch mirrored control-repo counts versus governance feature-doc counts.
 
@@ -74,19 +74,24 @@ When `--source-repo` is provided, each feature entry also includes a `documents`
   "documents": [
     {
       "source_type": "branch-docs",
-      "source_path": "git:origin/northstar-migration-feature:docs/northstar/migration/feature/finish-northstaret-migration-3a10d3/prd.md",
+      "source_path": "git:origin/northstar-migration-feature:docs/northstar/migration/finish-northstaret-migration-3a10d3/prd.md",
       "relative_path": "prd.md",
       "filename": "prd.md",
+      "source_location": "branch-docs-flat",
       "git_ref": "origin/northstar-migration-feature",
-      "git_path": "docs/northstar/migration/feature/finish-northstaret-migration-3a10d3/prd.md",
+      "git_path": "docs/northstar/migration/finish-northstaret-migration-3a10d3/prd.md",
       "git_repo": "/path/to/source",
       "commit_ts": 1712000000
     },
     {
-      "source_type": "source-docs",
-      "source_path": "/path/to/source/Docs/platform/identity/auth-login/prd.md",
+      "source_type": "bmad-output",
+      "source_path": "git:origin/northstar-migration-feature:_bmad-output/lens-work/initiatives/northstar/migration/finish-northstaret-migration-3a10d3/prd.md",
       "relative_path": "prd.md",
       "filename": "prd.md",
+      "source_location": "branch-bmad-output",
+      "git_ref": "origin/northstar-migration-feature",
+      "git_path": "_bmad-output/lens-work/initiatives/northstar/migration/finish-northstaret-migration-3a10d3/prd.md",
+      "git_repo": "/path/to/source",
       "commit_ts": 1700000000
     }
   ]
@@ -102,12 +107,25 @@ When `--source-repo` is provided, each feature entry also includes a `documents`
       {
         "branch": "platform-identity-auth-login",
         "control_repo_documents": 2,
-        "governance_repo_documents": 1
+        "governance_repo_documents": 1,
+        "control_repo_by_source": {
+          "branch-docs-flat": 1,
+          "branch-bmad-output": 1
+        },
+        "governance_repo_by_source": {
+          "branch-docs-flat": 1
+        }
       },
       {
         "branch": "platform-identity-auth-login-dev",
         "control_repo_documents": 1,
-        "governance_repo_documents": 1
+        "governance_repo_documents": 1,
+        "control_repo_by_source": {
+          "branch-docs-compat": 1
+        },
+        "governance_repo_by_source": {
+          "branch-docs-compat": 1
+        }
       }
     ]
   }
@@ -115,6 +133,7 @@ When `--source-repo` is provided, each feature entry also includes a `documents`
 ```
 
 Git-based entries include `git_ref`, `git_path`, and `git_repo` fields. Filesystem entries do not. All entries include a `commit_ts` field (Unix epoch of the last commit that touched the file; `0` when unavailable). When the same `relative_path` appears from multiple sources, the most recently committed version is used during migration.
+Working-tree fallback entries use `source_location` values `working-tree-docs-fallback` and `working-tree-bmad-output-fallback` so audits clearly show when branch-family sources were absent.
 
 ## Branch Grouping Logic
 

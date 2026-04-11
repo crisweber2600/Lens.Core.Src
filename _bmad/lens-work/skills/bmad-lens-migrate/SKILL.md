@@ -9,7 +9,7 @@ description: Migration bridge between LENS v3 and Lens Next. Use when migrating 
 
 This skill transitions existing features from the LENS v3 branch topology (`{domain}-{service}-{feature}[-{milestone}]`) to the Lens Next 2-branch model (`{featureId}` + `{featureId}-plan`). It scans for old-model branches, derives what they were doing, maps them to the new topology, and proposes a migration plan. In-progress sessions are never lost. Dry-run is mandatory before any execution.
 
-Migration is now **governance-first**: every discovered legacy document is mirrored into the control repo under `docs/lens-work/migrations/...` as durable proof, while the canonical winning documents migrate into the governance feature docs folder. The migration record also captures per-branch control-versus-governance document counts so each legacy branch can be audited explicitly.
+Migration is now **governance-first**: every discovered legacy document is mirrored into the control repo under `docs/lens-work/migrations/...` as durable proof, while the canonical winning documents migrate into the governance feature docs folder. Source discovery is **legacy-path aware**: renamed Lens Next features still read legacy branch docs from `docs/{domain}/{service}/{legacyFeature}/` and feature-scoped `_bmad-output` paths, while governance writes to `features/{domain}/{service}/{featureId}/docs/`. The migration record also captures per-branch control-versus-governance document counts so each legacy branch can be audited explicitly.
 
 **The non-negotiable:** In-progress work must not be lost. Dry-run must be shown and confirmed before any execution. Old branches are kept until an explicit cleanup step.
 
@@ -44,7 +44,8 @@ You are the migration bridge between LENS v3 and Lens Next. You scan for old-mod
 | **legacy branch** | An old-model branch following `{domain}-{service}-{feature}[-{milestone}]` naming |
 | **base branch** | The primary feature branch; in new model: `{featureId}` |
 | **plan branch** | The planning artifacts branch; in new model: `{featureId}-plan` |
-| **featureId** | The `{feature}` part of the old branch name, in kebab-case |
+| **featureId** | The target Lens Next feature identifier written to governance; this may differ from the legacy source feature name when a feature is renamed during migration |
+| **legacy_feature** | The `{feature}` portion derived from `old_id`; used for legacy branch docs, working-tree docs fallback, and feature-scoped `_bmad-output` discovery/cleanup |
 | **migration plan** | List of detected legacy features with proposed new topology |
 | **milestone branch** | An old-model branch with an additional `{milestone}` suffix (e.g., `-planning`, `-dev`) |
 | **conflict** | A feature.yaml already exists at the target path for the derived featureId |
@@ -52,8 +53,8 @@ You are the migration bridge between LENS v3 and Lens Next. You scan for old-mod
 | **governance repo** | The repository containing Lens feature YAML, index, and summaries |
 | **source repo** | The source code repository that may contain a `Docs/` folder or `_bmad-output/` with feature documents |
 | **control-repo dossier** | The proof surface under `docs/lens-work/migrations/{domain}/{service}/{featureId}/` containing mirrored raw source docs, per-branch document counts, `migration-record.yaml`, cleanup approval, and cleanup receipt artifacts |
-| **document discovery** | Scanning governance-legacy branches, source repo `Docs/`, `_bmad-output/`, and legacy git branches for feature documents across the base branch and all detected milestone branches. Uses `git ls-tree`/`git show` when filesystem paths do not exist. Each discovered document includes a `commit_ts`; duplicates are resolved by freshness (newest wins), with static source priority as tiebreaker. |
-| **branch-docs** | Documents discovered on the legacy branch family in the source repo via `git ls-tree`/`git show`, including the base branch plus all detected milestone branches. Prioritized between governance-legacy and source-docs. |
+| **document discovery** | Scanning governance-legacy branches, legacy branch docs, feature-scoped `_bmad-output`, and working-tree fallback paths for feature documents across the base branch and all detected milestone branches. Branch docs prefer `docs/{domain}/{service}/{legacyFeature}/`; `docs/{domain}/{service}/feature/{legacyFeature}/` remains a compatibility fallback. Working-tree docs and `_bmad-output` are only considered when the branch family produced no docs or no feature-scoped `_bmad-output` entries for that feature. Each discovered document includes a `commit_ts`; canonical selection uses source-location precedence first, then freshness within the chosen location tier. |
+| **branch-docs** | Documents discovered on the legacy branch family in the source repo via `git ls-tree`/`git show`, including the base branch plus all detected milestone branches. Source locations distinguish `branch-docs-flat`, `branch-docs-compat`, and `branch-bmad-output` so audits reveal exactly which path won. |
 | **verification** | Post-migration check confirming governance artifacts exist, all discovered documents were mirrored into the control-repo dossier, and recorded governance hashes match before cleanup is allowed |
 | **cleanup approval** | Durable YAML artifact written to the dossier immediately before destructive cleanup executes |
 | **cleanup receipt** | Durable YAML artifact written to the dossier immediately after destructive cleanup completes or partially completes |

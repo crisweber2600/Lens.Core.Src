@@ -147,10 +147,11 @@ uv run lens.core/_bmad/lens-work/scripts/install.py --all-ides
 ```
 
 This generates adapter files for:
-- **GitHub Copilot** (VS Code) — `.github/copilot-instructions.md`
-- **Cursor** — `.cursor/rules/`
+- **GitHub Copilot** (VS Code) — `.github/lens-work-instructions.md`
+- **Cursor** — `.cursor/commands/`
 - **Claude Code** — `.claude/`
 - **Codex CLI** — `.codex/`
+- **OpenCode** — `.opencode/commands/`
 
 All adapters reference the same module and lifecycle contract — no configuration drift.
 

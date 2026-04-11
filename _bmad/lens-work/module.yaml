@@ -204,6 +204,8 @@ install_questions:
         label: "Claude Code"
       - value: "codex"
         label: "Codex CLI"
+      - value: "opencode"
+        label: "OpenCode"
 
 # Prompts — Lens Next only
 prompts:
@@ -328,10 +330,12 @@ adapters:
     dir: .cursor/
     commands:
       - .cursor/commands/bmad-lens-onboard.md
+      - .cursor/commands/bmad-lens-preflight.md
       - .cursor/commands/bmad-lens-init-feature.md
       - .cursor/commands/bmad-lens-preplan.md
       - .cursor/commands/bmad-lens-businessplan.md
       - .cursor/commands/bmad-lens-techplan.md
+      - .cursor/commands/bmad-lens-adversarial-review.md
       - .cursor/commands/bmad-lens-finalizeplan.md
       - .cursor/commands/bmad-lens-dev.md
       - .cursor/commands/bmad-lens-status.md
@@ -341,16 +345,19 @@ adapters:
       - .cursor/commands/bmad-lens-help.md
       - .cursor/commands/bmad-lens-promote.md
       - .cursor/commands/bmad-lens-constitution.md
+      - .cursor/commands/bmad-lens-audit.md
       - .cursor/commands/bmad-lens-sensing.md
       - .cursor/commands/bmad-lens-module-management.md
   claude:
     dir: .claude/
     commands:
       - .claude/commands/bmad-lens-onboard.md
+      - .claude/commands/bmad-lens-preflight.md
       - .claude/commands/bmad-lens-init-feature.md
       - .claude/commands/bmad-lens-preplan.md
       - .claude/commands/bmad-lens-businessplan.md
       - .claude/commands/bmad-lens-techplan.md
+      - .claude/commands/bmad-lens-adversarial-review.md
       - .claude/commands/bmad-lens-finalizeplan.md
       - .claude/commands/bmad-lens-dev.md
       - .claude/commands/bmad-lens-status.md
@@ -360,6 +367,7 @@ adapters:
       - .claude/commands/bmad-lens-help.md
       - .claude/commands/bmad-lens-promote.md
       - .claude/commands/bmad-lens-constitution.md
+      - .claude/commands/bmad-lens-audit.md
       - .claude/commands/bmad-lens-sensing.md
       - .claude/commands/bmad-lens-module-management.md
   codex:
@@ -367,10 +375,12 @@ adapters:
     agents_md: AGENTS.md
     commands:
       - .codex/commands/bmad-lens-onboard.md
+      - .codex/commands/bmad-lens-preflight.md
       - .codex/commands/bmad-lens-init-feature.md
       - .codex/commands/bmad-lens-preplan.md
       - .codex/commands/bmad-lens-businessplan.md
       - .codex/commands/bmad-lens-techplan.md
+      - .codex/commands/bmad-lens-adversarial-review.md
       - .codex/commands/bmad-lens-finalizeplan.md
       - .codex/commands/bmad-lens-dev.md
       - .codex/commands/bmad-lens-status.md
@@ -380,6 +390,28 @@ adapters:
       - .codex/commands/bmad-lens-help.md
       - .codex/commands/bmad-lens-promote.md
       - .codex/commands/bmad-lens-constitution.md
+      - .codex/commands/bmad-lens-audit.md
       - .codex/commands/bmad-lens-sensing.md
       - .codex/commands/bmad-lens-module-management.md
-
+  opencode:
+    dir: .opencode/
+    commands:
+      - .opencode/commands/bmad-lens-onboard.md
+      - .opencode/commands/bmad-lens-preflight.md
+      - .opencode/commands/bmad-lens-init-feature.md
+      - .opencode/commands/bmad-lens-preplan.md
+      - .opencode/commands/bmad-lens-businessplan.md
+      - .opencode/commands/bmad-lens-techplan.md
+      - .opencode/commands/bmad-lens-adversarial-review.md
+      - .opencode/commands/bmad-lens-finalizeplan.md
+      - .opencode/commands/bmad-lens-dev.md
+      - .opencode/commands/bmad-lens-status.md
+      - .opencode/commands/bmad-lens-next.md
+      - .opencode/commands/bmad-lens-batch.md
+      - .opencode/commands/bmad-lens-switch.md
+      - .opencode/commands/bmad-lens-help.md
+      - .opencode/commands/bmad-lens-promote.md
+      - .opencode/commands/bmad-lens-constitution.md
+      - .opencode/commands/bmad-lens-audit.md
+      - .opencode/commands/bmad-lens-sensing.md
+      - .opencode/commands/bmad-lens-module-management.md

@@ -6,6 +6,8 @@ Validate that a migrated feature has all expected artifacts and proof records in
 
 A structured verification report listing each expected governance artifact, dossier artifact, and mirrored document set. Verification also refreshes `migration-record.yaml` with the latest check results.
 
+Verification preserves the recorded `document_audit` block so reviewers can confirm which source-location labels won for each branch or fallback path.
+
 ## Process
 
 Run verification for a single feature:
@@ -36,7 +38,11 @@ python3 ./scripts/migrate-ops.py verify \
     { "name": "migration_record", "result": "pass" },
     { "name": "mirrored_documents", "result": "pass" },
     { "name": "governance_docs", "result": "pass" }
-  ]
+  ],
+  "document_audit": {
+    "control_feature_documents": 2,
+    "governance_feature_documents": 1
+  }
 }
 ```
 
@@ -56,6 +62,8 @@ If any check fails, `status` is `"fail"`.
 | governance_docs | Every canonical winning document exists in governance docs and its hash matches the recorded hash |
 
 If no legacy documents were discovered, verification still requires the dossier and migration record to exist so cleanup has durable proof that the feature was checked.
+
+When documents were discovered, the verification report should surface source-location labels such as `branch-docs-flat`, `branch-docs-compat`, `branch-bmad-output`, `working-tree-docs-fallback`, and `working-tree-bmad-output-fallback` through the persisted `document_audit` block.
 
 ## Human-in-the-Loop Workflow
 

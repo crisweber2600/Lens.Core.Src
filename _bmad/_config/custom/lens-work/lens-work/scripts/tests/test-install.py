@@ -29,6 +29,11 @@ class TestHelpFlag:
         combined = result.stdout + result.stderr
         assert "dry-run" in combined or "dry_run" in combined
 
+    def test_help_mentions_opencode(self):
+        result = _run("--help")
+        combined = result.stdout + result.stderr
+        assert "opencode" in combined
+
 
 class TestArgumentParsing:
     def test_invalid_ide_exits_nonzero(self):
@@ -36,8 +41,7 @@ class TestArgumentParsing:
         assert result.returncode != 0
 
     def test_dry_run_flag_accepted(self):
-        # --dry-run with --help should still exit 0
-        result = _run("--help")
+        result = _run("--dry-run")
         assert result.returncode == 0
 
 

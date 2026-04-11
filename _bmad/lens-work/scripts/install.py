@@ -5,7 +5,7 @@
 # ///
 """LENS Workbench — Module Installer.
 
-Sets up IDE adapters (GitHub Copilot, Cursor, Claude, Codex) and output directories.
+Sets up IDE adapters (GitHub Copilot, Cursor, Claude, Codex, OpenCode) and output directories.
 Safe to re-run: skips existing files unless --update is passed.
 """
 
@@ -15,7 +15,7 @@ import argparse
 import sys
 from pathlib import Path
 
-SUPPORTED_IDES = ["github-copilot", "cursor", "claude", "codex"]
+SUPPORTED_IDES = ["github-copilot", "cursor", "claude", "codex", "opencode"]
 
 # ---------------------------------------------------------------------------
 # State
@@ -37,17 +37,18 @@ _project_root: Path = Path(".")
 def write_adapter_file(file_path: Path, content: str) -> None:
     global _created, _skipped, _errors, _dry_run, _update
     rel = file_path.relative_to(_project_root)
-    if file_path.exists() and not _update:
+    existed = file_path.exists()
+    if existed and not _update:
         print(f"[SKIP] {rel} (exists, use --update to overwrite)")
         _skipped += 1
         return
     if _dry_run:
-        verb = "Would overwrite" if file_path.exists() else "Would create"
+        verb = "Would overwrite" if existed else "Would create"
         print(f"[INFO] {verb}: {rel}")
         return
     file_path.parent.mkdir(parents=True, exist_ok=True)
     file_path.write_text(content, encoding="utf-8")
-    verb = "Updated" if _update and file_path.exists() else "Created"
+    verb = "Updated" if _update and existed else "Created"
     print(f"[OK]   {verb}: {rel}")
     _created += 1
 
@@ -117,14 +118,17 @@ IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL @lens.core/_bmad/lens
 
 COMMANDS = [
     ("bmad-lens-onboard.md", "onboard", "Create profile + run bootstrap + auto-clone TargetProjects", "skills/bmad-lens-onboard/SKILL.md"),
+    ("bmad-lens-preflight.md", "preflight", "Run shared workspace preflight sync and validation", "prompts/lens-preflight.prompt.md"),
     ("bmad-lens-init-feature.md", "init-feature", "Create new feature with 2-branch topology", "skills/bmad-lens-init-feature/SKILL.md"),
     ("bmad-lens-preplan.md", "preplan", "Launch PrePlan phase (brainstorm/research/product brief)", "skills/bmad-lens-preplan/SKILL.md"),
     ("bmad-lens-businessplan.md", "businessplan", "Launch BusinessPlan phase (PRD/UX design)", "skills/bmad-lens-businessplan/SKILL.md"),
     ("bmad-lens-techplan.md", "techplan", "Launch TechPlan phase (architecture/technical design)", "skills/bmad-lens-techplan/SKILL.md"),
+    ("bmad-lens-adversarial-review.md", "adversarial-review", "Run lifecycle adversarial review with a party-mode blind-spot challenge", "skills/bmad-lens-adversarial-review/SKILL.md"),
     ("bmad-lens-finalizeplan.md", "finalizeplan", "Launch FinalizePlan phase (review, planning bundle, PR handoff)", "skills/bmad-lens-finalizeplan/SKILL.md"),
     ("bmad-lens-dev.md", "dev", "Launch Dev phase — epic-level implementation loop", "skills/bmad-lens-dev/SKILL.md"),
     ("bmad-lens-status.md", "status", "Show consolidated status report across all active features", "skills/bmad-lens-status/SKILL.md"),
     ("bmad-lens-next.md", "next", "Recommend next action based on lifecycle state", "skills/bmad-lens-next/SKILL.md"),
+    ("bmad-lens-batch.md", "batch", "Generate or resume a two-pass batch intake for planning targets", "skills/bmad-lens-batch/SKILL.md"),
     ("bmad-lens-switch.md", "switch", "Switch to different feature branch", "skills/bmad-lens-switch/SKILL.md"),
     ("bmad-lens-help.md", "help", "Show available commands and usage reference", "skills/bmad-lens-help/SKILL.md"),
     ("bmad-lens-promote.md", "promote", "Promote feature through next lifecycle milestone", "skills/bmad-lens-git-orchestration/SKILL.md"),
@@ -133,6 +137,8 @@ COMMANDS = [
     ("bmad-lens-sensing.md", "sensing", "Cross-initiative overlap detection on demand", "skills/bmad-lens-sensing/SKILL.md"),
     ("bmad-lens-module-management.md", "module-management", "Check module version and guide self-service updates", "skills/bmad-lens-module-management/SKILL.md"),
 ]
+
+COMMAND_FILE_NAMES = {file_name for file_name, _, _, _ in COMMANDS}
 
 
 # ---------------------------------------------------------------------------
@@ -270,7 +276,7 @@ def install_cursor() -> None:
     ensure_dir(cursor_dir)
     remove_stale_adapter_files(
         cursor_dir,
-        lambda name: name.startswith("bmad-lens-work-") and name.endswith(".md"),
+        lambda name: name in COMMAND_FILE_NAMES,
         "command alias",
     )
     for fname, name, desc, wf in COMMANDS:
@@ -288,7 +294,7 @@ def install_claude() -> None:
     ensure_dir(claude_dir)
     remove_stale_adapter_files(
         claude_dir,
-        lambda name: name.startswith("bmad-lens-work-") and name.endswith(".md"),
+        lambda name: name in COMMAND_FILE_NAMES,
         "command alias",
     )
     for fname, name, desc, wf in COMMANDS:
@@ -343,13 +349,31 @@ See `lens.core/_bmad/lens-work/module-help.csv` for the complete command list.
     ensure_dir(codex_dir)
     remove_stale_adapter_files(
         codex_dir,
-        lambda name: name.startswith("bmad-lens-work-") and name.endswith(".md"),
+        lambda name: name in COMMAND_FILE_NAMES,
         "command alias",
     )
     for fname, name, desc, wf in COMMANDS:
         write_adapter_file(codex_dir / fname, ide_command(name, desc, wf))
 
     print("[OK]   Codex CLI adapter complete")
+
+
+# ---------------------------------------------------------------------------
+# Phase 6: OpenCode
+# ---------------------------------------------------------------------------
+
+def install_opencode() -> None:
+    print("[INFO] Installing OpenCode adapter...")
+    opencode_dir = _project_root / ".opencode/commands"
+    ensure_dir(opencode_dir)
+    remove_stale_adapter_files(
+        opencode_dir,
+        lambda name: name in COMMAND_FILE_NAMES,
+        "command alias",
+    )
+    for fname, name, desc, wf in COMMANDS:
+        write_adapter_file(opencode_dir / fname, ide_command(name, desc, wf))
+    print("[OK]   OpenCode adapter complete")
 
 
 # ---------------------------------------------------------------------------
@@ -377,8 +401,11 @@ def main() -> int:
     _cwd = Path.cwd()
     _project_root = (
         _cwd if (_cwd / "lens.core").exists()
-        else next(p for p in script_dir.parents if (p / "lens.core").exists())
+        else next((p for p in script_dir.parents if (p / "lens.core").exists()), None)
     )
+    if _project_root is None:
+        print("[ERR]  Could not locate project root containing lens.core/", file=sys.stderr)
+        return 1
 
     ides = args.ides or []
     if args.all_ides:
@@ -408,6 +435,8 @@ def main() -> int:
                 install_claude()
             case "codex":
                 install_codex()
+            case "opencode":
+                install_opencode()
             case _:
                 print(f"[ERR]  Unknown IDE: {ide_name} (supported: {', '.join(SUPPORTED_IDES)})", file=sys.stderr)
                 global _errors

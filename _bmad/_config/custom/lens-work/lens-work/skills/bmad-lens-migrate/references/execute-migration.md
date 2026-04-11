@@ -34,7 +34,7 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   --source-repo {source_repo}
 ```
 
-`--source-repo` is optional. When provided, the migration also discovers and copies documents from the source repo (filesystem and git branches).
+`--source-repo` is optional. When provided, the migration discovers legacy branch docs first, then feature-scoped branch `_bmad-output`, and only falls back to working-tree docs or working-tree `_bmad-output` when the branch family is missing that feature-local content.
 
 `--control-repo` is optional. When omitted, the script attempts to infer the control repo from the current workspace and governance repo ancestry.
 
@@ -59,8 +59,8 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   "artifacts_copied": ["tech-plan.md"],
   "documents_migrated": ["prd.md", "tech-plan.md"],
   "documents_source": {
-    "prd.md": "branch-docs",
-    "tech-plan.md": "governance-legacy"
+    "branch-docs-flat": 1,
+    "governance-legacy": 1
   },
   "dossier_path": "{control_repo}/docs/lens-work/migrations/platform/identity/auth-login",
   "migration_record_path": "{control_repo}/docs/lens-work/migrations/platform/identity/auth-login/migration-record.yaml",
@@ -93,15 +93,19 @@ After governance scaffolding, documents are discovered from up to four sources a
 
 Priority order (highest wins when filenames conflict):
 1. **governance-legacy** — `{governance_repo}/branches/{old_id}[-milestone]/_bmad-output/` files (filesystem, or git `origin/{old_id}[-milestone]` branch fallback)
-2. **branch-docs** — `origin/{old_id}[-milestone]` branch family in source repo: `docs/{domain}/{service}/feature/{featureId}/` or `docs/{domain}/{service}/{featureId}/`, plus `_bmad-output/lens-work/` on each branch (git-only, requires `--source-repo`)
-3. **source-docs** — `{source_repo}/Docs/{domain}/{service}/{featureId}/` (filesystem, requires `--source-repo`)
-4. **bmad-output** — `{source_repo}/_bmad-output/lens-work/initiatives/{domain}/{service}/` (filesystem, requires `--source-repo`)
+2. **branch-docs-flat** — `origin/{old_id}[-milestone]` branch family in source repo: `docs/{domain}/{service}/{legacyFeature}/` (git-only, requires `--source-repo`)
+3. **branch-docs-compat** — `origin/{old_id}[-milestone]` branch family in source repo: `docs/{domain}/{service}/feature/{legacyFeature}/` when the flat path is absent on that branch (git-only, requires `--source-repo`)
+4. **working-tree-docs-fallback** — `{source_repo}/Docs|docs/{domain}/{service}/{legacyFeature}/` or the compat path only when no branch docs were found for that feature (filesystem, requires `--source-repo`)
+5. **branch-bmad-output** — feature-scoped branch `_bmad-output` only: `_bmad-output/lens-work/initiatives/{domain}/{service}/{legacyFeature}.yaml` and `_bmad-output/lens-work/initiatives/{domain}/{service}/{legacyFeature}/**` (git-only, requires `--source-repo`)
+6. **working-tree-bmad-output-fallback** — the same feature-scoped `_bmad-output` paths in the working tree, only when the branch family has no feature-local `_bmad-output` entries (filesystem, requires `--source-repo`)
 
 Git-based sources use `git ls-tree` to enumerate files and `git show` to extract content. Ensure `git fetch` has been run before migration.
 
 Migration is not complete until every discovered document has a mirrored raw copy in the control-repo dossier, every canonical winner exists in governance docs, and the branch-by-branch document audit has been recorded.
 
-Duplicate filenames are resolved by freshness: the most recently committed version wins. When commit timestamps are equal (or unavailable), the static source priority above is used as a tiebreaker.
+Duplicate filenames are resolved by source-location precedence first, then by freshness within the chosen location tier. This guarantees that docs beat feature-scoped `_bmad-output` when both provide the same `relative_path`, while still preferring the newest file within a given source location.
+
+Service-shared `_bmad-output` files such as `initiative.yaml`, `.todo/`, and sibling feature directories are intentionally excluded from migration.
 
 ### Governance Directory Scaffolding (v3.4)
 

@@ -4,7 +4,7 @@ Remove legacy source locations after migration has been verified. This is a dest
 
 ## Outcome
 
-Legacy branches, source repo documents, _bmad-output initiative directories, and optionally remote git branches are deleted for verified features. Cleanup writes both `cleanup-approval.yaml` and `cleanup-receipt.yaml` into the control-repo dossier so the destructive action is independently auditable.
+Legacy branches, source repo flat legacy docs paths, feature-local `_bmad-output` artifacts, and optionally remote git branches are deleted for verified features. Cleanup writes both `cleanup-approval.yaml` and `cleanup-receipt.yaml` into the control-repo dossier so the destructive action is independently auditable.
 
 ## Safety Gate
 
@@ -97,6 +97,11 @@ python3 ./scripts/migrate-ops.py cleanup \
       "path": "{governance_repo}/branches/platform-identity-auth-login/",
       "type": "directory",
       "source": "governance-legacy-branch"
+    },
+    {
+      "path": "{source_repo}/_bmad-output/lens-work/initiatives/platform/identity/auth-login-base.yaml",
+      "type": "file",
+      "source": "source-bmad-output-feature-file"
     }
   ],
   "branches_deleted": [
@@ -118,12 +123,15 @@ In dry-run mode, `cleaned` becomes `planned_deletions`, `branches_deleted` becom
 | Source | Path Pattern | When Cleaned |
 |--------|-------------|--------------|
 | Governance legacy branch | `{governance_repo}/branches/{old_id}/` | Always (if exists) |
-| Source repo Docs | `{source_repo}/Docs/{domain}/{service}/{featureId}/` | When `--source-repo` provided and path exists |
-| Source repo _bmad-output | `{source_repo}/_bmad-output/lens-work/initiatives/{domain}/{service}/` | When `--source-repo` provided and path exists |
+| Source repo flat docs path | `{source_repo}/Docs|docs/{domain}/{service}/{legacyFeature}/` | When `--source-repo` provided and the flat legacy path exists |
+| Source repo feature `_bmad-output` file | `{source_repo}/_bmad-output/lens-work/initiatives/{domain}/{service}/{legacyFeature}.yaml` | When `--source-repo` provided and file exists |
+| Source repo feature `_bmad-output` dir | `{source_repo}/_bmad-output/lens-work/initiatives/{domain}/{service}/{legacyFeature}/` | When `--source-repo` provided and dir exists |
 | Remote branches (governance) | `origin/{old_id}`, `origin/{old_id}-{milestone}` | When `--delete-remote-branches` set and branch exists |
 | Remote branches (source) | `origin/{old_id}`, `origin/{old_id}-{milestone}` | When `--delete-remote-branches` and `--source-repo` set and branch exists |
 
 Paths that do not exist are silently skipped.
+
+Compatibility docs paths under `docs/{domain}/{service}/feature/{legacyFeature}/` are intentionally **not** deleted by cleanup. They remain read-compatible fallback inputs unless a later migration deliberately expands cleanup scope.
 
 ## Agent Workflow
 

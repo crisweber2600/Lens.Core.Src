@@ -80,15 +80,29 @@ def init_remote_source_repo(tmp: str) -> Path:
     return source
 
 
-def create_remote_branch_with_file(source: Path, branch_name: str, relative_path: str, content: str) -> None:
-    """Create or update a remote branch with a single tracked file."""
+def create_remote_branch_with_files(source: Path, branch_name: str, files: dict[str, str]) -> None:
+    """Create or replace a remote branch with a tracked set of files."""
     run_git(source, "checkout", "-B", branch_name, "origin/main")
-    target = source / relative_path
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(content, encoding="utf-8")
-    run_git(source, "add", relative_path)
+    for relative_path, content in files.items():
+        target = source / relative_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+    run_git(source, "add", *sorted(files))
     run_git(source, "commit", "-m", f"add {branch_name} doc")
     run_git(source, "push", "-u", "origin", branch_name)
+
+
+def create_remote_branch_with_file(source: Path, branch_name: str, relative_path: str, content: str) -> None:
+    """Create or update a remote branch with a single tracked file."""
+    create_remote_branch_with_files(source, branch_name, {relative_path: content})
+
+
+def write_text_file(root: Path, relative_path: str, content: str) -> Path:
+    """Write a UTF-8 text file under *root* and return its path."""
+    target = root / relative_path
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(content, encoding="utf-8")
+    return target
 
 
 def test_scan_detects_legacy():
@@ -540,8 +554,8 @@ def test_migrate_feature_mirrors_base_and_milestone_branch_docs():
         assert_true("documents discovered from both branches", result["documents_discovered_count"] >= 2)
 
         dossier = Path(tmp) / "docs" / "lens-work" / "migrations" / "platform" / "identity" / "auth-login"
-        base_mirror = dossier / "sources" / "branch-docs" / "platform-identity-auth-login" / "branch-docs-feature" / "base.md"
-        dev_mirror = dossier / "sources" / "branch-docs" / "platform-identity-auth-login-dev" / "branch-docs-feature" / "dev.md"
+        base_mirror = dossier / "sources" / "branch-docs" / "platform-identity-auth-login" / "branch-docs-compat" / "base.md"
+        dev_mirror = dossier / "sources" / "branch-docs" / "platform-identity-auth-login-dev" / "branch-docs-compat" / "dev.md"
         governance_docs = governance / "features" / "platform" / "identity" / "auth-login" / "docs"
         assert_eq("base branch mirrored", base_mirror.exists(), True)
         assert_eq("dev branch mirrored", dev_mirror.exists(), True)
@@ -585,6 +599,268 @@ def test_migrate_feature_mirrors_base_and_milestone_branch_docs():
         )
 
 
+def test_migrate_feature_reads_legacy_paths_for_renamed_feature():
+    """Renamed features read legacy source paths but still write governance docs to the requested feature id."""
+    print("test_migrate_feature_reads_legacy_paths_for_renamed_feature", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        governance = Path(tmp) / "governance"
+        governance.mkdir(parents=True, exist_ok=True)
+        source = init_remote_source_repo(tmp)
+        create_remote_branch_with_file(
+            source,
+            "platform-identity-auth-login-base",
+            "docs/platform/identity/auth-login-base/prd.md",
+            "legacy feature doc\n",
+        )
+
+        result, code = run([
+            "migrate-feature",
+            "--governance-repo", str(governance),
+            "--old-id", "platform-identity-auth-login-base",
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--username", "testuser",
+            "--source-repo", str(source),
+            "--control-repo", tmp,
+        ])
+        assert_eq("migrate status", result["status"], "pass")
+        assert_eq("migrate exit code", code, 0)
+        assert_eq("legacy feature reported", result["legacy_feature"], "auth-login-base")
+
+        governance_doc = governance / "features" / "platform" / "identity" / "auth-login" / "docs" / "prd.md"
+        mirror_doc = (
+            Path(tmp)
+            / "docs"
+            / "lens-work"
+            / "migrations"
+            / "platform"
+            / "identity"
+            / "auth-login"
+            / "sources"
+            / "branch-docs"
+            / "platform-identity-auth-login-base"
+            / "branch-docs-flat"
+            / "prd.md"
+        )
+        assert_eq("governance doc exists", governance_doc.exists(), True)
+        assert_eq("governance doc content", governance_doc.read_text(encoding="utf-8"), "legacy feature doc\n")
+        assert_eq("legacy path mirrored", mirror_doc.exists(), True)
+
+
+def test_migrate_feature_prefers_branch_docs_over_branch_bmad_output():
+    """Branch docs win over feature-scoped branch _bmad-output when relative paths collide."""
+    print("test_migrate_feature_prefers_branch_docs_over_branch_bmad_output", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        governance = Path(tmp) / "governance"
+        governance.mkdir(parents=True, exist_ok=True)
+        source = init_remote_source_repo(tmp)
+        create_remote_branch_with_files(
+            source,
+            "platform-identity-auth-login",
+            {
+                "docs/platform/identity/auth-login/prd.md": "branch docs wins\n",
+                "_bmad-output/lens-work/initiatives/platform/identity/auth-login/prd.md": "branch bmad loses\n",
+                "_bmad-output/lens-work/initiatives/platform/identity/initiative.yaml": "shared should stay out\n",
+                "_bmad-output/lens-work/initiatives/platform/identity/other/keep.md": "sibling should stay out\n",
+            },
+        )
+
+        result, code = run([
+            "migrate-feature",
+            "--governance-repo", str(governance),
+            "--old-id", "platform-identity-auth-login",
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--username", "testuser",
+            "--source-repo", str(source),
+            "--control-repo", tmp,
+        ])
+        assert_eq("migrate status", result["status"], "pass")
+        assert_eq("migrate exit code", code, 0)
+
+        governance_doc = governance / "features" / "platform" / "identity" / "auth-login" / "docs" / "prd.md"
+        dossier = Path(tmp) / "docs" / "lens-work" / "migrations" / "platform" / "identity" / "auth-login"
+        docs_mirror = dossier / "sources" / "branch-docs" / "platform-identity-auth-login" / "branch-docs-flat" / "prd.md"
+        bmad_mirror = dossier / "sources" / "bmad-output" / "platform-identity-auth-login" / "branch-bmad-output" / "prd.md"
+        shared_mirror = dossier / "sources" / "bmad-output" / "platform-identity-auth-login" / "branch-bmad-output" / "initiative.yaml"
+        sibling_mirror = dossier / "sources" / "bmad-output" / "platform-identity-auth-login" / "branch-bmad-output" / "keep.md"
+
+        assert_eq("docs content wins", governance_doc.read_text(encoding="utf-8"), "branch docs wins\n")
+        assert_eq("docs mirrored", docs_mirror.exists(), True)
+        assert_eq("bmad mirrored", bmad_mirror.exists(), True)
+        assert_eq("shared initiative not mirrored", shared_mirror.exists(), False)
+        assert_eq("sibling feature file not mirrored", sibling_mirror.exists(), False)
+
+        record = yaml.safe_load((dossier / "migration-record.yaml").read_text(encoding="utf-8"))
+        branch_counts = {entry["branch"]: entry for entry in record["documents"]["document_audit"]["branches"]}
+        assert_eq(
+            "branch audit tracks docs location",
+            branch_counts["platform-identity-auth-login"]["governance_repo_by_source"]["branch-docs-flat"],
+            1,
+        )
+
+
+def test_dry_run_skips_working_tree_fallback_when_branch_sources_exist():
+    """Working-tree docs and _bmad-output stay out of discovery when the branch family already has feature sources."""
+    print("test_dry_run_skips_working_tree_fallback_when_branch_sources_exist", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        governance = Path(tmp) / "governance"
+        governance.mkdir(parents=True, exist_ok=True)
+        source = init_remote_source_repo(tmp)
+        create_remote_branch_with_files(
+            source,
+            "platform-identity-auth-login",
+            {
+                "docs/platform/identity/feature/auth-login/prd.md": "branch compat\n",
+                "_bmad-output/lens-work/initiatives/platform/identity/auth-login/notes.md": "branch bmad\n",
+            },
+        )
+        write_text_file(source, "docs/platform/identity/auth-login/prd.md", "working tree docs\n")
+        write_text_file(
+            source,
+            "_bmad-output/lens-work/initiatives/platform/identity/auth-login/local.md",
+            "working tree bmad\n",
+        )
+
+        result, code = run([
+            "migrate-feature",
+            "--governance-repo", str(governance),
+            "--old-id", "platform-identity-auth-login",
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--username", "testuser",
+            "--source-repo", str(source),
+            "--control-repo", tmp,
+            "--dry-run",
+        ])
+        assert_eq("dry run status", result["status"], "pass")
+        assert_eq("dry run exit code", code, 0)
+
+        source_locations = {entry["source_location"] for entry in result["documents_discovered"]}
+        assert_true("branch compat discovered", "branch-docs-compat" in source_locations)
+        assert_true("branch bmad discovered", "branch-bmad-output" in source_locations)
+        assert_eq("no working-tree docs fallback", "working-tree-docs-fallback" in source_locations, False)
+        assert_eq(
+            "no working-tree bmad fallback",
+            "working-tree-bmad-output-fallback" in source_locations,
+            False,
+        )
+
+
+def test_dry_run_uses_working_tree_fallback_when_branch_sources_missing():
+    """Working-tree docs and _bmad-output become fallback sources when no branch family content exists."""
+    print("test_dry_run_uses_working_tree_fallback_when_branch_sources_missing", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        governance = Path(tmp) / "governance"
+        governance.mkdir(parents=True, exist_ok=True)
+        source = Path(tmp) / "source"
+        source.mkdir(parents=True, exist_ok=True)
+        write_text_file(source, "docs/platform/identity/auth-login/prd.md", "working tree docs\n")
+        write_text_file(
+            source,
+            "_bmad-output/lens-work/initiatives/platform/identity/auth-login/local.md",
+            "working tree bmad\n",
+        )
+
+        result, code = run([
+            "migrate-feature",
+            "--governance-repo", str(governance),
+            "--old-id", "platform-identity-auth-login",
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--username", "testuser",
+            "--source-repo", str(source),
+            "--control-repo", tmp,
+            "--dry-run",
+        ])
+        assert_eq("dry run status", result["status"], "pass")
+        assert_eq("dry run exit code", code, 0)
+
+        source_locations = {entry["source_location"] for entry in result["documents_discovered"]}
+        assert_true("working-tree docs fallback discovered", "working-tree-docs-fallback" in source_locations)
+        assert_true(
+            "working-tree bmad fallback discovered",
+            "working-tree-bmad-output-fallback" in source_locations,
+        )
+
+
+def test_cleanup_only_deletes_feature_scoped_source_artifacts():
+    """cleanup removes only the legacy flat docs path and feature-local _bmad-output artifacts."""
+    print("test_cleanup_only_deletes_feature_scoped_source_artifacts", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        governance = Path(tmp) / "governance"
+        governance.mkdir(parents=True, exist_ok=True)
+        make_branch_dir(str(governance), "platform-identity-auth-login-base")
+
+        source = Path(tmp) / "source"
+        source.mkdir(parents=True, exist_ok=True)
+        write_text_file(source, "docs/platform/identity/auth-login-base/prd.md", "legacy flat docs\n")
+        compat_doc = write_text_file(source, "docs/platform/identity/feature/auth-login-base/compat.md", "compat docs\n")
+        feature_yaml = write_text_file(
+            source,
+            "_bmad-output/lens-work/initiatives/platform/identity/auth-login-base.yaml",
+            "feature yaml\n",
+        )
+        feature_dir_file = write_text_file(
+            source,
+            "_bmad-output/lens-work/initiatives/platform/identity/auth-login-base/notes.md",
+            "feature dir file\n",
+        )
+        shared_yaml = write_text_file(
+            source,
+            "_bmad-output/lens-work/initiatives/platform/identity/initiative.yaml",
+            "shared yaml\n",
+        )
+        sibling_file = write_text_file(
+            source,
+            "_bmad-output/lens-work/initiatives/platform/identity/other/keep.md",
+            "sibling file\n",
+        )
+
+        migrate_result, migrate_code = run([
+            "migrate-feature",
+            "--governance-repo", str(governance),
+            "--old-id", "platform-identity-auth-login-base",
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--username", "testuser",
+            "--source-repo", str(source),
+            "--control-repo", tmp,
+        ])
+        assert_eq("migrate status", migrate_result["status"], "pass")
+        assert_eq("migrate exit code", migrate_code, 0)
+
+        cleanup_result, cleanup_code = run([
+            "cleanup",
+            "--governance-repo", str(governance),
+            "--old-id", "platform-identity-auth-login-base",
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--source-repo", str(source),
+            "--control-repo", tmp,
+            "--actor", "testuser",
+        ])
+        assert_eq("cleanup status", cleanup_result["status"], "pass")
+        assert_eq("cleanup exit code", cleanup_code, 0)
+
+        cleaned_sources = {entry["source"] for entry in cleanup_result["cleaned"]}
+        assert_true("flat docs deleted", "source-repo-docs-flat" in cleaned_sources)
+        assert_true("feature yaml deleted", "source-bmad-output-feature-file" in cleaned_sources)
+        assert_true("feature dir deleted", "source-bmad-output-feature-dir" in cleaned_sources)
+        assert_eq("flat docs removed", (source / "docs" / "platform" / "identity" / "auth-login-base").exists(), False)
+        assert_eq("compat docs preserved", compat_doc.exists(), True)
+        assert_eq("feature yaml removed", feature_yaml.exists(), False)
+        assert_eq("feature dir file removed", feature_dir_file.exists(), False)
+        assert_eq("shared yaml preserved", shared_yaml.exists(), True)
+        assert_eq("sibling feature preserved", sibling_file.exists(), True)
+
+
 def test_verify_fails_when_dossier_mirror_is_missing():
     """verify fails when a recorded mirrored source file is missing from the control-repo dossier."""
     print("test_verify_fails_when_dossier_mirror_is_missing", file=sys.stderr)
@@ -614,7 +890,7 @@ def test_verify_fails_when_dossier_mirror_is_missing():
         assert_eq("migrate exit code", migrate_code, 0)
 
         dossier = Path(tmp) / "docs" / "lens-work" / "migrations" / "platform" / "identity" / "auth-login"
-        mirror_path = dossier / "sources" / "branch-docs" / "platform-identity-auth-login" / "branch-docs-feature" / "prd.md"
+        mirror_path = dossier / "sources" / "branch-docs" / "platform-identity-auth-login" / "branch-docs-compat" / "prd.md"
         mirror_path.unlink()
 
         verify_result, verify_code = run([
@@ -697,6 +973,11 @@ if __name__ == "__main__":
     test_migrate_feature_creates_summary_and_problems_in_feature_dir()
     test_migrate_feature_copies_legacy_artifacts()
     test_migrate_feature_mirrors_base_and_milestone_branch_docs()
+    test_migrate_feature_reads_legacy_paths_for_renamed_feature()
+    test_migrate_feature_prefers_branch_docs_over_branch_bmad_output()
+    test_dry_run_skips_working_tree_fallback_when_branch_sources_exist()
+    test_dry_run_uses_working_tree_fallback_when_branch_sources_missing()
+    test_cleanup_only_deletes_feature_scoped_source_artifacts()
     test_verify_fails_when_dossier_mirror_is_missing()
     test_cleanup_writes_approval_and_receipt_artifacts()
 

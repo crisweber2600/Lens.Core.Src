@@ -22,7 +22,7 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   --dry-run
 ```
 
-`--source-repo` is optional. When provided, the dry run also discovers documents from the source repo's `Docs/` folder, `_bmad-output/` directory, and legacy git branches (via `git ls-tree`/`git show`).
+`--source-repo` is optional. When provided, the dry run also discovers documents from legacy git branches first, then falls back to working-tree docs and feature-scoped `_bmad-output` only when the branch family produced no docs or no `_bmad-output` entries for that feature.
 
 `--control-repo` is optional. When omitted, the script attempts to infer the control repo from the current workspace and governance repo ancestry.
 
@@ -32,6 +32,7 @@ python3 ./scripts/migrate-ops.py migrate-feature \
 {
   "status": "pass",
   "feature_id": "auth-login",
+  "legacy_feature": "auth-login-base",
   "dry_run": true,
   "planned_actions": [
     "Create feature.yaml at {governance_repo}/features/platform/identity/auth-login/feature.yaml",
@@ -40,8 +41,8 @@ python3 ./scripts/migrate-ops.py migrate-feature \
     "Create problems log at {governance_repo}/features/platform/identity/auth-login/problems.md",
     "Write migration dossier at {control_repo}/docs/lens-work/migrations/platform/identity/auth-login",
     "Write migration record at {control_repo}/docs/lens-work/migrations/platform/identity/auth-login/migration-record.yaml",
-    "Mirror document [branch-docs:platform-identity-auth-login-dev] prd.md into the control-repo dossier",
-    "Migrate canonical document [source-docs:working-tree] prd.md to {governance_repo}/features/platform/identity/auth-login/docs/prd.md",
+    "Mirror document [branch-docs-flat:platform-identity-auth-login-dev] prd.md into the control-repo dossier",
+    "Migrate canonical document [working-tree-docs-fallback:working-tree] prd.md to {governance_repo}/features/platform/identity/auth-login/docs/prd.md",
     "Migrate canonical document [governance-legacy:platform-identity-auth-login] tech-plan.md to {governance_repo}/features/platform/identity/auth-login/docs/tech-plan.md"
   ],
   "feature_yaml_created": false,
@@ -66,19 +67,21 @@ python3 ./scripts/migrate-ops.py migrate-feature \
     },
     {
       "source_type": "branch-docs",
-      "source_path": "git:origin/platform-identity-auth-login:docs/platform/identity/feature/auth-login/prd.md",
+      "source_path": "git:origin/platform-identity-auth-login:docs/platform/identity/auth-login-base/prd.md",
       "relative_path": "prd.md",
       "filename": "prd.md",
+      "source_location": "branch-docs-flat",
       "git_ref": "origin/platform-identity-auth-login",
-      "git_path": "docs/platform/identity/feature/auth-login/prd.md",
+      "git_path": "docs/platform/identity/auth-login-base/prd.md",
       "git_repo": "/path/to/source",
       "commit_ts": 1712000000
     },
     {
       "source_type": "source-docs",
-      "source_path": "/path/to/source/Docs/platform/identity/auth-login/prd.md",
+      "source_path": "/path/to/source/Docs/platform/identity/auth-login-base/prd.md",
       "relative_path": "prd.md",
       "filename": "prd.md",
+      "source_location": "working-tree-docs-fallback",
       "commit_ts": 1690000000
     }
   ]
@@ -111,6 +114,6 @@ Then ask for confirmation:
 - "Proceed with migration for all N features? (yes/no)"
 - OR "Select features to migrate: (all/list numbers/no)"
 
-The preview must make the dossier location explicit so the user can see where the durable proof artifacts will be written before any destructive cleanup is ever offered. It must also surface the per-branch document audit so the user can compare branch-by-branch control counts against the governance feature-doc count before executing.
+The preview must make the dossier location explicit so the user can see where the durable proof artifacts will be written before any destructive cleanup is ever offered. It must also surface the per-branch document audit so the user can compare branch-by-branch control counts against the governance feature-doc count before executing, including which source-location label won (`branch-docs-flat`, `branch-docs-compat`, `branch-bmad-output`, `working-tree-docs-fallback`, `working-tree-bmad-output-fallback`).
 
 Do not proceed without explicit confirmation.
