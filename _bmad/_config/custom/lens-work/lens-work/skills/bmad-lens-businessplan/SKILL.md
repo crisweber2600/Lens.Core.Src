@@ -48,7 +48,7 @@ You are the BusinessPlan phase conductor for the Lens agent. You invoke register
 10. If mode is `interactive`, present a workflow selection menu: `prd`, `ux-design`, or `both`.
 11. If mode is `interactive` and BusinessPlan was invoked directly, confirm that BusinessPlan will publish reviewed PrePlan artifacts and then launch the selected native session or sessions. Do not ask downstream discovery questions here. If the user does not confirm, stop cleanly with no changes.
 12. If mode is `interactive` and BusinessPlan was auto-delegated from `/next`, treat that delegation as already confirmed once the workflow selection is known. Do not ask a redundant yes/no prompt just to run BusinessPlan.
-13. Publish staged preplan artifacts into the governance docs mirror via `bmad-lens-git-orchestration publish-to-governance --phase preplan` before creating BusinessPlan outputs.
+13. Publish staged preplan artifacts, including the preplan review report when present, into the governance docs mirror via `bmad-lens-git-orchestration publish-to-governance --phase preplan` before creating BusinessPlan outputs.
 14. Load preplan artifacts from the staged control-repo docs path for authoring context, and use the governance mirror as the published snapshot for cross-feature consumers.
 15. Load cross-feature context via `bmad-lens-init-feature` `fetch-context --depth full`.
 16. Load domain constitution via `bmad-lens-constitution`.
@@ -85,9 +85,12 @@ updated_at: {ISO timestamp}
 
 When all selected businessplan artifacts are staged in the control repo:
 
-1. Update `feature.yaml` phase to `businessplan-complete` via `bmad-lens-feature-yaml`.
-2. Leave governance publication of PRD and UX docs to the TechPlan handoff unless the user explicitly requests publication now.
-3. Report next action: advance to `/techplan` (or auto-advance per lifecycle.yaml).
+1. Run `bmad-lens-adversarial-review --phase businessplan --source phase-complete` using `phases.businessplan.completion_review` from `lifecycle.yaml` before updating phase state. Do not run this gate during batch pass 1. In interactive mode and batch pass 2:
+	- If the verdict is `fail`, stop and do not update `feature.yaml`.
+	- If the verdict is `pass` or `pass-with-warnings`, continue.
+2. Update `feature.yaml` phase to `businessplan-complete` via `bmad-lens-feature-yaml`.
+3. Leave governance publication of PRD, UX docs, and the businessplan review report to the TechPlan handoff unless the user explicitly requests publication now.
+4. Report next action: advance to `/techplan` (or auto-advance per lifecycle.yaml).
 
 ## Integration Points
 

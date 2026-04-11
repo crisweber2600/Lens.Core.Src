@@ -160,6 +160,13 @@ topics:
     tracks: [all]
     category: planning
 
+  - id: adversarial-review
+    command: /lens-adversarial-review
+    description: Stress-test staged planning artifacts and challenge blind spots before handoff
+    phases: [preplan, businessplan, techplan]
+    tracks: [all]
+    category: planning
+
   - id: bmad-create-epics-and-stories
     command: /bmad-create-epics-and-stories
     description: Generate epics and stories using the active Lens feature and artifact paths

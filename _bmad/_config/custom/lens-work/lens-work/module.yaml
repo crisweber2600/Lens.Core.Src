@@ -120,6 +120,11 @@ skills:
     file: skills/bmad-lens-expressplan/SKILL.md
     description: "ExpressPlan phase — all planning artifacts in one session for a feature"
 
+  # Lens Next Review Skills (v4.0)
+  - id: bmad-lens-adversarial-review
+    file: skills/bmad-lens-adversarial-review/SKILL.md
+    description: "Lifecycle adversarial review gate with party-mode blind-spot challenge"
+
   # Lens Next Migration Skills (v4.0)
   - id: bmad-lens-dev
     file: skills/bmad-lens-dev/SKILL.md
@@ -213,6 +218,7 @@ prompts:
   - lens-expressplan.prompt.md
   - lens-businessplan.prompt.md
   - lens-techplan.prompt.md
+  - lens-adversarial-review.prompt.md
   - lens-devproposal.prompt.md
   - lens-sprintplan.prompt.md
   - lens-dev.prompt.md

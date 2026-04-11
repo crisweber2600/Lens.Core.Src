@@ -91,9 +91,12 @@ updated_at: {ISO timestamp}
 
 When all selected preplan artifacts are staged in the control repo:
 
-1. Update `feature.yaml` phase to `preplan-complete` via `bmad-lens-feature-yaml`.
-2. Do not publish preplan docs to governance by default; BusinessPlan publishes the reviewed preplan set at phase handoff.
-3. Report next action: advance to `/businessplan` (or auto-advance per lifecycle.yaml).
+1. Run `bmad-lens-adversarial-review --phase preplan --source phase-complete` using `phases.preplan.completion_review` from `lifecycle.yaml` before updating phase state. Do not run this gate during batch pass 1. In interactive mode and batch pass 2:
+	- If the verdict is `fail`, stop and do not update `feature.yaml`.
+	- If the verdict is `pass` or `pass-with-warnings`, continue.
+2. Update `feature.yaml` phase to `preplan-complete` via `bmad-lens-feature-yaml`.
+3. Do not publish preplan docs to governance by default; BusinessPlan publishes the reviewed preplan set, including the preplan review report, at phase handoff.
+4. Report next action: advance to `/businessplan` (or auto-advance per lifecycle.yaml).
 
 ## Integration Points
 
