@@ -9,7 +9,7 @@ description: Migration bridge between LENS v3 and Lens Next. Use when migrating 
 
 This skill transitions existing features from the LENS v3 branch topology (`{domain}-{service}-{feature}[-{milestone}]`) to the Lens Next 2-branch model (`{featureId}` + `{featureId}-plan`). It scans for old-model branches, derives what they were doing, maps them to the new topology, and proposes a migration plan. In-progress sessions are never lost. Dry-run is mandatory before any execution.
 
-Migration now uses a **dual-write dossier**: every discovered legacy document is mirrored into the control repo under `docs/lens-work/migrations/...` as durable proof while the canonical winning documents are still written into the governance feature docs folder for compatibility.
+Migration is now **governance-first**: every discovered legacy document is mirrored into the control repo under `docs/lens-work/migrations/...` as durable proof, while the canonical winning documents migrate into the governance feature docs folder. The migration record also captures per-branch control-versus-governance document counts so each legacy branch can be audited explicitly.
 
 **The non-negotiable:** In-progress work must not be lost. Dry-run must be shown and confirmed before any execution. Old branches are kept until an explicit cleanup step.
 
@@ -51,10 +51,10 @@ You are the migration bridge between LENS v3 and Lens Next. You scan for old-mod
 | **cleanup** | Separate, explicit step to delete old branches after successful migration + confirmation |
 | **governance repo** | The repository containing Lens feature YAML, index, and summaries |
 | **source repo** | The source code repository that may contain a `Docs/` folder or `_bmad-output/` with feature documents |
-| **control-repo dossier** | The proof surface under `docs/lens-work/migrations/{domain}/{service}/{featureId}/` containing mirrored raw source docs, canonical dossier docs, `migration-record.yaml`, cleanup approval, and cleanup receipt artifacts |
+| **control-repo dossier** | The proof surface under `docs/lens-work/migrations/{domain}/{service}/{featureId}/` containing mirrored raw source docs, per-branch document counts, `migration-record.yaml`, cleanup approval, and cleanup receipt artifacts |
 | **document discovery** | Scanning governance-legacy branches, source repo `Docs/`, `_bmad-output/`, and legacy git branches for feature documents across the base branch and all detected milestone branches. Uses `git ls-tree`/`git show` when filesystem paths do not exist. Each discovered document includes a `commit_ts`; duplicates are resolved by freshness (newest wins), with static source priority as tiebreaker. |
 | **branch-docs** | Documents discovered on the legacy branch family in the source repo via `git ls-tree`/`git show`, including the base branch plus all detected milestone branches. Prioritized between governance-legacy and source-docs. |
-| **verification** | Post-migration check confirming governance artifacts exist, all discovered documents were mirrored into the control-repo dossier, and canonical hashes match before cleanup is allowed |
+| **verification** | Post-migration check confirming governance artifacts exist, all discovered documents were mirrored into the control-repo dossier, and recorded governance hashes match before cleanup is allowed |
 | **cleanup approval** | Durable YAML artifact written to the dossier immediately before destructive cleanup executes |
 | **cleanup receipt** | Durable YAML artifact written to the dossier immediately after destructive cleanup completes or partially completes |
 
@@ -77,7 +77,7 @@ You are the migration bridge between LENS v3 and Lens Next. You scan for old-mod
 
 Load available config from `{project-root}/lens.core/_bmad/config.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml`. Expected config keys under `lens`: `governance_repo`, `username`. Resolve:
 
-- `{governance_repo}` (default: current repo) — governance repo root path
+- `{governance_repo}` (default: configured governance repo, never the control repo root) — governance repo root path. If a control-repo path is passed by mistake, the script resolves `TargetProjects/*/lens-governance` automatically and warns.
 - `{username}` (default: `git config user.name`) — username for migration attribution
 
 If both config files are absent, use all defaults.

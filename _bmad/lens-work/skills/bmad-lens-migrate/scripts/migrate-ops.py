@@ -10,6 +10,7 @@ to the Lens Next 2-branch model ({featureId} + {featureId}-plan).
 """
 
 import argparse
+from collections import Counter, defaultdict
 import hashlib
 import importlib.util
 import json
@@ -188,6 +189,58 @@ def looks_like_control_repo(path: Path) -> bool:
     return path.is_dir() and (path / "lens.core").exists()
 
 
+def looks_like_governance_repo(path: Path) -> bool:
+    """Heuristic for detecting a governance repo root from a filesystem path."""
+    return path.is_dir() and (
+        path.name == "lens-governance"
+        or (path / "repo-inventory.yaml").is_file()
+        or (path / "feature-index.yaml").is_file()
+        or (path / "features").is_dir()
+    )
+
+
+def find_control_repo_ancestor(path: Path) -> Path | None:
+    """Return the nearest ancestor that looks like a control repo, if any."""
+    for candidate in (path, *path.parents):
+        if looks_like_control_repo(candidate):
+            return candidate
+    return None
+
+
+def infer_governance_repo_from_control(control_root: Path) -> Path | None:
+    """Infer the governance repo location from a control repo root."""
+    direct_candidate = control_root / "TargetProjects" / "lens" / "lens-governance"
+    if direct_candidate.is_dir():
+        return direct_candidate.resolve()
+
+    target_projects_dir = control_root / "TargetProjects"
+    if target_projects_dir.is_dir():
+        for candidate in sorted(target_projects_dir.glob("*/lens-governance")):
+            if candidate.is_dir():
+                return candidate.resolve()
+
+    return None
+
+
+def resolve_governance_repo(governance_repo_arg: str) -> tuple[Path, str | None]:
+    """Resolve the governance repo root, correcting control-repo inputs when possible."""
+    governance_repo = Path(governance_repo_arg).resolve()
+    if not governance_repo.exists() or not governance_repo.is_dir():
+        raise RuntimeError(f"Governance repo not found: {governance_repo}")
+
+    control_root = find_control_repo_ancestor(governance_repo)
+    if control_root is not None and not looks_like_governance_repo(governance_repo):
+        inferred_repo = infer_governance_repo_from_control(control_root)
+        if inferred_repo is None:
+            raise RuntimeError(
+                "Governance repo argument points inside the control repo "
+                f"({governance_repo}) but no governance repo was found under {control_root / 'TargetProjects'}."
+            )
+        return inferred_repo, f"Resolved governance repo from control-repo path: {inferred_repo}"
+
+    return governance_repo, None
+
+
 def resolve_control_repo(
     control_repo_arg: str | None,
     governance_repo: Path,
@@ -260,6 +313,68 @@ def build_mirror_relative_path(doc: dict) -> Path:
     return Path("sources") / safe_path_part(doc["source_type"]) / safe_path_part(doc.get("source_branch")) / safe_path_part(
         doc.get("source_location")
     ) / doc["relative_path"]
+
+
+def select_canonical_documents(docs: list[dict]) -> list[dict]:
+    """Select the canonical governance document for each relative path."""
+    priority_rank = {src: i for i, src in enumerate(DOC_SOURCE_PRIORITY)}
+    canonical_docs: list[dict] = []
+    seen_targets: set[str] = set()
+
+    for doc in sorted(
+        docs,
+        key=lambda item: (-(item.get("commit_ts") or 0), priority_rank.get(item["source_type"], 99)),
+    ):
+        rel = doc["relative_path"]
+        if rel in seen_targets:
+            continue
+        seen_targets.add(rel)
+        canonical_docs.append(doc)
+
+    return canonical_docs
+
+
+def build_document_audit(legacy_branches: list[str], control_entries: list[dict], governance_entries: list[dict]) -> dict:
+    """Summarize per-branch mirrored control docs versus governance docs for a feature."""
+    control_counts: Counter[str] = Counter()
+    governance_counts: Counter[str] = Counter()
+    control_by_source: dict[str, Counter[str]] = defaultdict(Counter)
+    governance_by_source: dict[str, Counter[str]] = defaultdict(Counter)
+
+    for entry in control_entries:
+        branch = entry.get("source_branch") or "working-tree"
+        source_type = entry.get("source_type") or "unknown"
+        control_counts[branch] += 1
+        control_by_source[branch][source_type] += 1
+
+    for entry in governance_entries:
+        branch = entry.get("source_branch") or "working-tree"
+        source_type = entry.get("source_type") or "unknown"
+        governance_counts[branch] += 1
+        governance_by_source[branch][source_type] += 1
+
+    ordered_branches: list[str] = []
+    seen: set[str] = set()
+    for branch in [*legacy_branches, *sorted(control_counts), *sorted(governance_counts)]:
+        if branch in seen:
+            continue
+        seen.add(branch)
+        ordered_branches.append(branch)
+
+    return {
+        "control_feature_documents": len(control_entries),
+        "governance_feature_documents": len(governance_entries),
+        "branches": [
+            {
+                "branch": branch,
+                "control_repo_documents": control_counts.get(branch, 0),
+                "governance_repo_documents": governance_counts.get(branch, 0),
+                "control_repo_by_source": dict(sorted(control_by_source.get(branch, {}).items())),
+                "governance_repo_by_source": dict(sorted(governance_by_source.get(branch, {}).items())),
+            }
+            for branch in ordered_branches
+        ],
+    }
 
 
 def serialize_discovered_doc(doc: dict, mirror_rel_path: Path) -> dict:
@@ -838,22 +953,21 @@ def migrate_documents(
     feature_id: str,
     source_repo: Path | None,
 ) -> dict:
-    """Mirror discovered documents into the control repo dossier and governance docs.
+    """Mirror discovered documents into the control repo dossier and migrate winners to governance docs.
 
     Conflict resolution: when the same relative_path appears in multiple sources,
     the most recently committed version wins.  Static source priority
     (DOC_SOURCE_PRIORITY) is the tiebreaker when timestamps are equal.
     All discovered source documents are mirrored into the dossier as proof before
-    the canonical winners are written to governance docs and dossier docs.
+    the canonical winners are written to governance docs.
     """
+    legacy_branches = build_legacy_branch_variants(old_id, governance_repo, source_repo)
     docs = discover_documents(governance_repo, old_id, domain, service, feature_id, source_repo)
     dossier_dir, _, _, _ = migration_record_paths(control_repo, domain, service, feature_id)
     target_dir = governance_repo / "features" / domain / service / feature_id / "docs"
-    dossier_docs_dir = dossier_dir / "docs"
 
     dossier_dir.mkdir(parents=True, exist_ok=True)
     target_dir.mkdir(parents=True, exist_ok=True)
-    dossier_docs_dir.mkdir(parents=True, exist_ok=True)
 
     if not docs:
         return {
@@ -864,11 +978,10 @@ def migrate_documents(
             "canonical_count": 0,
             "discovered_records": [],
             "canonical_records": [],
+            "document_audit": build_document_audit(legacy_branches, [], []),
             "dossier_dir": str(dossier_dir),
         }
 
-    # Sort by freshness (newest first), then static priority as tiebreaker
-    priority_rank = {src: i for i, src in enumerate(DOC_SOURCE_PRIORITY)}
     docs_with_content: list[dict] = []
     discovered_records: list[dict] = []
     errors: list[str] = []
@@ -898,24 +1011,16 @@ def migrate_documents(
     if errors:
         raise OSError("; ".join(errors))
 
-    docs_with_content.sort(key=lambda d: (-(d.get("commit_ts") or 0), priority_rank.get(d["source_type"], 99)))
-
     copied: list[str] = []
     source_counts: dict[str, int] = {}
-    seen_targets: set[str] = set()
     canonical_records: list[dict] = []
+    canonical_docs = select_canonical_documents(docs_with_content)
 
-    for doc in docs_with_content:
+    for doc in canonical_docs:
         rel = doc["relative_path"]
-        if rel in seen_targets:
-            continue  # A newer (or higher-priority) source already placed this file
-        seen_targets.add(rel)
-
         target_path = target_dir / rel
-        dossier_target_path = dossier_docs_dir / rel
         try:
             write_bytes_file(target_path, doc["_content"])
-            write_bytes_file(dossier_target_path, doc["_content"])
         except OSError as exc:
             raise OSError(f"Failed to write canonical document {rel}: {exc}") from exc
 
@@ -928,7 +1033,6 @@ def migrate_documents(
             "source_location": doc.get("source_location"),
             "sha256": doc["sha256"],
             "governance_path": relative_to_root(governance_repo, target_path),
-            "dossier_path": relative_to_root(control_repo, dossier_target_path),
         })
 
     return {
@@ -939,6 +1043,7 @@ def migrate_documents(
         "canonical_count": len(canonical_records),
         "discovered_records": discovered_records,
         "canonical_records": canonical_records,
+        "document_audit": build_document_audit(legacy_branches, discovered_records, canonical_records),
         "dossier_dir": str(dossier_dir),
     }
 
@@ -1016,24 +1121,19 @@ def verify_migration(
 
     discovered_entries = []
     canonical_entries = []
+    document_audit = None
     if record:
         documents_block = record.get("documents") if isinstance(record, dict) else None
         if isinstance(documents_block, dict):
             discovered_entries = documents_block.get("discovered") or []
             canonical_entries = documents_block.get("canonical") or []
+            document_audit = documents_block.get("document_audit")
 
     mirror_status, mirror_details = verify_recorded_files(control_repo, discovered_entries, "mirror_path")
     checks.append({
         "name": "mirrored_documents",
         "result": mirror_status if record else "fail",
         "details": mirror_details if record else "Migration record missing discovered document inventory",
-    })
-
-    dossier_status, dossier_details = verify_recorded_files(control_repo, canonical_entries, "dossier_path")
-    checks.append({
-        "name": "dossier_docs",
-        "result": dossier_status if record else "fail",
-        "details": dossier_details if record else "Migration record missing canonical dossier inventory",
     })
 
     governance_status, governance_details = verify_recorded_files(governance_repo, canonical_entries, "governance_path")
@@ -1053,6 +1153,8 @@ def verify_migration(
         "dossier_path": relative_to_root(control_repo, dossier_dir),
         "migration_record_path": relative_to_root(control_repo, record_path),
     }
+    if document_audit is not None:
+        result["document_audit"] = document_audit
 
     if record is not None:
         record["status"] = "verified" if overall == "pass" else "verification-failed"
@@ -1213,9 +1315,10 @@ def build_migrated_feature_data(
 
 def cmd_scan(args: argparse.Namespace) -> dict:
     """Detect legacy branches and build migration plan."""
-    governance_repo = Path(args.governance_repo)
-    if not governance_repo.exists():
-        print(f"Error: Governance repo not found: {governance_repo}", file=sys.stderr)
+    try:
+        governance_repo, governance_warning = resolve_governance_repo(args.governance_repo)
+    except RuntimeError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
 
     source_repo = Path(args.source_repo) if getattr(args, "source_repo", None) else None
@@ -1277,6 +1380,9 @@ def cmd_scan(args: argparse.Namespace) -> dict:
                 }
             )
 
+        docs = discover_documents(governance_repo, base_name, domain, service, feature_id, source_repo)
+        canonical_docs = select_canonical_documents(docs)
+
         legacy_features.append(
             {
                 "old_id": base_name,
@@ -1290,8 +1396,11 @@ def cmd_scan(args: argparse.Namespace) -> dict:
                 },
                 "state": state,
                 "dossier_path": relative_to_root(control_repo, migration_dossier_dir(control_repo, domain, service, feature_id)),
-                "documents": discover_documents(
-                    governance_repo, base_name, domain, service, feature_id, source_repo,
+                "documents": docs,
+                "document_audit": build_document_audit(
+                    build_legacy_branch_variants(base_name, governance_repo, source_repo),
+                    docs,
+                    canonical_docs,
                 ),
             }
         )
@@ -1301,18 +1410,22 @@ def cmd_scan(args: argparse.Namespace) -> dict:
         "legacy_features": legacy_features,
         "total": len(legacy_features),
         "conflicts": conflicts,
+        "governance_repo": str(governance_repo),
         "control_repo": str(control_repo),
     }
+    if governance_warning:
+        result.setdefault("warnings", []).append(governance_warning)
     if control_warning:
-        result["warning"] = control_warning
+        result.setdefault("warnings", []).append(control_warning)
     return result
 
 
 def cmd_migrate_feature(args: argparse.Namespace) -> dict:
     """Execute migration for a single feature."""
-    governance_repo = Path(args.governance_repo)
-    if not governance_repo.exists():
-        print(f"Error: Governance repo not found: {governance_repo}", file=sys.stderr)
+    try:
+        governance_repo, governance_warning = resolve_governance_repo(args.governance_repo)
+    except RuntimeError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
 
     init_feature_ops = load_init_feature_ops()
@@ -1368,6 +1481,8 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
             fallback_phase = raw_phase
 
     warnings: list[str] = []
+    if governance_warning:
+        warnings.append(governance_warning)
     if control_warning:
         warnings.append(control_warning)
 
@@ -1387,17 +1502,16 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
 
         # Document discovery preview
         docs = discover_documents(governance_repo, old_id, domain, service, feature_id, source_repo)
+        canonical_docs = select_canonical_documents(docs)
+        legacy_branches = build_legacy_branch_variants(old_id, governance_repo, source_repo)
         docs_target = governance_repo / "features" / domain / service / feature_id / "docs"
-        dossier_docs_target = dossier_dir / "docs"
         for doc in docs:
-            planned_actions.append(
-                f"Copy document [{doc['source_type']}] {doc['relative_path']} → {docs_target / doc['relative_path']}"
-            )
             planned_actions.append(
                 f"Mirror document [{doc['source_type']}:{doc.get('source_branch') or 'working-tree'}] {doc['relative_path']} → {dossier_dir / build_mirror_relative_path(doc)}"
             )
+        for doc in canonical_docs:
             planned_actions.append(
-                f"Write canonical dossier doc {doc['relative_path']} → {dossier_docs_target / doc['relative_path']}"
+                f"Migrate canonical document [{doc['source_type']}:{doc.get('source_branch') or 'working-tree'}] {doc['relative_path']} → {docs_target / doc['relative_path']}"
             )
 
         return {
@@ -1410,6 +1524,8 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
             "legacy_state_path": legacy_state_path,
             "documents_discovered": docs,
             "documents_discovered_count": len(docs),
+            "document_audit": build_document_audit(legacy_branches, docs, canonical_docs),
+            "governance_repo": str(governance_repo),
             "dossier_path": str(dossier_dir),
             "migration_record_path": str(record_path),
             "warnings": warnings,
@@ -1505,6 +1621,7 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
             "canonical_count": documents_result["canonical_count"],
             "discovered": documents_result["discovered_records"],
             "canonical": documents_result["canonical_records"],
+            "document_audit": documents_result["document_audit"],
         },
         "verification": {
             "status": "pending",
@@ -1543,6 +1660,8 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
         "documents_discovered_count": documents_result["discovered_count"],
         "documents_mirrored_count": documents_result["mirrored_count"],
         "canonical_documents_count": documents_result["canonical_count"],
+        "document_audit": documents_result["document_audit"],
+        "governance_repo": str(governance_repo),
         "dossier_path": documents_result["dossier_dir"],
         "migration_record_path": str(record_path),
         "legacy_state_path": legacy_state_path,
@@ -1552,9 +1671,10 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
 
 def cmd_check_conflicts(args: argparse.Namespace) -> dict:
     """Check for naming conflicts before migration."""
-    governance_repo = Path(args.governance_repo)
-    if not governance_repo.exists():
-        print(f"Error: Governance repo not found: {governance_repo}", file=sys.stderr)
+    try:
+        governance_repo, governance_warning = resolve_governance_repo(args.governance_repo)
+    except RuntimeError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
 
     feature_id = args.feature_id
@@ -1564,24 +1684,31 @@ def cmd_check_conflicts(args: argparse.Namespace) -> dict:
     target_path = governance_repo / "features" / domain / service / feature_id / "feature.yaml"
 
     if target_path.exists():
-        return {
+        result = {
             "status": "conflict",
             "conflict": True,
             "existing_path": str(target_path),
         }
+        if governance_warning:
+            result["warning"] = governance_warning
+        return result
 
-    return {
+    result = {
         "status": "pass",
         "conflict": False,
         "existing_path": None,
     }
+    if governance_warning:
+        result["warning"] = governance_warning
+    return result
 
 
 def cmd_verify(args: argparse.Namespace) -> dict:
     """Verify a migrated feature has all expected artifacts."""
-    governance_repo = Path(args.governance_repo)
-    if not governance_repo.exists():
-        print(f"Error: Governance repo not found: {governance_repo}", file=sys.stderr)
+    try:
+        governance_repo, governance_warning = resolve_governance_repo(args.governance_repo)
+    except RuntimeError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
 
     init_feature_ops = load_init_feature_ops()
@@ -1602,6 +1729,8 @@ def cmd_verify(args: argparse.Namespace) -> dict:
         return {"status": "fail", "error": str(exc)}
 
     result = verify_migration(governance_repo, args.feature_id, args.domain, args.service, control_repo)
+    if governance_warning:
+        result.setdefault("warnings", []).append(governance_warning)
     if control_warning:
         result.setdefault("warnings", []).append(control_warning)
     return result
@@ -1609,9 +1738,10 @@ def cmd_verify(args: argparse.Namespace) -> dict:
 
 def cmd_cleanup(args: argparse.Namespace) -> dict:
     """Clean up legacy artifacts and source documents after verified migration."""
-    governance_repo = Path(args.governance_repo)
-    if not governance_repo.exists():
-        print(f"Error: Governance repo not found: {governance_repo}", file=sys.stderr)
+    try:
+        governance_repo, governance_warning = resolve_governance_repo(args.governance_repo)
+    except RuntimeError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
 
     init_feature_ops = load_init_feature_ops()
@@ -1850,8 +1980,10 @@ def cmd_cleanup(args: argparse.Namespace) -> dict:
     result["approval_record_path"] = relative_to_root(control_repo, approval_path)
     result["cleanup_receipt_path"] = relative_to_root(control_repo, receipt_path)
     result["migration_record_path"] = relative_to_root(control_repo, record_path)
+    if governance_warning:
+        result.setdefault("warnings", []).append(governance_warning)
     if control_warning:
-        result["warning"] = control_warning
+        result.setdefault("warnings", []).append(control_warning)
     return result
 
 

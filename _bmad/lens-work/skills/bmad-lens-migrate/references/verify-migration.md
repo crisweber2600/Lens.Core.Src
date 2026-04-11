@@ -35,7 +35,6 @@ python3 ./scripts/migrate-ops.py verify \
     { "name": "dossier_dir", "result": "pass" },
     { "name": "migration_record", "result": "pass" },
     { "name": "mirrored_documents", "result": "pass" },
-    { "name": "dossier_docs", "result": "pass" },
     { "name": "governance_docs", "result": "pass" }
   ]
 }
@@ -54,7 +53,6 @@ If any check fails, `status` is `"fail"`.
 | dossier_dir | `{control_repo}/docs/lens-work/migrations/{domain}/{service}/{featureId}/` exists |
 | migration_record | `migration-record.yaml` exists in the dossier |
 | mirrored_documents | Every discovered legacy document has a mirrored raw copy in the dossier `sources/` tree and its hash matches the recorded hash |
-| dossier_docs | Every canonical winning document exists in the dossier `docs/` tree and its hash matches the recorded hash |
 | governance_docs | Every canonical winning document exists in governance docs and its hash matches the recorded hash |
 
 If no legacy documents were discovered, verification still requires the dossier and migration record to exist so cleanup has durable proof that the feature was checked.
@@ -72,7 +70,6 @@ After running verification, present a summary table to the user:
 | dossier_dir | ✓ |
 | migration_record | ✓ |
 | mirrored_documents | ✓ |
-| dossier_docs | ✓ |
 | governance_docs | ✓ |
 
 Then:
