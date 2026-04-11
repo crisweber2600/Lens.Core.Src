@@ -38,7 +38,7 @@ You are the lightweight problem capture layer for Lens. You run in the backgroun
 
 | Term | Definition |
 |------|-----------|
-| **phase** | The lifecycle gate at which a problem was encountered: `preplan`, `businessplan`, `techplan`, `sprintplan`, `dev`, `complete` |
+| **phase** | The lifecycle gate at which a problem was encountered: `preplan`, `businessplan`, `techplan`, `finalizeplan`, `dev`, `complete` |
 | **category** | The type classification of a problem: `requirements-gap`, `execution-failure`, `dependency-issue`, `scope-creep`, `tech-debt`, `process-breakdown` |
 | **problems.md** | Append-only problem log in the feature directory at `{governance-repo}/features/{domain}/{service}/{featureId}/problems.md` |
 | **entry_id** | Unique identifier for a problem entry: `prob-{YYYYMMDDTHHMMSSz}` |

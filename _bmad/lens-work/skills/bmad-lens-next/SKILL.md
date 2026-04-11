@@ -34,7 +34,7 @@ You read feature state and route to the most actionable next step. You are opini
 
 | Term | Definition |
 |------|-----------|
-| **phase** | Current lifecycle gate: preplan → businessplan → techplan → devproposal → sprintplan, plus expressplan, dev, complete, paused, and `*-complete` transition states |
+| **phase** | Current lifecycle gate: preplan → businessplan → techplan → finalizeplan, plus expressplan, dev, complete, paused, and `*-complete` transition states |
 | **stale context** | `context.stale=true` in feature.yaml — indicates the feature context needs a fresh pull |
 | **hard gate** | Compliance failure or missing milestone that blocks phase promotion |
 | **auto-delegate** | When the chosen command is deterministic and unblocked, `/next` loads that skill immediately |
@@ -43,7 +43,7 @@ You read feature state and route to the most actionable next step. You are opini
 
 | Condition | Recommendation |
 |-----------|---------------|
-| Phase=`{lifecycle phase}` | Delegate to the phase command (`/preplan`, `/businessplan`, `/techplan`, `/devproposal`, `/sprintplan`, `/expressplan`) |
+| Phase=`{lifecycle phase}` | Delegate to the phase command (`/preplan`, `/businessplan`, `/techplan`, `/finalizeplan`, `/expressplan`) |
 | Phase=`{phase}-complete` | Delegate to that phase's `auto_advance_to` command from `lifecycle.yaml` |
 | Phase=dev | Delegate to `/dev` |
 | Phase=complete | Delegate to `/complete` |
@@ -69,8 +69,7 @@ Run `./scripts/next-ops.py suggest` first. Then:
 | `/preplan` | Load `../bmad-lens-preplan/SKILL.md` |
 | `/businessplan` | Load `../bmad-lens-businessplan/SKILL.md` |
 | `/techplan` | Load `../bmad-lens-techplan/SKILL.md` |
-| `/devproposal` | Load `../bmad-lens-devproposal/SKILL.md` |
-| `/sprintplan` | Load `../bmad-lens-sprintplan/SKILL.md` |
+| `/finalizeplan` | Load `../bmad-lens-finalizeplan/SKILL.md` |
 | `/expressplan` | Load `../bmad-lens-expressplan/SKILL.md` |
 | `/dev` | Load `../bmad-lens-dev/SKILL.md` |
 | `/complete` | Load `../bmad-lens-complete/SKILL.md` |

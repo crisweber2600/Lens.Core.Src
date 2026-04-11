@@ -36,7 +36,7 @@ You generate the cross-feature command center. You read `main` for the fast path
 | Term | Definition |
 |------|-----------|
 | **feature-index.yaml** | Index file at `{governance_repo}/feature-index.yaml` on `main` — lists all features with phase, track, dependencies, and last-updated timestamp |
-| **staleness** | An active-phase feature (dev, sprintplan, businessplan, techplan) whose `lastUpdated` is more than 14 days ago |
+| **staleness** | An active-phase feature (dev, finalizeplan, businessplan, techplan) whose `lastUpdated` is more than 14 days ago |
 | **dependency edge** | A `depends_on`, `blocks`, or `related` relationship between two features |
 | **governance repo** | The repository containing `feature-index.yaml` and feature directories — all content on `main` |
 | **summary.md** | Per-feature summary at `features/{domain}/{service}/{feature-id}/summary.md` on `main` |

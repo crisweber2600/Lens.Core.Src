@@ -122,10 +122,10 @@ After the handoff, stop wrapper-side orchestration. Do not ask follow-on workflo
 | `bmad-create-prd` | BMAD Create PRD | feature-required | planning-docs | businessplan |
 | `bmad-create-ux-design` | BMAD Create UX Design | feature-required | planning-docs | businessplan |
 | `bmad-create-architecture` | BMAD Create Architecture | feature-required | planning-docs | techplan |
-| `bmad-create-epics-and-stories` | BMAD Create Epics and Stories | feature-required | planning-docs | devproposal |
-| `bmad-check-implementation-readiness` | BMAD Implementation Readiness | feature-required | planning-docs | devproposal |
-| `bmad-sprint-planning` | BMAD Sprint Planning | feature-required | planning-docs | sprintplan |
-| `bmad-create-story` | BMAD Create Story | feature-required | planning-docs | sprintplan |
+| `bmad-create-epics-and-stories` | BMAD Create Epics and Stories | feature-required | planning-docs | finalizeplan |
+| `bmad-check-implementation-readiness` | BMAD Implementation Readiness | feature-required | planning-docs | finalizeplan |
+| `bmad-sprint-planning` | BMAD Sprint Planning | feature-required | planning-docs | finalizeplan |
+| `bmad-create-story` | BMAD Create Story | feature-required | planning-docs | finalizeplan |
 | `bmad-quick-dev` | BMAD Quick Dev | feature-required | implementation-target | dev |
 | `bmad-code-review` | BMAD Code Review | feature-required | implementation-target | dev |
 

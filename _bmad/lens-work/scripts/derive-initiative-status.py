@@ -31,8 +31,8 @@ def main() -> int:
     parser.add_argument("--json", action="store_true", help="Output as JSON")
     args = parser.parse_args()
 
-    milestones = ["techplan", "devproposal", "sprintplan", "dev-ready"]
-    phases = ["preplan", "businessplan", "techplan", "devproposal", "sprintplan"]
+    milestones = ["techplan", "finalizeplan", "dev-ready"]
+    phases = ["preplan", "businessplan", "techplan", "finalizeplan"]
 
     current_milestone: str | None = None
     active_milestone_branch: str | None = None

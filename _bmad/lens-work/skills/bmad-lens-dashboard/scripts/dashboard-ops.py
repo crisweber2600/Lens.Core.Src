@@ -22,7 +22,7 @@ from pathlib import Path
 import yaml
 
 STALE_DAYS = 14
-ACTIVE_PHASES = {"dev", "sprintplan", "businessplan", "techplan"}
+ACTIVE_PHASES = {"dev", "finalizeplan", "businessplan", "techplan"}
 
 
 # ---------------------------------------------------------------------------
@@ -87,7 +87,7 @@ def is_stale(feature: dict) -> bool:
 
 def get_phase_status(phase: str) -> str:
     """Map a phase name to a CSS status class."""
-    if phase in {"preplan", "businessplan", "techplan", "sprintplan"}:
+    if phase in {"preplan", "businessplan", "techplan", "finalizeplan"}:
         return "planning"
     if phase == "dev":
         return "dev"
@@ -315,9 +315,9 @@ def build_problem_heatmap_table(problems_by_phase: dict) -> str:
 
 def build_sprint_progress_table(features: list[dict]) -> str:
     """Generate the sprint progress table for active features."""
-    active = [f for f in features if f.get("phase") in {"dev", "sprintplan"}]
+    active = [f for f in features if f.get("phase") in {"dev", "finalizeplan"}]
     if not active:
-        return '<p class="empty">No active features in dev or sprintplan phase.</p>'
+        return '<p class="empty">No active features in dev or finalizeplan phase.</p>'
     rows = []
     for f in active:
         summary_icon = "✓" if f.get("has_summary") else "—"

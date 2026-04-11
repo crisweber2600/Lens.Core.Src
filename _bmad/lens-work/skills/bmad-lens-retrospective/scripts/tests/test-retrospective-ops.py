@@ -82,7 +82,7 @@ def test_analyze_multiple_problems():
         {"phase": "dev", "category": "technical-debt", "status": "resolved"},
         {"phase": "dev", "category": "technical-debt", "status": "resolved"},
         {"phase": "businessplan", "category": "process-gap", "status": "open"},
-        {"phase": "sprintplan", "category": "scope-creep", "status": "resolved"},
+        {"phase": "finalizeplan", "category": "scope-creep", "status": "resolved"},
         {"phase": "dev", "category": "scope-creep", "status": "open"},
     ]
     with tempfile.TemporaryDirectory() as tmp:
@@ -170,7 +170,7 @@ def test_pattern_detection_exactly_three():
     entries = [
         {"phase": "dev", "category": "technical-debt", "status": "resolved"},
         {"phase": "dev", "category": "technical-debt", "status": "resolved"},
-        {"phase": "sprintplan", "category": "technical-debt", "status": "open"},
+        {"phase": "finalizeplan", "category": "technical-debt", "status": "open"},
     ]
     with tempfile.TemporaryDirectory() as tmp:
         problems_file = Path(tmp) / "problems.md"

@@ -34,7 +34,7 @@ python3 ./scripts/log-problem-ops.py log ... --dry-run
 
 | Field | Values | Notes |
 |-------|--------|-------|
-| `--phase` | `preplan`, `businessplan`, `techplan`, `sprintplan`, `dev`, `complete` | Auto-detect from feature.yaml if available |
+| `--phase` | `preplan`, `businessplan`, `techplan`, `finalizeplan`, `dev`, `complete` | Auto-detect from feature.yaml if available |
 | `--category` | `requirements-gap`, `execution-failure`, `dependency-issue`, `scope-creep`, `tech-debt`, `process-breakdown` | Ask once if unclear |
 | `--title` | Short string | One line, imperative or noun phrase |
 | `--description` | Full string | What happened and why it matters |

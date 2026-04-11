@@ -25,7 +25,7 @@ Sprint planning converts the tech plan and adversarial review findings into an o
 6. Validate that sprint 1 contains no unresolved critical blockers.
 7. Validate frontmatter with `validate-frontmatter --doc-type sprint-plan`.
 8. Commit via auto-publish.
-9. Update `feature.yaml` phase to `sprintplan`.
+9. Update `feature.yaml` phase to `finalizeplan`.
 
 ### Output: `sprint-plan.md`
 

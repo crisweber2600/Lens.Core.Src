@@ -42,8 +42,8 @@ You are the Dev phase conductor for the Lens agent. You orchestrate the full imp
 1. Load config from `{project-root}/lens.core/_bmad/config.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml`.
 2. Resolve `{governance_repo}` and `{feature_id}`.
 3. Load `feature.yaml` for the feature via `bmad-lens-feature-yaml`.
-4. Validate the feature's phase includes `dev` (sprintplan must be complete).
-5. Before any story discovery or code writes, publish staged SprintPlan artifacts into the governance docs mirror via `bmad-lens-git-orchestration publish-to-governance --phase sprintplan`. Halt if required sprint planning artifacts are still missing.
+4. Validate the feature's phase includes `dev` (finalizeplan must be complete).
+5. Before any story discovery or code writes, publish staged FinalizePlan artifacts into the governance docs mirror via `bmad-lens-git-orchestration publish-to-governance --phase finalizeplan`. Halt if required finalize planning artifacts are still missing.
 6. Load domain constitution via `bmad-lens-constitution`.
 7. Load cross-feature context via `bmad-lens-git-state`.
 8. Resolve the target repo:
@@ -69,13 +69,13 @@ When `initiative.target_repos` is empty:
 
 ### 2-Branch Topology (feature.yaml present)
 
-- Check `feature.yaml` phase status — sprintplan must be `complete`.
+- Check `feature.yaml` phase status — finalizeplan must be `complete`.
 - If `pr_pending`: warn user, offer continue/stop choice.
 - Skip audience promotion (2-branch uses feature.yaml phase state).
 
 ### Legacy Topology
 
-- Validate `initiative.phase_status[sprintplan]`.
+- Validate `initiative.phase_status[finalizeplan]`.
 - Check large-to-base promotion status.
 - If promotion not in `["complete", "passed", "passed_with_warnings"]`: auto-trigger `@lens promote` and exit (user re-runs after promotion).
 
@@ -105,7 +105,7 @@ After prior-phase validation:
    - `docs/implementation-artifacts/stories/{epic_number}-*-*.md`
    - `docs/implementation-artifacts/*epic-{epic_number}*.md`
 3. Deduplicate by story ID, sort by implementation order.
-4. If zero stories: fail — prompt user to run `/sprintplan` first.
+4. If zero stories: fail — prompt user to run `/finalizeplan` first.
 5. Check for resumable session in `${initiative.docs_path}/dev-session.yaml`:
    - If `status: in-progress` with completed stories: offer [R]esume / [F]resh / [X]stop.
    - Resume: filter out completed stories, restore special instructions.
@@ -255,8 +255,8 @@ After epic merge gate passes:
 
 | Error | Recovery |
 |-------|----------|
-| No story files found | Run `/sprintplan` first |
-| SprintPlan not merged | Merge pending PR and retry |
+| No story files found | Run `/finalizeplan` first |
+| FinalizePlan not merged | Merge pending PR and retry |
 | Constitution gate failed (enforced) | Auto-resolve: fix branch + PR created; merge and rerun `/dev` |
 | Dirty working directory | Stash or commit changes first |
 | Target repo is `{release_repo_root}` | Hard fail — check target_repos config |

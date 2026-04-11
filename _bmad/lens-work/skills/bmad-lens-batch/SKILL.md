@@ -9,11 +9,11 @@ description: Universal two-pass batch intake and resume flow for Lens planning t
 
 This skill provides the shared batch contract for Lens planning targets. On pass 1 it resolves the current planning target or an explicit override, analyzes available context, writes or refreshes a target-specific batch input markdown file, and stops. On pass 2 it resumes the owning planning target only after it can automatically detect that the required answer blocks in that file have been filled.
 
-**Scope:** Supports `preplan`, `businessplan`, `techplan`, `devproposal`, `sprintplan`, `expressplan`, and `quickplan`. It does not bypass the owning phase conductor or native BMAD workflow.
+**Scope:** Supports `preplan`, `businessplan`, `techplan`, `finalizeplan`, `expressplan`, and `quickplan`. It does not bypass the owning phase conductor or native BMAD workflow.
 
 **Args:**
 - `--feature-id <id>` (optional): Target a specific feature.
-- `--target <current|preplan|businessplan|techplan|devproposal|sprintplan|expressplan|quickplan>` (optional): Override the resolved planning target. Defaults to `current`.
+- `--target <current|preplan|businessplan|techplan|finalizeplan|expressplan|quickplan>` (optional): Override the resolved planning target. Defaults to `current`.
 
 ## Identity
 
@@ -43,8 +43,7 @@ You are the shared Lens batch orchestrator. You do not author lifecycle artifact
 | `preplan` | `preplan-batch-input.md` | `feature.yaml`, governance docs, brainstorm goals, constitution | `bmad-lens-preplan` |
 | `businessplan` | `businessplan-batch-input.md` | preplan artifacts, cross-feature context, constitution | `bmad-lens-businessplan` |
 | `techplan` | `techplan-batch-input.md` | businessplan artifacts, architecture dependencies, constitution | `bmad-lens-techplan` |
-| `devproposal` | `devproposal-batch-input.md` | techplan artifacts, delivery constraints, constitution | `bmad-lens-devproposal` |
-| `sprintplan` | `sprintplan-batch-input.md` | devproposal artifacts, team and dependency context, constitution | `bmad-lens-sprintplan` |
+| `finalizeplan` | `finalizeplan-batch-input.md` | techplan artifacts, review scope, governance impacts, and story-bundle constraints | `bmad-lens-finalizeplan` |
 | `expressplan` | `expressplan-batch-input.md` | feature scope, constitution, combined planning risks | `bmad-lens-expressplan` |
 | `quickplan` | `quickplan-batch-input.md` | full planning context, phase ordering, adversarial-review stop conditions | `bmad-lens-quickplan` |
 
@@ -116,8 +115,7 @@ Tailor questions to the resolved target:
 - `preplan`: problem framing, intended outcomes, related services, whether research and/or product brief synthesis is wanted
 - `businessplan`: whether the run should produce PRD, UX design, or both; unresolved stakeholders, scope boundaries, and UX assumptions
 - `techplan`: architecture decision gaps, system boundaries, integration assumptions, rollout and migration unknowns
-- `devproposal`: epic decomposition tradeoffs, story slicing constraints, readiness blockers, sequencing risks
-- `sprintplan`: sprint boundaries, team capacity assumptions, dependency ordering, story-file expectations, dev handoff risks
+- `finalizeplan`: review scope, governance-impact checks, epic decomposition tradeoffs, readiness blockers, sprint boundaries, and story-file expectations
 - `expressplan`: unresolved cross-artifact assumptions that would otherwise fracture a one-session plan
 - `quickplan`: which planning questions must be settled up front so the pipeline can progress cleanly, plus adversarial-review halt expectations
 

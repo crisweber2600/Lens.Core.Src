@@ -373,6 +373,7 @@ class TestMergePlanDirect:
             feature_id=feature_id,
             repo=None,
             strategy=strategy,
+            auto_merge=False,
             delete_after_merge=delete_after,
             dry_run=dry_run,
         )
@@ -515,7 +516,7 @@ class TestPublishToGovernance:
         governance.mkdir()
         control.mkdir()
 
-        write_feature_yaml(governance, "story-publish", domain="platform", service="identity", phase="sprintplan")
+        write_feature_yaml(governance, "story-publish", domain="platform", service="identity", phase="finalizeplan")
 
         control_docs = control / "docs" / "platform" / "identity" / "story-publish"
         control_docs.mkdir(parents=True, exist_ok=True)
@@ -529,7 +530,7 @@ class TestPublishToGovernance:
             governance_repo=str(governance),
             control_repo=str(control),
             feature_id="story-publish",
-            phase="sprintplan",
+            phase="finalizeplan",
             artifact=["story-files"],
             dry_run=False,
         ))
@@ -540,6 +541,120 @@ class TestPublishToGovernance:
         assert (target_root / "dev-story-legacy.md").exists()
         assert (target_root / "2-1-admin-audit.yaml").exists()
         assert result["missing_artifacts"] == []
+
+    def test_publish_to_governance_finalizeplan_includes_review_report(self, tmp_path):
+        governance = tmp_path / "governance"
+        control = tmp_path / "control"
+        governance.mkdir()
+        control.mkdir()
+
+        write_feature_yaml(governance, "review-publish", domain="platform", service="identity", phase="finalizeplan")
+
+        control_docs = control / "docs" / "platform" / "identity" / "review-publish"
+        control_docs.mkdir(parents=True, exist_ok=True)
+        (control_docs / "finalizeplan-review.md").write_text("# Final Review\n")
+
+        result, code = ops.cmd_publish_to_governance(_no_args(
+            governance_repo=str(governance),
+            control_repo=str(control),
+            feature_id="review-publish",
+            phase="finalizeplan",
+            artifact=["review-report"],
+            dry_run=False,
+        ))
+
+        assert code == 0
+        target = governance / "features" / "platform" / "identity" / "review-publish" / "docs" / "finalizeplan-review.md"
+        assert target.exists()
+        assert result["missing_artifacts"] == []
+
+
+class TestMergePlanPRStrategy:
+    def test_pr_strategy_reuses_existing_pr_and_enables_auto_merge(self, repo, monkeypatch):
+        make_branch(repo, "pr-feat")
+        make_branch(repo, "pr-feat-plan")
+
+        real_run = subprocess.run
+        gh_calls: list[list[str]] = []
+
+        def fake_run(cmd, *args, **kwargs):
+            if cmd[:3] == ["gh", "pr", "list"]:
+                gh_calls.append(cmd)
+                return subprocess.CompletedProcess(cmd, 0, stdout='[{"url":"https://example.test/pr/7","autoMergeRequest":null}]', stderr="")
+            if cmd[:3] == ["gh", "pr", "merge"]:
+                gh_calls.append(cmd)
+                return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+            return real_run(cmd, *args, **kwargs)
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        result, code = ops.cmd_merge_plan(_no_args(
+            governance_repo=str(repo),
+            feature_id="pr-feat",
+            repo=None,
+            strategy="pr",
+            auto_merge=True,
+            delete_after_merge=False,
+            dry_run=False,
+        ))
+
+        assert code == 0
+        assert result["created"] is False
+        assert result["pr_url"] == "https://example.test/pr/7"
+        assert result["auto_merge_enabled"] is True
+        assert any(call[:3] == ["gh", "pr", "list"] for call in gh_calls)
+        assert any(call[:3] == ["gh", "pr", "merge"] for call in gh_calls)
+
+
+class TestCreatePr:
+    def test_create_pr_dry_run(self, repo):
+        make_branch(repo, "feature-pr")
+        result, code = ops.cmd_create_pr(_no_args(
+            governance_repo=str(repo),
+            repo=None,
+            base="main",
+            head="feature-pr",
+            title="Test PR",
+            body="Dry run",
+            auto_merge=True,
+            dry_run=True,
+        ))
+        assert code == 0
+        assert result["pr_url"] == "(dry-run)"
+        assert result["auto_merge_requested"] is True
+
+    def test_create_pr_creates_new_pr(self, repo, monkeypatch):
+        make_branch(repo, "feature-pr2")
+
+        real_run = subprocess.run
+        gh_calls: list[list[str]] = []
+
+        def fake_run(cmd, *args, **kwargs):
+            if cmd[:3] == ["gh", "pr", "list"]:
+                gh_calls.append(cmd)
+                return subprocess.CompletedProcess(cmd, 0, stdout="[]", stderr="")
+            if cmd[:3] == ["gh", "pr", "create"]:
+                gh_calls.append(cmd)
+                return subprocess.CompletedProcess(cmd, 0, stdout="https://example.test/pr/8\n", stderr="")
+            return real_run(cmd, *args, **kwargs)
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        result, code = ops.cmd_create_pr(_no_args(
+            governance_repo=str(repo),
+            repo=None,
+            base="main",
+            head="feature-pr2",
+            title="Feature PR",
+            body="Create PR",
+            auto_merge=False,
+            dry_run=False,
+        ))
+
+        assert code == 0
+        assert result["created"] is True
+        assert result["pr_url"] == "https://example.test/pr/8"
+        assert any(call[:3] == ["gh", "pr", "create"] for call in gh_calls)
 
 
 

@@ -21,7 +21,9 @@ from pathlib import Path
 import yaml
 
 
-VALID_PHASES = ["preplan", "businessplan", "techplan", "sprintplan", "dev", "complete", "paused"]
+BASE_PHASES = ["preplan", "businessplan", "techplan", "finalizeplan", "expressplan", "dev", "complete", "paused"]
+COMPLETABLE_PHASES = ["preplan", "businessplan", "techplan", "finalizeplan", "expressplan"]
+VALID_PHASES = BASE_PHASES + [f"{phase}-complete" for phase in COMPLETABLE_PHASES]
 VALID_TRACKS = ["quickplan", "full", "feature", "hotfix", "hotfix-express", "express", "spike", "tech-change"]
 VALID_PRIORITIES = ["critical", "high", "medium", "low"]
 VALID_ROLES = ["lead", "contributor", "reviewer"]
@@ -34,60 +36,61 @@ TRACK_TRANSITIONS = {
     "full": {
         "preplan": ["businessplan", "paused"],
         "businessplan": ["techplan", "paused"],
-        "techplan": ["sprintplan", "paused"],
-        "sprintplan": ["dev", "paused"],
+        "techplan": ["finalizeplan", "paused"],
+        "finalizeplan": ["dev", "paused"],
         "dev": ["complete", "paused"],
-        "paused": VALID_PHASES,
+        "paused": BASE_PHASES,
         "complete": [],
     },
     "quickplan": {
-        "preplan": ["businessplan", "techplan", "sprintplan", "dev", "paused"],
-        "businessplan": ["techplan", "sprintplan", "dev", "paused"],
-        "techplan": ["sprintplan", "dev", "paused"],
-        "sprintplan": ["dev", "paused"],
+        "preplan": ["businessplan", "techplan", "finalizeplan", "dev", "paused"],
+        "businessplan": ["techplan", "finalizeplan", "dev", "paused"],
+        "techplan": ["finalizeplan", "dev", "paused"],
+        "finalizeplan": ["dev", "paused"],
         "dev": ["complete", "paused"],
-        "paused": VALID_PHASES,
+        "paused": BASE_PHASES,
         "complete": [],
     },
     "feature": {
         "preplan": ["businessplan", "paused"],
         "businessplan": ["techplan", "paused"],
-        "techplan": ["sprintplan", "paused"],
-        "sprintplan": ["dev", "paused"],
+        "techplan": ["finalizeplan", "paused"],
+        "finalizeplan": ["dev", "paused"],
         "dev": ["complete", "paused"],
-        "paused": VALID_PHASES,
+        "paused": BASE_PHASES,
         "complete": [],
     },
     "hotfix": {
         "preplan": ["dev", "paused"],
         "dev": ["complete", "paused"],
-        "paused": VALID_PHASES,
+        "paused": BASE_PHASES,
         "complete": [],
     },
     "hotfix-express": {
         "preplan": ["dev", "paused"],
         "dev": ["complete", "paused"],
-        "paused": VALID_PHASES,
+        "paused": BASE_PHASES,
         "complete": [],
     },
     "express": {
-        "preplan": ["sprintplan", "dev", "paused"],
-        "sprintplan": ["dev", "paused"],
+        "preplan": ["expressplan", "dev", "paused"],
+        "expressplan": ["dev", "paused"],
         "dev": ["complete", "paused"],
-        "paused": VALID_PHASES,
+        "paused": BASE_PHASES,
         "complete": [],
     },
     "spike": {
         "preplan": ["dev", "paused"],
         "dev": ["complete", "paused"],
-        "paused": VALID_PHASES,
+        "paused": BASE_PHASES,
         "complete": [],
     },
     "tech-change": {
         "preplan": ["techplan", "dev", "paused"],
-        "techplan": ["dev", "paused"],
+        "techplan": ["finalizeplan", "dev", "paused"],
+        "finalizeplan": ["dev", "paused"],
         "dev": ["complete", "paused"],
-        "paused": VALID_PHASES,
+        "paused": BASE_PHASES,
         "complete": [],
     },
 }
@@ -163,6 +166,18 @@ def now_iso() -> str:
 def get_transitions_for_track(track: str) -> dict:
     """Get the phase transition map for a given track."""
     return TRACK_TRANSITIONS.get(track, TRACK_TRANSITIONS["full"])
+
+
+def normalize_phase(phase: str) -> str:
+    """Strip a trailing -complete suffix when present."""
+    if phase.endswith("-complete"):
+        return phase[: -len("-complete")]
+    return phase
+
+
+def is_completion_phase(phase: str) -> bool:
+    """Return True when the phase token is a supported *-complete state."""
+    return phase.endswith("-complete") and normalize_phase(phase) in COMPLETABLE_PHASES
 
 
 def cmd_create(args: argparse.Namespace) -> dict:
@@ -309,8 +324,9 @@ def cmd_update(args: argparse.Namespace) -> dict:
             current_phase = data.get("phase", "preplan")
             track = data.get("track", "full")
             transitions = get_transitions_for_track(track)
-            allowed = transitions.get(current_phase, [])
-            if value not in allowed:
+            allowed = transitions.get(normalize_phase(current_phase), [])
+            completing_current_phase = value == f"{normalize_phase(current_phase)}-complete"
+            if not completing_current_phase and value not in allowed:
                 return {
                     "status": "fail",
                     "error": f"Invalid phase transition: {current_phase} -> {value} on track '{track}'. "
@@ -327,6 +343,10 @@ def cmd_update(args: argparse.Namespace) -> dict:
             # Update milestone if applicable
             if value in data.get("milestones", {}):
                 data["milestones"][value] = now_iso()
+            elif is_completion_phase(value):
+                completed_phase = normalize_phase(value)
+                if completed_phase in data.get("milestones", {}):
+                    data["milestones"][completed_phase] = now_iso()
             changes.append({"field": "phase", "old": current_phase, "new": value})
 
         # Handle dependency updates with bidirectional sync

@@ -20,14 +20,12 @@ priority order — the first matching rule wins.
 | preplan | preplan | `/preplan` | Feature is in PrePlan — continue the PrePlan workflow |
 | businessplan | businessplan | `/businessplan` | Feature is in BusinessPlan — continue the BusinessPlan workflow |
 | techplan | techplan | `/techplan` | Feature is in TechPlan — continue the TechPlan workflow |
-| devproposal | devproposal | `/devproposal` | Feature is in DevProposal — continue the DevProposal workflow |
-| sprintplan | sprintplan | `/sprintplan` | Feature is in SprintPlan — continue the SprintPlan workflow |
+| finalizeplan | finalizeplan | `/finalizeplan` | Feature is in FinalizePlan — continue the FinalizePlan workflow |
 | expressplan | expressplan | `/expressplan` | Feature is in ExpressPlan — continue the ExpressPlan workflow |
 | preplan-complete | businessplan | `/businessplan` | PrePlan is complete — continue with `/businessplan` |
 | businessplan-complete | techplan | `/techplan` | BusinessPlan is complete — continue with `/techplan` |
-| techplan-complete | devproposal | `/devproposal` | TechPlan is complete — continue with `/devproposal` |
-| devproposal-complete | sprintplan | `/sprintplan` | DevProposal is complete — continue with `/sprintplan` |
-| sprintplan-complete | dev | `/dev` | SprintPlan is complete — continue with `/dev` |
+| techplan-complete | finalizeplan | `/finalizeplan` | TechPlan is complete — continue with `/finalizeplan` |
+| finalizeplan-complete | dev | `/dev` | FinalizePlan is complete — continue with `/dev` |
 | expressplan-complete | dev | `/dev` | ExpressPlan is complete — continue with `/dev` |
 | dev | dev | `/dev` | Feature is in dev execution — continue implementation and story flow |
 | complete | complete | `/complete` | Feature is at lifecycle closeout — finalize retrospective, documentation, and archival |
@@ -40,8 +38,8 @@ A blocker surfaces when a required milestone for the current or auto-advanced ph
 | Phase | Required Milestone | Blocker Message |
 |-------|--------------------|-----------------|
 | techplan | `milestones.businessplan` | Business plan milestone not completed |
-| devproposal | `milestones.techplan` | Tech plan milestone not completed |
-| dev | `milestones.sprintplan` | Sprint plan milestone not completed |
+| finalizeplan | `milestones.techplan` | Tech plan milestone not completed |
+| dev | `milestones.finalizeplan` | Finalize plan milestone not completed |
 | complete | `milestones.dev-complete` | Dev-complete milestone not set |
 
 Track-aware exception: if the feature track starts at `techplan` (for example `hotfix` or `tech-change`), `/next` does not require a businessplan milestone before delegating to `/techplan`.

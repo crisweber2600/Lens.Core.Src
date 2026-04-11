@@ -7,13 +7,13 @@ description: Lifecycle adversarial review gate with a party-mode blind-spot chal
 
 ## Overview
 
-This skill runs the lifecycle completion review for PrePlan, BusinessPlan, and TechPlan. It validates that the staged artifacts for the current phase exist, stress-tests them with adversarial review, then runs a short party-mode challenge round that pushes the user to identify blind spots they have not considered. It writes or refreshes a phase-specific review artifact in the control repo docs path and returns a hard-gate verdict for phase completion. When invoked manually it reruns the same review without advancing phase state.
+This skill runs the lifecycle completion review for PrePlan, BusinessPlan, TechPlan, and the FinalizePlan review checkpoint. It validates that the staged artifacts for the requested phase exist, stress-tests them with adversarial review, then runs a short party-mode challenge round that pushes the user to identify blind spots they have not considered. It writes or refreshes a phase-specific review artifact in the control repo docs path and returns a hard-gate verdict for the requested review checkpoint. When invoked manually it reruns the same review without advancing phase state.
 
-**Scope:** Supports `preplan`, `businessplan`, and `techplan` only.
+**Scope:** Supports `preplan`, `businessplan`, `techplan`, and `finalizeplan`.
 
 **Args:**
 - `--feature-id <id>` (optional): target a specific feature.
-- `--phase <current|preplan|businessplan|techplan>` (optional): override the phase to review. Defaults to `current`.
+- `--phase <current|preplan|businessplan|techplan|finalizeplan>` (optional): override the phase to review. Defaults to `current`.
 - `--source <phase-complete|manual-rerun>` (optional): identify whether the review is being run automatically during phase completion or manually as a rerun. Defaults to `manual-rerun`.
 
 ## Identity
@@ -45,13 +45,14 @@ You are the Lens lifecycle review conductor. You do not author the phase artifac
 4. Resolve the review phase:
    - Use `--phase` when provided and not `current`.
    - Otherwise read the active feature phase and strip a trailing `-complete` suffix.
-5. Validate that the resolved phase is one of `preplan`, `businessplan`, or `techplan`.
+5. Validate that the resolved phase is one of `preplan`, `businessplan`, `techplan`, or `finalizeplan`.
 6. Load `phases.{phase}.completion_review` from `lifecycle.yaml`. Reject the run if the review contract is missing.
 7. Resolve the staged docs path from `feature.yaml.docs.path` (fallback: `docs/{domain}/{service}/{featureId}` in the control repo).
 8. Verify that every artifact named in `completion_review.reviewed_artifacts` exists in the staged docs path before continuing. If any required artifact is missing, stop and report the missing file list.
 9. Load predecessor planning artifacts when they exist for the resolved phase:
    - `businessplan` reviews against staged PrePlan artifacts and their published governance mirror when available.
    - `techplan` reviews against staged BusinessPlan artifacts and their published governance mirror when available.
+   - `finalizeplan` reviews against the combined staged PrePlan, BusinessPlan, and TechPlan artifact set plus any published governance mirrors when available.
    - `preplan` has no lifecycle predecessor; rely on feature metadata, governance context, and constitution only.
 10. Load cross-feature context via `bmad-lens-init-feature` `fetch-context --depth full`.
 11. Load domain constitution via `bmad-lens-constitution`.
@@ -78,6 +79,7 @@ You are the Lens lifecycle review conductor. You do not author the phase artifac
 | `preplan` | `preplan-adversarial-review.md` |
 | `businessplan` | `businessplan-adversarial-review.md` |
 | `techplan` | `techplan-adversarial-review.md` |
+| `finalizeplan` | `finalizeplan-review.md` |
 
 All review artifacts are written to the staged control-repo docs path resolved from `feature.yaml.docs.path`.
 
@@ -90,4 +92,4 @@ All review artifacts are written to the staged control-repo docs path resolved f
 | `bmad-lens-constitution` | Loads constitutional planning constraints |
 | `bmad-review-adversarial-general` | Supplies the skeptical review posture and findings model |
 | `bmad-party-mode` | Supplies the short multi-voice blind-spot challenge round |
-| Phase conductors | Call this skill before marking `preplan`, `businessplan`, or `techplan` complete |
+| Phase conductors | Call this skill before marking `preplan`, `businessplan`, or `techplan` complete, and during FinalizePlan step 1 review |

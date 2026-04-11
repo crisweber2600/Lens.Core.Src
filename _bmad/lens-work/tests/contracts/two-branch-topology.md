@@ -45,16 +45,18 @@
 
 | Action | feature.yaml Field | Expected Value |
 |--------|-------------------|----------------|
-| Init feature | `current_milestone` | `techplan` |
-| Complete techplan | `current_milestone` | `devproposal` |
-| Complete devproposal | `current_milestone` | `sprintplan` |
-| Complete sprintplan | `current_milestone` | `dev-ready` |
+| Init feature | `phase` | `preplan` |
+| Complete businessplan | `milestones.businessplan` | ISO timestamp |
+| Complete techplan | `milestones.techplan` | ISO timestamp |
+| Complete finalizeplan | `milestones.finalizeplan` | ISO timestamp |
+| Begin development | `phase` | `dev` |
 
 ### Merge Chain (2-branch)
 
 | Source | Target | Gate | PR Count |
 |--------|--------|------|----------|
-| `{featureId}` | `main` | constitution-gate | 1 (single PR) |
+| `{featureId}-plan` | `{featureId}` | planning review / merge readiness | 1 |
+| `{featureId}` | `main` | final merge / constitution gate | 1 |
 
 ### Backward Compatibility
 
@@ -69,7 +71,7 @@
 
 1. For branch creation: invoke `git-orchestration` → `create-feature-branches` with topology config and verify branches exist
 2. For artifact routing: invoke `git-orchestration` → `commit-and-publish` and verify files land on correct branches
-3. For milestone tracking: read `feature.yaml` after each phase completion and verify `current_milestone` value
-4. For merge chain: verify single PR created from `{featureId}` to `main`
+3. For milestone tracking: read `feature.yaml` after each phase completion and verify the expected milestone timestamp or phase update
+4. For merge chain: verify the planning PR is created from `{featureId}-plan` to `{featureId}` and the final PR is created from `{featureId}` to `main`
 5. For backward compatibility: run legacy track operations and verify no 2-branch behavior leaks
 6. For container scopes: run `/new-domain` and `/new-service` and verify no lifecycle branch is created and governance markers land under `features/{domain}/` and `features/{domain}/{service}/`

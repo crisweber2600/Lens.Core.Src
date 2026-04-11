@@ -11,9 +11,11 @@
 #        relationship conflict detection, required frontmatter.
 # v3.4: 2-branch topology support — featureId + featureId-plan branches,
 #        feature.yaml as optional state source, per-track topology config.
+# v3.5: FinalizePlan collapses the old DevProposal + SprintPlan chain into
+#        a single post-TechPlan planning phase with explicit PR handoffs.
 # =============================================================================
 
-schema_version: 3.4
+schema_version: 3.5
 close_states: [completed, abandoned, superseded]
 initiative_state_schema: initiative-state.yaml
 artifact_publication:
@@ -76,21 +78,15 @@ milestones:
     role: "IC creation work"
     description: "Where early planning phases happen — individual contributor generates artifacts before promotion"
     phases: [preplan, businessplan, techplan]
-  devproposal:
-    role: "Lead review"
-    description: "Adversarial review gate — devproposal milestone branches from here post-promotion"
-    phases: [devproposal]
+  finalizeplan:
+    role: "Planning consolidation"
+    description: "Final review, governance cross-check, bundled execution prep, and PR handoff before dev"
+    phases: [finalizeplan]
     entry_gate: adversarial-review
     entry_gate_mode: party
-  sprintplan:
-    role: "Stakeholder approval"
-    description: "Stakeholder sign-off — sprintplan milestone branches from here post-promotion"
-    phases: [sprintplan]
-    entry_gate: stakeholder-approval
-    entry_gate_mode: informational   # v3.2: informational by default, constitution can set to 'hard'
   dev-ready:
     role: "Ready for execution"
-    description: "Constitution-gated — dev execution happens after sprintplan completes"
+    description: "Constitution-gated — dev execution happens after finalizeplan completes"
     phases: []
     entry_gate: constitution-gate
   dev-complete:
@@ -156,7 +152,7 @@ phases:
     artifacts:
       - architecture
     milestone: techplan
-    auto_advance_to: /devproposal
+    auto_advance_to: /finalizeplan
     auto_advance_promote: true
     completion_review:
       gate: adversarial-review
@@ -165,34 +161,39 @@ phases:
       reviewed_artifacts: [architecture]
       outcomes: [pass, pass-with-warnings, fail]
 
-  devproposal:
-    display_name: "DevProposal"
-    agent: john
-    agent_role: PM
-    supporting_agents: []
-    description: "Implementation proposal — epics, stories, readiness check"
+  finalizeplan:
+    display_name: "FinalizePlan"
+    agent: lens
+    agent_role: "Planning Conductor"
+    supporting_agents: [john, bob, winston]
+    description: "Final planning consolidation — review everything written so far, check governance impacts, bundle downstream planning artifacts, and open the final PR into main"
     artifacts:
+      - review-report
       - epics
       - stories
       - implementation-readiness
-    milestone: devproposal
-    branching_milestone: devproposal
-    auto_advance_to: /sprintplan
-    auto_advance_promote: true
-
-  sprintplan:
-    display_name: "SprintPlan"
-    agent: bob
-    agent_role: Scrum Master
-    supporting_agents: []
-    description: "Sprint planning — sprint-status, individual story files"
-    artifacts:
       - sprint-status
       - story-files
-    milestone: sprintplan
-    branching_milestone: sprintplan
+    milestone: finalizeplan
+    branching_milestone: finalizeplan
     auto_advance_to: /dev
-    auto_advance_promote: true
+    auto_advance_promote: false
+    completion_review:
+      gate: adversarial-review
+      mode: party
+      report: finalizeplan-review.md
+      reviewed_artifacts: [product-brief, research, brainstorm, prd, ux-design, architecture]
+      outcomes: [pass, pass-with-warnings, fail]
+    execution_contract:
+      - step: 1
+        name: review-and-push
+        description: "Run the final adversarial review and party-mode challenge across all staged planning artifacts, inspect governance for impacted services or documents, write review outputs, then commit and push {featureId}-plan."
+      - step: 2
+        name: plan-pr-readiness
+        description: "Create or verify the {featureId}-plan -> {featureId} PR, confirm readiness to merge, and optionally enable auto-merge for the planning PR."
+      - step: 3
+        name: downstream-bundle-and-final-pr
+        description: "After the planning PR lands, generate epics, stories, implementation-readiness, sprint-status, and story files, then open the final {featureId} -> main PR."
 
   # Standalone phase — not part of phase_order, used only by express track
   expressplan:
@@ -219,7 +220,7 @@ phases:
 # is not part of the phase ordering or milestone promotion chain.
 # NOTE: 'expressplan' is NOT in phase_order — it is a standalone single-phase track
 # that produces all artifacts in one session. It has its own phase definition below.
-phase_order: [preplan, businessplan, techplan, devproposal, sprintplan]
+phase_order: [preplan, businessplan, techplan, finalizeplan]
 
 # -----------------------------------------------------------------------------
 # TRACKS (predefined lifecycle profiles)
@@ -227,25 +228,25 @@ phase_order: [preplan, businessplan, techplan, devproposal, sprintplan]
 tracks:
   full:
     description: "Complete lifecycle — all phases, all milestones"
-    phases: [preplan, businessplan, techplan, devproposal, sprintplan]
-    milestones: [techplan, devproposal, sprintplan, dev-ready]
+    phases: [preplan, businessplan, techplan, finalizeplan]
+    milestones: [techplan, finalizeplan, dev-ready]
     start_phase: preplan
     topology: 2-branch                # v3.4: legacy (milestone branches) | 2-branch (featureId + featureId-plan)
     feature_yaml: true                # v3.4: use feature.yaml as optional state source
 
   feature:
     description: "Known business context — skip research, start at business plan"
-    phases: [businessplan, techplan, devproposal, sprintplan]
-    milestones: [techplan, devproposal, sprintplan, dev-ready]
+    phases: [businessplan, techplan, finalizeplan]
+    milestones: [techplan, finalizeplan, dev-ready]
     start_phase: businessplan
     topology: 2-branch
     feature_yaml: true
 
   tech-change:
     description: "Pure technical change — no business case needed"
-    phases: [techplan, devproposal, sprintplan]
-    milestones: [techplan, devproposal, sprintplan, dev-ready]
-    constitution_controlled_gates: [devproposal, devproposal-to-sprintplan]
+    phases: [techplan, finalizeplan]
+    milestones: [techplan, finalizeplan, dev-ready]
+    constitution_controlled_gates: [finalizeplan, finalizeplan-to-dev]
     start_phase: techplan
     topology: 2-branch
     feature_yaml: true
@@ -281,10 +282,10 @@ tracks:
 
   quickdev:
     description: "Rapid execution — delegates to target-project agents"
-    phases: [devproposal]
-    milestones: [devproposal, dev-ready]
+    phases: [finalizeplan]
+    milestones: [finalizeplan, dev-ready]
     constitution_controlled_gates: [adversarial-review]
-    start_phase: devproposal
+    start_phase: finalizeplan
     topology: 2-branch
     feature_yaml: true
 
@@ -432,7 +433,7 @@ gate_collapsing:
     - name: medium-feature
       max_stories: 8
       collapsed_gates: [stakeholder-approval]
-      result: two-promotion-prs     # techplan → devproposal, devproposal → dev-ready
+      result: two-promotion-prs     # techplan → finalizeplan, finalizeplan → dev-ready
       combined_reviewers: false
 
 # -----------------------------------------------------------------------------
@@ -539,14 +540,10 @@ planning_repo:
     milestone: "{initiative-root}-{milestone}"
   merge_chain:
     - source: "{initiative-root}-techplan"
-      target: "{initiative-root}-devproposal"
+      target: "{initiative-root}-finalizeplan"
       type: milestone-promotion
       gate: adversarial-review
-    - source: "{initiative-root}-devproposal"
-      target: "{initiative-root}-sprintplan"
-      type: milestone-promotion
-      gate: stakeholder-approval
-    - source: "{initiative-root}-sprintplan"
+    - source: "{initiative-root}-finalizeplan"
       target: "{initiative-root}-dev-ready"
       type: milestone-promotion
       gate: constitution-gate
@@ -600,8 +597,7 @@ two_branch_topology:
     preplan: { branch: plan, folder: "drafts/" }        # control repo
     businessplan: { branch: plan, folder: "drafts/" }   # control repo
     techplan: { branch: plan, folder: "drafts/" }       # control repo
-    devproposal: { branch: plan, folder: "drafts/" }    # control repo
-    sprintplan: { branch: plan, folder: "drafts/" }     # control repo
+    finalizeplan: { branch: plan, folder: "drafts/" }   # control repo
     expressplan: { branch: code, folder: "artifacts/" } # control repo
   milestone_tracking:
     description: >
@@ -958,7 +954,31 @@ migrations:
           file: "_bmad-output/lens-work/feature-index.yaml"
           legacy_file: "_bmad-output/lens-work/features.yaml"
           new_fields: [owner, plan_branch, updated_at, summary, relationships]
-          status_values: [draft, planning, dev, review, complete, archived]
+
+  - from_version: 3.4
+    to_version: 3.5
+    breaking: false
+    migration_command: "/lens-upgrade --from 3.4 --to 3.5"
+    branch_rename_required: false
+    changes:
+      - type: rename_field
+        path: milestones.devproposal
+        new_path: milestones.finalizeplan
+      - type: remove_field
+        path: milestones.sprintplan
+      - type: replace_value
+        path: phases.techplan.auto_advance_to
+        old_value: /devproposal
+        new_value: /finalizeplan
+      - type: rename_field
+        path: phases.devproposal
+        new_path: phases.finalizeplan
+      - type: remove_field
+        path: phases.sprintplan
+      - type: collapse_phases
+        path: tracks.*
+        value: { from: [devproposal, sprintplan], to: finalizeplan }
+        status_values: [draft, planning, dev, review, complete, archived]
       - type: add_capability
         path: constitution.capabilities
         value: cross_feature_visibility

@@ -311,7 +311,7 @@ def _build_new_feature_yaml(args: argparse.Namespace, timestamp: str) -> dict:
         "milestones": {
             "businessplan": None,
             "techplan": None,
-            "sprintplan": None,
+            "finalizeplan": None,
             "dev-ready": None,
             "dev-complete": None,
         },

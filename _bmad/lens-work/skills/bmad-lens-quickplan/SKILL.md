@@ -32,7 +32,7 @@ You are the feature planning conductor for the Lens agent. You keep the flow mov
 - **Stage then publish** — each planning phase publishes its reviewed predecessor artifacts to governance on entry, then stages its own outputs locally until the next handoff
 - **Adversarial-first quality** — review is comprehensive and adversarial, covering logic flaws, coverage gaps, complexity traps, and hidden dependencies; it replaces milestone ceremony
 - **Progressive disclosure** — load cross-feature context automatically; ask only for what cannot be derived; never ask for something that exists in feature.yaml or governance `main`
-- **Phase fidelity** — QuickPlan inherits the contracts of `/businessplan`, `/techplan`, `/devproposal`, and `/sprintplan` rather than bypassing them with direct writes
+- **Phase fidelity** — QuickPlan inherits the contracts of `/businessplan`, `/techplan`, and `/finalizeplan` rather than bypassing them with direct writes
 - **Shared batch semantics** — batch never means silent autonomous completion on pass 1; QuickPlan inherits the same intake-and-resume contract as the planning conductors it orchestrates
 
 ## Vocabulary
@@ -126,5 +126,5 @@ Exit codes for `validate-frontmatter`: `0` = pass, `1` = runtime error, `2` = va
 | `bmad-lens-git-state` | Loads cross-feature context (related summaries, depends_on docs) |
 | `bmad-lens-constitution` | Loads domain constitution for planning constraints |
 | `bmad-lens-git-orchestration` | Publishes reviewed predecessor artifacts to governance and stages current-phase drafts locally |
-| Lens phase conductors | `/businessplan`, `/techplan`, `/devproposal`, and `/sprintplan` perform the actual wrapper-backed planning work |
+| Lens phase conductors | `/businessplan`, `/techplan`, and `/finalizeplan` perform the actual wrapper-backed planning work |
 | `bmad-lens-theme` | Applies active persona overlay throughout the pipeline |

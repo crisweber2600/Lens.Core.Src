@@ -178,7 +178,7 @@ def _determine_phase(artifacts: dict[str, bool]) -> str:
     if artifacts.get("stories"):
         return "dev"
     if artifacts.get("sprint_plan"):
-        return "sprintplan"
+        return "finalizeplan"
     if artifacts.get("tech_plan"):
         return "techplan"
     if artifacts.get("business_plan"):
