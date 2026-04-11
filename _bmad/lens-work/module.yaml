@@ -228,9 +228,17 @@ prompts:
   - lens-approval-status.prompt.md
   - lens-help.prompt.md
   - lens-bmad-brainstorming.prompt.md
+  - lens-bmad-product-brief.prompt.md
+  - lens-bmad-domain-research.prompt.md
+  - lens-bmad-market-research.prompt.md
+  - lens-bmad-technical-research.prompt.md
   - lens-bmad-create-prd.prompt.md
+  - lens-bmad-create-ux-design.prompt.md
   - lens-bmad-create-architecture.prompt.md
   - lens-bmad-create-epics-and-stories.prompt.md
+  - lens-bmad-check-implementation-readiness.prompt.md
+  - lens-bmad-sprint-planning.prompt.md
+  - lens-bmad-create-story.prompt.md
   - lens-bmad-quick-dev.prompt.md
   - lens-bmad-code-review.prompt.md
   - lens-setup.prompt.md
@@ -283,9 +291,17 @@ adapters:
       - .github/prompts/lens-approval-status.prompt.md
       - .github/prompts/lens-help.prompt.md
       - .github/prompts/lens-bmad-brainstorming.prompt.md
+      - .github/prompts/lens-bmad-product-brief.prompt.md
+      - .github/prompts/lens-bmad-domain-research.prompt.md
+      - .github/prompts/lens-bmad-market-research.prompt.md
+      - .github/prompts/lens-bmad-technical-research.prompt.md
       - .github/prompts/lens-bmad-create-prd.prompt.md
+      - .github/prompts/lens-bmad-create-ux-design.prompt.md
       - .github/prompts/lens-bmad-create-architecture.prompt.md
       - .github/prompts/lens-bmad-create-epics-and-stories.prompt.md
+      - .github/prompts/lens-bmad-check-implementation-readiness.prompt.md
+      - .github/prompts/lens-bmad-sprint-planning.prompt.md
+      - .github/prompts/lens-bmad-create-story.prompt.md
       - .github/prompts/lens-bmad-quick-dev.prompt.md
       - .github/prompts/lens-bmad-code-review.prompt.md
       - .github/prompts/lens-setup.prompt.md

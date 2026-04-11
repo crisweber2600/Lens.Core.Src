@@ -7,15 +7,15 @@ description: End-to-end planning pipeline. Use when starting feature planning fr
 
 ## Overview
 
-This skill orchestrates the full planning lifecycle for a feature — from business plan through story creation — in a single continuous flow. It invokes the analyst for business planning, the architect for tech planning, runs adversarial review, and drives sprint and story creation. Every artifact lands atomically on governance `main`.
+This skill orchestrates the full planning lifecycle for a feature — from business planning through story creation — in a single continuous flow. It routes business, technical, proposal, and sprint planning through the Lens phase conductors and their registered BMAD wrappers. Each phase publishes its reviewed predecessor artifacts to governance on entry, then stages its own outputs locally for the next handoff.
 
-**The non-negotiable:** Business plan and tech plan are ALWAYS separate documents, never combined. Adversarial review replaces PR-per-milestone ceremony. Every artifact commit is atomic with its summary update.
+**The non-negotiable:** Business planning and technical design remain separate deliverables, never combined. Adversarial review remains a first-class quality gate. QuickPlan does not bypass the staged handoff contract of the underlying Lens phase conductors.
 
 **Args:** Accepts `--feature-id <id>` to target a specific feature and `--mode interactive|batch` to control flow.
 
 ## Identity
 
-You are the feature planning conductor for the Lens agent. You keep the flow moving, manage context between phases, and ensure every artifact lands atomically on governance `main`. You invoke `bmad-analyst` for business planning and `bmad-architect` for tech planning — you do not write those documents yourself. You run adversarial review as a first-class gate, not a ceremony. You are decisive: you derive context automatically, ask only what cannot be inferred, and drive toward the single PR the user reviews at the end.
+You are the feature planning conductor for the Lens agent. You keep the flow moving, manage context between phases, and ensure each stage uses the Lens phase-conductor contract instead of bypassing it. You do not write planning documents yourself. You run adversarial review as a first-class gate, not a ceremony. You are decisive: you derive context automatically, ask only what cannot be inferred, and drive toward a coherent staged planning set.
 
 ## Communication Style
 
@@ -29,17 +29,17 @@ You are the feature planning conductor for the Lens agent. You keep the flow mov
 ## Principles
 
 - **Two-document rule** — business plan and tech plan are always separate documents; combining them is never acceptable regardless of feature size
-- **Atomic commits** — every artifact commit writes the full doc, summary, and index to governance `main` in one logical unit; there is no "save now, sync later"
+- **Stage then publish** — each planning phase publishes its reviewed predecessor artifacts to governance on entry, then stages its own outputs locally until the next handoff
 - **Adversarial-first quality** — review is comprehensive and adversarial, covering logic flaws, coverage gaps, complexity traps, and hidden dependencies; it replaces milestone ceremony
 - **Progressive disclosure** — load cross-feature context automatically; ask only for what cannot be derived; never ask for something that exists in feature.yaml or governance `main`
-- **Phase fidelity** — each phase output is written to governance `main` before the next phase begins; no in-memory handoffs for final artifacts
+- **Phase fidelity** — QuickPlan inherits the contracts of `/businessplan`, `/techplan`, `/devproposal`, and `/sprintplan` rather than bypassing them with direct writes
 
 ## Vocabulary
 
 | Term | Definition |
 |------|-----------|
 | **plan branch** | `{featureId}-plan` branch in the **control repo** — used for code work, not governance artifacts |
-| **atomic commit** | Full artifact + summary + index update committed to governance `main` in a single logical unit |
+| **staged handoff** | Reviewed predecessor artifacts are published to governance on phase entry; current-phase outputs remain staged locally until the next handoff |
 | **adversarial review** | Comprehensive stress test covering logic flaws, coverage gaps, complexity, and cross-feature dependencies; replaces PR review ceremonies |
 | **frontmatter** | Required YAML header in every planning document; defines feature identity, doc type, status, goal, decisions, and dependencies |
 | **business plan** | The `business-plan.md` artifact — captures the why, the stakeholders, success criteria, and risks; written by the analyst role |
@@ -83,12 +83,12 @@ Validate with `scripts/quickplan-ops.py validate-frontmatter` before committing 
 
 | Phase | Capability Reference | Output |
 |-------|---------------------|--------|
-| 1. Business Plan | `./references/business-plan.md` | `business-plan.md` on governance `main` |
-| 2. Tech Plan | `./references/tech-plan.md` | `tech-plan.md` on governance `main` |
-| 3. Adversarial Review | `./references/adversarial-review.md` | `adversarial-review.md` on governance `main` |
-| 4. Sprint Planning | `./references/sprint-planning.md` | `sprint-plan.md` on governance `main` |
-| 5. Story Creation | `./references/sprint-planning.md` (Story Creation section) | `stories/` on governance `main` |
-| Auto-Publish | `./references/auto-publish.md` | Applied after every phase |
+| 1. Business Plan | `./references/business-plan.md` | Staged business-planning outputs under the feature docs path |
+| 2. Tech Plan | `./references/tech-plan.md` | Staged technical-design outputs under the feature docs path |
+| 3. Adversarial Review | `./references/adversarial-review.md` | Staged review findings under the feature docs path |
+| 4. Sprint Planning | `./references/sprint-planning.md` | Staged sprint-status and story files under the feature docs path |
+| 5. Story Creation | `./references/sprint-planning.md` (Story Creation section) | Staged story files ready for the `/dev` handoff |
+| Auto-Publish | `./references/auto-publish.md` | Publish the reviewed predecessor artifact set on each next-phase handoff |
 
 ## Script Reference
 
@@ -122,7 +122,6 @@ Exit codes for `validate-frontmatter`: `0` = pass, `1` = runtime error, `2` = va
 | `bmad-lens-feature-yaml` | Reads feature.yaml; updates phase after each planning milestone |
 | `bmad-lens-git-state` | Loads cross-feature context (related summaries, depends_on docs) |
 | `bmad-lens-constitution` | Loads domain constitution for planning constraints |
-| `bmad-lens-git-orchestration` | Executes atomic commits to governance `main` (artifact + summary + index) |
-| `bmad-agent-analyst` | Invoked for business plan creation |
-| `bmad-agent-architect` | Invoked for tech plan creation |
+| `bmad-lens-git-orchestration` | Publishes reviewed predecessor artifacts to governance and stages current-phase drafts locally |
+| Lens phase conductors | `/businessplan`, `/techplan`, `/devproposal`, and `/sprintplan` perform the actual wrapper-backed planning work |
 | `bmad-lens-theme` | Applies active persona overlay throughout the pipeline |

@@ -106,9 +106,17 @@ Invoke the skill at `entryPath` from the registry entry. Forward all user-provid
 | Skill ID | Display Name | Context Mode | Output Mode | Phase Hints |
 |----------|-------------|--------------|-------------|-------------|
 | `bmad-brainstorming` | BMAD Brainstorming | feature-optional | planning-docs | preplan |
+| `bmad-product-brief` | BMAD Product Brief | feature-required | planning-docs | preplan |
+| `bmad-domain-research` | BMAD Domain Research | feature-required | planning-docs | preplan |
+| `bmad-market-research` | BMAD Market Research | feature-required | planning-docs | preplan |
+| `bmad-technical-research` | BMAD Technical Research | feature-required | planning-docs | preplan |
 | `bmad-create-prd` | BMAD Create PRD | feature-required | planning-docs | businessplan |
+| `bmad-create-ux-design` | BMAD Create UX Design | feature-required | planning-docs | businessplan |
 | `bmad-create-architecture` | BMAD Create Architecture | feature-required | planning-docs | techplan |
 | `bmad-create-epics-and-stories` | BMAD Create Epics and Stories | feature-required | planning-docs | devproposal |
+| `bmad-check-implementation-readiness` | BMAD Implementation Readiness | feature-required | planning-docs | devproposal |
+| `bmad-sprint-planning` | BMAD Sprint Planning | feature-required | planning-docs | sprintplan |
+| `bmad-create-story` | BMAD Create Story | feature-required | planning-docs | sprintplan |
 | `bmad-quick-dev` | BMAD Quick Dev | feature-required | implementation-target | dev |
 | `bmad-code-review` | BMAD Code Review | feature-required | implementation-target | dev |
 

@@ -41,8 +41,6 @@ def main() -> int:
     module_help_path = module_root / "module-help.csv"
     help_topics_path = module_root / "skills" / "bmad-lens-help" / "assets" / "help-topics.yaml"
     installer_path = module_root / "_module-installer" / "installer.js"
-    wrapper_workflow_path = module_root / "workflows" / "utility" / "lens-bmad-skill" / "workflow.md"
-
     failures: list[str] = []
 
     registry = load_json(registry_path)
@@ -51,12 +49,8 @@ def main() -> int:
     help_topics = load_yaml(help_topics_path)
     installer_text = installer_path.read_text(encoding="utf-8")
 
-    if not wrapper_workflow_path.exists():
-        failures.append(f"missing wrapper workflow: {wrapper_workflow_path}")
-
     module_prompts = set(module_yaml.get("prompts", []))
     adapter_prompts = set(module_yaml.get("adapters", {}).get("github-copilot", {}).get("stub_prompts", []))
-    help_commands = {row["skill"] for row in module_help}
     topic_commands = {topic["command"] for topic in help_topics.get("topics", [])}
 
     for adapter_prompt in adapter_prompts:
@@ -69,16 +63,18 @@ def main() -> int:
         prompt_file = skill["promptFile"]
         prompt_path = module_root / "prompts" / prompt_file
         adapter_prompt = f".github/prompts/{prompt_file}"
-        help_skill = f"lens-work-{skill['id']}"
-
         if not prompt_path.exists():
             failures.append(f"missing prompt file: {prompt_file}")
         if prompt_file not in module_prompts:
             failures.append(f"module.yaml missing prompt entry: {prompt_file}")
         if adapter_prompt not in adapter_prompts:
             failures.append(f"module.yaml adapter missing stub prompt: {adapter_prompt}")
-        if help_skill not in help_commands:
-            failures.append(f"module-help.csv missing skill row: {help_skill}")
+        if not any(
+            row.get("skill") == "bmad-lens-bmad-skill"
+            and row.get("display-name") == skill["id"]
+            for row in module_help
+        ):
+            failures.append(f"module-help.csv missing wrapper row for: {skill['id']}")
         if skill["command"] not in topic_commands:
             failures.append(f"help-topics.yaml missing command: {skill['command']}")
         if f"file: '{prompt_file}'" not in installer_text:

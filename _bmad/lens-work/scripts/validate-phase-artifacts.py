@@ -48,11 +48,32 @@ def artifact_candidates(docs_root: Path, name: str) -> list[Path]:
         case "sprint-status":
             candidates = [docs_root / "sprint-status.yaml", docs_root / "sprint-backlog.md"]
         case "story-files":
-            candidates = list(docs_root.glob("dev-story-*.md"))
+            candidates = story_file_candidates(docs_root)
         case "review-report":
             candidates = [docs_root / "review-report.md", docs_root / "adversarial-review.md"]
         case _:
             candidates = [docs_root / f"{name}.md"]
+    return candidates
+
+
+def story_file_candidates(docs_root: Path) -> list[Path]:
+    candidates: list[Path] = []
+    seen: set[Path] = set()
+
+    for pattern in ("dev-story-*.md", "dev-story-*.yaml", "[0-9]*-[0-9]*-*.md", "[0-9]*-[0-9]*-*.yaml"):
+        for candidate in docs_root.glob(pattern):
+            if candidate not in seen:
+                candidates.append(candidate)
+                seen.add(candidate)
+
+    stories_dir = docs_root / "stories"
+    if stories_dir.exists():
+        for pattern in ("*.md", "*.yaml"):
+            for candidate in stories_dir.glob(pattern):
+                if candidate not in seen:
+                    candidates.append(candidate)
+                    seen.add(candidate)
+
     return candidates
 
 

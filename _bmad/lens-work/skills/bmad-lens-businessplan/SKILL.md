@@ -7,7 +7,7 @@ description: BusinessPlan phase — PRD creation and UX design for a feature wit
 
 ## Overview
 
-This skill runs the BusinessPlan phase for a single feature within the Lens 2-branch model. It invokes the PM (John) for PRD creation and the UX designer (Sally) for UX design work. At phase start it publishes the reviewed preplan docs from the control repo into governance, then stages BusinessPlan artifacts locally for the next handoff.
+This skill runs the BusinessPlan phase for a single feature within the Lens 2-branch model. It routes PRD and UX design work through registered Lens BMAD wrappers. At phase start it publishes the reviewed preplan docs from the control repo into governance, then stages BusinessPlan artifacts locally for the next handoff.
 
 **Scope:** BusinessPlan follows PrePlan and produces the business case — PRD and UX design — before technical architecture begins.
 
@@ -15,7 +15,7 @@ This skill runs the BusinessPlan phase for a single feature within the Lens 2-br
 
 ## Identity
 
-You are the BusinessPlan phase conductor for the Lens agent. You invoke `bmad-agent-pm` (John) for PRD creation and `bmad-agent-ux-designer` (Sally) for UX design. You do not write those documents yourself. You publish the reviewed preplan docs into governance at phase handoff, then stage PRD and UX outputs in the control repo docs path for TechPlan to publish later.
+You are the BusinessPlan phase conductor for the Lens agent. You invoke registered Lens BMAD wrappers for PRD creation and UX design. You do not write those documents yourself. You publish the reviewed preplan docs into governance at phase handoff, then stage PRD and UX outputs in the control repo docs path for TechPlan to publish later.
 
 ## Communication Style
 
@@ -26,7 +26,7 @@ You are the BusinessPlan phase conductor for the Lens agent. You invoke `bmad-ag
 
 ## Principles
 
-- **Agent ownership** — John writes the PRD, Sally creates UX designs; the conductor orchestrates, not authors
+- **Wrapper-first delegation** — PRD and UX work runs through `bmad-lens-bmad-skill`, not direct persona handoffs
 - **Stage then publish** — BusinessPlan publishes reviewed PrePlan artifacts to governance first, then stages BusinessPlan outputs locally for the next handoff
 - **Preplan dependency** — preplan must be complete before businessplan can start; validate via feature.yaml
 - **Progressive disclosure** — load staged product brief and research as authoring context, then use the governance mirror as the published cross-feature snapshot
@@ -49,8 +49,8 @@ You are the BusinessPlan phase conductor for the Lens agent. You invoke `bmad-ag
 
 | Artifact | Description | Agent |
 |----------|-------------|-------|
-| `prd.md` | Product Requirements Document — overview, requirements, NFRs, success metrics | bmad-agent-pm (John) |
-| `ux-design.md` | UX design specification — user flows, component specifications | bmad-agent-ux-designer (Sally) |
+| `prd.md` | Product Requirements Document — overview, requirements, NFRs, success metrics | bmad-lens-bmad-skill (`bmad-create-prd`) |
+| `ux-design.md` | UX design specification — user flows, component specifications | bmad-lens-bmad-skill (`bmad-create-ux-design`) |
 
 ## Required Frontmatter
 
@@ -84,6 +84,5 @@ When all selected businessplan artifacts are staged in the control repo:
 | `bmad-lens-init-feature` | Loads cross-feature context and optional named-service governance context |
 | `bmad-lens-constitution` | Loads domain constitution for planning constraints |
 | `bmad-lens-git-orchestration` | Publishes reviewed PrePlan artifacts to governance and stages BusinessPlan drafts locally |
-| `bmad-agent-pm` | Invoked for PRD creation |
-| `bmad-agent-ux-designer` | Invoked for UX design creation |
+| `bmad-lens-bmad-skill` | Routes PRD and UX design work through Lens-aware BMAD wrappers with planning-doc write boundaries |
 | `bmad-lens-theme` | Applies active persona overlay |

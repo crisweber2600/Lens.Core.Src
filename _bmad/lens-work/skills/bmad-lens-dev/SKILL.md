@@ -43,12 +43,13 @@ You are the Dev phase conductor for the Lens agent. You orchestrate the full imp
 2. Resolve `{governance_repo}` and `{feature_id}`.
 3. Load `feature.yaml` for the feature via `bmad-lens-feature-yaml`.
 4. Validate the feature's phase includes `dev` (sprintplan must be complete).
-5. Load domain constitution via `bmad-lens-constitution`.
-6. Load cross-feature context via `bmad-lens-git-state`.
-7. Resolve the target repo:
+5. Before any story discovery or code writes, publish staged SprintPlan artifacts into the governance docs mirror via `bmad-lens-git-orchestration publish-to-governance --phase sprintplan`. Halt if required sprint planning artifacts are still missing.
+6. Load domain constitution via `bmad-lens-constitution`.
+7. Load cross-feature context via `bmad-lens-git-state`.
+8. Resolve the target repo:
    - Try `initiative.target_repos[0]` first.
    - If absent: run auto-discovery (see Target Repo Auto-Discovery below).
-8. Validate target repo is NOT inside `{release_repo_root}` (hard fail).
+9. Validate target repo is NOT inside `{release_repo_root}` (hard fail).
 
 ## Target Repo Auto-Discovery
 
@@ -96,8 +97,12 @@ After prior-phase validation:
 1. If `initiative.question_mode == "batch"`: run batch question generation only, output `dev-implementation-questions.md`, and exit.
 2. Discover story files matching the epic number:
    - `{bmad_docs}/dev-story-{epic_number}-*.md`
+   - `{bmad_docs}/{epic_number}-*-*.md`
+   - `{bmad_docs}/stories/{epic_number}-*-*.md`
    - `{bmad_docs}/*epic-{epic_number}*.md`
    - `docs/implementation-artifacts/dev-story-{epic_number}-*.md`
+   - `docs/implementation-artifacts/{epic_number}-*-*.md`
+   - `docs/implementation-artifacts/stories/{epic_number}-*-*.md`
    - `docs/implementation-artifacts/*epic-{epic_number}*.md`
 3. Deduplicate by story ID, sort by implementation order.
 4. If zero stories: fail — prompt user to run `/sprintplan` first.
