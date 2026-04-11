@@ -77,7 +77,7 @@ After producing the draft:
 
 ### Pass 2 — Execute Tech Plan
 
-- Once `quickplan-batch-input.md` is marked `ready-for-pass-2`, produce and commit the tech plan using the approved answers as context.
+- Once `quickplan-batch-input.md` contains answers for every required question block, produce and commit the tech plan using the approved answers as context.
 - Append a one-line tech-plan summary to the batch report.
 - Proceed to adversarial review only if the pipeline remains unblocked.
 

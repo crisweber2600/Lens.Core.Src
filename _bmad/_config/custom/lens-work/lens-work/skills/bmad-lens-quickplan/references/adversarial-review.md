@@ -140,7 +140,7 @@ Required location: `{governance-repo}/features/{domain}/{service}/{featureId}/ad
 
 ### Pass 2 — Review Gate
 
-- Run review and commit the artifact once `quickplan-batch-input.md` is marked `ready-for-pass-2`.
+- Run review and commit the artifact once `quickplan-batch-input.md` contains answers for every required question block.
 - On `pass` or `pass-with-warnings`, continue the pipeline.
 - On `fail`, halt the pipeline and report all critical findings in the final output. Do not proceed to sprint planning or story creation.
 

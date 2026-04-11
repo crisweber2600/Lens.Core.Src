@@ -7,7 +7,7 @@ description: Universal two-pass batch intake and resume flow for Lens planning t
 
 ## Overview
 
-This skill provides the shared batch contract for Lens planning targets. On pass 1 it resolves the current planning target or an explicit override, analyzes available context, writes or refreshes a target-specific batch input markdown file, and stops. On pass 2 it resumes the owning planning target only after that batch input file is explicitly marked ready.
+This skill provides the shared batch contract for Lens planning targets. On pass 1 it resolves the current planning target or an explicit override, analyzes available context, writes or refreshes a target-specific batch input markdown file, and stops. On pass 2 it resumes the owning planning target only after it can automatically detect that the required answer blocks in that file have been filled.
 
 **Scope:** Supports `preplan`, `businessplan`, `techplan`, `devproposal`, `sprintplan`, `expressplan`, and `quickplan`. It does not bypass the owning phase conductor or native BMAD workflow.
 
@@ -17,7 +17,7 @@ This skill provides the shared batch contract for Lens planning targets. On pass
 
 ## Identity
 
-You are the shared Lens batch orchestrator. You do not author lifecycle artifacts, publish reviewed predecessor artifacts, or advance phase state on pass 1. You analyze current Lens context, generate a tailored intake file for offline completion, and resume the owning planning target only after the user marks that file ready.
+You are the shared Lens batch orchestrator. You do not author lifecycle artifacts, publish reviewed predecessor artifacts, or advance phase state on pass 1. You analyze current Lens context, generate a tailored intake file for offline completion, and resume the owning planning target only after the file itself shows that the required answers are present.
 
 ## Communication Style
 
@@ -32,7 +32,7 @@ You are the shared Lens batch orchestrator. You do not author lifecycle artifact
 - **Shared batch contract** — `/batch` and phase-local `--mode batch` flows all use the same pass-1/pass-2 behavior
 - **Context-derived questions** — generate questions from `feature.yaml`, predecessor artifacts, cross-feature context, and constitution inputs; do not emit a generic static questionnaire
 - **Lifecycle-safe intake files** — batch input markdown files are supporting inputs, not lifecycle artifacts, and must not satisfy phase validation gates
-- **Explicit readiness marker** — pass 2 starts only when the batch input file has `batch_status: ready-for-pass-2`
+- **Automatic readiness detection** — pass 2 starts only when every required `**Your answer:**` block contains non-placeholder content; users must not toggle a status field by hand
 - **Resume through the owning target** — pass 2 resumes the phase conductor or quickplan workflow; it never authors outputs directly inside this skill
 - **Interactive boundaries remain intact** — once pass 2 delegates to the owning target, the existing BusinessPlan and TechPlan interactive/native handoff rules still apply
 
@@ -62,8 +62,9 @@ You are the shared Lens batch orchestrator. You do not author lifecycle artifact
 7. Load cross-feature context via `bmad-lens-init-feature` `fetch-context --depth full`.
 8. Load domain constitution via `bmad-lens-constitution`.
 9. Resolve the batch input file path as `{docs.path}/{target}-batch-input.md`.
-10. If the batch input file is missing or its frontmatter field `batch_status` is not `ready-for-pass-2`, enter pass 1.
-11. If the batch input file exists and `batch_status == ready-for-pass-2`, enter pass 2.
+10. If the batch input file is missing, enter pass 1.
+11. If the batch input file exists but one or more required answer blocks are blank or still contain placeholder content such as `TBD`, `TODO`, `?`, or `[pending]`, enter pass 1.
+12. If the batch input file exists and every required answer block contains real content, enter pass 2.
 
 ## Pass 1 — Intake Generation
 
@@ -74,9 +75,8 @@ You are the shared Lens batch orchestrator. You do not author lifecycle artifact
    - Domain constitution constraints and mandatory gates
 2. Generate questions that close only the gaps that remain after that analysis.
 3. Write or refresh `{target}-batch-input.md` using `./references/batch-input-template.md`.
-4. Set frontmatter `batch_status: needs-input`.
-5. Preserve any existing user-authored answers when refreshing the file; only update stale context snapshots and unanswered question prompts.
-6. Report the file path and stop.
+4. Preserve any existing user-authored answers when refreshing the file; only update stale context snapshots and unanswered question prompts.
+5. Report the file path and stop.
 
 Pass 1 must not do any of the following:
 
@@ -88,7 +88,7 @@ Pass 1 must not do any of the following:
 ## Pass 2 — Resume Execution
 
 1. Load `{target}-batch-input.md`.
-2. Validate that `batch_status == ready-for-pass-2`.
+2. Validate that every required answer block contains real content rather than a placeholder token.
 3. Summarize the answered inputs into a `batch_resume_context` bundle with:
 
 ```yaml
@@ -101,6 +101,13 @@ batch_answers_summary: "{concise summary of resolved answers}"
 4. Delegate to the owning target with that `batch_resume_context` loaded as first-class context.
 5. For wrapper-backed targets, include the same batch bundle in the `lens_context` handed to `bmad-lens-bmad-skill`.
 6. After delegation, stop batch-side orchestration and let the owning target follow its normal publication, delegation, and completion rules.
+
+## Readiness Detection Rules
+
+- Treat a question as answered when the text beneath `**Your answer:**` contains non-empty content that is not just a placeholder token.
+- Treat `TBD`, `TODO`, `?`, `[pending]`, and blank answer blocks as unanswered.
+- Treat explicit answers such as `No additional constraints.`, `None.`, or `Deferred: <reason>` as answered.
+- Do not require users to edit any batch status field manually; derive readiness from the answer blocks themselves.
 
 ## Question Derivation Guidance
 

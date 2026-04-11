@@ -7,7 +7,7 @@ description: PrePlan phase — brainstorm, research, and product brief for a fea
 
 ## Overview
 
-This skill runs the PrePlan phase for a single feature within the Lens 2-branch model. Interactive preplan is always brainstorm-first: it begins with BMAD topic and outcome elicitation, grounds itself in governance artifacts only, and stages any resulting drafts in the control repo docs path. Product-brief and research follow-on work is delegated through registered Lens BMAD wrappers. Governance publication is deferred until BusinessPlan begins. In batch mode it uses the shared Lens two-pass batch contract: pass 1 writes or refreshes `preplan-batch-input.md` and stops; pass 2 resumes preplan only after that file is marked ready.
+This skill runs the PrePlan phase for a single feature within the Lens 2-branch model. Interactive preplan is always brainstorm-first: it begins with BMAD topic and outcome elicitation, grounds itself in governance artifacts only, and stages any resulting drafts in the control repo docs path. Product-brief and research follow-on work is delegated through registered Lens BMAD wrappers. Governance publication is deferred until BusinessPlan begins. In batch mode it uses the shared Lens two-pass batch contract: pass 1 writes or refreshes `preplan-batch-input.md` and stops; pass 2 resumes preplan once the required answer blocks in that file are filled.
 
 **Scope:** PrePlan is the first phase in the full lifecycle track. It produces early-stage analysis artifacts — product brief, research notes, and brainstorming output — before any business or technical planning begins.
 

@@ -148,6 +148,6 @@ As a {role}, I want {capability}, so that {benefit}.
 
 ### Pass 2 — Execute Sprint Planning
 
-- Once `quickplan-batch-input.md` is marked `ready-for-pass-2`, create the sprint plan and all story files using the approved answers as context.
+- Once `quickplan-batch-input.md` contains answers for every required question block, create the sprint plan and all story files using the approved answers as context.
 - Commit each planning stage as an atomic two-phase commit.
 - Append sprint and story counts to the batch summary log.

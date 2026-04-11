@@ -76,7 +76,7 @@ LENS will walk you through naming your feature, selecting a lifecycle track, and
 
 `/next` does not show a menu when the next step is deterministic. It surfaces blockers when it cannot proceed; otherwise it routes straight into the owning phase command.
 
-`/batch` defaults to the current planning target. On the first pass it writes a context-derived `{target}-batch-input.md` file and stops; after you fill it in and mark it ready, re-running `/batch` resumes the owning planning command.
+`/batch` defaults to the current planning target. On the first pass it writes a context-derived `{target}-batch-input.md` file and stops; once the required answer blocks are filled, re-running `/batch` resumes the owning planning command automatically.
 
 ---
 
