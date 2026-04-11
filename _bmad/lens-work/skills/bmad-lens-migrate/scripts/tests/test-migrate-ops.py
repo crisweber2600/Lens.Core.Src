@@ -349,6 +349,38 @@ def test_governance_repo_not_found_migrate():
     assert_eq("missing repo exit code (migrate)", code, 1)
 
 
+def test_migrate_feature_resolves_governance_repo_from_control_repo_path():
+    """migrate-feature resolves the governance repo when the control repo path is passed by mistake."""
+    print("test_migrate_feature_resolves_governance_repo_from_control_repo_path", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        control = Path(tmp) / "control"
+        governance = control / "TargetProjects" / "lens" / "lens-governance"
+        (control / "lens.core").mkdir(parents=True, exist_ok=True)
+        governance.mkdir(parents=True, exist_ok=True)
+
+        result, code = run([
+            "migrate-feature",
+            "--governance-repo", str(control),
+            "--old-id", "platform-identity-auth-login",
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+            "--username", "testuser",
+            "--control-repo", str(control),
+        ])
+        assert_eq("resolved governance status", result["status"], "pass")
+        assert_eq("resolved governance exit code", code, 0)
+
+        feature_path = governance / "features" / "platform" / "identity" / "auth-login" / "feature.yaml"
+        wrong_feature_path = control / "features" / "platform" / "identity" / "auth-login" / "feature.yaml"
+        assert_eq("feature written into governance repo", feature_path.exists(), True)
+        assert_eq("feature not written into control repo root", wrong_feature_path.exists(), False)
+        assert_true(
+            "warning mentions governance resolution",
+            any("Resolved governance repo" in warning for warning in result.get("warnings", [])),
+        )
+
+
 def test_scan_detects_conflict():
     """scan surfaces conflict when new-model feature.yaml already exists."""
     print("test_scan_detects_conflict", file=sys.stderr)
@@ -473,7 +505,7 @@ def test_migrate_feature_copies_legacy_artifacts():
 
 
 def test_migrate_feature_mirrors_base_and_milestone_branch_docs():
-    """migrate-feature mirrors docs from the base and milestone legacy branches into the dossier."""
+    """migrate-feature mirrors branch docs into the dossier and migrates canonical docs into governance only."""
     print("test_migrate_feature_mirrors_base_and_milestone_branch_docs", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
         governance = Path(tmp) / "governance"
@@ -510,13 +542,47 @@ def test_migrate_feature_mirrors_base_and_milestone_branch_docs():
         dossier = Path(tmp) / "docs" / "lens-work" / "migrations" / "platform" / "identity" / "auth-login"
         base_mirror = dossier / "sources" / "branch-docs" / "platform-identity-auth-login" / "branch-docs-feature" / "base.md"
         dev_mirror = dossier / "sources" / "branch-docs" / "platform-identity-auth-login-dev" / "branch-docs-feature" / "dev.md"
+        governance_docs = governance / "features" / "platform" / "identity" / "auth-login" / "docs"
         assert_eq("base branch mirrored", base_mirror.exists(), True)
         assert_eq("dev branch mirrored", dev_mirror.exists(), True)
+        assert_eq("base branch migrated to governance docs", (governance_docs / "base.md").exists(), True)
+        assert_eq("dev branch migrated to governance docs", (governance_docs / "dev.md").exists(), True)
+        assert_eq("no canonical dossier docs created", (dossier / "docs").exists(), False)
+
+        audit = result["document_audit"]
+        branch_counts = {entry["branch"]: entry for entry in audit["branches"]}
+        assert_eq("control feature document count", audit["control_feature_documents"], 2)
+        assert_eq("governance feature document count", audit["governance_feature_documents"], 2)
+        assert_eq(
+            "base branch control doc count",
+            branch_counts["platform-identity-auth-login"]["control_repo_documents"],
+            1,
+        )
+        assert_eq(
+            "dev branch control doc count",
+            branch_counts["platform-identity-auth-login-dev"]["control_repo_documents"],
+            1,
+        )
+        assert_eq(
+            "base branch governance doc count",
+            branch_counts["platform-identity-auth-login"]["governance_repo_documents"],
+            1,
+        )
+        assert_eq(
+            "dev branch governance doc count",
+            branch_counts["platform-identity-auth-login-dev"]["governance_repo_documents"],
+            1,
+        )
 
         record_path = dossier / "migration-record.yaml"
         record = yaml.safe_load(record_path.read_text(encoding="utf-8"))
         assert_eq("record discovered count", record["documents"]["discovered_count"], 2)
         assert_eq("record canonical count", record["documents"]["canonical_count"], 2)
+        assert_eq(
+            "record governance document count",
+            record["documents"]["document_audit"]["governance_feature_documents"],
+            2,
+        )
 
 
 def test_verify_fails_when_dossier_mirror_is_missing():
@@ -625,6 +691,7 @@ if __name__ == "__main__":
     test_invalid_domain()
     test_governance_repo_not_found()
     test_governance_repo_not_found_migrate()
+    test_migrate_feature_resolves_governance_repo_from_control_repo_path()
     test_scan_detects_conflict()
     test_migrate_feature_preserves_legacy_state()
     test_migrate_feature_creates_summary_and_problems_in_feature_dir()

@@ -10,8 +10,8 @@ For each confirmed feature:
 - Summary stub created at `{governance_repo}/features/{domain}/{service}/{featureId}/summary.md`
 - Problems log created at `{governance_repo}/features/{domain}/{service}/{featureId}/problems.md`
 - Raw discovered documents mirrored to `{control_repo}/docs/lens-work/migrations/{domain}/{service}/{featureId}/sources/`
-- Canonical winning documents written to both `{governance_repo}/features/{domain}/{service}/{featureId}/docs/` and `{control_repo}/docs/lens-work/migrations/{domain}/{service}/{featureId}/docs/`
-- `migration-record.yaml` written to the control-repo dossier as durable proof of what was discovered, mirrored, and selected
+- Canonical winning documents written to `{governance_repo}/features/{domain}/{service}/{featureId}/docs/`
+- `migration-record.yaml` written to the control-repo dossier as durable proof of what was discovered, mirrored, selected, and counted branch-by-branch
 
 Old branches are NOT deleted at this step. Cleanup is a separate, explicit operation that requires verification first.
 
@@ -52,6 +52,10 @@ python3 ./scripts/migrate-ops.py migrate-feature \
   "documents_discovered_count": 2,
   "documents_mirrored_count": 2,
   "canonical_documents_count": 2,
+  "document_audit": {
+    "control_feature_documents": 2,
+    "governance_feature_documents": 2
+  },
   "artifacts_copied": ["tech-plan.md"],
   "documents_migrated": ["prd.md", "tech-plan.md"],
   "documents_source": {
@@ -84,7 +88,8 @@ For each confirmed feature in the migration plan:
 After governance scaffolding, documents are discovered from up to four sources and dual-written:
 
 - every discovered source file is mirrored into the control-repo dossier under `sources/` for auditability
-- the canonical winning file for each relative path is written to both governance docs and dossier `docs/`
+- the canonical winning file for each relative path is written to governance docs only
+- the migration record stores per-branch control-repo mirror counts and per-branch governance winner counts so each legacy branch can be audited
 
 Priority order (highest wins when filenames conflict):
 1. **governance-legacy** — `{governance_repo}/branches/{old_id}[-milestone]/_bmad-output/` files (filesystem, or git `origin/{old_id}[-milestone]` branch fallback)
@@ -94,7 +99,7 @@ Priority order (highest wins when filenames conflict):
 
 Git-based sources use `git ls-tree` to enumerate files and `git show` to extract content. Ensure `git fetch` has been run before migration.
 
-Migration is not complete until every discovered document has a mirrored raw copy in the control-repo dossier and every canonical winner exists in both governance docs and dossier docs.
+Migration is not complete until every discovered document has a mirrored raw copy in the control-repo dossier, every canonical winner exists in governance docs, and the branch-by-branch document audit has been recorded.
 
 Duplicate filenames are resolved by freshness: the most recently committed version wins. When commit timestamps are equal (or unavailable), the static source priority above is used as a tiebreaker.
 

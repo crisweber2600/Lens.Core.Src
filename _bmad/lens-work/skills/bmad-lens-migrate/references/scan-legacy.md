@@ -39,7 +39,7 @@ When `--source-repo` is provided, the scan also discovers documents from up to f
 3. **source-docs** — `{source_repo}/Docs/{domain}/{service}/{featureId}/` (filesystem, case-insensitive Docs/docs)
 4. **bmad-output** — `{source_repo}/_bmad-output/lens-work/initiatives/{domain}/{service}/` (filesystem)
 
-Scan output now also includes the inferred control-repo dossier path for each feature so dry-run and migrate can show where mirrored proof artifacts will be written.
+Scan output now also includes the inferred control-repo dossier path for each feature plus a `document_audit` block showing per-branch mirrored control-repo counts versus governance feature-doc counts.
 
 **Prerequisite:** Ensure `git fetch` has been run on both the governance repo and source repo so remote branch refs are current.
 
@@ -67,7 +67,7 @@ Scan output now also includes the inferred control-repo dossier path for each fe
 }
 ```
 
-When `--source-repo` is provided, each feature entry also includes a `documents` array:
+When `--source-repo` is provided, each feature entry also includes a `documents` array and `document_audit` summary:
 
 ```json
 {
@@ -90,6 +90,27 @@ When `--source-repo` is provided, each feature entry also includes a `documents`
       "commit_ts": 1700000000
     }
   ]
+}
+```
+
+```json
+{
+  "document_audit": {
+    "control_feature_documents": 3,
+    "governance_feature_documents": 2,
+    "branches": [
+      {
+        "branch": "platform-identity-auth-login",
+        "control_repo_documents": 2,
+        "governance_repo_documents": 1
+      },
+      {
+        "branch": "platform-identity-auth-login-dev",
+        "control_repo_documents": 1,
+        "governance_repo_documents": 1
+      }
+    ]
+  }
 }
 ```
 

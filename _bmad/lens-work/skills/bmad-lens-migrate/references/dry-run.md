@@ -4,7 +4,7 @@ Preview the full migration plan without making any changes. This step is mandato
 
 ## Outcome
 
-A complete report of every action that would be taken — feature.yaml paths to be created, feature-index.yaml entries to be added, summary and problems stubs to be written, raw source documents to be mirrored into the control-repo dossier, canonical dossier docs to be written, and any legacy state or artifacts to preserve — with no files written or modified.
+A complete report of every action that would be taken — feature.yaml paths to be created, feature-index.yaml entries to be added, summary and problems stubs to be written, raw source documents to be mirrored into the control-repo dossier, canonical governance docs to be migrated, and any legacy state or artifacts to preserve — with no files written or modified.
 
 ## Process
 
@@ -40,15 +40,19 @@ python3 ./scripts/migrate-ops.py migrate-feature \
     "Create problems log at {governance_repo}/features/platform/identity/auth-login/problems.md",
     "Write migration dossier at {control_repo}/docs/lens-work/migrations/platform/identity/auth-login",
     "Write migration record at {control_repo}/docs/lens-work/migrations/platform/identity/auth-login/migration-record.yaml",
-    "Copy document prd.md from source-docs to features/platform/identity/auth-login/docs/",
-    "Copy document tech-plan.md from governance-legacy to features/platform/identity/auth-login/docs/",
-    "Mirror document [branch-docs:platform-identity-auth-login-dev] prd.md into the control-repo dossier"
+    "Mirror document [branch-docs:platform-identity-auth-login-dev] prd.md into the control-repo dossier",
+    "Migrate canonical document [source-docs:working-tree] prd.md to {governance_repo}/features/platform/identity/auth-login/docs/prd.md",
+    "Migrate canonical document [governance-legacy:platform-identity-auth-login] tech-plan.md to {governance_repo}/features/platform/identity/auth-login/docs/tech-plan.md"
   ],
   "feature_yaml_created": false,
   "index_updated": false,
   "legacy_state_path": "{governance_repo}/branches/platform-identity-auth-login/initiative-state.yaml",
   "dossier_path": "{control_repo}/docs/lens-work/migrations/platform/identity/auth-login",
   "migration_record_path": "{control_repo}/docs/lens-work/migrations/platform/identity/auth-login/migration-record.yaml",
+  "document_audit": {
+    "control_feature_documents": 3,
+    "governance_feature_documents": 2
+  },
   "documents_discovered": [
     {
       "source_type": "governance-legacy",
@@ -107,6 +111,6 @@ Then ask for confirmation:
 - "Proceed with migration for all N features? (yes/no)"
 - OR "Select features to migrate: (all/list numbers/no)"
 
-The preview must make the dossier location explicit so the user can see where the durable proof artifacts will be written before any destructive cleanup is ever offered.
+The preview must make the dossier location explicit so the user can see where the durable proof artifacts will be written before any destructive cleanup is ever offered. It must also surface the per-branch document audit so the user can compare branch-by-branch control counts against the governance feature-doc count before executing.
 
 Do not proceed without explicit confirmation.
