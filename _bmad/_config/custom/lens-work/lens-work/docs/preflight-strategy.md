@@ -12,8 +12,14 @@ The preflight pull strategy uses different freshness windows depending on the cu
 
 ## Full vs. Partial Preflight
 
-- **Full preflight:** Pulls all authority repos, syncs `.github/` and agent entry points, verifies IDE adapters, and updates the preflight timestamp.
-- **Partial preflight (cache hit):** Skips pulls but still runs presence checks and `.github/` sync to catch local deletions or manual modifications.
+- **Full preflight:** Pulls all authority repos, syncs `.github/`, prunes stale managed `.github/` files recorded in the local hash manifest, verifies IDE adapters, and updates the preflight timestamp.
+- **Partial preflight (cache hit):** Skips pulls but still reconciles `.github/` against the current local `lens.core` snapshot to catch local deletions or manual modifications. Upstream deletions are only observed after the next full preflight refreshes `lens.core`.
+
+## Managed `.github/` Reconciliation
+
+- `docs/lens-work/personal/.github-hashes` tracks the `.github/` files last synchronized from `lens.core/.github/`.
+- Preflight removes only files that were previously synced and are no longer present in `lens.core/.github/`.
+- Untracked local `.github/` files are preserved, except for `.github/prompts/*.prompt.md` files that fall outside the published `lens-*.prompt.md` contract.
 
 ## Timestamp Mechanism
 

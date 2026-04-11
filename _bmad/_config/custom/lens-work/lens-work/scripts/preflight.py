@@ -59,6 +59,39 @@ def load_hash_manifest(path: Path) -> dict[str, str]:
     return hashes
 
 
+def remove_empty_parent_dirs(start_dir: Path, stop_dir: Path) -> None:
+    current = start_dir
+    while current != stop_dir and current.is_dir():
+        try:
+            current.rmdir()
+        except OSError:
+            break
+        current = current.parent
+
+
+def prune_stale_synced_github_files(
+    project_root: Path,
+    stored_hashes: dict[str, str],
+    new_hashes: dict[str, str],
+) -> int:
+    github_root = project_root / ".github"
+    removed = 0
+
+    for rel_path in sorted(set(stored_hashes) - set(new_hashes)):
+        if not rel_path.startswith(".github/"):
+            continue
+
+        local_file = project_root / rel_path
+        if not local_file.is_file():
+            continue
+
+        local_file.unlink()
+        removed += 1
+        remove_empty_parent_dirs(local_file.parent, github_root)
+
+    return removed
+
+
 def parse_timestamp(raw: str) -> datetime | None:
     val = raw.strip()
     if not val:
@@ -206,6 +239,8 @@ def main() -> int:
 
         new_hashes[rel] = r_hash
 
+    stale_removed = prune_stale_synced_github_files(project_root, stored_hashes, new_hashes)
+
     # Write hash manifest
     hash_file.parent.mkdir(parents=True, exist_ok=True)
     hash_file.write_text(
@@ -213,6 +248,8 @@ def main() -> int:
         encoding="utf-8",
     )
     echo(f"  ✓ .github/ synced ({updated_count} file(s) updated)")
+    if stale_removed:
+        echo(f"  ✓ Removed {stale_removed} stale synced .github file(s)")
 
     # Prompt hygiene
     prompts_dir = project_root / ".github/prompts"
