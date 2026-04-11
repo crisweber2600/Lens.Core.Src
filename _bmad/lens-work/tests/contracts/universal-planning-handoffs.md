@@ -36,10 +36,12 @@ This contract captures the staged planning and wrapper-routing behavior for the 
 
 | Command | Interactive confirmation happens | Native workflow owns after delegation | Conductor must not do |
 |---------|----------------------------------|---------------------------------------|-----------------------|
-| `/businessplan` | Before any publication or artifact writes, after the user chooses `prd`, `ux-design`, or `both` | `bmad-create-prd` or `bmad-create-ux-design` menus, discovery questions, and document authorship | Ask PRD or UX discovery questions itself, or silently continue to the second selected workflow |
-| `/techplan` | Before any publication or artifact writes | `bmad-create-architecture` menus, discovery questions, and document authorship | Ask architecture-discovery questions itself or write `architecture.md` before delegation |
+| `/businessplan` | Before any publication or artifact writes only when BusinessPlan was invoked directly; if auto-delegated from `/next`, the workflow selection remains interactive but the phase entry itself is already confirmed | `bmad-create-prd` or `bmad-create-ux-design` menus, discovery questions, and document authorship | Ask PRD or UX discovery questions itself, silently continue to the second selected workflow, or ask a second yes/no prompt just because `/next` launched BusinessPlan |
+| `/techplan` | Before any publication or artifact writes only when TechPlan was invoked directly; if auto-delegated from `/next`, phase entry is already confirmed | `bmad-create-architecture` menus, discovery questions, and document authorship | Ask architecture-discovery questions itself, write `architecture.md` before delegation, or ask a second yes/no prompt just because `/next` launched TechPlan |
 
 If `/businessplan` interactive mode selects `both`, each native workflow runs as a separate handoff. BusinessPlan must ask before launching the second workflow.
+
+When `/next` auto-delegates into a lifecycle command, that handoff counts as consent to start the delegated phase. The delegated phase may still ask for scope choices that are intrinsic to the phase, but it must not pause for a redundant "confirm to proceed" gate.
 
 The Lens BMAD wrapper is context-only. After delegation it does not continue phase-conductor execution or synthesize downstream planning artifacts on behalf of the delegated workflow.
 

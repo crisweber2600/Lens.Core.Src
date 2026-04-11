@@ -60,7 +60,7 @@ Run `./scripts/next-ops.py suggest` first. Then:
 1. If the script returns `status=fail`, report the error. If the feature is missing, direct the user to `/init-feature`.
 2. If `recommendation.blockers` is non-empty, report the blockers and do not delegate.
 3. If the recommendation is unblocked, mention any warnings in one short line and immediately load the owning skill for `recommendation.command`.
-4. Carry the current feature context into the delegated skill. Do not stop after merely printing the command unless the user explicitly asked for advice only.
+4. Carry the current feature context into the delegated skill. The `/next` handoff counts as user consent to start the delegated phase entry sequence, so the delegated skill must not ask for a redundant yes/no prompt just to launch that phase. Do not stop after merely printing the command unless the user explicitly asked for advice only.
 
 ### Command → Skill Route
 
