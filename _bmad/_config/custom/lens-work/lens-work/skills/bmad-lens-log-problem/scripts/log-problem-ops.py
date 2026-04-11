@@ -20,7 +20,7 @@ VALID_PHASES = [
     "preplan",
     "businessplan",
     "techplan",
-    "sprintplan",
+    "finalizeplan",
     "dev",
     "complete",
 ]

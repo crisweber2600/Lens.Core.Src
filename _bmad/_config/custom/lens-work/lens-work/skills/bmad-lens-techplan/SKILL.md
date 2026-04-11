@@ -84,8 +84,8 @@ When the architecture artifact is staged in the control repo:
 	- If the verdict is `fail`, stop and do not update `feature.yaml`.
 	- If the verdict is `pass` or `pass-with-warnings`, continue.
 2. Update `feature.yaml` phase to `techplan-complete` via `bmad-lens-feature-yaml`.
-3. Leave governance publication of the architecture doc and techplan review report to the DevProposal handoff unless the user explicitly requests publication now.
-4. Report next action: advance to `/devproposal` (auto-advance with promotion per lifecycle.yaml).
+3. Leave governance publication of the architecture doc and techplan review report to the FinalizePlan handoff unless the user explicitly requests publication now.
+4. Report next action: advance to `/finalizeplan` (auto-advance with promotion per lifecycle.yaml).
 
 ## Integration Points
 

@@ -47,8 +47,7 @@ def test_phase_conductors_delegate_batch_to_shared_skill():
         "skills/bmad-lens-preplan/SKILL.md": "bmad-lens-batch --target preplan",
         "skills/bmad-lens-businessplan/SKILL.md": "bmad-lens-batch --target businessplan",
         "skills/bmad-lens-techplan/SKILL.md": "bmad-lens-batch --target techplan",
-        "skills/bmad-lens-devproposal/SKILL.md": "bmad-lens-batch --target devproposal",
-        "skills/bmad-lens-sprintplan/SKILL.md": "bmad-lens-batch --target sprintplan",
+        "skills/bmad-lens-finalizeplan/SKILL.md": "bmad-lens-batch --target finalizeplan",
         "skills/bmad-lens-expressplan/SKILL.md": "bmad-lens-batch --target expressplan",
         "skills/bmad-lens-quickplan/SKILL.md": "bmad-lens-batch --target quickplan",
     }

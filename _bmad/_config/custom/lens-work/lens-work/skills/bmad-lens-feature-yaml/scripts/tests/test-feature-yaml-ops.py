@@ -170,12 +170,12 @@ def test_update_phase_quickplan():
             "--username", "testuser",
         ])
 
-        # Quickplan allows skipping: preplan -> sprintplan
+        # Quickplan allows skipping: preplan -> finalizeplan
         result, code = run([
             "update",
             "--governance-repo", tmp,
             "--feature-id", "qp-test",
-            "--set", "phase=sprintplan",
+            "--set", "phase=finalizeplan",
             "--username", "testuser",
         ])
         assert_eq("quickplan skip status", result["status"], "pass")
@@ -408,7 +408,7 @@ def test_track_specific_transitions():
         ])
         assert_eq("spike preplan->dev allowed", result["status"], "pass")
 
-        # Express: preplan -> sprintplan allowed, preplan -> businessplan blocked
+        # Express: preplan -> expressplan allowed, preplan -> businessplan blocked
         run([
             "create",
             "--governance-repo", tmp,
@@ -423,10 +423,10 @@ def test_track_specific_transitions():
             "update",
             "--governance-repo", tmp,
             "--feature-id", "express-test",
-            "--set", "phase=sprintplan",
+            "--set", "phase=expressplan",
             "--username", "testuser",
         ])
-        assert_eq("express preplan->sprintplan allowed", result["status"], "pass")
+        assert_eq("express preplan->expressplan allowed", result["status"], "pass")
 
         # Tech-change: preplan -> techplan allowed
         run([

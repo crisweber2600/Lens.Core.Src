@@ -29,12 +29,12 @@ LEGACY_TRACK_ALIASES: dict[str, str] = {
 }
 
 # Next-phase gates that can be inferred from feature.yaml milestones.
-# Some phases, such as businessplan and sprintplan, are validated through phase state
+# Some phases, such as businessplan and finalizeplan, are validated through phase state
 # rather than a dedicated milestone field in feature.yaml.
 ENTRY_MILESTONE_RULES: dict[str, tuple[str, str, str | None]] = {
     "techplan": ("businessplan", "Business plan milestone not completed", "businessplan"),
-    "devproposal": ("techplan", "Tech plan milestone not completed", "techplan"),
-    "dev": ("sprintplan", "Sprint plan milestone not completed", "sprintplan"),
+    "finalizeplan": ("techplan", "Tech plan milestone not completed", "techplan"),
+    "dev": ("finalizeplan", "Finalize plan milestone not completed", "finalizeplan"),
     "complete": ("dev-complete", "Dev-complete milestone not set", None),
 }
 

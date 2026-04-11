@@ -56,7 +56,7 @@ If config is absent, use current repo root as governance repo.
 
 Before finalizing, verify:
 1. Feature exists in governance repo
-2. Feature phase is `dev` or `complete` (not `preplan`, `planning`, `techplan`, `sprintplan`, `paused`)
+2. Feature phase is `dev` or `complete` (not `preplan`, `planning`, `techplan`, `finalizeplan`, `paused`)
 3. `retrospective.md` exists in the feature directory (or user explicitly confirms skip)
 4. Constitution compliance check has passed (or user confirms override)
 

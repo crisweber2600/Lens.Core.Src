@@ -37,9 +37,15 @@ import yaml
 PHASE_ARTIFACTS: dict[str, list[str]] = {
     "preplan": ["product-brief", "research", "brainstorm"],
     "businessplan": ["prd", "ux-design"],
-    "techplan": ["architecture"],
-    "devproposal": ["epics", "stories", "implementation-readiness"],
-    "sprintplan": ["sprint-status", "story-files"],
+    "techplan": ["architecture", "review-report"],
+    "finalizeplan": [
+        "review-report",
+        "epics",
+        "stories",
+        "implementation-readiness",
+        "sprint-status",
+        "story-files",
+    ],
     "expressplan": [
         "product-brief",
         "prd",
@@ -191,7 +197,14 @@ def artifact_candidates(docs_root: Path, name: str) -> list[Path]:
         case "story-files":
             candidates = story_file_candidates(docs_root)
         case "review-report":
-            candidates = [docs_root / "review-report.md", docs_root / "adversarial-review.md"]
+            candidates = [
+                docs_root / "review-report.md",
+                docs_root / "adversarial-review.md",
+                docs_root / "preplan-adversarial-review.md",
+                docs_root / "businessplan-adversarial-review.md",
+                docs_root / "techplan-adversarial-review.md",
+                docs_root / "finalizeplan-review.md",
+            ]
         case _:
             candidates = [docs_root / f"{name}.md"]
     return candidates
@@ -433,6 +446,171 @@ def cmd_create_dev_branch(args: argparse.Namespace) -> tuple[dict[str, Any], int
     }, 0
 
 
+def _run_gh(repo: str, args: list[str]) -> tuple[subprocess.CompletedProcess | None, dict[str, Any] | None]:
+    """Run a gh command and normalize not-found handling."""
+    try:
+        return subprocess.run(
+            ["gh"] + args,
+            cwd=repo,
+            capture_output=True,
+            text=True,
+            check=False,
+        ), None
+    except FileNotFoundError:
+        return None, {"error": "gh_not_found", "detail": "gh CLI not found on PATH"}
+
+
+def _gh_auth_error(detail: str) -> bool:
+    lowered = detail.lower()
+    return any(token in lowered for token in ["authentication", "not logged", "login required", "403"])
+
+
+def _ensure_pull_request(
+    repo: str,
+    *,
+    base_branch: str,
+    head_branch: str,
+    title: str,
+    body: str,
+    auto_merge: bool,
+    dry_run: bool,
+) -> tuple[dict[str, Any], int]:
+    """Create or reuse a PR, optionally enabling auto-merge."""
+    payload: dict[str, Any] = {
+        "base_branch": base_branch,
+        "head_branch": head_branch,
+        "auto_merge_requested": auto_merge,
+    }
+
+    if dry_run:
+        payload.update({
+            "pr_url": "(dry-run)",
+            "created": None,
+            "auto_merge_enabled": None if auto_merge else False,
+        })
+        return payload, 0
+
+    list_result, list_error = _run_gh(
+        repo,
+        [
+            "pr",
+            "list",
+            "--head",
+            head_branch,
+            "--base",
+            base_branch,
+            "--state",
+            "open",
+            "--json",
+            "url,autoMergeRequest",
+        ],
+    )
+    if list_error:
+        return list_error, 1
+    if list_result is None:
+        return {"error": "pr_lookup_failed", "detail": "gh returned no result"}, 1
+    if list_result.returncode != 0:
+        detail = list_result.stderr.strip() or list_result.stdout.strip()
+        if _gh_auth_error(detail):
+            return {"error": "gh_not_authenticated", "detail": detail}, 1
+        return {"error": "pr_lookup_failed", "detail": detail}, 1
+
+    try:
+        existing_prs = json.loads(list_result.stdout or "[]")
+    except json.JSONDecodeError as exc:
+        return {"error": "pr_lookup_failed", "detail": f"invalid gh json: {exc}"}, 1
+
+    existing = existing_prs[0] if existing_prs else None
+    if existing:
+        payload.update({
+            "pr_url": existing.get("url", ""),
+            "created": False,
+            "auto_merge_enabled": bool(existing.get("autoMergeRequest")),
+        })
+    else:
+        create_result, create_error = _run_gh(
+            repo,
+            [
+                "pr",
+                "create",
+                "--base",
+                base_branch,
+                "--head",
+                head_branch,
+                "--title",
+                title,
+                "--body",
+                body,
+            ],
+        )
+        if create_error:
+            return create_error, 1
+        if create_result is None:
+            return {"error": "pr_create_failed", "detail": "gh returned no result"}, 1
+        if create_result.returncode != 0:
+            detail = create_result.stderr.strip() or create_result.stdout.strip()
+            if _gh_auth_error(detail):
+                return {"error": "gh_not_authenticated", "detail": detail}, 1
+            return {"error": "pr_create_failed", "detail": detail}, 1
+        payload.update({
+            "pr_url": create_result.stdout.strip(),
+            "created": True,
+            "auto_merge_enabled": False,
+        })
+
+    exit_code = 0
+    if auto_merge and not payload.get("auto_merge_enabled"):
+        merge_result, merge_error = _run_gh(
+            repo,
+            ["pr", "merge", payload["pr_url"], "--auto", "--merge"],
+        )
+        if merge_error:
+            payload["warnings"] = [merge_error["detail"]]
+            return payload, 2
+        if merge_result is None:
+            payload["warnings"] = ["gh returned no result while enabling auto-merge"]
+            return payload, 2
+        if merge_result.returncode != 0:
+            detail = merge_result.stderr.strip() or merge_result.stdout.strip()
+            payload["warnings"] = [f"auto_merge_not_enabled: {detail}"]
+            return payload, 2
+        payload["auto_merge_enabled"] = True
+
+    return payload, exit_code
+
+
+def cmd_create_pr(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    repo = args.repo or args.governance_repo
+    base_branch = args.base
+    head_branch = args.head
+
+    if not branch_exists(repo, base_branch, include_remote=True):
+        return {"error": "base_branch_not_found", "branch": base_branch}, 1
+    if not branch_exists(repo, head_branch, include_remote=True):
+        return {"error": "head_branch_not_found", "branch": head_branch}, 1
+
+    result_payload: dict[str, Any] = {
+        "strategy": "pr",
+        "base_branch": base_branch,
+        "head_branch": head_branch,
+        "dry_run": args.dry_run,
+    }
+
+    pr_payload, exit_code = _ensure_pull_request(
+        repo,
+        base_branch=base_branch,
+        head_branch=head_branch,
+        title=args.title or f"[pr] {head_branch} — merge into {base_branch}",
+        body=args.body,
+        auto_merge=args.auto_merge,
+        dry_run=args.dry_run,
+    )
+    if "error" in pr_payload:
+        return pr_payload, exit_code
+    result_payload.update(pr_payload)
+    return result_payload, exit_code
+
+
 def cmd_merge_plan(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     feature_id = args.feature_id
     repo = args.repo or args.governance_repo
@@ -452,31 +630,26 @@ def cmd_merge_plan(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         "base_branch": feature_id,
         "plan_branch": plan_branch,
         "plan_branch_deleted": False,
+        "auto_merge_requested": bool(getattr(args, "auto_merge", False)),
         "dry_run": args.dry_run,
     }
 
     runner = Runner(args.dry_run, repo)
 
     if strategy == "pr":
-        if args.dry_run:
-            result_payload["pr_url"] = "(dry-run)"
-            return result_payload, 0
-        try:
-            pr_result = subprocess.run(
-                ["gh", "pr", "create",
-                 "--base", feature_id,
-                 "--head", plan_branch,
-                 "--title", f"[plan] {feature_id} — merge planning artifacts",
-                 "--body", "Auto-created by bmad-lens-git-orchestration"],
-                cwd=repo, capture_output=True, text=True, check=False
-            )
-            if pr_result.returncode != 0:
-                if "authentication" in pr_result.stderr.lower():
-                    return {"error": "gh_not_authenticated", "detail": pr_result.stderr.strip()}, 1
-                return {"error": "pr_create_failed", "detail": pr_result.stderr.strip()}, 1
-            result_payload["pr_url"] = pr_result.stdout.strip()
-        except FileNotFoundError:
-            return {"error": "gh_not_found", "detail": "gh CLI not found on PATH"}, 1
+        pr_payload, exit_code = _ensure_pull_request(
+            repo,
+            base_branch=feature_id,
+            head_branch=plan_branch,
+            title=f"[plan] {feature_id} — merge planning artifacts",
+            body="Auto-created by bmad-lens-git-orchestration",
+            auto_merge=getattr(args, "auto_merge", False),
+            dry_run=args.dry_run,
+        )
+        if "error" in pr_payload:
+            return pr_payload, exit_code
+        result_payload.update(pr_payload)
+        return result_payload, exit_code
     else:  # direct
         # Guard: clean working tree before checkout
         dirty = verify_clean(repo) if not args.dry_run else None
@@ -666,8 +839,20 @@ def build_parser() -> argparse.ArgumentParser:
     mp.add_argument("--feature-id", required=True)
     mp.add_argument("--repo", default=None)
     mp.add_argument("--strategy", choices=["pr", "direct"], default="pr")
+    mp.add_argument("--auto-merge", action="store_true")
     mp.add_argument("--delete-after-merge", action="store_true")
     mp.add_argument("--dry-run", action="store_true")
+
+    # create-pr
+    cp = sub.add_parser("create-pr", help="Create or validate a pull request between two branches")
+    cp.add_argument("--governance-repo", required=True)
+    cp.add_argument("--repo", default=None)
+    cp.add_argument("--base", required=True)
+    cp.add_argument("--head", required=True)
+    cp.add_argument("--title", default=None)
+    cp.add_argument("--body", default="Auto-created by bmad-lens-git-orchestration")
+    cp.add_argument("--auto-merge", action="store_true")
+    cp.add_argument("--dry-run", action="store_true")
 
     # push
     pu = sub.add_parser("push", help="Push current or named branch to remote")
@@ -706,6 +891,7 @@ def main() -> int:
         "create-feature-branches": cmd_create_feature_branches,
         "commit-artifacts": cmd_commit_artifacts,
         "create-dev-branch": cmd_create_dev_branch,
+        "create-pr": cmd_create_pr,
         "merge-plan": cmd_merge_plan,
         "publish-to-governance": cmd_publish_to_governance,
         "push": cmd_push,

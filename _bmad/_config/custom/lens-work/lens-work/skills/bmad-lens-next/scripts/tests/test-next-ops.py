@@ -68,7 +68,7 @@ def make_feature(
         "milestones": {
             "businessplan": None,
             "techplan": None,
-            "sprintplan": None,
+            "finalizeplan": None,
             "dev-ready": None,
             "dev-complete": None,
         },
@@ -118,7 +118,7 @@ def test_dev_phase():
                 "milestones": {
                     "businessplan": "2026-04-01T00:00:00Z",
                     "techplan": "2026-04-02T00:00:00Z",
-                    "sprintplan": "2026-04-03T00:00:00Z",
+                    "finalizeplan": "2026-04-03T00:00:00Z",
                     "dev-ready": None,
                     "dev-complete": None,
                 }
@@ -144,7 +144,7 @@ def test_complete_phase():
                 "milestones": {
                     "businessplan": "2026-04-01T00:00:00Z",
                     "techplan": "2026-04-02T00:00:00Z",
-                    "sprintplan": "2026-04-03T00:00:00Z",
+                    "finalizeplan": "2026-04-03T00:00:00Z",
                     "dev-ready": "2026-04-04T00:00:00Z",
                     "dev-complete": "2026-04-05T00:00:00Z",
                 }
@@ -182,7 +182,7 @@ def test_businessplan_complete_auto_advance():
                 "milestones": {
                     "businessplan": "2026-04-01T00:00:00Z",
                     "techplan": None,
-                    "sprintplan": None,
+                    "finalizeplan": None,
                     "dev-ready": None,
                     "dev-complete": None,
                 }
@@ -287,7 +287,7 @@ def test_valid_action_command_returned():
                 "milestones": {
                     "businessplan": "2026-04-01T00:00:00Z",
                     "techplan": "2026-04-02T00:00:00Z",
-                    "sprintplan": "2026-04-03T00:00:00Z",
+                    "finalizeplan": "2026-04-03T00:00:00Z",
                     "dev-ready": None,
                     "dev-complete": None,
                 }
@@ -323,7 +323,7 @@ def test_techplan_phase():
                 "milestones": {
                     "businessplan": "2026-04-01T00:00:00Z",
                     "techplan": None,
-                    "sprintplan": None,
+                    "finalizeplan": None,
                     "dev-ready": None,
                     "dev-complete": None,
                 }
@@ -336,29 +336,29 @@ def test_techplan_phase():
         assert_eq("no blockers (businessplan milestone set)", result["recommendation"]["blockers"], [])
 
 
-def test_devproposal_phase():
-    """DevProposal phase → action=devproposal."""
-    print("test_devproposal_phase", file=sys.stderr)
+def test_finalizeplan_phase():
+    """FinalizePlan phase → action=finalizeplan."""
+    print("test_finalizeplan_phase", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
         make_feature(
             tmp,
-            "dp-feat",
-            phase="devproposal",
+            "fp-feat",
+            phase="finalizeplan",
             extra={
                 "milestones": {
                     "businessplan": "2026-04-01T00:00:00Z",
                     "techplan": "2026-04-02T00:00:00Z",
-                    "sprintplan": None,
+                    "finalizeplan": None,
                     "dev-ready": None,
                     "dev-complete": None,
                 }
             },
         )
-        result, code = run(["suggest", "--governance-repo", tmp, "--feature-id", "dp-feat"])
+        result, code = run(["suggest", "--governance-repo", tmp, "--feature-id", "fp-feat"])
         assert_eq("status pass", result["status"], "pass")
         assert_eq("exit code 0", code, 0)
-        assert_eq("action", result["recommendation"]["action"], "devproposal")
-        assert_eq("command", result["recommendation"]["command"], "/devproposal")
+        assert_eq("action", result["recommendation"]["action"], "finalizeplan")
+        assert_eq("command", result["recommendation"]["command"], "/finalizeplan")
         assert_eq("no blockers (techplan milestone set)", result["recommendation"]["blockers"], [])
 
 
@@ -386,7 +386,7 @@ def test_open_issues_warning():
                 "milestones": {
                     "businessplan": "2026-04-01T00:00:00Z",
                     "techplan": "2026-04-02T00:00:00Z",
-                    "sprintplan": "2026-04-03T00:00:00Z",
+                    "finalizeplan": "2026-04-03T00:00:00Z",
                     "dev-ready": None,
                     "dev-complete": None,
                 },
@@ -407,7 +407,7 @@ def test_domain_service_fast_path():
     """Direct lookup via --domain/--service works without scanning."""
     print("test_domain_service_fast_path", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
-        make_feature(tmp, "fast-feat", phase="sprintplan")
+        make_feature(tmp, "fast-feat", phase="finalizeplan")
         result, code = run([
             "suggest",
             "--governance-repo", tmp,
@@ -416,7 +416,7 @@ def test_domain_service_fast_path():
             "--service", "api",
         ])
         assert_eq("status pass", result["status"], "pass")
-        assert_eq("action", result["recommendation"]["action"], "sprintplan")
+        assert_eq("action", result["recommendation"]["action"], "finalizeplan")
 
 
 def test_feature_index_lookup():
@@ -452,7 +452,7 @@ if __name__ == "__main__":
     test_valid_action_command_returned()
     test_businessplan_phase()
     test_techplan_phase()
-    test_devproposal_phase()
+    test_finalizeplan_phase()
     test_missing_entry_milestone_blocker()
     test_open_issues_warning()
     test_domain_service_fast_path()

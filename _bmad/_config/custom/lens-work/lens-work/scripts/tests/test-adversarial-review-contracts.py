@@ -21,6 +21,8 @@ def test_lifecycle_declares_completion_review_for_preplan_businessplan_and_techp
     assert "reviewed_artifacts: [prd, ux-design]" in text
     assert "report: techplan-adversarial-review.md" in text
     assert "reviewed_artifacts: [architecture]" in text
+    assert "report: finalizeplan-review.md" in text
+    assert "reviewed_artifacts: [product-brief, research, brainstorm, prd, ux-design, architecture]" in text
 
 
 def test_phase_conductors_block_completion_until_review_gate_passes():
@@ -41,11 +43,11 @@ def test_phase_conductors_block_completion_until_review_gate_passes():
 def test_handoff_docs_publish_review_artifacts_with_predecessor_phase_outputs():
     businessplan = _read("skills/bmad-lens-businessplan/SKILL.md")
     techplan = _read("skills/bmad-lens-techplan/SKILL.md")
-    devproposal = _read("skills/bmad-lens-devproposal/SKILL.md")
+    finalizeplan = _read("skills/bmad-lens-finalizeplan/SKILL.md")
 
     assert "including the preplan review report when present" in businessplan
     assert "including the businessplan review report when present" in techplan
-    assert "including the techplan review report when present" in devproposal
+    assert "including the techplan review report when present" in finalizeplan
 
 
 def test_adversarial_review_skill_requires_party_mode_challenge_and_no_state_updates():

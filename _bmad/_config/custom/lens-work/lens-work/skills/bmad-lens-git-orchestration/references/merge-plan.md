@@ -20,9 +20,10 @@ The planning artifacts from `{featureId}-plan` are integrated into `{featureId}`
 ## Process — PR strategy
 
 1. Confirm both branches exist
-2. `gh pr create --base {featureId} --head {featureId}-plan --title "[plan] {featureId} — merge planning artifacts" --body "Auto-created by bmad-lens-git-orchestration"`
-3. Return PR URL
-4. Optionally delete local `{featureId}-plan` branch after PR is merged (run on merge event or when `--delete-after-merge` flag is set)
+2. Reuse an existing open PR for `{featureId}-plan` → `{featureId}` when one already exists; otherwise run `gh pr create --base {featureId} --head {featureId}-plan --title "[plan] {featureId} — merge planning artifacts" --body "Auto-created by bmad-lens-git-orchestration"`
+3. If `--auto-merge` was requested, run `gh pr merge <pr-url> --auto --merge` and report whether GitHub accepted auto-merge
+4. Return PR URL
+5. Optionally delete local `{featureId}-plan` branch after PR is merged (run on merge event or when `--delete-after-merge` flag is set)
 
 ## Process — Direct strategy
 
@@ -41,6 +42,9 @@ The planning artifacts from `{featureId}-plan` are integrated into `{featureId}`
   "base_branch": "payments-auth-oauth",
   "plan_branch": "payments-auth-oauth-plan",
   "pr_url": "https://github.com/org/repo/pull/42",
+  "created": true,
+  "auto_merge_requested": true,
+  "auto_merge_enabled": true,
   "plan_branch_deleted": false
 }
 ```

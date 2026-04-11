@@ -8,7 +8,7 @@ Reviewed planning artifacts that already exist in the control repo docs path are
 
 - `feature.yaml` exists for the feature in the governance repo
 - The control repo has staged planning docs under `feature.yaml.docs.path` or the fallback docs path
-- The caller provides a valid phase (`preplan`, `businessplan`, `techplan`, `devproposal`, `sprintplan`, or `expressplan`)
+- The caller provides a valid phase (`preplan`, `businessplan`, `techplan`, `finalizeplan`, or `expressplan`)
 
 ## Process
 

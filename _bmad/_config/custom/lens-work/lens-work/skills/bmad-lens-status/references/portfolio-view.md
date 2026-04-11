@@ -33,7 +33,7 @@ Feature            Domain      Service    Phase        Owner    Status
 ──────────────────────────────────────────────────────────────────────────────────
 auth-login         platform    identity   dev          alice    active
 ⚠️ auth-mfa        platform    identity   techplan     bob      active
-api-gateway        platform    gateway    sprintplan   carol    active
+api-gateway        platform    gateway    finalizeplan carol    active
 billing-v2         payments    core       dev          dave     active
 ⚠️ reporting-v3    analytics   bi         businessplan eve      active
 notifications      comms       push       preplan      alice    active

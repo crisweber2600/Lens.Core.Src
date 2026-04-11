@@ -28,7 +28,7 @@ python3 ./scripts/dashboard-ops.py generate \
 ## Staleness Definition
 
 A feature is **stale** when:
-- Its `phase` is one of `dev`, `sprintplan`, `businessplan`, or `techplan` (active phases)
+- Its `phase` is one of `dev`, `finalizeplan`, `businessplan`, or `techplan` (active phases)
 - Its `lastUpdated` timestamp is more than **14 days** ago, or `lastUpdated` is absent
 
 Stale features are flagged with `"stale": true` in the collect output and rendered with a `STALE` badge and a dedicated alert section at the top of the dashboard.

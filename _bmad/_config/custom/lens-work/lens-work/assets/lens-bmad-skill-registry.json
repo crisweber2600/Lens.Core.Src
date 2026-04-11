@@ -106,7 +106,7 @@
       "entryPath": "lens.core/_bmad/bmm/3-solutioning/bmad-create-epics-and-stories/SKILL.md",
       "contextMode": "feature-required",
       "outputMode": "planning-docs",
-      "phaseHints": ["devproposal"],
+      "phaseHints": ["finalizeplan"],
       "helpCategory": "planning"
     },
     {
@@ -118,7 +118,7 @@
       "entryPath": "lens.core/_bmad/bmm/3-solutioning/bmad-check-implementation-readiness/SKILL.md",
       "contextMode": "feature-required",
       "outputMode": "planning-docs",
-      "phaseHints": ["devproposal"],
+      "phaseHints": ["finalizeplan"],
       "helpCategory": "planning"
     },
     {
@@ -130,7 +130,7 @@
       "entryPath": "lens.core/_bmad/bmm/4-implementation/bmad-sprint-planning/SKILL.md",
       "contextMode": "feature-required",
       "outputMode": "planning-docs",
-      "phaseHints": ["sprintplan"],
+      "phaseHints": ["finalizeplan"],
       "helpCategory": "planning"
     },
     {
@@ -142,7 +142,7 @@
       "entryPath": "lens.core/_bmad/bmm/4-implementation/bmad-create-story/SKILL.md",
       "contextMode": "feature-required",
       "outputMode": "planning-docs",
-      "phaseHints": ["sprintplan"],
+      "phaseHints": ["finalizeplan"],
       "helpCategory": "planning"
     },
     {

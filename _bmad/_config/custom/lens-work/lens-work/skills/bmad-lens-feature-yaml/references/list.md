@@ -27,4 +27,4 @@ python3 ./scripts/feature-yaml-ops.py list \
 
 Returns JSON with a `features` array and `total` count. Each entry includes featureId, name, domain, service, phase, track, priority, and path.
 
-For user-facing display, present as a table grouped by domain/service. Highlight features in active phases (`dev`, `sprintplan`) and any with `critical` priority.
+For user-facing display, present as a table grouped by domain/service. Highlight features in active phases (`dev`, `finalizeplan`) and any with `critical` priority.

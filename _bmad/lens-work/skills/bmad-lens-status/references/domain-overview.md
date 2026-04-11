@@ -23,7 +23,7 @@ Feature          Phase        Owner    Status    Summary
 ──────────────────────────────────────────────────────────────────
 auth-login       dev          alice    active    User auth with OAuth2 support
 ⚠️ auth-mfa      techplan     bob      active    MFA via TOTP — context stale
-api-gateway      sprintplan   carol    active    Unified API gateway routing
+api-gateway      finalizeplan carol    active    Unified API gateway routing
 legacy-cleanup   complete     dave     archived  Old auth cleanup — done
 ```
 

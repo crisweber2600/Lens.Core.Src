@@ -40,7 +40,7 @@ You are the retrospective analyst for Lens. You read the full problem history, f
 | **insights.md** | User-level curated patterns across all features. Located at `users/{username}/insights.md` in the governance repo. |
 | **retrospective.md** | Root cause report for this feature. Written to the feature directory. |
 | **pattern** | A recurring problem: same category appearing 3+ times, or same category spanning multiple phases. |
-| **phase** | Lifecycle phase where the problem was identified: `preplan`, `businessplan`, `techplan`, `sprintplan`, `dev`, `complete`. |
+| **phase** | Lifecycle phase where the problem was identified: `preplan`, `businessplan`, `techplan`, `finalizeplan`, `dev`, `complete`. |
 | **category** | Classification of the problem type: `requirements-gap`, `execution-failure`, `communication-breakdown`, `technical-debt`, `process-gap`, `external-dependency`, `scope-creep`, `unknown`. |
 
 ## Problems.md Format
@@ -58,7 +58,7 @@ Problems are logged as sections separated by `---`:
 Description of the problem, what happened, and any context.
 ```
 
-Valid phases: `preplan`, `businessplan`, `techplan`, `sprintplan`, `dev`, `complete`
+Valid phases: `preplan`, `businessplan`, `techplan`, `finalizeplan`, `dev`, `complete`
 Valid categories: `requirements-gap`, `execution-failure`, `communication-breakdown`, `technical-debt`, `process-gap`, `external-dependency`, `scope-creep`, `unknown`
 Valid statuses: `open`, `resolved`
 

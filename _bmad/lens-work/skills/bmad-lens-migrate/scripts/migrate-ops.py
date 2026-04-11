@@ -45,16 +45,30 @@ DOC_SOURCE_BRANCH_DOCS = "branch-docs"
 DOC_SOURCE_REPO_DOCS = "source-docs"
 DOC_SOURCE_BMAD_OUTPUT = "bmad-output"
 
+DOC_LOCATION_BRANCH_DOCS_FLAT = "branch-docs-flat"
+DOC_LOCATION_BRANCH_DOCS_COMPAT = "branch-docs-compat"
+DOC_LOCATION_BRANCH_BMAD_OUTPUT = "branch-bmad-output"
+DOC_LOCATION_WORKING_TREE_DOCS_FALLBACK = "working-tree-docs-fallback"
+DOC_LOCATION_WORKING_TREE_BMAD_OUTPUT_FALLBACK = "working-tree-bmad-output-fallback"
+
 # Priority order for conflict resolution (first wins)
 DOC_SOURCE_PRIORITY = [DOC_SOURCE_GOVERNANCE_LEGACY, DOC_SOURCE_BRANCH_DOCS, DOC_SOURCE_REPO_DOCS, DOC_SOURCE_BMAD_OUTPUT]
+DOC_CANONICAL_PRIORITY = {
+    DOC_SOURCE_GOVERNANCE_LEGACY: 0,
+    DOC_LOCATION_BRANCH_DOCS_FLAT: 1,
+    DOC_LOCATION_BRANCH_DOCS_COMPAT: 2,
+    DOC_LOCATION_WORKING_TREE_DOCS_FALLBACK: 3,
+    DOC_LOCATION_BRANCH_BMAD_OUTPUT: 4,
+    DOC_LOCATION_WORKING_TREE_BMAD_OUTPUT_FALLBACK: 5,
+}
 
 LEGACY_PHASE_MAP = {
     "planning": "preplan",
     "preplan": "preplan",
     "businessplan": "businessplan",
     "techplan": "techplan",
-    "devproposal": "sprintplan",
-    "sprintplan": "sprintplan",
+    "devproposal": "finalizeplan",
+    "sprintplan": "finalizeplan",
     "dev": "dev",
     "dev-ready": "dev",
     "complete": "complete",
@@ -64,8 +78,8 @@ LEGACY_PHASE_MAP = {
 LEGACY_MILESTONE_MAP = {
     "businessplan": "businessplan",
     "techplan": "techplan",
-    "devproposal": "sprintplan",
-    "sprintplan": "sprintplan",
+    "devproposal": "finalizeplan",
+    "sprintplan": "finalizeplan",
     "dev-ready": "dev-ready",
     "dev-complete": "dev-complete",
 }
@@ -74,7 +88,7 @@ LEGACY_MILESTONE_MAP = {
 DEFAULT_BRANCH_PATTERN = r"^([a-z0-9-]+)-([a-z0-9-]+)-([a-z0-9-]+)(?:-([a-z0-9-]+))?$"
 
 # Phase ordering for state derivation (earliest to latest)
-PHASE_ORDER = ["planning", "businessplan", "techplan", "sprintplan", "dev", "complete"]
+PHASE_ORDER = ["planning", "businessplan", "techplan", "finalizeplan", "dev", "complete"]
 
 
 def validate_identifier(value: str, field_name: str) -> str | None:
@@ -85,6 +99,30 @@ def validate_identifier(value: str, field_name: str) -> str | None:
             f"Must match [a-z0-9][a-z0-9._-]{{0,63}} (lowercase alphanumeric, dots, hyphens, underscores)."
         )
     return None
+
+
+def parse_legacy_identity(old_id: str) -> tuple[str, str, str] | None:
+    """Split a legacy branch id into domain, service, and feature parts."""
+    parts = old_id.split("-")
+    if len(parts) < 3:
+        return None
+    return parts[0], parts[1], "-".join(parts[2:])
+
+
+def derive_legacy_feature(old_id: str, domain: str, service: str) -> str:
+    """Derive the legacy feature slug from *old_id* and validate its domain/service."""
+    parsed = parse_legacy_identity(old_id)
+    if parsed is None:
+        raise ValueError(f"Legacy branch '{old_id}' must contain domain, service, and feature segments")
+
+    derived_domain, derived_service, legacy_feature = parsed
+    if derived_domain != domain or derived_service != service:
+        raise ValueError(
+            f"Legacy branch '{old_id}' derives domain/service '{derived_domain}/{derived_service}', "
+            f"but migration requested '{domain}/{service}'"
+        )
+
+    return legacy_feature
 
 
 def now_iso() -> str:
@@ -315,15 +353,33 @@ def build_mirror_relative_path(doc: dict) -> Path:
     ) / doc["relative_path"]
 
 
+def document_source_label(doc: dict) -> str:
+    """Return the audit/reporting label for a discovered document."""
+    source_type = doc.get("source_type")
+    if source_type == DOC_SOURCE_GOVERNANCE_LEGACY:
+        return DOC_SOURCE_GOVERNANCE_LEGACY
+    return doc.get("source_location") or source_type or "unknown"
+
+
+def document_canonical_priority(doc: dict) -> int:
+    """Return the canonical precedence rank for a discovered document."""
+    return DOC_CANONICAL_PRIORITY.get(document_source_label(doc), len(DOC_CANONICAL_PRIORITY) + 1)
+
+
 def select_canonical_documents(docs: list[dict]) -> list[dict]:
     """Select the canonical governance document for each relative path."""
-    priority_rank = {src: i for i, src in enumerate(DOC_SOURCE_PRIORITY)}
     canonical_docs: list[dict] = []
     seen_targets: set[str] = set()
 
     for doc in sorted(
         docs,
-        key=lambda item: (-(item.get("commit_ts") or 0), priority_rank.get(item["source_type"], 99)),
+        key=lambda item: (
+            document_canonical_priority(item),
+            -(item.get("commit_ts") or 0),
+            item.get("source_branch") or "working-tree",
+            item["relative_path"],
+            item["source_path"],
+        ),
     ):
         rel = doc["relative_path"]
         if rel in seen_targets:
@@ -343,13 +399,13 @@ def build_document_audit(legacy_branches: list[str], control_entries: list[dict]
 
     for entry in control_entries:
         branch = entry.get("source_branch") or "working-tree"
-        source_type = entry.get("source_type") or "unknown"
+        source_type = document_source_label(entry)
         control_counts[branch] += 1
         control_by_source[branch][source_type] += 1
 
     for entry in governance_entries:
         branch = entry.get("source_branch") or "working-tree"
-        source_type = entry.get("source_type") or "unknown"
+        source_type = document_source_label(entry)
         governance_counts[branch] += 1
         governance_by_source[branch][source_type] += 1
 
@@ -547,17 +603,16 @@ def group_legacy_branches(names: list[str]) -> dict[str, dict]:
     for name in sorted_names:
         if name in is_milestone:
             continue
-        parts = name.split("-")
-        if len(parts) < 3:
+        parsed = parse_legacy_identity(name)
+        if parsed is None:
             continue
-        domain = parts[0]
-        service = parts[1]
-        feature_id = "-".join(parts[2:])
+        domain, service, legacy_feature = parsed
         features[name] = {
             "old_id": name,
             "derived_domain": domain,
             "derived_service": service,
-            "feature_id": feature_id,
+            "feature_id": legacy_feature,
+            "legacy_feature": legacy_feature,
             "milestones": milestone_map.get(name, []),
         }
 
@@ -653,7 +708,7 @@ def detect_legacy_milestones(governance_repo: Path, old_id: str) -> list[str]:
     return sorted(milestones)
 
 
-def find_legacy_state(governance_repo: Path, old_id: str, domain: str, service: str, feature_id: str) -> tuple[dict | None, str | None]:
+def find_legacy_state(governance_repo: Path, old_id: str, domain: str, service: str, legacy_feature: str) -> tuple[dict | None, str | None]:
     """Locate a legacy initiative-state.yaml in known historical locations.
 
     Tries filesystem first, then falls back to git extraction from origin/{old_id}.
@@ -662,7 +717,7 @@ def find_legacy_state(governance_repo: Path, old_id: str, domain: str, service: 
     candidates = [
         branch_dir / "initiative-state.yaml",
         branch_dir / "_bmad-output" / "lens-work" / "initiative-state.yaml",
-        branch_dir / "_bmad-output" / "lens-work" / "initiatives" / domain / service / feature_id / "initiative-state.yaml",
+        branch_dir / "_bmad-output" / "lens-work" / "initiatives" / domain / service / legacy_feature / "initiative-state.yaml",
         branch_dir / "_bmad-output" / "lens-work" / "initiatives" / domain / service / "initiative-state.yaml",
     ]
 
@@ -678,7 +733,7 @@ def find_legacy_state(governance_repo: Path, old_id: str, domain: str, service: 
         git_candidates = [
             "initiative-state.yaml",
             "_bmad-output/lens-work/initiative-state.yaml",
-            f"_bmad-output/lens-work/initiatives/{domain}/{service}/{feature_id}/initiative-state.yaml",
+            f"_bmad-output/lens-work/initiatives/{domain}/{service}/{legacy_feature}/initiative-state.yaml",
             f"_bmad-output/lens-work/initiatives/{domain}/{service}/initiative-state.yaml",
         ]
         for git_path in git_candidates:
@@ -786,21 +841,29 @@ def _find_docs_folder(repo_root: Path) -> Path | None:
     return None
 
 
+def _list_files_under(root: Path) -> list[Path]:
+    """Return all files beneath *root* in stable order."""
+    if not root.is_dir():
+        return []
+    return [path for path in sorted(root.rglob("*")) if path.is_file()]
+
+
 def discover_documents(
     governance_repo: Path,
     old_id: str,
     domain: str,
     service: str,
     feature_id: str,
+        legacy_feature: str,
     source_repo: Path | None,
 ) -> list[dict]:
     """Discover documents from all sources for a feature.
 
     Sources checked (in priority order):
       1. governance-legacy  — filesystem branches/{old_id}[-milestone]/... or git origin/{old_id}[-milestone] in governance repo
-      2. branch-docs        — git origin/{old_id}[-milestone] docs/ tree in source repo
-      3. source-docs        — filesystem Docs/{domain}/{service}/{featureId}/ in source repo
-      4. bmad-output        — filesystem _bmad-output/lens-work/initiatives/{domain}/{service}/ in source repo
+            2. branch-docs        — git origin/{old_id}[-milestone] docs/ tree in source repo using legacy feature paths
+            3. source-docs        — fallback filesystem docs paths in source repo when branch docs are absent
+            4. bmad-output        — feature-scoped branch or working-tree _bmad-output paths when docs are absent
 
     Returns list of dicts: {source_type, source_path, relative_path, filename, git_ref?, git_path?, source_branch, source_location}.
     """
@@ -852,17 +915,27 @@ def discover_documents(
     if source_repo is not None:
         # Source 2: Branch-docs — documents on the legacy branch family in the source repo
         source_branches = build_legacy_branch_variants(old_id, governance_repo, source_repo)
+        branch_docs_found = False
+        branch_bmad_found = False
         for branch_name in source_branches:
             ref = f"origin/{branch_name}"
             if not _git_ref_exists(source_repo, ref):
                 continue
 
-            doc_prefixes = [
-                (f"docs/{domain}/{service}/feature/{feature_id}/", "branch-docs-feature"),
-                (f"docs/{domain}/{service}/{feature_id}/", "branch-docs-flat"),
-            ]
-            for prefix, location_name in doc_prefixes:
-                paths = _git_ls_tree(source_repo, ref, prefix)
+            flat_prefix = f"docs/{domain}/{service}/{legacy_feature}/"
+            compat_prefix = f"docs/{domain}/{service}/feature/{legacy_feature}/"
+            flat_paths = _git_ls_tree(source_repo, ref, flat_prefix)
+            if flat_paths:
+                branch_docs_found = True
+                doc_paths = [(flat_paths, flat_prefix, DOC_LOCATION_BRANCH_DOCS_FLAT)]
+            else:
+                compat_paths = _git_ls_tree(source_repo, ref, compat_prefix)
+                doc_paths = []
+                if compat_paths:
+                    branch_docs_found = True
+                    doc_paths.append((compat_paths, compat_prefix, DOC_LOCATION_BRANCH_DOCS_COMPAT))
+
+            for paths, prefix, location_name in doc_paths:
                 for git_path in paths:
                     rel = git_path[len(prefix):]
                     if rel:
@@ -881,14 +954,33 @@ def discover_documents(
                             "commit_ts": ts,
                         })
 
-            bmad_branch_prefix = "_bmad-output/lens-work/"
-            bmad_paths = _git_ls_tree(source_repo, ref, bmad_branch_prefix)
-            for git_path in bmad_paths:
-                rel = git_path[len(bmad_branch_prefix):]
+            bmad_feature_file = f"_bmad-output/lens-work/initiatives/{domain}/{service}/{legacy_feature}.yaml"
+            bmad_feature_prefix = f"_bmad-output/lens-work/initiatives/{domain}/{service}/{legacy_feature}/"
+            for git_path in _git_ls_tree(source_repo, ref, bmad_feature_file):
+                branch_bmad_found = True
+                ts = _git_file_commit_ts(source_repo, ref, git_path) or 0
+                rel = Path(git_path).name
+                discovered.append({
+                    "source_type": DOC_SOURCE_BMAD_OUTPUT,
+                    "source_path": f"git:{ref}:{git_path}",
+                    "relative_path": rel,
+                    "filename": Path(rel).name,
+                    "git_ref": ref,
+                    "git_path": git_path,
+                    "git_repo": str(source_repo),
+                    "source_branch": branch_name,
+                    "source_location": DOC_LOCATION_BRANCH_BMAD_OUTPUT,
+                    "repo_label": "source",
+                    "commit_ts": ts,
+                })
+
+            for git_path in _git_ls_tree(source_repo, ref, bmad_feature_prefix):
+                rel = git_path[len(bmad_feature_prefix):]
                 if rel:
+                    branch_bmad_found = True
                     ts = _git_file_commit_ts(source_repo, ref, git_path) or 0
                     discovered.append({
-                        "source_type": DOC_SOURCE_BRANCH_DOCS,
+                        "source_type": DOC_SOURCE_BMAD_OUTPUT,
                         "source_path": f"git:{ref}:{git_path}",
                         "relative_path": rel,
                         "filename": Path(rel).name,
@@ -896,50 +988,69 @@ def discover_documents(
                         "git_path": git_path,
                         "git_repo": str(source_repo),
                         "source_branch": branch_name,
-                        "source_location": "branch-bmad-output",
+                        "source_location": DOC_LOCATION_BRANCH_BMAD_OUTPUT,
                         "repo_label": "source",
                         "commit_ts": ts,
                     })
 
-        # Source 3: Source repo Docs/{domain}/{service}/{featureId}/ (filesystem)
+        # Source 3: Working-tree docs fallback when no branch docs exist for this feature.
         docs_folder = _find_docs_folder(source_repo)
-        if docs_folder is not None:
-            feature_docs = docs_folder / domain / service / feature_id
-            if feature_docs.is_dir():
-                for fpath in sorted(feature_docs.rglob("*")):
-                    if fpath.is_file():
-                        rel_to_repo = str(fpath.relative_to(source_repo))
-                        ts = _git_file_commit_ts(source_repo, "HEAD", rel_to_repo) or 0
-                        discovered.append({
-                            "source_type": DOC_SOURCE_REPO_DOCS,
-                            "source_path": str(fpath),
-                            "repo_relative_path": rel_to_repo,
-                            "relative_path": str(fpath.relative_to(feature_docs)),
-                            "filename": fpath.name,
-                            "source_branch": "working-tree",
-                            "source_location": "working-tree-docs",
-                            "repo_label": "source",
-                            "commit_ts": ts,
-                        })
+        if not branch_docs_found and docs_folder is not None:
+            flat_docs = docs_folder / domain / service / legacy_feature
+            flat_files = _list_files_under(flat_docs)
+            compat_docs = docs_folder / domain / service / "feature" / legacy_feature
+            feature_docs = flat_docs if flat_files else compat_docs
 
-        # Source 4: Source repo _bmad-output/lens-work/initiatives/{domain}/{service}/ (filesystem)
-        bmad_output = source_repo / "_bmad-output" / "lens-work" / "initiatives" / domain / service
-        if bmad_output.is_dir():
-            for fpath in sorted(bmad_output.rglob("*")):
-                if fpath.is_file():
-                    rel_to_repo = str(fpath.relative_to(source_repo))
-                    ts = _git_file_commit_ts(source_repo, "HEAD", rel_to_repo) or 0
-                    discovered.append({
-                        "source_type": DOC_SOURCE_BMAD_OUTPUT,
-                        "source_path": str(fpath),
-                        "repo_relative_path": rel_to_repo,
-                        "relative_path": str(fpath.relative_to(bmad_output)),
-                        "filename": fpath.name,
-                        "source_branch": "working-tree",
-                        "source_location": "working-tree-bmad-output",
-                        "repo_label": "source",
-                        "commit_ts": ts,
-                    })
+            for fpath in (flat_files or _list_files_under(compat_docs)):
+                rel_to_repo = str(fpath.relative_to(source_repo))
+                ts = _git_file_commit_ts(source_repo, "HEAD", rel_to_repo) or 0
+                discovered.append({
+                    "source_type": DOC_SOURCE_REPO_DOCS,
+                    "source_path": str(fpath),
+                    "repo_relative_path": rel_to_repo,
+                    "relative_path": str(fpath.relative_to(feature_docs)),
+                    "filename": fpath.name,
+                    "source_branch": "working-tree",
+                    "source_location": DOC_LOCATION_WORKING_TREE_DOCS_FALLBACK,
+                    "repo_label": "source",
+                    "commit_ts": ts,
+                })
+
+        # Source 4: Working-tree feature-scoped _bmad-output fallback when branch entries are absent.
+        if not branch_bmad_found:
+            bmad_output = source_repo / "_bmad-output" / "lens-work" / "initiatives" / domain / service
+            feature_yaml = bmad_output / f"{legacy_feature}.yaml"
+            feature_dir = bmad_output / legacy_feature
+
+            if feature_yaml.is_file():
+                rel_to_repo = str(feature_yaml.relative_to(source_repo))
+                ts = _git_file_commit_ts(source_repo, "HEAD", rel_to_repo) or 0
+                discovered.append({
+                    "source_type": DOC_SOURCE_BMAD_OUTPUT,
+                    "source_path": str(feature_yaml),
+                    "repo_relative_path": rel_to_repo,
+                    "relative_path": feature_yaml.name,
+                    "filename": feature_yaml.name,
+                    "source_branch": "working-tree",
+                    "source_location": DOC_LOCATION_WORKING_TREE_BMAD_OUTPUT_FALLBACK,
+                    "repo_label": "source",
+                    "commit_ts": ts,
+                })
+
+            for fpath in _list_files_under(feature_dir):
+                rel_to_repo = str(fpath.relative_to(source_repo))
+                ts = _git_file_commit_ts(source_repo, "HEAD", rel_to_repo) or 0
+                discovered.append({
+                    "source_type": DOC_SOURCE_BMAD_OUTPUT,
+                    "source_path": str(fpath),
+                    "repo_relative_path": rel_to_repo,
+                    "relative_path": str(fpath.relative_to(feature_dir)),
+                    "filename": fpath.name,
+                    "source_branch": "working-tree",
+                    "source_location": DOC_LOCATION_WORKING_TREE_BMAD_OUTPUT_FALLBACK,
+                    "repo_label": "source",
+                    "commit_ts": ts,
+                })
 
     return discovered
 
@@ -951,6 +1062,7 @@ def migrate_documents(
     domain: str,
     service: str,
     feature_id: str,
+    legacy_feature: str,
     source_repo: Path | None,
 ) -> dict:
     """Mirror discovered documents into the control repo dossier and migrate winners to governance docs.
@@ -962,7 +1074,7 @@ def migrate_documents(
     the canonical winners are written to governance docs.
     """
     legacy_branches = build_legacy_branch_variants(old_id, governance_repo, source_repo)
-    docs = discover_documents(governance_repo, old_id, domain, service, feature_id, source_repo)
+    docs = discover_documents(governance_repo, old_id, domain, service, feature_id, legacy_feature, source_repo)
     dossier_dir, _, _, _ = migration_record_paths(control_repo, domain, service, feature_id)
     target_dir = governance_repo / "features" / domain / service / feature_id / "docs"
 
@@ -1005,7 +1117,12 @@ def migrate_documents(
             errors.append(f"Failed to mirror {doc['relative_path']} into dossier: {exc}")
             continue
 
-        discovered_records.append(serialize_discovered_doc(enriched_doc, mirror_rel_path))
+        discovered_records.append(
+            serialize_discovered_doc(
+                enriched_doc,
+                Path(relative_to_root(control_repo, dossier_dir / mirror_rel_path)),
+            )
+        )
         docs_with_content.append(enriched_doc)
 
     if errors:
@@ -1025,7 +1142,8 @@ def migrate_documents(
             raise OSError(f"Failed to write canonical document {rel}: {exc}") from exc
 
         copied.append(rel)
-        source_counts[doc["source_type"]] = source_counts.get(doc["source_type"], 0) + 1
+        source_label = document_source_label(doc)
+        source_counts[source_label] = source_counts.get(source_label, 0) + 1
         canonical_records.append({
             "relative_path": rel,
             "source_type": doc["source_type"],
@@ -1219,13 +1337,14 @@ def build_migrated_feature_data(
     feature_id: str,
     domain: str,
     service: str,
+    legacy_feature: str,
     username: str,
     timestamp: str,
     fallback_phase: str,
 ) -> tuple[dict, str | None, list[str]]:
     """Create a Lens Next feature.yaml payload, preserving legacy state where possible."""
     init_feature_ops = load_init_feature_ops()
-    legacy_state, legacy_state_path = find_legacy_state(governance_repo, old_id, domain, service, feature_id)
+    legacy_state, legacy_state_path = find_legacy_state(governance_repo, old_id, domain, service, legacy_feature)
     warnings: list[str] = []
 
     raw_track = None
@@ -1367,6 +1486,7 @@ def cmd_scan(args: argparse.Namespace) -> dict:
         feature_id = info["feature_id"]
         domain = info["derived_domain"]
         service = info["derived_service"]
+        legacy_feature = info["legacy_feature"]
         milestones = info["milestones"]
         state = derive_state(milestones)
 
@@ -1380,7 +1500,7 @@ def cmd_scan(args: argparse.Namespace) -> dict:
                 }
             )
 
-        docs = discover_documents(governance_repo, base_name, domain, service, feature_id, source_repo)
+        docs = discover_documents(governance_repo, base_name, domain, service, feature_id, legacy_feature, source_repo)
         canonical_docs = select_canonical_documents(docs)
 
         legacy_features.append(
@@ -1389,6 +1509,7 @@ def cmd_scan(args: argparse.Namespace) -> dict:
                 "derived_domain": domain,
                 "derived_service": service,
                 "feature_id": feature_id,
+                "legacy_feature": legacy_feature,
                 "milestones": milestones,
                 "proposed": {
                     "base_branch": feature_id,
@@ -1472,9 +1593,14 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
             "error": f"Feature '{feature_id}' already exists in feature-index.yaml",
         }
 
+    try:
+        legacy_feature = derive_legacy_feature(old_id, domain, service)
+    except ValueError as exc:
+        return {"status": "fail", "error": str(exc)}
+
     milestones = detect_legacy_milestones(governance_repo, old_id)
     fallback_phase = derive_state(milestones)
-    legacy_state, legacy_state_path = find_legacy_state(governance_repo, old_id, domain, service, feature_id)
+    legacy_state, legacy_state_path = find_legacy_state(governance_repo, old_id, domain, service, legacy_feature)
     if legacy_state:
         raw_phase = legacy_state.get("current_phase") or legacy_state.get("phase")
         if isinstance(raw_phase, str) and raw_phase:
@@ -1501,22 +1627,23 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
             planned_actions.append(f"Copy legacy artifacts from {artifact_source}")
 
         # Document discovery preview
-        docs = discover_documents(governance_repo, old_id, domain, service, feature_id, source_repo)
+        docs = discover_documents(governance_repo, old_id, domain, service, feature_id, legacy_feature, source_repo)
         canonical_docs = select_canonical_documents(docs)
         legacy_branches = build_legacy_branch_variants(old_id, governance_repo, source_repo)
         docs_target = governance_repo / "features" / domain / service / feature_id / "docs"
         for doc in docs:
             planned_actions.append(
-                f"Mirror document [{doc['source_type']}:{doc.get('source_branch') or 'working-tree'}] {doc['relative_path']} → {dossier_dir / build_mirror_relative_path(doc)}"
+                f"Mirror document [{document_source_label(doc)}:{doc.get('source_branch') or 'working-tree'}] {doc['relative_path']} → {dossier_dir / build_mirror_relative_path(doc)}"
             )
         for doc in canonical_docs:
             planned_actions.append(
-                f"Migrate canonical document [{doc['source_type']}:{doc.get('source_branch') or 'working-tree'}] {doc['relative_path']} → {docs_target / doc['relative_path']}"
+                f"Migrate canonical document [{document_source_label(doc)}:{doc.get('source_branch') or 'working-tree'}] {doc['relative_path']} → {docs_target / doc['relative_path']}"
             )
 
         return {
             "status": "pass",
             "feature_id": feature_id,
+            "legacy_feature": legacy_feature,
             "dry_run": True,
             "planned_actions": planned_actions,
             "feature_yaml_created": False,
@@ -1537,6 +1664,7 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
         feature_id,
         domain,
         service,
+        legacy_feature,
         username,
         timestamp,
         fallback_phase,
@@ -1592,7 +1720,7 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
     # Document migration
     try:
         documents_result = migrate_documents(
-            governance_repo, control_repo, old_id, domain, service, feature_id, source_repo,
+            governance_repo, control_repo, old_id, domain, service, feature_id, legacy_feature, source_repo,
         )
     except OSError as e:
         return {"status": "fail", "error": f"Failed to migrate documents: {e}"}
@@ -1600,6 +1728,7 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
     migration_record = {
         "version": 1,
         "feature_id": feature_id,
+        "legacy_feature": legacy_feature,
         "old_id": old_id,
         "domain": domain,
         "service": service,
@@ -1649,6 +1778,7 @@ def cmd_migrate_feature(args: argparse.Namespace) -> dict:
     return {
         "status": "pass",
         "feature_id": feature_id,
+        "legacy_feature": legacy_feature,
         "dry_run": False,
         "feature_yaml_created": feature_yaml_created,
         "index_updated": index_updated,
@@ -1765,6 +1895,12 @@ def cmd_cleanup(args: argparse.Namespace) -> dict:
         control_repo, control_warning = resolve_control_repo(getattr(args, "control_repo", None), governance_repo, source_repo)
     except RuntimeError as exc:
         return {"status": "fail", "error": str(exc)}
+
+    try:
+        legacy_feature = derive_legacy_feature(old_id, domain, service)
+    except ValueError as exc:
+        return {"status": "fail", "error": str(exc)}
+
     dossier_dir, record_path, approval_path, receipt_path = migration_record_paths(control_repo, domain, service, feature_id)
     record = read_yaml_if_exists(record_path)
     if record is None:
@@ -1800,21 +1936,29 @@ def cmd_cleanup(args: argparse.Namespace) -> dict:
     if source_repo:
         docs_folder = _find_docs_folder(source_repo)
         if docs_folder:
-            source_docs = docs_folder / domain / service / feature_id
+            source_docs = docs_folder / domain / service / legacy_feature
             if source_docs.is_dir():
                 planned_deletions.append({
                     "path": str(source_docs),
                     "type": "directory",
-                    "source": "source-repo-docs",
+                    "source": "source-repo-docs-flat",
                 })
 
-        # 3. Source repo _bmad-output/lens-work/initiatives/{domain}/{service}/
+        # 3. Source repo feature-scoped _bmad-output artifacts
         bmad_output = source_repo / "_bmad-output" / "lens-work" / "initiatives" / domain / service
-        if bmad_output.is_dir():
+        feature_yaml = bmad_output / f"{legacy_feature}.yaml"
+        feature_dir = bmad_output / legacy_feature
+        if feature_yaml.is_file():
             planned_deletions.append({
-                "path": str(bmad_output),
+                "path": str(feature_yaml),
+                "type": "file",
+                "source": "source-bmad-output-feature-file",
+            })
+        if feature_dir.is_dir():
+            planned_deletions.append({
+                "path": str(feature_dir),
                 "type": "directory",
-                "source": "source-bmad-output",
+                "source": "source-bmad-output-feature-dir",
             })
 
     # 4. Remote branch cleanup (when --delete-remote-branches is set)
@@ -1864,6 +2008,7 @@ def cmd_cleanup(args: argparse.Namespace) -> dict:
         result: dict = {
             "status": "pass",
             "feature_id": feature_id,
+            "legacy_feature": legacy_feature,
             "dry_run": True,
             "planned_deletions": planned_deletions,
             "approval_record_path": relative_to_root(control_repo, approval_path),
@@ -1879,6 +2024,7 @@ def cmd_cleanup(args: argparse.Namespace) -> dict:
     actor = args.actor or detect_git_user(control_repo)
     approval_record = {
         "feature_id": feature_id,
+        "legacy_feature": legacy_feature,
         "old_id": old_id,
         "domain": domain,
         "service": service,
@@ -1905,6 +2051,9 @@ def cmd_cleanup(args: argparse.Namespace) -> dict:
             if target.is_dir():
                 shutil.rmtree(target)
                 cleaned.append(deletion)
+            elif target.is_file():
+                target.unlink()
+                cleaned.append(deletion)
         except OSError as e:
             errors.append(f"Failed to delete {target}: {e}")
 
@@ -1928,6 +2077,7 @@ def cmd_cleanup(args: argparse.Namespace) -> dict:
     result = {
         "status": "pass" if not errors else "partial",
         "feature_id": feature_id,
+        "legacy_feature": legacy_feature,
         "dry_run": False,
         "cleaned": cleaned,
     }
@@ -1938,6 +2088,7 @@ def cmd_cleanup(args: argparse.Namespace) -> dict:
 
     cleanup_receipt = {
         "feature_id": feature_id,
+        "legacy_feature": legacy_feature,
         "old_id": old_id,
         "domain": domain,
         "service": service,

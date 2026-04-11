@@ -171,7 +171,7 @@ def test_pause_without_reason():
 def test_dry_run_pause():
     print("test_dry_run_pause", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
-        feature_path = make_feature(tmp, phase="sprintplan")
+        feature_path = make_feature(tmp, phase="finalizeplan")
         with open(feature_path) as f:
             before = f.read()
 

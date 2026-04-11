@@ -119,7 +119,7 @@ def make_feature_yaml(
         "milestones": {
             "businessplan": None,
             "techplan": None,
-            "sprintplan": None,
+            "finalizeplan": None,
             "dev-ready": None,
             "dev-complete": None,
         },

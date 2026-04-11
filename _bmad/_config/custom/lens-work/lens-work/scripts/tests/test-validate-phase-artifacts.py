@@ -22,6 +22,10 @@ def _run(*args: str):
 def _make_docs(tmp_path: Path) -> Path:
     docs_root = tmp_path / "docs"
     docs_root.mkdir()
+    (docs_root / "finalizeplan-review.md").write_text("# Review\n", encoding="utf-8")
+    (docs_root / "epics.md").write_text("# Epics\n", encoding="utf-8")
+    (docs_root / "stories.md").write_text("# Stories\n", encoding="utf-8")
+    (docs_root / "implementation-readiness.md").write_text("# Ready\n", encoding="utf-8")
     (docs_root / "sprint-status.yaml").write_text("status: draft\n", encoding="utf-8")
     return docs_root
 
@@ -48,7 +52,7 @@ class TestValidatePhaseArtifactsStoryFiles:
         (docs_root / "1-2-user-auth.md").write_text("# Story\n", encoding="utf-8")
 
         result = _run(
-            "--phase", "sprintplan",
+            "--phase", "finalizeplan",
             "--lifecycle-path", str(LIFECYCLE),
             "--docs-root", str(docs_root),
             "--json",
@@ -65,7 +69,7 @@ class TestValidatePhaseArtifactsStoryFiles:
         (stories_dir / "1-3-admin-audit.yaml").write_text("status: ready-for-dev\n", encoding="utf-8")
 
         result = _run(
-            "--phase", "sprintplan",
+            "--phase", "finalizeplan",
             "--lifecycle-path", str(LIFECYCLE),
             "--docs-root", str(docs_root),
             "--json",
@@ -80,7 +84,7 @@ class TestValidatePhaseArtifactsStoryFiles:
         (docs_root / "dev-story-1-4-payments.md").write_text("# Legacy Story\n", encoding="utf-8")
 
         result = _run(
-            "--phase", "sprintplan",
+            "--phase", "finalizeplan",
             "--lifecycle-path", str(LIFECYCLE),
             "--docs-root", str(docs_root),
             "--json",

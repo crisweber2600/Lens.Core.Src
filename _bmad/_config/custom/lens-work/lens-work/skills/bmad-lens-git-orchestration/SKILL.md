@@ -86,11 +86,23 @@ Load `./references/create-dev-branch.md` for full guidance.
 **Process:**
 1. Confirm both branches exist and are clean
 2. Determine merge strategy: `pr` (default) or `direct`
-3. For `pr`: create a GitHub PR from `{featureId}-plan` → `{featureId}`, return PR URL
+3. For `pr`: create or reuse a GitHub PR from `{featureId}-plan` → `{featureId}`, optionally enable auto-merge, then return PR URL
 4. For `direct`: merge with `--no-ff`, commit message `[MERGE] {featureId} — merge plan into base`
 5. Optionally delete `{featureId}-plan` branch after successful merge
 
 Load `./references/merge-plan.md` for full guidance.
+
+### create-pr
+
+**Outcome:** A PR exists between two named branches, with optional auto-merge enabled when requested.
+
+**Process:**
+1. Confirm base and head branches exist
+2. Reuse an existing open PR for the same head/base pair when one already exists
+3. Otherwise create the PR with the provided or default title/body
+4. If `--auto-merge` was requested, attempt to enable it and report whether GitHub accepted it
+
+Load `./references/create-pr.md` for full guidance.
 
 ### push
 

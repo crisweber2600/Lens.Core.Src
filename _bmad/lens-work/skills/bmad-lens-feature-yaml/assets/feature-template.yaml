@@ -13,14 +13,14 @@ service: ""
 
 # --- Lifecycle ---
 phase: "preplan"
-# Valid phases: preplan, businessplan, techplan, sprintplan, dev, complete, paused
+# Valid phases: preplan, businessplan, techplan, finalizeplan, expressplan, dev, complete, paused, and *-complete states
 track: "quickplan"
 # Valid tracks: quickplan, full, feature, hotfix, hotfix-express, express, spike, tech-change
 
 milestones:
   businessplan: null
   techplan: null
-  sprintplan: null
+  finalizeplan: null
   dev-ready: null
   dev-complete: null
 # Each milestone is null (not reached) or an ISO 8601 timestamp (completed)

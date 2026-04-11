@@ -9,7 +9,7 @@ description: ExpressPlan phase — all planning artifacts in one session for a f
 
 This skill runs the ExpressPlan phase for a single feature within the Lens 2-branch model. It combines analyst, PM, architect, and scrum master perspectives to produce all planning artifacts in a single guided session. Every artifact lands atomically on governance `main`. In batch mode it uses the shared Lens two-pass batch contract: pass 1 writes or refreshes `expressplan-batch-input.md` and stops; pass 2 resumes the express session only after the approved answers are loaded.
 
-**Scope:** ExpressPlan is a standalone phase used only by the `express` track. It replaces the full lifecycle sequence (preplan → businessplan → techplan → devproposal → sprintplan) with a single combined session. No milestone branches or PRs are created.
+**Scope:** ExpressPlan is a standalone phase used only by the `express` track. It replaces the full lifecycle sequence (preplan → businessplan → techplan → finalizeplan) with a single combined session. No milestone branches or PRs are created.
 
 **Args:** Accepts `--feature-id <id>` to target a specific feature and `--mode interactive|batch` to control flow.
 

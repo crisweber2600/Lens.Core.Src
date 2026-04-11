@@ -54,7 +54,11 @@ def artifact_candidates(docs_root: Path, name: str) -> list[Path]:
         case "story-files":
             candidates = story_file_candidates(docs_root)
         case "review-report":
-            candidates = [docs_root / "review-report.md", docs_root / "adversarial-review.md"]
+            candidates = [
+                docs_root / "review-report.md",
+                docs_root / "adversarial-review.md",
+                docs_root / "finalizeplan-review.md",
+            ]
         case _:
             candidates = [docs_root / f"{name}.md"]
     return [candidate for candidate in candidates if not is_batch_input(candidate)]

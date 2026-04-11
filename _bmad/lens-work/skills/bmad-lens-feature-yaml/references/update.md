@@ -34,10 +34,10 @@ Transitions are track-aware. Each track defines which phases can follow which:
 
 | From \ Track | full | quickplan | hotfix | express | spike | feature | hotfix-express | tech-change |
 |---|---|---|---|---|---|---|---|---|
-| preplan | businessplan | businessplan, techplan, sprintplan, dev | dev | sprintplan, dev | dev | businessplan | dev | techplan, dev |
-| businessplan | techplan | techplan, sprintplan, dev | — | — | — | techplan | — | — |
-| techplan | sprintplan | sprintplan, dev | — | — | — | sprintplan | — | dev |
-| sprintplan | dev | dev | — | dev | — | dev | — | — |
+| preplan | businessplan | businessplan, techplan, finalizeplan, dev | dev | expressplan, dev | dev | businessplan | dev | techplan, dev |
+| businessplan | techplan | techplan, finalizeplan, dev | — | — | — | techplan | — | — |
+| techplan | finalizeplan | finalizeplan, dev | — | — | — | finalizeplan | expressplan | dev |
+| finalizeplan | dev | dev | — | — | — | dev | — | dev |
 | dev | complete | complete | complete | complete | complete | complete | complete | complete |
 | paused | any | any | any | any | any | any | any | any |
 

@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-VALID_PHASES = ["preplan", "businessplan", "techplan", "sprintplan", "dev", "complete"]
+VALID_PHASES = ["preplan", "businessplan", "techplan", "finalizeplan", "dev", "complete"]
 VALID_CATEGORIES = [
     "requirements-gap",
     "execution-failure",

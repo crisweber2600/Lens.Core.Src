@@ -62,12 +62,9 @@ agent:
     - trigger: TP or fuzzy match on techplan
       exec: "{project-root}/lens.core/_bmad/lens-work/workflows/router/techplan/workflow.md"
       description: "[TP] Start TechPlan: Route architecture and technical planning work"
-    - trigger: DP or fuzzy match on devproposal
-      exec: "{project-root}/lens.core/_bmad/lens-work/workflows/router/devproposal/workflow.md"
-      description: "[DP] Start DevProposal: Route epics, stories, and readiness work"
-    - trigger: SP or fuzzy match on sprintplan
-      exec: "{project-root}/lens.core/_bmad/lens-work/workflows/router/sprintplan/workflow.md"
-      description: "[SP] Start SprintPlan: Route sprint planning and story file generation"
+    - trigger: FZ or fuzzy match on finalizeplan or final plan
+      exec: "{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-finalizeplan/SKILL.md"
+      description: "[FZ] Start FinalizePlan: Run review, planning bundle, and PR handoff work"
     - trigger: DV or fuzzy match on dev
       exec: "{project-root}/lens.core/_bmad/lens-work/workflows/router/dev/workflow.md"
       description: "[DV] Delegate Dev: Route implementation execution to target project agents"

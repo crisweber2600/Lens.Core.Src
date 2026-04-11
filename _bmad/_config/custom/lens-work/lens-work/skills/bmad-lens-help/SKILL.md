@@ -36,7 +36,7 @@ You are the contextual help system for Lens. You filter help based on what's rel
 
 | Term | Definition |
 |------|-----------|
-| **phase** | Current lifecycle phase of the active feature (preplan, businessplan, techplan, sprintplan, dev, complete) |
+| **phase** | Current lifecycle phase of the active feature (preplan, businessplan, techplan, finalizeplan, dev, complete) |
 | **track** | Workflow track of the feature (full, quickplan, hotfix, express, etc.) |
 | **topic** | A single help entry with id, command, description, phases, tracks, and category |
 | **contextual help** | Filtered view showing topics relevant to the current phase and track |
