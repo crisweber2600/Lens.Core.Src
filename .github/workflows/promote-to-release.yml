@@ -363,8 +363,6 @@ jobs:
         run: |
           REQUIRED=(
             "build-output/.github/agents/bmad-agent-lens-work-lens.agent.md"
-            "build-output/.github/prompts/lens-work.onboard.prompt.md"
-            "build-output/.github/prompts/lens-work.discover.prompt.md"
             "build-output/.github/lens-work-instructions.md"
           )
 
@@ -388,6 +386,24 @@ jobs:
               echo "✅ $target"
             fi
           done
+
+          for src in .github/prompts/*.md; do
+            [ -f "$src" ] || continue
+            target="build-output/.github/prompts/$(basename "$src")"
+            if [ ! -f "$target" ]; then
+              echo "::error::Missing published prompt file: $target"
+              MISSING=1
+            else
+              echo "✅ $target"
+            fi
+          done
+
+          LEGACY_PROMPTS=$(find build-output/.github/prompts -maxdepth 1 -type f -name 'lens-work*.prompt.md' -print)
+          if [ -n "$LEGACY_PROMPTS" ]; then
+            echo "::error::Legacy lens-work prompt aliases were published"
+            printf '%s\n' "$LEGACY_PROMPTS"
+            MISSING=1
+          fi
 
           if [ -e "build-output/.github/.git" ]; then
             echo "::error::build-output/.github contains .git; .github must be embedded content, not a nested clone"

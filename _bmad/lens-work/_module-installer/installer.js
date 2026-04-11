@@ -242,6 +242,27 @@ IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL @lens.core/_bmad/lens
 `;
 }
 
+async function removeMatchingFiles(dirPath, matcher, { logger, label }) {
+    if (!(await fsHelpers.pathExists(dirPath))) {
+        return 0;
+    }
+
+    const entries = await fs.readdir(dirPath, { withFileTypes: true });
+    let removed = 0;
+
+    for (const entry of entries) {
+        if (!entry.isFile() || !matcher(entry.name)) {
+            continue;
+        }
+
+        await fs.rm(path.join(dirPath, entry.name), { force: true });
+        logger.log(`  removed stale ${label}: ${entry.name}`);
+        removed++;
+    }
+
+    return removed;
+}
+
 function codexAgentsMd() {
     return `# LENS Workbench — Codex Agent
 
@@ -391,6 +412,13 @@ async function installGitHubCopilot(projectRoot, { updateMode, logger }) {
     const promptsDir = path.join(ghDir, 'prompts');
     const skillsDir = path.join(ghDir, 'skills');
 
+    await fsHelpers.ensureDir(promptsDir);
+    await removeMatchingFiles(
+        promptsDir,
+        name => name.startsWith('lens-work') && name.endsWith('.prompt.md'),
+        { logger, label: 'prompt alias' }
+    );
+
     // Agent stub
     await writeAdapterFile(
         path.join(agentsDir, 'bmad-agent-lens-work-lens.agent.md'),
@@ -453,6 +481,13 @@ async function installCursor(projectRoot, { updateMode, logger }) {
 
     const cursorDir = path.join(projectRoot, '.cursor', 'commands');
 
+    await fsHelpers.ensureDir(cursorDir);
+    await removeMatchingFiles(
+        cursorDir,
+        name => name.startsWith('bmad-lens-work-') && name.endsWith('.md'),
+        { logger, label: 'command alias' }
+    );
+
     for (const cmd of IDE_COMMANDS) {
         await writeAdapterFile(
             path.join(cursorDir, cmd.file),
@@ -468,6 +503,13 @@ async function installClaude(projectRoot, { updateMode, logger }) {
     logger.log('Installing Claude Code adapter...');
 
     const claudeDir = path.join(projectRoot, '.claude', 'commands');
+
+    await fsHelpers.ensureDir(claudeDir);
+    await removeMatchingFiles(
+        claudeDir,
+        name => name.startsWith('bmad-lens-work-') && name.endsWith('.md'),
+        { logger, label: 'command alias' }
+    );
 
     for (const cmd of IDE_COMMANDS) {
         await writeAdapterFile(
@@ -492,6 +534,13 @@ async function installCodex(projectRoot, { updateMode, logger }) {
 
     // .codex/commands/ — same command stubs as Cursor/Claude
     const codexDir = path.join(projectRoot, '.codex', 'commands');
+
+    await fsHelpers.ensureDir(codexDir);
+    await removeMatchingFiles(
+        codexDir,
+        name => name.startsWith('bmad-lens-work-') && name.endsWith('.md'),
+        { logger, label: 'command alias' }
+    );
 
     for (const cmd of IDE_COMMANDS) {
         await writeAdapterFile(

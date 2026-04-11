@@ -47,12 +47,12 @@ Each subfolder is an independent git repo with its own `.git/`, branches, and re
 | `lens.core/_bmad/_config/...` | `lens.core/_bmad/_config/...` |
 | `docs/...` | Workspace root `docs/...` (control repo) |
 | `{target_projects_path}/{domain}/{service}/{repo}/` | The cloned code repo for that initiative |
-| `.github/prompts/*.prompt.md` | Published lens-work stub files (`lens-work.*` and `lens-*`) — always follow the redirect to `lens.core/_bmad/lens-work/prompts/...` |
+| `.github/prompts/*.prompt.md` | Published Lens Next stub files (`lens-*.prompt.md`) — always follow the redirect to `lens.core/_bmad/lens-work/prompts/...` |
 | `.github/skills/*/SKILL.md` | Stub files — always follow the redirect to the referenced `lens.core/_bmad/.../SKILL.md` path |
 
 ## The `/dev` Prompt — Strict Write Scope
 
-When `lens-work.dev.prompt.md` is executed:
+When `lens-dev.prompt.md` is executed:
 
 1. **Implementation code** (new files, edits, commits, branches, PRs) goes ONLY in the target repo under the configured `target_projects_path`
 2. **State tracking** (sprint-status, initiative state) goes ONLY in `docs/`
