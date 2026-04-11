@@ -69,7 +69,17 @@ After producing the draft:
 
 ## Batch Mode Behaviour
 
-Produce and commit the tech plan without prompting. Append to the batch summary log. Proceed immediately to adversarial review.
+### Pass 1 — Intake Generation
+
+- Do not produce or commit `tech-plan.md` on pass 1.
+- Add only unresolved technical-design questions to `quickplan-batch-input.md`.
+- Stop after the intake file is written or refreshed.
+
+### Pass 2 — Execute Tech Plan
+
+- Once `quickplan-batch-input.md` is marked `ready-for-pass-2`, produce and commit the tech plan using the approved answers as context.
+- Append a one-line tech-plan summary to the batch report.
+- Proceed to adversarial review only if the pipeline remains unblocked.
 
 ## Quality Checklist (pre-commit)
 

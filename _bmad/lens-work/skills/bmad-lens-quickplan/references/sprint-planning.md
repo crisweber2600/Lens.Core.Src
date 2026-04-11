@@ -140,4 +140,14 @@ As a {role}, I want {capability}, so that {benefit}.
 
 ## Batch Mode Behaviour
 
-Create sprint plan and all stories without prompting. Commit each as an atomic two-phase commit. Append to batch summary log.
+### Pass 1 — Intake Generation
+
+- Do not create `sprint-plan.md` or story files on pass 1.
+- Add only unresolved sprint-boundary, estimation, and story-shaping questions to `quickplan-batch-input.md`.
+- Stop after the intake file is written or refreshed.
+
+### Pass 2 — Execute Sprint Planning
+
+- Once `quickplan-batch-input.md` is marked `ready-for-pass-2`, create the sprint plan and all story files using the approved answers as context.
+- Commit each planning stage as an atomic two-phase commit.
+- Append sprint and story counts to the batch summary log.

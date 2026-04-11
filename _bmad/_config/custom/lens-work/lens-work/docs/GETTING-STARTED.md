@@ -64,6 +64,7 @@ LENS will walk you through naming your feature, selecting a lifecycle track, and
 |---------|-------------|
 | `/status` | Show current initiative state (derived from git) |
 | `/next` | Resolve the one unblocked next step and load it immediately |
+| `/batch` | Generate or resume a two-pass batch intake for the current planning target |
 | `/help` | List all available commands |
 | `/switch` | Switch to a different initiative |
 | `/dashboard` | See all active initiatives across domains |
@@ -74,6 +75,8 @@ LENS will walk you through naming your feature, selecting a lifecycle track, and
 | `/split-feature` | Split a feature initiative into multiple child initiatives |
 
 `/next` does not show a menu when the next step is deterministic. It surfaces blockers when it cannot proceed; otherwise it routes straight into the owning phase command.
+
+`/batch` defaults to the current planning target. On the first pass it writes a context-derived `{target}-batch-input.md` file and stops; after you fill it in and mark it ready, re-running `/batch` resumes the owning planning command.
 
 ---
 

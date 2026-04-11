@@ -13,6 +13,7 @@ Lens,bmad-lens-status,feature-status,FS,Show current phase branch state and acti
 Lens,bmad-lens-status,domain-status,DM,Show all features in a domain with status from feature-index.yaml,domain,<domain> [--governance-dir],anytime,,,false,,domain summary JSON
 Lens,bmad-lens-status,portfolio-status,PS,Show all active features across the portfolio from feature-index.yaml,portfolio,[--governance-dir],anytime,,,false,,portfolio summary JSON
 Lens,bmad-lens-next,next-action,NA,Resolve the one unblocked next command for the current feature and auto-delegate into it,suggest,[featureId] [--governance-dir],anytime,,,false,,delegated command or blocker report
+Lens,bmad-lens-batch,batch,BT,Generate or resume a two-pass batch intake for the current planning target,run,[featureId] [--target <current|preplan|businessplan|techplan|devproposal|sprintplan|expressplan|quickplan>],anytime,,,false,,{target}-batch-input.md or resumed planning target
 Lens,bmad-lens-switch,switch-feature,FE,Switch active feature context loading paths and related deps,switch,<featureId> [--governance-dir],anytime,,,false,,context paths JSON
 Lens,bmad-lens-switch,list-features,LF,List all features with status and staleness info,list,[--status] [--governance-dir],anytime,,,false,,features list JSON
 Lens,bmad-lens-help,contextual-help,HE,Show phase-filtered help for the current lifecycle state,contextual,[--phase] [--track],anytime,,,false,,help table

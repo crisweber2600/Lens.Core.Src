@@ -19,6 +19,7 @@ pytest scripts/tests/test-create-pr.py -v
 | Test | Script Under Test |
 |------|-------------------|
 | `test-create-pr.py` | `uv run create-pr.py` |
+| `test-batch-mode-contracts.py` | Static contract checks for `/batch` publication and two-pass batch behavior |
 | `test-install.py` | `uv run install.py` |
 | `test-phase-conductor-contracts.py` | Static contract checks for interactive planning handoffs |
 | `test-preflight.py` | `uv run preflight.py` |

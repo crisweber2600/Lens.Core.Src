@@ -7,7 +7,7 @@ description: DevProposal phase — epics, stories, and implementation readiness 
 
 ## Overview
 
-This skill runs the DevProposal phase for a single feature within the Lens 2-branch model. It publishes the reviewed TechPlan docs from the control repo into governance, then stages DevProposal artifacts locally for the SprintPlan handoff. Epic and story creation plus implementation readiness run through registered Lens BMAD wrappers.
+This skill runs the DevProposal phase for a single feature within the Lens 2-branch model. It publishes the reviewed TechPlan docs from the control repo into governance, then stages DevProposal artifacts locally for the SprintPlan handoff. Epic and story creation plus implementation readiness run through registered Lens BMAD wrappers. In batch mode it uses the shared Lens two-pass batch contract: pass 1 writes or refreshes `devproposal-batch-input.md` and stops; pass 2 resumes DevProposal with the approved answers loaded before publication and wrapper delegation.
 
 **Scope:** DevProposal follows TechPlan and produces the implementation breakdown — epics, stories, and readiness assessment. This is the sole phase in the devproposal milestone.
 
@@ -21,7 +21,7 @@ You are the DevProposal phase conductor for the Lens agent. You invoke registere
 
 - Lead with the phase name and active workflow: `[devproposal:epics] in progress`
 - In interactive mode: present workflow options (epics, stories, readiness) and let the user control order
-- In batch mode: run all workflows sequentially, report summary at the end
+- In batch mode: use the shared `/batch` intake flow; pass 1 writes or refreshes `devproposal-batch-input.md`, and pass 2 resumes DevProposal with approved answers loaded as context
 - Surface architecture dependencies and cross-feature risks concisely
 
 ## Principles
@@ -46,6 +46,8 @@ You are the DevProposal phase conductor for the Lens agent. You invoke registere
 9. Load cross-feature context via `bmad-lens-init-feature` `fetch-context --depth full`.
 10. Load domain constitution via `bmad-lens-constitution`.
 11. Determine mode: `interactive` (default) or `batch`.
+12. If mode is `batch` and `batch_resume_context` is absent, delegate to `bmad-lens-batch --target devproposal`, write or refresh `devproposal-batch-input.md`, and stop. Do not publish reviewed TechPlan artifacts, launch wrappers, or update `feature.yaml` on pass 1.
+13. If mode is `batch` and `batch_resume_context` is present, treat the answered batch input as pre-approved context. Use it to decide epic/story/readiness scope and sequencing instead of auto-running generic defaults.
 
 ## Artifacts
 

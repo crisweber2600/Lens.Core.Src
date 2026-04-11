@@ -132,4 +132,18 @@ Required location: `{governance-repo}/features/{domain}/{service}/{featureId}/ad
 
 ## Batch Mode Behaviour
 
-Run review and commit artifact. On `pass` or `pass-with-warnings`, continue pipeline. On `fail`, halt pipeline and report all critical findings in the final output — do not proceed to sprint planning or story creation.
+### Pass 1 — Intake Generation
+
+- Do not run adversarial review on pass 1.
+- Add only unresolved review-readiness questions to `quickplan-batch-input.md`.
+- Stop after the intake file is written or refreshed.
+
+### Pass 2 — Review Gate
+
+- Run review and commit the artifact once `quickplan-batch-input.md` is marked `ready-for-pass-2`.
+- On `pass` or `pass-with-warnings`, continue the pipeline.
+- On `fail`, halt the pipeline and report all critical findings in the final output. Do not proceed to sprint planning or story creation.
+
+### Batch Reporting
+
+- Include finding counts by severity and the final gate outcome in the batch summary.

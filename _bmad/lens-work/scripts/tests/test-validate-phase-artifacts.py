@@ -27,6 +27,22 @@ def _make_docs(tmp_path: Path) -> Path:
 
 
 class TestValidatePhaseArtifactsStoryFiles:
+    def test_ignores_batch_input_files_for_phase_completion(self, tmp_path):
+        docs_root = _make_docs(tmp_path)
+        (docs_root / "techplan-batch-input.md").write_text("# Batch Input\n", encoding="utf-8")
+
+        result = _run(
+            "--phase", "techplan",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--json",
+        )
+
+        assert result.returncode == 1, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["status"] == "fail"
+        assert payload["missing"] == ["architecture"]
+
     def test_accepts_root_story_key_files(self, tmp_path):
         docs_root = _make_docs(tmp_path)
         (docs_root / "1-2-user-auth.md").write_text("# Story\n", encoding="utf-8")

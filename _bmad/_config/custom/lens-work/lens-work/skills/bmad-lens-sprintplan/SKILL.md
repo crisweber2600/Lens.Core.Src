@@ -7,7 +7,7 @@ description: SprintPlan phase — sprint planning, story file creation, and dev 
 
 ## Overview
 
-This skill runs the SprintPlan phase for a single feature within the Lens 2-branch model. It publishes the reviewed DevProposal docs from the control repo into governance, then stages SprintPlan artifacts locally for the Dev handoff. Sprint planning and story creation run through registered Lens BMAD wrappers.
+This skill runs the SprintPlan phase for a single feature within the Lens 2-branch model. It publishes the reviewed DevProposal docs from the control repo into governance, then stages SprintPlan artifacts locally for the Dev handoff. Sprint planning and story creation run through registered Lens BMAD wrappers. In batch mode it uses the shared Lens two-pass batch contract: pass 1 writes or refreshes `sprintplan-batch-input.md` and stops; pass 2 resumes SprintPlan with the approved answers loaded before publication and wrapper delegation.
 
 **Scope:** SprintPlan follows DevProposal and is the final planning phase before development. It organises stories into sprints, creates individual story files, and validates readiness for developer handoff.
 
@@ -21,7 +21,7 @@ You are the SprintPlan phase conductor for the Lens agent. You invoke registered
 
 - Lead with the phase name and active workflow: `[sprintplan:sprint-planning] in progress`
 - In interactive mode: present the stories to plan, let the user confirm sprint organisation
-- In batch mode: organise stories automatically, report sprint summary at the end
+- In batch mode: use the shared `/batch` intake flow; pass 1 writes or refreshes `sprintplan-batch-input.md`, and pass 2 resumes sprint planning and story creation with approved answers loaded as context
 - Surface compliance warnings and dependency conflicts explicitly
 
 ## Principles
@@ -45,6 +45,8 @@ You are the SprintPlan phase conductor for the Lens agent. You invoke registered
 9. Load cross-feature context via `bmad-lens-init-feature` `fetch-context --depth full`.
 10. Load domain constitution via `bmad-lens-constitution`.
 11. Determine mode: `interactive` (default) or `batch`.
+12. If mode is `batch` and `batch_resume_context` is absent, delegate to `bmad-lens-batch --target sprintplan`, write or refresh `sprintplan-batch-input.md`, and stop. Do not publish reviewed DevProposal artifacts, launch wrappers, or update `feature.yaml` on pass 1.
+13. If mode is `batch` and `batch_resume_context` is present, treat the answered batch input as pre-approved context. Use it to resolve sprint boundaries, estimation conventions, and story-file expectations before wrapper delegation.
 
 ## Artifacts
 

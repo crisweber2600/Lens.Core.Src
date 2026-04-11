@@ -7,7 +7,7 @@ description: ExpressPlan phase — all planning artifacts in one session for a f
 
 ## Overview
 
-This skill runs the ExpressPlan phase for a single feature within the Lens 2-branch model. It combines analyst, PM, architect, and scrum master perspectives to produce all planning artifacts in a single guided session. Every artifact lands atomically on governance `main`.
+This skill runs the ExpressPlan phase for a single feature within the Lens 2-branch model. It combines analyst, PM, architect, and scrum master perspectives to produce all planning artifacts in a single guided session. Every artifact lands atomically on governance `main`. In batch mode it uses the shared Lens two-pass batch contract: pass 1 writes or refreshes `expressplan-batch-input.md` and stops; pass 2 resumes the express session only after the approved answers are loaded.
 
 **Scope:** ExpressPlan is a standalone phase used only by the `express` track. It replaces the full lifecycle sequence (preplan → businessplan → techplan → devproposal → sprintplan) with a single combined session. No milestone branches or PRs are created.
 
@@ -21,7 +21,7 @@ You are the ExpressPlan phase conductor for the Lens agent. You combine the pers
 
 - Lead with the current artifact and what comes next: `[expressplan:prd] complete → next: architecture`
 - In interactive mode: guide through each artifact sequentially, confirming before moving on
-- In batch mode: produce all artifacts, run review, report summary at the end
+- In batch mode: use the shared `/batch` intake flow; pass 1 writes or refreshes `expressplan-batch-input.md`, and pass 2 resumes the combined planning session with approved answers loaded as context
 - Surface cross-artifact inconsistencies immediately — express planning must be internally coherent
 
 ## Principles
@@ -43,6 +43,8 @@ You are the ExpressPlan phase conductor for the Lens agent. You combine the pers
 6. Load cross-feature context via `bmad-lens-git-state`.
 7. Load domain constitution via `bmad-lens-constitution`.
 8. Determine mode: `interactive` (default) or `batch`.
+9. If mode is `batch` and `batch_resume_context` is absent, delegate to `bmad-lens-batch --target expressplan`, write or refresh `expressplan-batch-input.md`, and stop. Do not create governance artifacts or update `feature.yaml` on pass 1.
+10. If mode is `batch` and `batch_resume_context` is present, treat the answered batch input as pre-approved context for the combined session and continue with normal express execution and review.
 
 ## Artifacts
 

@@ -7,7 +7,7 @@ description: PrePlan phase — brainstorm, research, and product brief for a fea
 
 ## Overview
 
-This skill runs the PrePlan phase for a single feature within the Lens 2-branch model. Interactive preplan is always brainstorm-first: it begins with BMAD topic and outcome elicitation, grounds itself in governance artifacts only, and stages any resulting drafts in the control repo docs path. Product-brief and research follow-on work is delegated through registered Lens BMAD wrappers. Governance publication is deferred until BusinessPlan begins.
+This skill runs the PrePlan phase for a single feature within the Lens 2-branch model. Interactive preplan is always brainstorm-first: it begins with BMAD topic and outcome elicitation, grounds itself in governance artifacts only, and stages any resulting drafts in the control repo docs path. Product-brief and research follow-on work is delegated through registered Lens BMAD wrappers. Governance publication is deferred until BusinessPlan begins. In batch mode it uses the shared Lens two-pass batch contract: pass 1 writes or refreshes `preplan-batch-input.md` and stops; pass 2 resumes preplan only after that file is marked ready.
 
 **Scope:** PrePlan is the first phase in the full lifecycle track. It produces early-stage analysis artifacts — product brief, research notes, and brainstorming output — before any business or technical planning begins.
 
@@ -23,7 +23,7 @@ You are the PrePlan phase conductor for the Lens agent. You facilitate a Lens-aw
 - In interactive mode: begin with the BMAD brainstorming session-setup questions before any document is created or any downstream analyst synthesis begins
 - State the resolved staging path as context; do not ask the user where drafts should be stored
 - Load additional service governance context as services emerge in the conversation; do not front-load a dedicated service-selection question
-- In batch mode: run all preplan workflows sequentially, report summary at the end
+- In batch mode: use the shared `/batch` intake flow; pass 1 writes or refreshes `preplan-batch-input.md`, and pass 2 resumes preplan with approved answers loaded as context
 - Surface open questions and risks concisely — never suppress them
 
 ## Principles
@@ -60,7 +60,8 @@ You are the PrePlan phase conductor for the Lens agent. You facilitate a Lens-aw
 	5. As additional services emerge later in the working session, load their governance context at that moment using the same helper flow.
 	6. After brainstorming context exists, ask whether this same session should also synthesize research and/or a product brief from the brainstorm output.
 	7. Only then invoke Lens BMAD wrappers for research and product-brief work. Route product briefs through `bmad-product-brief`. For research, choose the narrowest registered Lens wrapper that matches the requested outcome (`bmad-domain-research`, `bmad-market-research`, or `bmad-technical-research`) and ask for clarification only if the research mode cannot be inferred. Do not synthesize those artifacts from assumptions captured before the brainstorming session.
-12. In batch mode, run brainstorming first and any requested follow-on artifacts second; still resolve docs paths silently and stay within governance-only context.
+12. In batch mode, use the shared Lens batch contract. If `batch_resume_context` is absent, delegate to `bmad-lens-batch --target preplan`, write or refresh `preplan-batch-input.md`, and stop. Do not write lifecycle artifacts or update `feature.yaml` on pass 1.
+13. If `batch_resume_context` is present, treat the answered batch input as pre-approved context. Skip the brainstorming setup checkpoint questions, use the approved answers to decide whether preplan resumes with brainstorming only or with follow-on research and/or product-brief work, and keep the session within governance-only context.
 
 ## Artifacts
 

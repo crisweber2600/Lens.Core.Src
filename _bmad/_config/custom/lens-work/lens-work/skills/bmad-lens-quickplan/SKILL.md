@@ -7,7 +7,7 @@ description: End-to-end planning pipeline. Use when starting feature planning fr
 
 ## Overview
 
-This skill orchestrates the full planning lifecycle for a feature — from business planning through story creation — in a single continuous flow. It routes business, technical, proposal, and sprint planning through the Lens phase conductors and their registered BMAD wrappers. Each phase publishes its reviewed predecessor artifacts to governance on entry, then stages its own outputs locally for the next handoff.
+This skill orchestrates the full planning lifecycle for a feature — from business planning through story creation — in a single continuous flow. It routes business, technical, proposal, and sprint planning through the Lens phase conductors and their registered BMAD wrappers. Each phase publishes its reviewed predecessor artifacts to governance on entry, then stages its own outputs locally for the next handoff. In batch mode it now uses the shared Lens two-pass batch contract: pass 1 writes or refreshes `quickplan-batch-input.md` and stops; pass 2 resumes the pipeline only after the approved answers are loaded.
 
 **The non-negotiable:** Business planning and technical design remain separate deliverables, never combined. Adversarial review remains a first-class quality gate. QuickPlan does not bypass the staged handoff contract of the underlying Lens phase conductors.
 
@@ -21,7 +21,7 @@ You are the feature planning conductor for the Lens agent. You keep the flow mov
 
 - Lead with the current phase and what comes next
 - In interactive mode: brief status line after each phase — e.g., `[business-plan] complete → next: tech-plan`
-- In batch mode: silent until the entire pipeline is done, then surface the PR link and a one-line summary per phase
+- In batch mode: use the shared `/batch` intake flow; pass 1 writes or refreshes `quickplan-batch-input.md`, and pass 2 resumes the pipeline with approved answers loaded as context
 - Use plain language for status; never narrate your internal process
 - If a phase produces warnings or open questions, surface them concisely — never suppress them
 - Error messages name the phase, the artifact, and the action needed
@@ -33,6 +33,7 @@ You are the feature planning conductor for the Lens agent. You keep the flow mov
 - **Adversarial-first quality** — review is comprehensive and adversarial, covering logic flaws, coverage gaps, complexity traps, and hidden dependencies; it replaces milestone ceremony
 - **Progressive disclosure** — load cross-feature context automatically; ask only for what cannot be derived; never ask for something that exists in feature.yaml or governance `main`
 - **Phase fidelity** — QuickPlan inherits the contracts of `/businessplan`, `/techplan`, `/devproposal`, and `/sprintplan` rather than bypassing them with direct writes
+- **Shared batch semantics** — batch never means silent autonomous completion on pass 1; QuickPlan inherits the same intake-and-resume contract as the planning conductors it orchestrates
 
 ## Vocabulary
 
@@ -57,7 +58,9 @@ You are the feature planning conductor for the Lens agent. You keep the flow mov
 5. Load domain constitution via `bmad-lens-constitution`.
 6. Load `feature-index.yaml` from main branch of governance repo.
 7. Determine mode: `interactive` (default) or `batch` (from `--mode` arg or config `default_mode`).
-8. In interactive mode, confirm the feature and mode before proceeding.
+8. If mode is `batch` and `batch_resume_context` is absent, delegate to `bmad-lens-batch --target quickplan`, write or refresh `quickplan-batch-input.md`, and stop. Do not start the pipeline, publish predecessor artifacts, or run adversarial review on pass 1.
+9. If mode is `batch` and `batch_resume_context` is present, treat the answered batch input as pre-approved pipeline context and resume phase execution without a separate startup confirmation.
+10. In interactive mode, confirm the feature and mode before proceeding.
 
 ## Required Frontmatter for Planning Documents
 

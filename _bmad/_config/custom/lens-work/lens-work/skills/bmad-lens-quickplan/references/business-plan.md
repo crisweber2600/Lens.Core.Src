@@ -67,7 +67,17 @@ After producing the draft:
 
 ## Batch Mode Behaviour
 
-Produce and commit the business plan without prompting. Append to the batch summary log. Proceed immediately to tech plan.
+### Pass 1 — Intake Generation
+
+- Do not produce or commit `business-plan.md` on pass 1.
+- Add only unresolved business-planning questions to `quickplan-batch-input.md`.
+- Stop after the intake file is written or refreshed.
+
+### Pass 2 — Execute Business Plan
+
+- Once `quickplan-batch-input.md` is marked `ready-for-pass-2`, produce and commit the business plan using the approved answers as context.
+- Append a one-line business-plan summary to the batch report.
+- Proceed to tech plan only if the pipeline remains unblocked.
 
 ## Quality Checklist (pre-commit)
 
