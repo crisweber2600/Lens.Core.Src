@@ -5,7 +5,6 @@
 feature: {featureId}
 doc_type: batch-input
 phase: {target}
-batch_status: needs-input
 goal: "{one-line planning goal}"
 context_sources: []
 updated_at: {ISO timestamp}
@@ -16,8 +15,10 @@ updated_at: {ISO timestamp}
 
 1. Review the context snapshot below.
 2. Fill in the answer area for every question that still needs input.
-3. Change `batch_status` to `ready-for-pass-2` when the file is ready to resume.
+3. If a question has no extra constraints, say so explicitly instead of leaving it blank.
 4. Re-run `/batch` or the owning phase command with `--mode batch`.
+
+Lens automatically treats the file as ready when every required answer block contains real content. Blank answers and placeholders such as `TBD`, `TODO`, `?`, or `[pending]` are treated as unresolved.
 
 ## Context Snapshot
 

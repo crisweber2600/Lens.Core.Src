@@ -31,13 +31,14 @@ def test_batch_command_publication_surfaces_are_aligned():
     assert "Generate or resume a two-pass batch intake for planning targets" in installer
 
 
-def test_batch_skill_requires_two_pass_ready_marker():
+def test_batch_skill_uses_automatic_readiness_detection():
     text = _read("skills/bmad-lens-batch/SKILL.md")
 
     assert "Questions-only first pass" in text
-    assert "batch_status: ready-for-pass-2" in text
+    assert "Automatic readiness detection" in text
+    assert "every required `**Your answer:**` block contains non-placeholder content" in text
     assert "pass 1 never publishes predecessor artifacts" in text
-    assert "resumes the owning planning target only after that batch input file is explicitly marked ready" in text
+    assert "resumes the owning planning target only after it can automatically detect that the required answer blocks in that file have been filled" in text
     assert "{target}-batch-input.md" in text
 
 
