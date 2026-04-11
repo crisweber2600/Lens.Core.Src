@@ -32,6 +32,17 @@ This contract captures the staged planning and wrapper-routing behavior for the 
 | `/sprintplan` | sprint planning | `bmad-sprint-planning` |
 | `/sprintplan` | story files | `bmad-create-story` |
 
+## Interactive Handoff Boundary
+
+| Command | Interactive confirmation happens | Native workflow owns after delegation | Conductor must not do |
+|---------|----------------------------------|---------------------------------------|-----------------------|
+| `/businessplan` | Before any publication or artifact writes, after the user chooses `prd`, `ux-design`, or `both` | `bmad-create-prd` or `bmad-create-ux-design` menus, discovery questions, and document authorship | Ask PRD or UX discovery questions itself, or silently continue to the second selected workflow |
+| `/techplan` | Before any publication or artifact writes | `bmad-create-architecture` menus, discovery questions, and document authorship | Ask architecture-discovery questions itself or write `architecture.md` before delegation |
+
+If `/businessplan` interactive mode selects `both`, each native workflow runs as a separate handoff. BusinessPlan must ask before launching the second workflow.
+
+The Lens BMAD wrapper is context-only. After delegation it does not continue phase-conductor execution or synthesize downstream planning artifacts on behalf of the delegated workflow.
+
 ## Story File Compatibility
 
 The sprint handoff must recognize all currently supported story-file layouts:

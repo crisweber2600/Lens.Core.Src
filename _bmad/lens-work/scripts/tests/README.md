@@ -20,6 +20,7 @@ pytest scripts/tests/test-create-pr.py -v
 |------|-------------------|
 | `test-create-pr.py` | `uv run create-pr.py` |
 | `test-install.py` | `uv run install.py` |
+| `test-phase-conductor-contracts.py` | Static contract checks for interactive planning handoffs |
 | `test-preflight.py` | `uv run preflight.py` |
 | `test-setup-control-repo.py` | `uv run setup-control-repo.py` |
 | `test-store-github-pat.py` | `uv run store-github-pat.py` |
