@@ -48,7 +48,7 @@ You are the TechPlan phase conductor for the Lens agent. You invoke the register
 9. If mode is `batch` and `batch_resume_context` is present, treat the answered batch input as pre-approved context. Do not show a separate run-confirmation prompt before publication or delegation.
 10. If mode is `interactive` and TechPlan was invoked directly, announce that TechPlan will publish reviewed BusinessPlan artifacts to governance and then launch the native architecture workflow via `bmad-lens-bmad-skill`. Confirm before any publication, copy, or write action. If the user does not confirm, stop cleanly with no changes.
 11. If mode is `interactive` and TechPlan was auto-delegated from `/next`, treat that delegation as already confirmed. Do not ask a redundant yes/no prompt; proceed directly into the phase entry sequence.
-12. Publish staged BusinessPlan artifacts into the governance docs mirror via `bmad-lens-git-orchestration publish-to-governance --phase businessplan` before creating TechPlan outputs.
+12. Publish staged BusinessPlan artifacts, including the businessplan review report when present, into the governance docs mirror via `bmad-lens-git-orchestration publish-to-governance --phase businessplan` before creating TechPlan outputs.
 13. Load BusinessPlan artifacts from the staged control-repo docs path for authoring context, and use the governance mirror as the published snapshot for cross-feature consumers.
 14. Load cross-feature context via `bmad-lens-init-feature` `fetch-context --depth full`.
 15. Load domain constitution via `bmad-lens-constitution`.
@@ -80,9 +80,12 @@ updated_at: {ISO timestamp}
 
 When the architecture artifact is staged in the control repo:
 
-1. Update `feature.yaml` phase to `techplan-complete` via `bmad-lens-feature-yaml`.
-2. Leave governance publication of the architecture doc to the DevProposal handoff unless the user explicitly requests publication now.
-3. Report next action: advance to `/devproposal` (auto-advance with promotion per lifecycle.yaml).
+1. Run `bmad-lens-adversarial-review --phase techplan --source phase-complete` using `phases.techplan.completion_review` from `lifecycle.yaml` before updating phase state. Do not run this gate during batch pass 1. In interactive mode and batch pass 2:
+	- If the verdict is `fail`, stop and do not update `feature.yaml`.
+	- If the verdict is `pass` or `pass-with-warnings`, continue.
+2. Update `feature.yaml` phase to `techplan-complete` via `bmad-lens-feature-yaml`.
+3. Leave governance publication of the architecture doc and techplan review report to the DevProposal handoff unless the user explicitly requests publication now.
+4. Report next action: advance to `/devproposal` (auto-advance with promotion per lifecycle.yaml).
 
 ## Integration Points
 

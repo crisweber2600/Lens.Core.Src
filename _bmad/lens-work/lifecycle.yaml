@@ -121,6 +121,12 @@ phases:
     milestone: techplan
     auto_advance_to: /businessplan
     auto_advance_promote: false
+    completion_review:
+      gate: adversarial-review
+      mode: party
+      report: preplan-adversarial-review.md
+      reviewed_artifacts: [product-brief, research, brainstorm]
+      outcomes: [pass, pass-with-warnings, fail]
 
   businessplan:
     display_name: "BusinessPlan"
@@ -134,6 +140,12 @@ phases:
     milestone: techplan
     auto_advance_to: /techplan
     auto_advance_promote: false
+    completion_review:
+      gate: adversarial-review
+      mode: party
+      report: businessplan-adversarial-review.md
+      reviewed_artifacts: [prd, ux-design]
+      outcomes: [pass, pass-with-warnings, fail]
 
   techplan:
     display_name: "TechPlan"
@@ -146,6 +158,12 @@ phases:
     milestone: techplan
     auto_advance_to: /devproposal
     auto_advance_promote: true
+    completion_review:
+      gate: adversarial-review
+      mode: party
+      report: techplan-adversarial-review.md
+      reviewed_artifacts: [architecture]
+      outcomes: [pass, pass-with-warnings, fail]
 
   devproposal:
     display_name: "DevProposal"
