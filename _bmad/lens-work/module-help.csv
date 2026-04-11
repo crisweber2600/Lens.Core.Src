@@ -54,9 +54,17 @@ Lens,bmad-lens-sprintplan,sprintplan,LS,Run SprintPlan phase — sprint planning
 Lens,bmad-lens-expressplan,expressplan,LE,Run ExpressPlan phase — all planning artifacts in one session for a feature,plan,<featureId> [--mode interactive|batch],phase-express,bmad-lens-init-feature:create,,false,,"product-brief.md, prd.md, architecture.md, epics.md, stories.md, sprint-status.yaml, review-report.md"
 Lens,bmad-lens-dev,dev,DV,Launch Dev phase — epic-level implementation loop with story management,implement,<featureId> [--epic],delegation,bmad-lens-sprintplan:plan,,false,,implementation artifacts
 Lens,bmad-lens-bmad-skill,bmad-brainstorming,BBS,Run BMAD brainstorming with Lens governance context,brainstorming,<featureId>,preplan,,,false,docs/planning-artifacts,brainstorming session
+Lens,bmad-lens-bmad-skill,bmad-product-brief,BPF,Run BMAD product brief with Lens governance context,product-brief,<featureId>,preplan,,,false,docs/planning-artifacts,product brief
+Lens,bmad-lens-bmad-skill,bmad-domain-research,BDR,Run BMAD domain research with Lens governance context,domain-research,<featureId>,preplan,,,false,docs/planning-artifacts,domain research
+Lens,bmad-lens-bmad-skill,bmad-market-research,BMR,Run BMAD market research with Lens governance context,market-research,<featureId>,preplan,,,false,docs/planning-artifacts,market research
+Lens,bmad-lens-bmad-skill,bmad-technical-research,BTR,Run BMAD technical research with Lens governance context,technical-research,<featureId>,preplan,,,false,docs/planning-artifacts,technical research
 Lens,bmad-lens-bmad-skill,bmad-create-prd,BPR,Run BMAD create PRD with Lens governance context,create-prd,<featureId>,businessplan,,,false,docs/planning-artifacts,prd
+Lens,bmad-lens-bmad-skill,bmad-create-ux-design,BUX,Run BMAD create UX design with Lens governance context,create-ux-design,<featureId>,businessplan,,,false,docs/planning-artifacts,ux design
 Lens,bmad-lens-bmad-skill,bmad-create-architecture,BAR,Run BMAD create architecture with Lens governance context,create-architecture,<featureId>,techplan,,,false,docs/planning-artifacts,architecture
 Lens,bmad-lens-bmad-skill,bmad-create-epics-and-stories,BES,Run BMAD create epics and stories with Lens governance context,create-epics-and-stories,<featureId>,devproposal,,,false,docs/planning-artifacts,"epics and stories"
+Lens,bmad-lens-bmad-skill,bmad-check-implementation-readiness,BIR,Run BMAD implementation readiness with Lens governance context,check-implementation-readiness,<featureId>,devproposal,,,false,docs/planning-artifacts,implementation readiness
+Lens,bmad-lens-bmad-skill,bmad-sprint-planning,BSP,Run BMAD sprint planning with Lens governance context,sprint-planning,<featureId>,sprintplan,,,false,docs/implementation-artifacts,sprint status
+Lens,bmad-lens-bmad-skill,bmad-create-story,BST,Run BMAD create story with Lens governance context,create-story,<featureId>,sprintplan,,,false,docs/implementation-artifacts,story files
 Lens,bmad-lens-bmad-skill,bmad-quick-dev,BQD,Run BMAD quick dev with Lens governance context,quick-dev,<featureId>,dev,,,false,docs/implementation-artifacts,"spec and implementation"
 Lens,bmad-lens-bmad-skill,bmad-code-review,BCR,Run BMAD code review with Lens governance context,code-review,<featureId>,dev,,,false,docs/implementation-artifacts,review findings
 Lens,bmad-lens-sensing,sensing,SN,Run cross-initiative overlap detection,detect,[--governance-dir],anytime,,,false,,sensing report

@@ -509,6 +509,39 @@ class TestPublishToGovernance:
         assert any(path.endswith("features/platform/identity/dry-publish/docs/prd.md") for path in result["published_files"])
         assert not (governance / "features" / "platform" / "identity" / "dry-publish" / "docs" / "prd.md").exists()
 
+    def test_publish_to_governance_copies_story_files_from_supported_shapes(self, tmp_path):
+        governance = tmp_path / "governance"
+        control = tmp_path / "control"
+        governance.mkdir()
+        control.mkdir()
+
+        write_feature_yaml(governance, "story-publish", domain="platform", service="identity", phase="sprintplan")
+
+        control_docs = control / "docs" / "platform" / "identity" / "story-publish"
+        control_docs.mkdir(parents=True, exist_ok=True)
+        (control_docs / "1-2-user-auth.md").write_text("# Story 1-2\n")
+        (control_docs / "dev-story-legacy.md").write_text("# Legacy Story\n")
+        stories_dir = control_docs / "stories"
+        stories_dir.mkdir()
+        (stories_dir / "2-1-admin-audit.yaml").write_text("status: ready-for-dev\n")
+
+        result, code = ops.cmd_publish_to_governance(_no_args(
+            governance_repo=str(governance),
+            control_repo=str(control),
+            feature_id="story-publish",
+            phase="sprintplan",
+            artifact=["story-files"],
+            dry_run=False,
+        ))
+
+        assert code == 0
+        target_root = governance / "features" / "platform" / "identity" / "story-publish" / "docs"
+        assert (target_root / "1-2-user-auth.md").exists()
+        assert (target_root / "dev-story-legacy.md").exists()
+        assert (target_root / "2-1-admin-audit.yaml").exists()
+        assert result["missing_artifacts"] == []
+
+
 
 # ---------------------------------------------------------------------------
 # CLI integration (subprocess)
