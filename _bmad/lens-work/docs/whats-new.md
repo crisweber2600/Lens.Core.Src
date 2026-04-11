@@ -55,6 +55,7 @@ A comprehensive audit and upgrade pass that brought the module manifest, prompt 
 - Standardized 5 `SKILL.md` name prefixes to `lens-work-*` for consistency
 - Created missing `utility/profile/SKILL.md`
 - Removed deprecated `includes/size-topology.md`
+- Added **OpenCode** as a fifth IDE adapter with `.opencode/commands/` Lens command stubs
 
 ### Help Registry Fixes
 
@@ -649,7 +650,7 @@ No migration needed. All changes are additive documentation, i18n headers, and i
 | Phases | 5 | 6 |
 | Milestones | — | 5 |
 | Scripts | 5 | 15 |
-| IDE adapters | 4 | 4 |
+| IDE adapters | 4 | 5 |
 | Documentation files | 5 | 22 |
 | Template assets | 0 | 8 |
 | Constitution capabilities | 0 | 9 |

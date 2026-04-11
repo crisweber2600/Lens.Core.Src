@@ -13,7 +13,7 @@
 | Node.js | 16+ | CI/CD installer only (`_module-installer/installer.js`) |
 | curl | any | REST API calls in scripts (GitHub/Azure DevOps) |
 | jq | any (optional) | JSON parsing in scripts |
-| Python | 3.8+ (optional) | Legacy setup merge utilities (`bmad-lens-work-setup/scripts/`) |
+| Python | 3.11+ (optional) | `uv run --script` entrypoints including `install.py` and legacy setup merge utilities |
 
 ---
 
@@ -23,32 +23,32 @@
 
 ```bash
 # From control repo root
-bash lens.core/_bmad/lens-work/scripts/install.py
+uv run lens.core/_bmad/lens-work/scripts/install.py
 ```
 
 ### Multi-IDE Installation
 
 ```bash
 # Install for specific IDE
-bash lens.core/_bmad/lens-work/scripts/install.py --ide cursor
+uv run lens.core/_bmad/lens-work/scripts/install.py --ide cursor
 
 # Install for all supported IDEs
-bash lens.core/_bmad/lens-work/scripts/install.py --all-ides
+uv run lens.core/_bmad/lens-work/scripts/install.py --all-ides
 ```
 
 ### Update Existing Installation
 
 ```bash
-bash lens.core/_bmad/lens-work/scripts/install.py --update
+uv run lens.core/_bmad/lens-work/scripts/install.py --update
 ```
 
 ### Dry Run (Preview)
 
 ```bash
-bash lens.core/_bmad/lens-work/scripts/install.py --dry-run
+uv run lens.core/_bmad/lens-work/scripts/install.py --dry-run
 ```
 
-**Supported IDEs:** `github-copilot` (default), `cursor`, `claude`, `codex`
+**Supported IDEs:** `github-copilot` (default), `cursor`, `claude`, `codex`, `opencode`
 
 **What install does:**
 1. Creates IDE adapter stubs in `.github/` (or IDE-specific config folder)

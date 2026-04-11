@@ -386,6 +386,8 @@ const IDE_COMMANDS = [
     { file: 'bmad-lens-module-management.md', name: 'module-management', desc: 'Check module version and guide self-service updates', wf: 'skills/bmad-lens-module-management/SKILL.md' },
 ];
 
+const IDE_COMMAND_FILES = new Set(IDE_COMMANDS.map(cmd => cmd.file));
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Write helper with skip/update semantics
 // ─────────────────────────────────────────────────────────────────────────────
@@ -486,7 +488,7 @@ async function installCursor(projectRoot, { updateMode, logger }) {
     await fsHelpers.ensureDir(cursorDir);
     await removeMatchingFiles(
         cursorDir,
-        name => name.startsWith('bmad-lens-work-') && name.endsWith('.md'),
+        name => IDE_COMMAND_FILES.has(name),
         { logger, label: 'command alias' }
     );
 
@@ -509,7 +511,7 @@ async function installClaude(projectRoot, { updateMode, logger }) {
     await fsHelpers.ensureDir(claudeDir);
     await removeMatchingFiles(
         claudeDir,
-        name => name.startsWith('bmad-lens-work-') && name.endsWith('.md'),
+        name => IDE_COMMAND_FILES.has(name),
         { logger, label: 'command alias' }
     );
 
@@ -540,7 +542,7 @@ async function installCodex(projectRoot, { updateMode, logger }) {
     await fsHelpers.ensureDir(codexDir);
     await removeMatchingFiles(
         codexDir,
-        name => name.startsWith('bmad-lens-work-') && name.endsWith('.md'),
+        name => IDE_COMMAND_FILES.has(name),
         { logger, label: 'command alias' }
     );
 
@@ -553,6 +555,29 @@ async function installCodex(projectRoot, { updateMode, logger }) {
     }
 
     logger.log('✓ Codex CLI adapter complete');
+}
+
+async function installOpenCode(projectRoot, { updateMode, logger }) {
+    logger.log('Installing OpenCode adapter...');
+
+    const opencodeDir = path.join(projectRoot, '.opencode', 'commands');
+
+    await fsHelpers.ensureDir(opencodeDir);
+    await removeMatchingFiles(
+        opencodeDir,
+        name => IDE_COMMAND_FILES.has(name),
+        { logger, label: 'command alias' }
+    );
+
+    for (const cmd of IDE_COMMANDS) {
+        await writeAdapterFile(
+            path.join(opencodeDir, cmd.file),
+            ideCommandStub(cmd.name, cmd.desc, cmd.wf),
+            { updateMode, logger }
+        );
+    }
+
+    logger.log('✓ OpenCode adapter complete');
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -641,6 +666,7 @@ async function install(options) {
             'cursor': installCursor,
             'claude': installClaude,
             'codex': installCodex,
+            'opencode': installOpenCode,
         };
 
         const ides = installedIDEs && installedIDEs.length > 0
