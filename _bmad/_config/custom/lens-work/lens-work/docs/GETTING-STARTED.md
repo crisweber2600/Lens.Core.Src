@@ -38,7 +38,7 @@ This detects your git provider, validates authentication (PAT), creates your use
 /new-feature
 ```
 
-LENS will walk you through naming your feature, selecting a lifecycle track, and creating the initiative branch. Then run the command it recommends (usually `/preplan` or `/expressplan`) to begin planning.
+LENS will walk you through naming your feature, selecting a lifecycle track, and creating the initiative branch. Then run the command it recommends (usually `/preplan` or `/expressplan`) to begin planning. If you want the workbench to route for you, use `/next` and it will load the one unblocked phase command automatically.
 
 ---
 
@@ -63,7 +63,7 @@ LENS will walk you through naming your feature, selecting a lifecycle track, and
 | Command | What It Does |
 |---------|-------------|
 | `/status` | Show current initiative state (derived from git) |
-| `/next` | Get a recommendation for what to do next |
+| `/next` | Resolve the one unblocked next step and load it immediately |
 | `/help` | List all available commands |
 | `/switch` | Switch to a different initiative |
 | `/dashboard` | See all active initiatives across domains |
@@ -72,6 +72,8 @@ LENS will walk you through naming your feature, selecting a lifecycle track, and
 | `/log-problem` | Record an issue or friction point for the active initiative |
 | `/move-feature` | Reclassify a feature to a different domain/service |
 | `/split-feature` | Split a feature initiative into multiple child initiatives |
+
+`/next` does not show a menu when the next step is deterministic. It surfaces blockers when it cannot proceed; otherwise it routes straight into the owning phase command.
 
 ---
 

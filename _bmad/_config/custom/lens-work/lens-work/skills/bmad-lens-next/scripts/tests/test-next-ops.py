@@ -170,6 +170,32 @@ def test_preplan_complete_auto_advance():
         assert_eq("command", result["recommendation"]["command"], "/businessplan")
 
 
+def test_businessplan_complete_auto_advance():
+    """businessplan-complete → auto-advances to techplan."""
+    print("test_businessplan_complete_auto_advance", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        make_feature(
+            tmp,
+            "bp-complete-feat",
+            phase="businessplan-complete",
+            extra={
+                "milestones": {
+                    "businessplan": "2026-04-01T00:00:00Z",
+                    "techplan": None,
+                    "sprintplan": None,
+                    "dev-ready": None,
+                    "dev-complete": None,
+                }
+            },
+        )
+        result, code = run(["suggest", "--governance-repo", tmp, "--feature-id", "bp-complete-feat"])
+        assert_eq("status pass", result["status"], "pass")
+        assert_eq("exit code 0", code, 0)
+        assert_eq("action techplan", result["recommendation"]["action"], "techplan")
+        assert_eq("command", result["recommendation"]["command"], "/techplan")
+        assert_eq("no blockers", result["recommendation"]["blockers"], [])
+
+
 def test_expressplan_phase():
     """ExpressPlan phase → recommends expressplan."""
     print("test_expressplan_phase", file=sys.stderr)
@@ -415,6 +441,7 @@ if __name__ == "__main__":
     test_dev_phase()
     test_complete_phase()
     test_preplan_complete_auto_advance()
+    test_businessplan_complete_auto_advance()
     test_expressplan_phase()
     test_paused_phase()
     test_missing_phase_uses_track_start_phase()
