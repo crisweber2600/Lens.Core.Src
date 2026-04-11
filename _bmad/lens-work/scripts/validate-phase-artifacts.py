@@ -22,6 +22,10 @@ def get_required_artifacts(lifecycle_path: Path, phase: str) -> list[str]:
     return phase_data.get("artifacts", [])
 
 
+def is_batch_input(candidate: Path) -> bool:
+    return candidate.name.endswith("-batch-input.md")
+
+
 def artifact_candidates(docs_root: Path, name: str) -> list[Path]:
     match name:
         case "product-brief":
@@ -53,7 +57,7 @@ def artifact_candidates(docs_root: Path, name: str) -> list[Path]:
             candidates = [docs_root / "review-report.md", docs_root / "adversarial-review.md"]
         case _:
             candidates = [docs_root / f"{name}.md"]
-    return candidates
+    return [candidate for candidate in candidates if not is_batch_input(candidate)]
 
 
 def story_file_candidates(docs_root: Path) -> list[Path]:
@@ -62,6 +66,8 @@ def story_file_candidates(docs_root: Path) -> list[Path]:
 
     for pattern in ("dev-story-*.md", "dev-story-*.yaml", "[0-9]*-[0-9]*-*.md", "[0-9]*-[0-9]*-*.yaml"):
         for candidate in docs_root.glob(pattern):
+            if is_batch_input(candidate):
+                continue
             if candidate not in seen:
                 candidates.append(candidate)
                 seen.add(candidate)
@@ -70,6 +76,8 @@ def story_file_candidates(docs_root: Path) -> list[Path]:
     if stories_dir.exists():
         for pattern in ("*.md", "*.yaml"):
             for candidate in stories_dir.glob(pattern):
+                if is_batch_input(candidate):
+                    continue
                 if candidate not in seen:
                     candidates.append(candidate)
                     seen.add(candidate)

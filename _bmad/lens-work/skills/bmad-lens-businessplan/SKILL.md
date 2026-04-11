@@ -7,7 +7,7 @@ description: BusinessPlan phase — PRD creation and UX design for a feature wit
 
 ## Overview
 
-This skill runs the BusinessPlan phase for a single feature within the Lens 2-branch model. It routes PRD and UX design work through registered Lens BMAD wrappers. In batch mode it publishes the reviewed preplan docs from the control repo into governance, then stages BusinessPlan artifacts locally for the next handoff. In interactive mode it confirms the selected native planning session first, then runs the publication and delegation sequence without conductor-side PRD or UX discovery.
+This skill runs the BusinessPlan phase for a single feature within the Lens 2-branch model. It routes PRD and UX design work through registered Lens BMAD wrappers. In batch mode it uses the shared Lens two-pass batch contract: pass 1 writes or refreshes `businessplan-batch-input.md` and stops; pass 2 resumes BusinessPlan with the approved answers loaded before publication and delegation. In interactive mode it confirms the selected native planning session first, then runs the publication and delegation sequence without conductor-side PRD or UX discovery.
 
 **Scope:** BusinessPlan follows PrePlan and produces the business case — PRD and UX design — before technical architecture begins.
 
@@ -21,7 +21,7 @@ You are the BusinessPlan phase conductor for the Lens agent. You invoke register
 
 - Lead with the phase name and active workflow: `[businessplan:prd] in progress`
 - In interactive mode: present one workflow selection menu (`prd`, `ux-design`, or `both`); if BusinessPlan was invoked directly, explain that it will publish reviewed PrePlan artifacts and then launch the selected native workflow and wait for confirmation before any publication or artifact writes; if BusinessPlan was auto-delegated from `/next`, skip that run-confirmation prompt and proceed once the user has selected the workflow scope
-- In batch mode: publish reviewed PrePlan artifacts, then run PRD and UX workflows sequentially and report summary at the end
+- In batch mode: use the shared `/batch` intake flow; pass 1 writes or refreshes `businessplan-batch-input.md`, and pass 2 resumes the selected PRD and/or UX flow with approved answers loaded as context
 - Surface open questions from preplan artifacts — never ignore predecessor context
 - After delegation, let the selected native PRD or UX workflow own discovery questions, menus, and document authoring
 
@@ -43,18 +43,20 @@ You are the BusinessPlan phase conductor for the Lens agent. You invoke register
 5. Validate predecessor `preplan` phase is complete (or track skips preplan).
 6. Resolve the staged docs path from `feature.yaml.docs.path` (fallback: `docs/{domain}/{service}/{featureId}` in the control repo).
 7. Determine mode: `interactive` (default) or `batch`.
-8. If mode is `interactive`, present a workflow selection menu: `prd`, `ux-design`, or `both`.
-9. If mode is `interactive` and BusinessPlan was invoked directly, confirm that BusinessPlan will publish reviewed PrePlan artifacts and then launch the selected native session or sessions. Do not ask downstream discovery questions here. If the user does not confirm, stop cleanly with no changes.
-10. If mode is `interactive` and BusinessPlan was auto-delegated from `/next`, treat that delegation as already confirmed once the workflow selection is known. Do not ask a redundant yes/no prompt just to run BusinessPlan.
-11. Publish staged preplan artifacts into the governance docs mirror via `bmad-lens-git-orchestration publish-to-governance --phase preplan` before creating BusinessPlan outputs.
-12. Load preplan artifacts from the staged control-repo docs path for authoring context, and use the governance mirror as the published snapshot for cross-feature consumers.
-13. Load cross-feature context via `bmad-lens-init-feature` `fetch-context --depth full`.
-14. Load domain constitution via `bmad-lens-constitution`.
-15. Delegate the selected workflow through `bmad-lens-bmad-skill`:
+8. If mode is `batch` and `batch_resume_context` is absent, delegate to `bmad-lens-batch --target businessplan`, write or refresh `businessplan-batch-input.md`, and stop. Do not publish reviewed PrePlan artifacts, launch native sessions, or update `feature.yaml` on pass 1.
+9. If mode is `batch` and `batch_resume_context` is present, derive workflow selection from the answered batch input and treat those answers as pre-approved context. Do not show the interactive workflow selection menu again unless the batch input leaves workflow scope ambiguous.
+10. If mode is `interactive`, present a workflow selection menu: `prd`, `ux-design`, or `both`.
+11. If mode is `interactive` and BusinessPlan was invoked directly, confirm that BusinessPlan will publish reviewed PrePlan artifacts and then launch the selected native session or sessions. Do not ask downstream discovery questions here. If the user does not confirm, stop cleanly with no changes.
+12. If mode is `interactive` and BusinessPlan was auto-delegated from `/next`, treat that delegation as already confirmed once the workflow selection is known. Do not ask a redundant yes/no prompt just to run BusinessPlan.
+13. Publish staged preplan artifacts into the governance docs mirror via `bmad-lens-git-orchestration publish-to-governance --phase preplan` before creating BusinessPlan outputs.
+14. Load preplan artifacts from the staged control-repo docs path for authoring context, and use the governance mirror as the published snapshot for cross-feature consumers.
+15. Load cross-feature context via `bmad-lens-init-feature` `fetch-context --depth full`.
+16. Load domain constitution via `bmad-lens-constitution`.
+17. Delegate the selected workflow through `bmad-lens-bmad-skill`:
 	- `prd` -> `bmad-create-prd`
 	- `ux-design` -> `bmad-create-ux-design`
-	- `both` -> run as two separate native sessions; after the first completes, ask before launching the second
-16. After delegation, do not continue with conductor-side PRD or UX questioning or authoring. The native workflow owns the interactive session and document creation for the selected work item.
+	- `both` -> run as two separate native sessions; after the first completes, ask before launching the second in interactive mode, or proceed directly to the second in batch pass 2
+18. After delegation, do not continue with conductor-side PRD or UX questioning or authoring. The native workflow owns the interactive session and document creation for the selected work item.
 
 ## Artifacts
 

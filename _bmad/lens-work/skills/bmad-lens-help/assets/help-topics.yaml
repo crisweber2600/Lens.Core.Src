@@ -34,6 +34,13 @@ topics:
     tracks: [all]
     category: navigation
 
+  - id: batch
+    command: /batch
+    description: Generate or resume a two-pass batch intake for the current planning target
+    phases: [preplan, businessplan, techplan, devproposal, sprintplan, expressplan]
+    tracks: [all]
+    category: planning
+
   - id: switch
     command: /switch
     description: Switch active feature context

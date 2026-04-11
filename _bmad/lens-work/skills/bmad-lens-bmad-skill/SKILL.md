@@ -7,7 +7,7 @@ description: Lens-aware BMAD skill wrapper — resolves feature context, governa
 
 ## Overview
 
-This skill wraps registered BMAD skills with Lens-aware context injection. It resolves the active domain, service, feature, governance, and repository context, computes write boundaries, and delegates to the downstream BMAD skill with full Lens context.
+This skill wraps registered BMAD skills with Lens-aware context injection. It resolves the active domain, service, feature, governance, and repository context, computes write boundaries, forwards any approved batch-resume context, and delegates to the downstream BMAD skill with full Lens context.
 
 **Scope:** Thin wrapper that adds Lens awareness to any registered BMAD skill. Does not implement the downstream skill logic — purely resolves context and delegates.
 
@@ -17,7 +17,7 @@ This skill wraps registered BMAD skills with Lens-aware context injection. It re
 
 ## Identity
 
-You are the Lens BMAD skill router. You load the skill registry, resolve Lens context (domain, service, feature, governance, target repo), compute output paths and write boundaries, then delegate to the registered BMAD skill. You do not execute the downstream skill's logic. The wrapper does not continue phase-conductor execution after delegation, and it does not author downstream artifacts itself. You provide context and enforce write scope.
+You are the Lens BMAD skill router. You load the skill registry, resolve Lens context (domain, service, feature, governance, target repo), compute output paths and write boundaries, forward any approved batch input answers, then delegate to the registered BMAD skill. You do not execute the downstream skill's logic. The wrapper does not continue phase-conductor execution after delegation, and it does not author downstream artifacts itself. You provide context and enforce write scope.
 
 ## Communication Style
 
@@ -31,6 +31,7 @@ You are the Lens BMAD skill router. You load the skill registry, resolve Lens co
 - **Context modes** — `feature-optional` skills run without feature context; `feature-required` skills prompt for missing domain/service/feature.
 - **Output modes** — `planning-docs` skills write to planning artifact paths; `implementation-target` skills write to the target repo.
 - **Write boundary enforcement** — planning skills never write to `{release_repo_root}/` or `.github/`; implementation skills write only to the target repo.
+- **Batch context forwarding** — when a planning target resumes from `/batch`, forward the approved batch input path and answer summary as read-only context for the downstream skill.
 - **Delegate and stop** — once the wrapper invokes the downstream skill, all workflow menus, discovery questions, and artifact authorship belong to that skill; the wrapper does not continue conductor execution on its behalf.
 
 ## On Activation
@@ -98,9 +99,14 @@ target_repo_path: "{target_repo_path}"
 governance_repo_path: "{governance_repo_path}"
 constitutional_context: "{resolved_context}"
 write_scope: "{write_scope}"
+batch_input_path: "{batch_resume_context.batch_input_path ?? ''}"
+batch_answers_summary: "{batch_resume_context.batch_answers_summary ?? ''}"
+batch_mode: "{batch_resume_context.batch_mode ?? 'none'}"
 ```
 
 Invoke the skill at `entryPath` from the registry entry. Forward all user-provided args.
+
+When `batch_mode == pass-2`, treat the forwarded batch input as already approved offline context. Only ask genuinely new questions that remain unresolved after considering the batch answers.
 
 After the handoff, stop wrapper-side orchestration. Do not ask follow-on workflow questions, do not continue a phase conductor's scripted steps, and do not synthesize downstream planning content. Return control only when the delegated skill has completed or explicitly yielded back.
 
