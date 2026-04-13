@@ -7,8 +7,9 @@
 
 The init-feature workflow creates the 2-branch topology ({featureId} and {featureId}-plan),
 writes feature.yaml to the governance repo, registers the feature in feature-index.yaml on main,
-and creates a summary.md stub. Domain and service container markers are also created in the
-governance repo so container-only scopes have durable metadata outside the control repo.
+and creates a summary.md stub. Domain and service container markers and constitutions are also
+created in the governance repo. When --target-projects-root is provided, a .gitkeep scaffold
+file is created inside the corresponding TargetProjects/{domain}/{service}/ folder.
 
 Git/gh commands are returned as arrays — not executed directly.
 """
@@ -172,6 +173,108 @@ def make_domain_yaml(domain: str, name: str, username: str, timestamp: str) -> d
     }
 
 
+def make_domain_constitution_md(domain: str, name: str) -> str:
+    """Build the initial domain-level constitution.md content."""
+    display = name or domain
+    return (
+        "---\n"
+        "permitted_tracks: [quickplan, full, hotfix, tech-change]\n"
+        "required_artifacts:\n"
+        "  planning:\n"
+        "    - business-plan\n"
+        "  dev:\n"
+        "    - stories\n"
+        "gate_mode: informational\n"
+        "sensing_gate_mode: informational\n"
+        "additional_review_participants: []\n"
+        "enforce_stories: true\n"
+        "enforce_review: true\n"
+        "---\n"
+        "\n"
+        f"# {display} Domain Constitution\n"
+        "\n"
+        f"This constitution defines governance rules for the **{display}** domain.\n"
+        "\n"
+        "## Scope\n"
+        "\n"
+        f"Applies to all services and repositories within the `{domain}` domain.\n"
+        "Lower-level constitutions (service, repo) may add constraints but may not remove those defined here.\n"
+        "\n"
+        "## Tracks\n"
+        "\n"
+        "All standard tracks are permitted: `quickplan`, `full`, `hotfix`, `tech-change`.\n"
+        "Service-level constitutions may restrict this list further.\n"
+        "\n"
+        "## Artifacts\n"
+        "\n"
+        "- **Planning phase:** a `business-plan` is required before promotion to dev.\n"
+        "- **Dev phase:** at least one story file must exist before dev work begins.\n"
+        "\n"
+        "## Review\n"
+        "\n"
+        "Peer review is enforced for all features in this domain.\n"
+        "Additional participants may be named at the service or repo level.\n"
+        "\n"
+        "## Notes\n"
+        "\n"
+        "This constitution was initialized with domain defaults.\n"
+        "Update it to reflect the specific governance needs of the "
+        f"{display} domain.\n"
+    )
+
+
+def make_service_constitution_md(domain: str, service: str, name: str) -> str:
+    """Build the initial service-level constitution.md content (inherits from domain)."""
+    display = name or service
+    return (
+        "---\n"
+        "permitted_tracks: [quickplan, full, hotfix, tech-change]\n"
+        "required_artifacts:\n"
+        "  planning:\n"
+        "    - business-plan\n"
+        "  dev:\n"
+        "    - stories\n"
+        "gate_mode: informational\n"
+        "sensing_gate_mode: informational\n"
+        "additional_review_participants: []\n"
+        "enforce_stories: true\n"
+        "enforce_review: true\n"
+        "---\n"
+        "\n"
+        f"# {domain} / {display} Service Constitution\n"
+        "\n"
+        f"Inherits from the `{domain}` domain constitution.\n"
+        "Lower-level constitutions (repo) may add constraints but may not remove those defined here.\n"
+        "\n"
+        "## Scope\n"
+        "\n"
+        f"Applies to all repositories within the `{service}` service of the `{domain}` domain.\n"
+        "\n"
+        "## Tracks\n"
+        "\n"
+        f"Inherits all permitted tracks from the domain: `quickplan`, `full`, `hotfix`, `tech-change`.\n"
+        "Repo-level constitutions may restrict this list further.\n"
+        "\n"
+        "## Artifacts\n"
+        "\n"
+        "Inherits domain-level artifact requirements:\n"
+        "- **Planning phase:** `business-plan`\n"
+        "- **Dev phase:** `stories`\n"
+        "\n"
+        "Add service-specific artifact requirements below as needed.\n"
+        "\n"
+        "## Review\n"
+        "\n"
+        "Peer review is enforced. Additional participants may be named at the repo level.\n"
+        "\n"
+        "## Notes\n"
+        "\n"
+        "This constitution was initialized with service defaults inherited from the "
+        f"`{domain}` domain.\n"
+        f"Update it to reflect the specific governance needs of the `{service}` service.\n"
+    )
+
+
 def make_service_yaml(
     domain: str,
     service: str,
@@ -201,6 +304,16 @@ def get_domain_marker_path(governance_repo: str, domain: str) -> Path:
 def get_service_marker_path(governance_repo: str, domain: str, service: str) -> Path:
     """Return the canonical governance path for a service marker."""
     return Path(governance_repo) / "features" / domain / service / "service.yaml"
+
+
+def get_domain_constitution_path(governance_repo: str, domain: str) -> Path:
+    """Return the canonical governance path for a domain constitution."""
+    return Path(governance_repo) / "constitutions" / domain / "constitution.md"
+
+
+def get_service_constitution_path(governance_repo: str, domain: str, service: str) -> Path:
+    """Return the canonical governance path for a service constitution."""
+    return Path(governance_repo) / "constitutions" / domain / service / "constitution.md"
 
 
 def ensure_container_markers(
@@ -565,7 +678,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
 
 
 def cmd_create_domain(args: argparse.Namespace) -> dict:
-    """Create a governance marker for a domain container."""
+    """Create a governance marker and constitution for a domain container."""
     err = validate_safe_id(args.domain, "domain")
     if err:
         return {"status": "fail", "error": err}
@@ -574,8 +687,11 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
     domain = args.domain
     name = args.name or domain
     username = args.username
+    target_projects_root: str | None = getattr(args, "target_projects_root", None)
     timestamp = now_iso()
+
     marker_path = get_domain_marker_path(governance_repo, domain)
+    constitution_path = get_domain_constitution_path(governance_repo, domain)
 
     if marker_path.exists():
         return {
@@ -583,12 +699,30 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
             "error": f"Domain '{domain}' already exists at {marker_path}",
         }
 
-    rel_path = str(marker_path.relative_to(governance_repo))
+    marker_rel = str(marker_path.relative_to(governance_repo))
+    constitution_rel = str(constitution_path.relative_to(governance_repo))
+    marker_paths = [marker_rel]
+    constitution_paths = [constitution_rel]
+    gov_paths = marker_paths + constitution_paths
+
+    # Workspace .gitkeep path when target_projects_root is provided.
+    tp_gitkeep_path: Path | None = None
+    tp_rel: str | None = None
+    if target_projects_root:
+        tp_gitkeep_path = Path(target_projects_root) / domain / ".gitkeep"
+        workspace_root = str(Path(target_projects_root).parent)
+        tp_rel = str(tp_gitkeep_path.relative_to(workspace_root))
+
     git_cmds = build_container_git_commands(
         governance_repo,
-        [rel_path],
+        gov_paths,
         f"feat(domain): add {domain} container",
     )
+    if tp_gitkeep_path is not None and tp_rel is not None:
+        git_cmds.extend([
+            f"git -C {workspace_root} add {tp_rel}",
+            f'git -C {workspace_root} commit -m "scaffold(domain): add {domain} folder"',
+        ])
 
     if args.dry_run:
         return {
@@ -596,7 +730,10 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
             "dry_run": True,
             "scope": "domain",
             "path": str(marker_path),
-            "created_marker_paths": [rel_path],
+            "constitution_path": str(constitution_path),
+            "created_marker_paths": marker_paths,
+            "created_constitution_paths": constitution_paths,
+            "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
             "git_commands": git_cmds,
         }
 
@@ -605,17 +742,33 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
     except OSError as e:
         return {"status": "fail", "error": f"Failed to write domain marker: {e}"}
 
+    try:
+        constitution_path.parent.mkdir(parents=True, exist_ok=True)
+        constitution_path.write_text(make_domain_constitution_md(domain, name), encoding="utf-8")
+    except OSError as e:
+        return {"status": "fail", "error": f"Failed to write domain constitution: {e}"}
+
+    if tp_gitkeep_path is not None:
+        try:
+            tp_gitkeep_path.parent.mkdir(parents=True, exist_ok=True)
+            tp_gitkeep_path.touch()
+        except OSError as e:
+            return {"status": "fail", "error": f"Failed to scaffold TargetProjects domain folder: {e}"}
+
     return {
         "status": "pass",
         "scope": "domain",
         "path": str(marker_path),
-        "created_marker_paths": [rel_path],
+        "constitution_path": str(constitution_path),
+        "created_marker_paths": marker_paths,
+        "created_constitution_paths": constitution_paths,
+        "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
         "git_commands": git_cmds,
     }
 
 
 def cmd_create_service(args: argparse.Namespace) -> dict:
-    """Create governance markers for a service container and its parent domain if needed."""
+    """Create governance markers and constitutions for a service container (and parent domain if absent)."""
     err = validate_safe_id(args.domain, "domain")
     if err:
         return {"status": "fail", "error": err}
@@ -628,6 +781,7 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
     service = args.service
     name = args.name or service
     username = args.username
+    target_projects_root: str | None = getattr(args, "target_projects_root", None)
     timestamp = now_iso()
 
     service_path = get_service_marker_path(governance_repo, domain, service)
@@ -637,6 +791,7 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
             "error": f"Service '{domain}/{service}' already exists at {service_path}",
         }
 
+    # Marker paths (ensure_container_markers creates both domain and service markers).
     created_marker_paths = ensure_container_markers(
         governance_repo,
         domain,
@@ -645,6 +800,25 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
         timestamp,
         dry_run=args.dry_run,
     )
+
+    # Constitution paths.
+    domain_constitution_path = get_domain_constitution_path(governance_repo, domain)
+    service_constitution_path = get_service_constitution_path(governance_repo, domain, service)
+    domain_name = domain  # display name falls back to id for auto-created domain
+    created_constitution_paths: list[str] = []
+
+    if not domain_constitution_path.exists():
+        created_constitution_paths.append(str(domain_constitution_path.relative_to(governance_repo)))
+        if not args.dry_run:
+            try:
+                domain_constitution_path.parent.mkdir(parents=True, exist_ok=True)
+                domain_constitution_path.write_text(
+                    make_domain_constitution_md(domain, domain_name), encoding="utf-8"
+                )
+            except OSError as e:
+                return {"status": "fail", "error": f"Failed to write domain constitution: {e}"}
+
+    created_constitution_paths.append(str(service_constitution_path.relative_to(governance_repo)))
 
     # Overwrite the auto-generated service marker with the requested display name.
     if not args.dry_run:
@@ -656,19 +830,52 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
         except OSError as e:
             return {"status": "fail", "error": f"Failed to write service marker: {e}"}
 
+        try:
+            service_constitution_path.parent.mkdir(parents=True, exist_ok=True)
+            service_constitution_path.write_text(
+                make_service_constitution_md(domain, service, name), encoding="utf-8"
+            )
+        except OSError as e:
+            return {"status": "fail", "error": f"Failed to write service constitution: {e}"}
+
+    # Workspace .gitkeep path when target_projects_root is provided.
+    tp_gitkeep_path: Path | None = None
+    tp_rel: str | None = None
+    workspace_root: str | None = None
+    if target_projects_root:
+        tp_gitkeep_path = Path(target_projects_root) / domain / service / ".gitkeep"
+        workspace_root = str(Path(target_projects_root).parent)
+        tp_rel = str(tp_gitkeep_path.relative_to(workspace_root))
+        if not args.dry_run:
+            try:
+                tp_gitkeep_path.parent.mkdir(parents=True, exist_ok=True)
+                tp_gitkeep_path.touch()
+            except OSError as e:
+                return {"status": "fail", "error": f"Failed to scaffold TargetProjects service folder: {e}"}
+
+    all_gov_paths = unique_paths(created_marker_paths + created_constitution_paths)
     git_cmds = build_container_git_commands(
         governance_repo,
-        created_marker_paths,
+        all_gov_paths,
         f"feat(service): add {domain}/{service} container",
     )
+    if tp_gitkeep_path is not None and tp_rel is not None and workspace_root is not None:
+        git_cmds.extend([
+            f"git -C {workspace_root} add {tp_rel}",
+            f'git -C {workspace_root} commit -m "scaffold(service): add {domain}/{service} folder"',
+        ])
 
     return {
         "status": "pass",
         "dry_run": bool(args.dry_run),
         "scope": "service",
         "path": str(service_path),
+        "constitution_path": str(service_constitution_path),
         "created_domain_marker": any(path.endswith("/domain.yaml") for path in created_marker_paths),
+        "created_domain_constitution": any("constitutions/" in path and path.endswith(f"{domain}/constitution.md") for path in created_constitution_paths),
         "created_marker_paths": created_marker_paths,
+        "created_constitution_paths": created_constitution_paths,
+        "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
         "git_commands": git_cmds,
     }
 
@@ -787,8 +994,16 @@ Examples:
     %(prog)s create-domain --governance-repo /path/to/repo --domain platform \\
         --name "Platform" --username cweber
 
+    %(prog)s create-domain --governance-repo /path/to/repo --domain platform \\
+        --name "Platform" --username cweber \\
+        --target-projects-root /path/to/TargetProjects
+
     %(prog)s create-service --governance-repo /path/to/repo --domain platform \\
         --service identity --name "Identity" --username cweber
+
+    %(prog)s create-service --governance-repo /path/to/repo --domain platform \\
+        --service identity --name "Identity" --username cweber \\
+        --target-projects-root /path/to/TargetProjects
 
   %(prog)s create --governance-repo /path/to/gov --control-repo /path/to/src \\
     --feature-id payment-gateway --domain commerce --service payments \\
@@ -804,12 +1019,18 @@ Examples:
 
     create_domain_p = subparsers.add_parser(
         "create-domain",
-        help="Create a governance marker for a domain container",
+        help="Create a governance marker and constitution for a domain container",
     )
     create_domain_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
     create_domain_p.add_argument("--domain", required=True, help="Domain name")
     create_domain_p.add_argument("--name", default=None, help="Human-friendly domain name")
     create_domain_p.add_argument("--username", required=True, help="Username of the creator")
+    create_domain_p.add_argument(
+        "--target-projects-root",
+        default=None,
+        dest="target_projects_root",
+        help="Path to TargetProjects folder; creates {domain}/.gitkeep scaffold if provided",
+    )
     create_domain_p.add_argument(
         "--dry-run",
         action="store_true",
@@ -818,13 +1039,19 @@ Examples:
 
     create_service_p = subparsers.add_parser(
         "create-service",
-        help="Create a governance marker for a service container",
+        help="Create a governance marker and constitution for a service container",
     )
     create_service_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
     create_service_p.add_argument("--domain", required=True, help="Domain name")
     create_service_p.add_argument("--service", required=True, help="Service name")
     create_service_p.add_argument("--name", default=None, help="Human-friendly service name")
     create_service_p.add_argument("--username", required=True, help="Username of the creator")
+    create_service_p.add_argument(
+        "--target-projects-root",
+        default=None,
+        dest="target_projects_root",
+        help="Path to TargetProjects folder; creates {domain}/{service}/.gitkeep scaffold if provided",
+    )
     create_service_p.add_argument(
         "--dry-run",
         action="store_true",

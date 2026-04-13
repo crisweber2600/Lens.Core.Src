@@ -14,7 +14,7 @@ project_knowledge: "{project-root}/docs"
 
 # Lens-work module defaults
 release_repo_root: lens.core
-target_projects_path: "../TargetProjects"
+target_projects_path: "{project-root}/TargetProjects"
 default_git_remote: github
 lifecycle_contract: "{project-root}/lens.core/_bmad/lens-work/lifecycle.yaml"
 initiative_output_folder: "{project-root}/docs/lens-work/initiatives"
@@ -24,7 +24,7 @@ personal_output_folder: "{project-root}/docs/lens-work/personal"
 default_model: "Claude Sonnet 4.6 (copilot)"
 
 # Governance — resolved by /onboard, used during activation health checks
-governance_repo_path: "../TargetProjects/lens/lens-governance"
+governance_repo_path: "{project-root}/TargetProjects/lens/lens-governance"
 target_repos: []
 
 # Core Configuration Values

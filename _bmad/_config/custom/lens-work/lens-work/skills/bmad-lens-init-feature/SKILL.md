@@ -67,6 +67,8 @@ Load `{governance_repo}/users/{username}/user-profile.md` for user defaults. Loa
 | ---------- | ------- | ----- |
 | Init Feature | Branches, feature.yaml, PR, index entry, and summary stub created atomically | Load `./references/init-feature.md` |
 | Auto-Context Pull | Domain context, related summaries, and depends_on docs loaded | Load `./references/auto-context-pull.md` |
+| Create Domain | Domain marker (`domain.yaml`), constitution (`constitutions/{domain}/constitution.md`), and optional TargetProjects scaffold created | Use `create-domain` subcommand |
+| Create Service | Service marker, domain constitution (if absent), service constitution, and optional TargetProjects scaffold created | Use `create-service` subcommand |
 
 ## Integration Points
 
@@ -125,4 +127,21 @@ uv run scripts/init-feature-ops.py fetch-context \
   --governance-repo /path/to/gov-repo \
   --feature-id auth-refresh \
   --depth full
+
+# Create a new domain (governance marker + constitution + optional TargetProjects scaffold)
+uv run scripts/init-feature-ops.py create-domain \
+  --governance-repo /path/to/gov-repo \
+  --domain platform \
+  --name "Platform" \
+  --username cweber \
+  --target-projects-root /path/to/TargetProjects
+
+# Create a new service (service + domain markers + constitutions + optional TargetProjects scaffold)
+uv run scripts/init-feature-ops.py create-service \
+  --governance-repo /path/to/gov-repo \
+  --domain platform \
+  --service identity \
+  --name "Identity" \
+  --username cweber \
+  --target-projects-root /path/to/TargetProjects
 ```

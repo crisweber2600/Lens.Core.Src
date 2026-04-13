@@ -815,6 +815,125 @@ def make_feature_yaml_fixture(feature_id: str, domain: str, service: str) -> dic
     }
 
 
+def test_create_domain_creates_constitution():
+    """Domain creation writes a constitution.md in constitutions/{domain}/."""
+    print("test_create_domain_creates_constitution", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        result, code = run([
+            "create-domain",
+            "--governance-repo", tmp,
+            "--domain", "platform",
+            "--name", "Platform",
+            "--username", "cweber",
+        ])
+        assert_eq("domain create status", result.get("status"), "pass")
+        assert_eq("domain create exit code", code, 0)
+        assert_true("constitution_path in result", result.get("constitution_path"))
+
+        constitution_path = Path(tmp) / "constitutions" / "platform" / "constitution.md"
+        assert_eq("domain constitution exists", constitution_path.exists(), True)
+
+        content = constitution_path.read_text(encoding="utf-8")
+        assert_true("constitution has frontmatter", content.startswith("---"))
+        assert_true("constitution has permitted_tracks", "permitted_tracks" in content)
+        assert_true("constitution references domain name", "Platform" in content)
+        assert_true("constitution lists governance rules", "enforce_stories: true" in content)
+
+
+def test_create_service_creates_constitutions():
+    """Service creation writes constitutions for both the service and its parent domain when absent."""
+    print("test_create_service_creates_constitutions", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        result, code = run([
+            "create-service",
+            "--governance-repo", tmp,
+            "--domain", "platform",
+            "--service", "identity",
+            "--name", "Identity",
+            "--username", "cweber",
+        ])
+        assert_eq("service create status", result.get("status"), "pass")
+        assert_eq("service create exit code", code, 0)
+        assert_true("constitution_path in result", result.get("constitution_path"))
+        assert_eq("domain constitution auto-created flag", result.get("created_domain_constitution"), True)
+
+        domain_constitution = Path(tmp) / "constitutions" / "platform" / "constitution.md"
+        service_constitution = Path(tmp) / "constitutions" / "platform" / "identity" / "constitution.md"
+        assert_eq("domain constitution exists", domain_constitution.exists(), True)
+        assert_eq("service constitution exists", service_constitution.exists(), True)
+
+        service_content = service_constitution.read_text(encoding="utf-8")
+        assert_true("service constitution has frontmatter", service_content.startswith("---"))
+        assert_true("service constitution references domain", "platform" in service_content)
+        assert_true("service constitution references service name", "Identity" in service_content)
+        assert_true("service constitution mentions inherits", "Inherits" in service_content)
+
+
+def test_create_domain_with_target_projects():
+    """Domain creation scaffolds TargetProjects/{domain}/.gitkeep when --target-projects-root is provided."""
+    print("test_create_domain_with_target_projects", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as gov_tmp:
+        with tempfile.TemporaryDirectory() as workspace_tmp:
+            tp_root = str(Path(workspace_tmp) / "TargetProjects")
+            result, code = run([
+                "create-domain",
+                "--governance-repo", gov_tmp,
+                "--domain", "platform",
+                "--name", "Platform",
+                "--username", "cweber",
+                "--target-projects-root", tp_root,
+            ])
+            assert_eq("domain tp create status", result.get("status"), "pass")
+            assert_eq("domain tp create exit code", code, 0)
+            assert_true("target_projects_path in result", result.get("target_projects_path"))
+
+            gitkeep = Path(tp_root) / "platform" / ".gitkeep"
+            assert_eq("domain .gitkeep exists", gitkeep.exists(), True)
+
+            git_cmds = result.get("git_commands", [])
+            assert_true(
+                "workspace git add in commands",
+                any("TargetProjects/platform/.gitkeep" in c for c in git_cmds),
+            )
+            assert_true(
+                "workspace git commit in commands",
+                any("scaffold(domain)" in c for c in git_cmds),
+            )
+
+
+def test_create_service_with_target_projects():
+    """Service creation scaffolds TargetProjects/{domain}/{service}/.gitkeep when --target-projects-root is provided."""
+    print("test_create_service_with_target_projects", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as gov_tmp:
+        with tempfile.TemporaryDirectory() as workspace_tmp:
+            tp_root = str(Path(workspace_tmp) / "TargetProjects")
+            result, code = run([
+                "create-service",
+                "--governance-repo", gov_tmp,
+                "--domain", "platform",
+                "--service", "identity",
+                "--name", "Identity",
+                "--username", "cweber",
+                "--target-projects-root", tp_root,
+            ])
+            assert_eq("service tp create status", result.get("status"), "pass")
+            assert_eq("service tp create exit code", code, 0)
+            assert_true("target_projects_path in result", result.get("target_projects_path"))
+
+            gitkeep = Path(tp_root) / "platform" / "identity" / ".gitkeep"
+            assert_eq("service .gitkeep exists", gitkeep.exists(), True)
+
+            git_cmds = result.get("git_commands", [])
+            assert_true(
+                "workspace git add in commands",
+                any("TargetProjects/platform/identity/.gitkeep" in c for c in git_cmds),
+            )
+            assert_true(
+                "workspace git commit in commands",
+                any("scaffold(service)" in c for c in git_cmds),
+            )
+
+
 if __name__ == "__main__":
     test_create_feature()
     test_create_domain_marker()
@@ -839,6 +958,10 @@ if __name__ == "__main__":
     test_fetch_context_service_ref_text_scopes_to_target_domain()
     test_fetch_context_service_context_without_service_marker()
     test_control_repo_git_commands()
+    test_create_domain_creates_constitution()
+    test_create_service_creates_constitutions()
+    test_create_domain_with_target_projects()
+    test_create_service_with_target_projects()
 
     print(f"\nResults: {PASS} passed, {FAIL} failed", file=sys.stderr)
     sys.exit(1 if FAIL > 0 else 0)

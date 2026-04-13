@@ -6,6 +6,9 @@ description: "Initialize a new domain in the governance structure"
 Load and follow the skill at: `lens.core/_bmad/lens-work/skills/bmad-lens-init-feature/SKILL.md`
 
 The user wants to initialize a new **domain** — not a feature. This means:
-1. Create the domain directory under `{governance_repo}/constitutions/{domain}/`
-2. Create a domain-level `constitution.md` with defaults
-3. Do NOT create feature branches or feature.yaml — domain initialization is governance-only
+1. Create the domain marker at `{governance_repo}/features/{domain}/domain.yaml`
+2. Create a domain-level `constitution.md` at `{governance_repo}/constitutions/{domain}/constitution.md` with defaults
+3. If `{target_projects_path}` is configured, scaffold `{target_projects_path}/{domain}/` by passing `--target-projects-root {target_projects_path}` to the `create-domain` subcommand
+4. Do NOT create feature branches or feature.yaml — domain initialization is governance-only
+
+Use the `create-domain` subcommand of `scripts/init-feature-ops.py`. Return the git commands for the user to execute.
