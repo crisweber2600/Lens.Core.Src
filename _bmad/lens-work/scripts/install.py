@@ -212,6 +212,9 @@ You must fully embody this agent's persona and follow all activation instruction
     prompts = [
         ("lens-onboard.prompt.md", "lens-onboard", "Bootstrap control repo — detect provider, validate auth, create profile, auto-clone TargetProjects", "lens-onboard.prompt.md"),
         ("lens-init-feature.prompt.md", "lens-init-feature", "Create a new feature with 2-branch topology", "lens-init-feature.prompt.md"),
+        ("lens-new-domain.prompt.md", "lens-new-domain", "Create new domain-level constitution scaffolding", "lens-new-domain.prompt.md"),
+        ("lens-new-service.prompt.md", "lens-new-service", "Create new service-level constitution scaffolding within a domain", "lens-new-service.prompt.md"),
+        ("lens-new-feature.prompt.md", "lens-new-feature", "Initialize a new feature with 2-branch topology, feature YAML, and PR", "lens-new-feature.prompt.md"),
         ("lens-preplan.prompt.md", "lens-preplan", "Run PrePlan phase (brainstorm, research, product brief)", "lens-preplan.prompt.md"),
         ("lens-businessplan.prompt.md", "lens-businessplan", "Run BusinessPlan phase (PRD, UX design)", "lens-businessplan.prompt.md"),
         ("lens-techplan.prompt.md", "lens-techplan", "Run TechPlan phase (architecture, technical design)", "lens-techplan.prompt.md"),
