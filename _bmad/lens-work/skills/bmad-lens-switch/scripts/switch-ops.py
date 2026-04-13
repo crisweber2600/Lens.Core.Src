@@ -13,6 +13,7 @@ import argparse
 import json
 import os
 import re
+import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
@@ -343,6 +344,21 @@ def cmd_list(args: argparse.Namespace) -> dict:
     return {"status": "pass", "mode": "features", "features": features, "total": len(features)}
 
 
+def try_git_checkout(control_repo: str, branch: str) -> tuple[bool, str | None]:
+    """Attempt git checkout of branch in control_repo. Returns (switched, error_msg)."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", control_repo, "checkout", branch],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            return True, None
+        return False, result.stderr.strip() or result.stdout.strip() or f"git checkout {branch} failed"
+    except OSError as e:
+        return False, f"git not available: {e}"
+
+
 def cmd_switch(args: argparse.Namespace) -> dict:
     """Validate and prepare context for switching to a feature."""
     err = validate_identifier(args.feature_id, "feature-id")
@@ -359,6 +375,8 @@ def cmd_switch(args: argparse.Namespace) -> dict:
             return {"status": "fail", "error": err}
 
     personal_folder = resolve_personal_folder(args.governance_repo, args.personal_folder)
+    plan_branch = f"{args.feature_id}-plan"
+    control_repo: str | None = getattr(args, "control_repo", None)
 
     index_data, err = load_feature_index(args.governance_repo)
     if err:
@@ -386,9 +404,15 @@ def cmd_switch(args: argparse.Namespace) -> dict:
         except OSError as e:
             return {"status": "fail", "error": f"Failed to write context.yaml: {e}"}
 
-        return {
+        branch_switched: bool | None = None
+        branch_error: str | None = None
+        if control_repo:
+            branch_switched, branch_error = try_git_checkout(control_repo, plan_branch)
+
+        result: dict = {
             "status": "pass",
             "mode": "service-context",
+            "plan_branch": plan_branch,
             "service_context": {
                 "id": service_meta["id"],
                 "name": service_meta["name"],
@@ -404,6 +428,11 @@ def cmd_switch(args: argparse.Namespace) -> dict:
             },
             "message": "feature-index.yaml missing; switched to service context fallback.",
         }
+        if control_repo is not None:
+            result["branch_switched"] = branch_switched
+            if branch_error:
+                result["branch_error"] = branch_error
+        return result
 
     raw_features: list[dict] = index_data.get("features") or []
     index_by_id = {f.get("id"): f for f in raw_features if f.get("id")}
@@ -445,8 +474,14 @@ def cmd_switch(args: argparse.Namespace) -> dict:
     except OSError as e:
         return {"status": "fail", "error": f"Failed to write context.yaml: {e}"}
 
-    return {
+    branch_switched2: bool | None = None
+    branch_error2: str | None = None
+    if control_repo:
+        branch_switched2, branch_error2 = try_git_checkout(control_repo, plan_branch)
+
+    out: dict = {
         "status": "pass",
+        "plan_branch": plan_branch,
         "feature": {
             "id": args.feature_id,
             "name": feature_data.get("name", ""),
@@ -466,6 +501,11 @@ def cmd_switch(args: argparse.Namespace) -> dict:
             "full_docs": full_docs,
         },
     }
+    if control_repo is not None:
+        out["branch_switched"] = branch_switched2
+        if branch_error2:
+            out["branch_error"] = branch_error2
+    return out
 
 
 def cmd_context_paths(args: argparse.Namespace) -> dict:
@@ -564,6 +604,15 @@ Examples:
         help=(
             "Path to personal folder for context.yaml persistence. "
             "If omitted, defaults to <governance_repo_parent>/.github/lens/personal"
+        ),
+    )
+    switch_p.add_argument(
+        "--control-repo",
+        required=False,
+        dest="control_repo",
+        help=(
+            "Path to the control repo root. When provided, performs "
+            "'git checkout {featureId}-plan' in that repo after resolving the feature context."
         ),
     )
 
