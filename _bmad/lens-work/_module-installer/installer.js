@@ -313,6 +313,7 @@ const STUB_PROMPTS = [
     { file: 'lens-init-feature.prompt.md', name: 'lens-init-feature', desc: 'Create a new feature with 2-branch topology', target: 'lens-init-feature.prompt.md' },
     { file: 'lens-new-domain.prompt.md', name: 'lens-new-domain', desc: 'Create new domain-level constitution scaffolding', target: 'lens-new-domain.prompt.md' },
     { file: 'lens-new-service.prompt.md', name: 'lens-new-service', desc: 'Create new service-level constitution scaffolding within a domain', target: 'lens-new-service.prompt.md' },
+    { file: 'lens-new-feature.prompt.md', name: 'lens-new-feature', desc: 'Initialize a new feature with 2-branch topology, feature YAML, and PR', target: 'lens-new-feature.prompt.md' },
     { file: 'lens-preplan.prompt.md', name: 'lens-preplan', desc: 'Run PrePlan phase (brainstorm, research, product brief)', target: 'lens-preplan.prompt.md' },
     { file: 'lens-businessplan.prompt.md', name: 'lens-businessplan', desc: 'Run BusinessPlan phase (PRD, UX design)', target: 'lens-businessplan.prompt.md' },
     { file: 'lens-techplan.prompt.md', name: 'lens-techplan', desc: 'Run TechPlan phase (architecture, technical design)', target: 'lens-techplan.prompt.md' },
