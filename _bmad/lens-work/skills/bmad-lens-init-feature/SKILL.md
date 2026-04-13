@@ -134,7 +134,8 @@ uv run scripts/init-feature-ops.py create-domain \
   --domain platform \
   --name "Platform" \
   --username cweber \
-  --target-projects-root /path/to/TargetProjects
+  --target-projects-root /path/to/TargetProjects \
+  --personal-folder /path/to/docs/lens-work/personal
 
 # Create a new service (service + domain markers + constitutions + optional TargetProjects scaffold)
 uv run scripts/init-feature-ops.py create-service \
@@ -143,5 +144,27 @@ uv run scripts/init-feature-ops.py create-service \
   --service identity \
   --name "Identity" \
   --username cweber \
-  --target-projects-root /path/to/TargetProjects
+  --target-projects-root /path/to/TargetProjects \
+  --personal-folder /path/to/docs/lens-work/personal
+
+# Read the active domain/service context (for non-feature-branch commands)
+uv run scripts/init-feature-ops.py read-context \
+  --personal-folder /path/to/docs/lens-work/personal
 ```
+
+### Context State File
+
+Both `create-domain` and `create-service` accept an optional `--personal-folder` argument. When provided, they write a `context.yaml` file to that folder after successfully creating the governance artifacts. This file persists the user's active domain and service so that commands can resolve them without an active feature branch.
+
+**Schema:**
+```yaml
+domain: "platform"
+service: "identity"   # null when only create-domain was run
+updated_at: "2026-04-13T12:00:00Z"
+updated_by: "new-service"   # "new-domain" or "new-service"
+```
+
+- `create-domain` writes `service: null` — switching domains clears any stale service context
+- `create-service` writes both `domain` and `service`
+- The file lives in `{personal_output_folder}/context.yaml` (default: `{project-root}/docs/lens-work/personal/context.yaml`) — local-only, never git-tracked
+- Use the `read-context` subcommand to retrieve the current context when not on a feature branch

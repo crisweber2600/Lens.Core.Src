@@ -99,6 +99,23 @@ def atomic_write_yaml(path: Path, data: dict) -> None:
         raise
 
 
+def write_context_yaml(personal_folder: str, domain: str, service: str | None, source: str) -> Path:
+    """Write context.yaml to the personal folder with the current domain/service.
+
+    This is a local-only file (not git-tracked); it persists the user's active domain/service
+    context so that non-feature-branch commands can resolve it without a feature branch.
+    """
+    context_path = Path(personal_folder) / "context.yaml"
+    context_data: dict = {
+        "domain": domain,
+        "service": service,
+        "updated_at": now_iso(),
+        "updated_by": source,
+    }
+    atomic_write_yaml(context_path, context_data)
+    return context_path
+
+
 def make_feature_yaml(
     feature_id: str,
     domain: str,
@@ -755,7 +772,15 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
         except OSError as e:
             return {"status": "fail", "error": f"Failed to scaffold TargetProjects domain folder: {e}"}
 
-    return {
+    personal_folder: str | None = getattr(args, "personal_folder", None)
+    context_path: str | None = None
+    if personal_folder:
+        try:
+            context_path = str(write_context_yaml(personal_folder, domain, None, "new-domain"))
+        except OSError as e:
+            return {"status": "fail", "error": f"Failed to write context.yaml: {e}"}
+
+    result: dict = {
         "status": "pass",
         "scope": "domain",
         "path": str(marker_path),
@@ -765,6 +790,9 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
         "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
         "git_commands": git_cmds,
     }
+    if context_path is not None:
+        result["context_path"] = context_path
+    return result
 
 
 def cmd_create_service(args: argparse.Namespace) -> dict:
@@ -865,7 +893,15 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
             f'git -C {workspace_root} commit -m "scaffold(service): add {domain}/{service} folder"',
         ])
 
-    return {
+    personal_folder_svc: str | None = getattr(args, "personal_folder", None)
+    context_path_svc: str | None = None
+    if personal_folder_svc and not args.dry_run:
+        try:
+            context_path_svc = str(write_context_yaml(personal_folder_svc, domain, service, "new-service"))
+        except OSError as e:
+            return {"status": "fail", "error": f"Failed to write context.yaml: {e}"}
+
+    svc_result: dict = {
         "status": "pass",
         "dry_run": bool(args.dry_run),
         "scope": "service",
@@ -878,6 +914,9 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
         "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
         "git_commands": git_cmds,
     }
+    if context_path_svc is not None:
+        svc_result["context_path"] = context_path_svc
+    return svc_result
 
 
 def cmd_fetch_context(args: argparse.Namespace) -> dict:
@@ -982,6 +1021,37 @@ def cmd_fetch_context(args: argparse.Namespace) -> dict:
     }
 
 
+def cmd_read_context(args: argparse.Namespace) -> dict:
+    """Read the active domain/service context from the personal folder context.yaml.
+
+    Returns the last-written domain/service pair set by create-domain or create-service.
+    When not on a feature branch, callers use this to resolve which domain/service to
+    run commands against.
+    """
+    context_path = Path(args.personal_folder) / "context.yaml"
+    if not context_path.exists():
+        return {
+            "status": "not-found",
+            "error": (
+                f"No context.yaml found at {context_path}. "
+                "Run `lens-new-domain` or `lens-new-service` first to establish a context."
+            ),
+        }
+    try:
+        with open(context_path) as f:
+            data = yaml.safe_load(f) or {}
+    except (yaml.YAMLError, OSError) as e:
+        return {"status": "fail", "error": f"Failed to read context.yaml: {e}"}
+
+    return {
+        "status": "pass",
+        "domain": data.get("domain"),
+        "service": data.get("service"),
+        "updated_at": data.get("updated_at"),
+        "updated_by": data.get("updated_by"),
+    }
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
                 description="Governance initialization operations for features and container scopes.",
@@ -1032,6 +1102,12 @@ Examples:
         help="Path to TargetProjects folder; creates {domain}/.gitkeep scaffold if provided",
     )
     create_domain_p.add_argument(
+        "--personal-folder",
+        default=None,
+        dest="personal_folder",
+        help="Path to personal folder; writes context.yaml with current domain when provided",
+    )
+    create_domain_p.add_argument(
         "--dry-run",
         action="store_true",
         help="Print planned operations without writing any files",
@@ -1053,9 +1129,26 @@ Examples:
         help="Path to TargetProjects folder; creates {domain}/{service}/.gitkeep scaffold if provided",
     )
     create_service_p.add_argument(
+        "--personal-folder",
+        default=None,
+        dest="personal_folder",
+        help="Path to personal folder; writes context.yaml with current domain and service when provided",
+    )
+    create_service_p.add_argument(
         "--dry-run",
         action="store_true",
         help="Print planned operations without writing any files",
+    )
+
+    read_context_p = subparsers.add_parser(
+        "read-context",
+        help="Read the active domain/service context from the personal folder",
+    )
+    read_context_p.add_argument(
+        "--personal-folder",
+        required=True,
+        dest="personal_folder",
+        help="Path to personal folder containing context.yaml",
     )
 
     create_p = subparsers.add_parser("create", help="Create feature branches, YAML, PR, and index entry")
@@ -1120,6 +1213,7 @@ def main() -> None:
         "create-service": cmd_create_service,
         "create": cmd_create,
         "fetch-context": cmd_fetch_context,
+        "read-context": cmd_read_context,
     }
 
     result = commands[args.command](args)
