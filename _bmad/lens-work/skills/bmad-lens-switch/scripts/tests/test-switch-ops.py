@@ -248,6 +248,20 @@ def test_list_output_fields():
                 assert_true(f"feature has {key}", key in feature)
 
 
+def test_list_numbered_menu_fields():
+    """List output includes sequential 1-based num field for numbered menu."""
+    print("test_list_numbered_menu_fields", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        write_index(tmp, SAMPLE_INDEX_ENTRIES)
+        result, code = run(["list", "--governance-repo", tmp])
+        assert_eq("list status", result["status"], "pass")
+        features = result.get("features", [])
+        assert_true("has features", len(features) > 0)
+        for i, feature in enumerate(features):
+            assert_true(f"feature {i} has num", "num" in feature)
+            assert_eq(f"feature {i} num is {i + 1}", feature["num"], i + 1)
+
+
 def test_switch_existing_feature():
     """Switch to an existing feature validates and returns full context."""
     print("test_switch_existing_feature", file=sys.stderr)
@@ -584,6 +598,7 @@ def main() -> None:
     test_list_domain_fallback_with_domains()
     test_list_empty_index()
     test_list_output_fields()
+    test_list_numbered_menu_fields()
     test_switch_existing_feature()
     test_switch_nonexistent_feature()
     test_switch_returns_context_depends_on()

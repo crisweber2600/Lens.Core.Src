@@ -37,11 +37,15 @@ python3 ./scripts/switch-ops.py list \
 
 ## Output
 
+Each feature entry includes a `num` field (1-indexed integer) for menu selection:
+
 ```json
 {
   "status": "pass",
+  "mode": "features",
   "features": [
     {
+      "num": 1,
       "id": "auth-login",
       "domain": "platform",
       "service": "identity",
@@ -50,6 +54,7 @@ python3 ./scripts/switch-ops.py list \
       "summary": "User authentication flow with JWT tokens"
     },
     {
+      "num": 2,
       "id": "user-profile",
       "domain": "platform",
       "service": "identity",
@@ -64,17 +69,19 @@ python3 ./scripts/switch-ops.py list \
 
 ## Display Format
 
-Present results as a table grouped by domain/service:
+Present results as a numbered menu grouped by domain/service. Use `→` to mark the currently active feature (if any):
 
 ```
 Available features (2):
 
 PLATFORM / IDENTITY
-  auth-login     active   cweber    User authentication flow with JWT tokens
-  user-profile   active   amelia    User profile management and preferences
+  1  auth-login     active   cweber    User authentication flow with JWT tokens
+  2  user-profile   active   amelia    User profile management and preferences
+
+Enter a number to switch, or q to cancel:
 ```
 
-Highlight the currently active feature (if any) with `→` prefix.
+When the user enters a valid number, resolve the feature id at that position and proceed with the switch flow. On `q` or any non-numeric input, cancel with no changes.
 
 ## Domain Fallback (no features yet)
 
