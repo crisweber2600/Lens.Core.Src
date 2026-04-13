@@ -258,6 +258,7 @@ prompts:
   - lens-pause-resume.prompt.md
   - lens-profile.prompt.md
   - lens-dashboard.prompt.md
+  - lens-discover.prompt.md
   - lens-feature-yaml.prompt.md
   - lens-git-orchestration.prompt.md
   - lens-git-state.prompt.md
@@ -321,6 +322,7 @@ adapters:
       - .github/prompts/lens-pause-resume.prompt.md
       - .github/prompts/lens-profile.prompt.md
       - .github/prompts/lens-dashboard.prompt.md
+      - .github/prompts/lens-discover.prompt.md
       - .github/prompts/lens-feature-yaml.prompt.md
       - .github/prompts/lens-git-orchestration.prompt.md
       - .github/prompts/lens-git-state.prompt.md
@@ -349,6 +351,7 @@ adapters:
       - .cursor/commands/bmad-lens-audit.md
       - .cursor/commands/bmad-lens-sensing.md
       - .cursor/commands/bmad-lens-module-management.md
+      - .cursor/commands/bmad-lens-discover.md
   claude:
     dir: .claude/
     commands:
@@ -371,6 +374,7 @@ adapters:
       - .claude/commands/bmad-lens-audit.md
       - .claude/commands/bmad-lens-sensing.md
       - .claude/commands/bmad-lens-module-management.md
+      - .claude/commands/bmad-lens-discover.md
   codex:
     dir: ./
     agents_md: AGENTS.md
@@ -394,6 +398,7 @@ adapters:
       - .codex/commands/bmad-lens-audit.md
       - .codex/commands/bmad-lens-sensing.md
       - .codex/commands/bmad-lens-module-management.md
+      - .codex/commands/bmad-lens-discover.md
   opencode:
     dir: .opencode/
     commands:
@@ -416,3 +421,4 @@ adapters:
       - .opencode/commands/bmad-lens-audit.md
       - .opencode/commands/bmad-lens-sensing.md
       - .opencode/commands/bmad-lens-module-management.md
+      - .opencode/commands/bmad-lens-discover.md
