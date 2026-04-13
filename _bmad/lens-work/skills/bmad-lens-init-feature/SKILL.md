@@ -67,8 +67,8 @@ Load `{governance_repo}/users/{username}/user-profile.md` for user defaults. Loa
 | ---------- | ------- | ----- |
 | Init Feature | Branches, feature.yaml, PR, index entry, and summary stub created atomically | Load `./references/init-feature.md` |
 | Auto-Context Pull | Domain context, related summaries, and depends_on docs loaded | Load `./references/auto-context-pull.md` |
-| Create Domain | Domain marker (`domain.yaml`), constitution (`constitutions/{domain}/constitution.md`), and optional TargetProjects scaffold created | Use `create-domain` subcommand |
-| Create Service | Service marker, domain constitution (if absent), service constitution, and optional TargetProjects scaffold created | Use `create-service` subcommand |
+| Create Domain | Domain marker (`domain.yaml`), constitution (`constitutions/{domain}/constitution.md`), optional TargetProjects scaffold, optional `docs/{domain}/` scaffold, and optional personal context file created | Use `create-domain` subcommand |
+| Create Service | Service marker, domain constitution (if absent), service constitution, optional TargetProjects scaffold, optional `docs/{domain}/{service}/` scaffold, and optional personal context file created | Use `create-service` subcommand |
 
 ## Integration Points
 
@@ -135,6 +135,7 @@ uv run scripts/init-feature-ops.py create-domain \
   --name "Platform" \
   --username cweber \
   --target-projects-root /path/to/TargetProjects \
+  --docs-root /path/to/docs \
   --personal-folder /path/to/docs/lens-work/personal
 
 # Create a new service (service + domain markers + constitutions + optional TargetProjects scaffold)
@@ -145,6 +146,7 @@ uv run scripts/init-feature-ops.py create-service \
   --name "Identity" \
   --username cweber \
   --target-projects-root /path/to/TargetProjects \
+  --docs-root /path/to/docs \
   --personal-folder /path/to/docs/lens-work/personal
 
 # Read the active domain/service context (for non-feature-branch commands)
@@ -153,6 +155,15 @@ uv run scripts/init-feature-ops.py read-context \
 ```
 
 ### Context State File
+
+### Control Repo Docs Scaffold
+
+Both `create-domain` and `create-service` accept an optional `--docs-root` argument. When provided, they scaffold the control-repo docs tree so the domain or service has a durable staging folder before the first feature is created.
+
+- `create-domain` creates `docs/{domain}/.gitkeep`
+- `create-service` creates `docs/{domain}/{service}/.gitkeep`
+- The returned JSON includes `docs_path` when the scaffold was created or planned
+- The returned `git_commands` include the required `git add` and scaffold commit for the control repo
 
 Both `create-domain` and `create-service` accept an optional `--personal-folder` argument. When provided, they write a `context.yaml` file to that folder after successfully creating the governance artifacts. This file persists the user's active domain and service so that commands can resolve them without an active feature branch.
 

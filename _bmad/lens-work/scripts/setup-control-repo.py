@@ -170,6 +170,7 @@ def resolve_clone_branch(remote_url: str, preferred: str, label: str, dry_run: b
 
 def ensure_gitignore_entries(root: Path, dry_run: bool) -> None:
     entries = [
+        "docs/lens-work/personal/",
         ".github/lens/personal/",
         ".github/",
         "lens.core/",
@@ -442,7 +443,7 @@ def main() -> int:
 
     # 4. Output directories
     if not dry_run:
-        for rel in ["docs/lens-work/initiatives", ".github/lens/personal"]:
+        for rel in ["docs/lens-work/initiatives", "docs/lens-work/personal", ".github/lens/personal"]:
             (project_root / rel).mkdir(parents=True, exist_ok=True)
         print("[OK]   Output directory structure verified")
     else:

@@ -934,6 +934,71 @@ def test_create_service_with_target_projects():
             )
 
 
+def test_create_domain_with_docs_root():
+    """Domain creation scaffolds docs/{domain}/.gitkeep when --docs-root is provided."""
+    print("test_create_domain_with_docs_root", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as gov_tmp:
+        with tempfile.TemporaryDirectory() as workspace_tmp:
+            docs_root = str(Path(workspace_tmp) / "docs")
+            result, code = run([
+                "create-domain",
+                "--governance-repo", gov_tmp,
+                "--domain", "platform",
+                "--name", "Platform",
+                "--username", "cweber",
+                "--docs-root", docs_root,
+            ])
+            assert_eq("domain docs create status", result.get("status"), "pass")
+            assert_eq("domain docs create exit code", code, 0)
+            assert_true("docs_path in result", result.get("docs_path"))
+
+            gitkeep = Path(docs_root) / "platform" / ".gitkeep"
+            assert_eq("domain docs .gitkeep exists", gitkeep.exists(), True)
+
+            git_cmds = result.get("git_commands", [])
+            assert_true(
+                "docs git add in commands",
+                any("docs/platform/.gitkeep" in c for c in git_cmds),
+            )
+            assert_true(
+                "docs git commit in commands",
+                any("scaffold(domain)" in c for c in git_cmds),
+            )
+
+
+def test_create_service_with_docs_root():
+    """Service creation scaffolds docs/{domain}/{service}/.gitkeep when --docs-root is provided."""
+    print("test_create_service_with_docs_root", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as gov_tmp:
+        with tempfile.TemporaryDirectory() as workspace_tmp:
+            docs_root = str(Path(workspace_tmp) / "docs")
+            result, code = run([
+                "create-service",
+                "--governance-repo", gov_tmp,
+                "--domain", "platform",
+                "--service", "identity",
+                "--name", "Identity",
+                "--username", "cweber",
+                "--docs-root", docs_root,
+            ])
+            assert_eq("service docs create status", result.get("status"), "pass")
+            assert_eq("service docs create exit code", code, 0)
+            assert_true("service docs_path in result", result.get("docs_path"))
+
+            gitkeep = Path(docs_root) / "platform" / "identity" / ".gitkeep"
+            assert_eq("service docs .gitkeep exists", gitkeep.exists(), True)
+
+            git_cmds = result.get("git_commands", [])
+            assert_true(
+                "service docs git add in commands",
+                any("docs/platform/identity/.gitkeep" in c for c in git_cmds),
+            )
+            assert_true(
+                "service docs git commit in commands",
+                any("scaffold(service)" in c for c in git_cmds),
+            )
+
+
 def test_create_domain_writes_context_yaml():
     """create-domain with --personal-folder writes context.yaml with domain, service=null, updated_by=new-domain."""
     print("test_create_domain_writes_context_yaml", file=sys.stderr)
@@ -1072,6 +1137,8 @@ if __name__ == "__main__":
     test_create_service_creates_constitutions()
     test_create_domain_with_target_projects()
     test_create_service_with_target_projects()
+    test_create_domain_with_docs_root()
+    test_create_service_with_docs_root()
     test_create_domain_writes_context_yaml()
     test_create_service_writes_context_yaml()
     test_create_domain_no_personal_folder_skips_context()
