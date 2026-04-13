@@ -285,16 +285,7 @@ def main() -> int:
                     echo(f"  ✓ Synced {entry}")
 
     # ------------------------------------------------------------------
-    # Step 4: Verify IDE adapters
-    # ------------------------------------------------------------------
-    if not (project_root / ".claude/commands").is_dir():
-        echo("[preflight] .claude/commands missing — running installer...")
-        install_script = release_dir / "_bmad/lens-work/scripts/install.py"
-        if install_script.is_file():
-            subprocess.run(["uv", "run", str(install_script), "--ide", "claude"], check=False)
-
-    # ------------------------------------------------------------------
-    # Step 4b: Verify authority repos
+    # Step 4: Verify authority repos
     # ------------------------------------------------------------------
     missing_repos = not release_dir.is_dir()
     if governance_path and not governance_path.is_dir():
