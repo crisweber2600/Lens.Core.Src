@@ -647,7 +647,7 @@ async function install(options) {
                 'lifecycle_contract: "{project-root}/_bmad/lens-work/lifecycle.yaml"',
                 `governance_repo_path: ${toYamlString(governanceRepoPath)}`,
                 'initiative_output_folder: "{project-root}/docs/lens-work/initiatives"',
-                'personal_output_folder: "{project-root}/docs/lens-work/personal"',
+                'personal_output_folder: "{project-root}/.github/lens/personal"',
                 '',
                 '# Core Configuration Values',
                 `user_name: ${toYamlString(coreConfig.user_name || config.user_name || 'User')}`,

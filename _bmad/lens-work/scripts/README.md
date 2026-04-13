@@ -123,7 +123,7 @@ The version is extracted from `lens.core/_bmad/lens-work/lifecycle.yaml` (`schem
 The script ensures these entries exist in your `.gitignore`:
 
 ```
-docs/lens-work/personal/
+.github/lens/personal/
 .github/
 lens.core/
 TargetProjects/
@@ -189,7 +189,7 @@ Open VS Code with GitHub Copilot Chat and type:
 The onboard workflow will:
 - Validate your authentication
 - Read `governance-setup.yaml` to locate your governance repo
-- Create your personal profile (`docs/lens-work/personal/profile.yaml`)
+- Create your personal profile (`.github/lens/personal/profile.yaml`)
 - Clone target project repos from the governance `repo-inventory.yaml`
 
 ### 5. (Optional) Install non-Copilot IDE adapters
