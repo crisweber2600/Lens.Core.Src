@@ -92,6 +92,90 @@ def prune_stale_synced_github_files(
     return removed
 
 
+# ---------------------------------------------------------------------------
+# Prompt catalog metadata — (experience, role)
+# Kept in sync with setup.py. Unknown stems are always included.
+# ---------------------------------------------------------------------------
+_PROMPT_METADATA: dict[str, tuple[str, str | None]] = {
+    "lens-adversarial-review":           ("full",  "any"),
+    "lens-batch":                         ("both",  "any"),
+    "lens-bmad-brainstorming":            ("full",  "plan"),
+    "lens-bmad-code-review":              ("full",  "dev"),
+    "lens-bmad-create-architecture":      ("full",  "plan"),
+    "lens-bmad-create-epics-and-stories": ("full",  "plan"),
+    "lens-bmad-create-prd":               ("full",  "plan"),
+    "lens-bmad-create-story":             ("full",  "plan"),
+    "lens-bmad-create-ux-design":         ("full",  "plan"),
+    "lens-bmad-domain-research":          ("full",  "plan"),
+    "lens-bmad-market-research":          ("full",  "plan"),
+    "lens-bmad-product-brief":            ("full",  "plan"),
+    "lens-bmad-quick-dev":                ("full",  "dev"),
+    "lens-bmad-sprint-planning":          ("full",  "plan"),
+    "lens-bmad-technical-research":       ("full",  "plan"),
+    "lens-businessplan":                  ("both",  "plan"),
+    "lens-complete":                      ("both",  "any"),
+    "lens-constitution":                  ("full",  "admin"),
+    "lens-dev":                           ("both",  "dev"),
+    "lens-discover":                      ("both",  "any"),
+    "lens-expressplan":                   ("both",  "any"),
+    "lens-finalizeplan":                  ("both",  "plan"),
+    "lens-help":                          ("both",  "any"),
+    "lens-log-problem":                   ("full",  None),
+    "lens-move-feature":                  ("full",  "plan"),
+    "lens-new-domain":                    ("any",   "plan"),
+    "lens-new-feature":                   ("both",  "any"),
+    "lens-new-service":                   ("both",  "any"),
+    "lens-next":                          ("both",  "any"),
+    "lens-preflight":                     ("both",  "any"),
+    "lens-preplan":                       ("both",  "plan"),
+    "lens-split-feature":                 ("both",  "plan"),
+    "lens-switch":                        ("both",  "any"),
+    "lens-techplan":                      ("both",  "plan"),
+    "lens-theme":                         ("both",  "any"),
+    "lens-upgrade":                       ("full",  "admin"),
+}
+
+
+def _should_include_prompt(stem: str, experience: str, role: str) -> bool:
+    """Return True if a prompt should be present for the given profile."""
+    meta = _PROMPT_METADATA.get(stem)
+    if meta is None:
+        return True  # unknown stem → always keep (forward-compatible)
+
+    exp, prole = meta
+
+    if experience == "lite" and exp == "full":
+        return False
+
+    if role == "admin":
+        return True
+
+    if prole == "admin":
+        return False
+
+    if role == "planner":
+        return prole in ("plan", "any", None)
+    if role == "dev":
+        return prole in ("dev", "any", None)
+    return True  # "both"
+
+
+def _load_user_profile(project_root: Path) -> dict[str, str]:
+    """Read .github/lens/personal/profile.yaml; return defaults if missing."""
+    profile_path = project_root / ".github" / "lens" / "personal" / "profile.yaml"
+    defaults: dict[str, str] = {"experience_mode": "full", "primary_role": "both"}
+    if not profile_path.is_file():
+        return defaults
+    try:
+        for line in profile_path.read_text(encoding="utf-8").splitlines():
+            m = re.match(r"^(experience_mode|primary_role):\s*(.+)$", line.strip())
+            if m:
+                defaults[m.group(1)] = m.group(2).strip()
+    except OSError:
+        pass
+    return defaults
+
+
 def parse_timestamp(raw: str) -> datetime | None:
     val = raw.strip()
     if not val:
@@ -262,6 +346,22 @@ def main() -> int:
                     pf.unlink()
             elif name.endswith(".prompt.md"):
                 pf.unlink()
+
+        # Profile-aware prompt filtering
+        profile = _load_user_profile(project_root)
+        experience = profile.get("experience_mode", "full")
+        role = profile.get("primary_role", "both")
+        profile_removed = 0
+        for pf in list(prompts_dir.iterdir()):
+            name = pf.name
+            if not re.match(r"^lens-.*\.prompt\.md$", name):
+                continue
+            stem = name[: -len(".prompt.md")]
+            if not _should_include_prompt(stem, experience, role):
+                pf.unlink()
+                profile_removed += 1
+        if profile_removed:
+            echo(f"  ✓ Removed {profile_removed} prompt(s) excluded by profile (experience={experience}, role={role})")
 
     # ------------------------------------------------------------------
     # Step 3b: Sync agent entry points
