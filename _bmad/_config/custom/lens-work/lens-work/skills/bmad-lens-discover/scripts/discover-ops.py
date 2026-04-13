@@ -82,7 +82,7 @@ def _scan_disk(target_root: Path, max_depth: int = 3) -> list[Path]:
         except PermissionError:
             pass
 
-    _walk(target_root, 1)
+    _walk(target_root, 0)
     return git_dirs
 
 
