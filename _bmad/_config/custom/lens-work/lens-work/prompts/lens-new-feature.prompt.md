@@ -1,0 +1,18 @@
+---
+mode: agent
+description: "Initialize a new feature with 2-branch topology, feature YAML, and PR"
+---
+
+Load and follow the skill at: `lens.core/_bmad/lens-work/skills/bmad-lens-init-feature/SKILL.md`
+
+The user wants to initialize a new **feature**. This means:
+1. Create a 2-branch topology (`{featureId}` and `{featureId}-plan`) in the control repo
+2. Commit `feature.yaml` to governance `main` under `features/{domain}/{service}/{featureId}/feature.yaml`
+3. Register the feature in `feature-index.yaml` on `main`
+4. Create a `summary.md` stub on `main` under `features/{domain}/{service}/{featureId}/summary.md`
+5. For standard/quickplan track: open a PR from the plan branch to the feature branch in the control repo
+6. For `express` track: defer the planning PR until planning artifacts exist on the plan branch
+
+Apply progressive disclosure — ask only for feature name, domain, and service upfront; derive featureId and validate against `feature-index.yaml`; then require the user to choose a track explicitly before writing anything.
+
+Use the `create` subcommand of `scripts/init-feature-ops.py`. Return git commands for the user to execute.
