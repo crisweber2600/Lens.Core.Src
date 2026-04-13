@@ -208,6 +208,18 @@ def test_expressplan_phase():
         assert_eq("command", result["recommendation"]["command"], "/expressplan")
 
 
+def test_expressplan_complete_auto_advance():
+    """expressplan-complete → auto-advances to finalizeplan (not dev)."""
+    print("test_expressplan_complete_auto_advance", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        make_feature(tmp, "express-complete-feat", phase="expressplan-complete", track="express")
+        result, code = run(["suggest", "--governance-repo", tmp, "--feature-id", "express-complete-feat"])
+        assert_eq("status pass", result["status"], "pass")
+        assert_eq("exit code 0", code, 0)
+        assert_eq("action finalizeplan", result["recommendation"]["action"], "finalizeplan")
+        assert_eq("command", result["recommendation"]["command"], "/finalizeplan")
+
+
 def test_paused_phase():
     """Paused phase → recommends pause-resume."""
     print("test_paused_phase", file=sys.stderr)

@@ -201,18 +201,31 @@ phases:
     agent: lens
     agent_role: "Express Planner"
     supporting_agents: [winston, john, sally, bob]
-    description: "Combined planning — product brief, PRD, architecture, epics, stories, and sprint plan in a single guided session"
+    description: "Express planning — QuickPlan via Lens wrapper, adversarial review with party mode, then hand off to FinalizePlan"
     artifacts:
-      - product-brief
-      - prd
-      - architecture
-      - epics
-      - stories
-      - sprint-status
-      - review-report
-    milestone: dev-ready
-    auto_advance_to: /dev
+      - business-plan
+      - tech-plan
+      - sprint-plan
+      - expressplan-adversarial-review
+    milestone: finalizeplan
+    auto_advance_to: /finalizeplan
     auto_advance_promote: false
+    completion_review:
+      gate: adversarial-review
+      mode: party
+      report: expressplan-adversarial-review.md
+      reviewed_artifacts: [business-plan, tech-plan]
+      outcomes: [pass, pass-with-warnings, fail]
+    execution_contract:
+      - step: 1
+        name: quickplan-via-lens-wrapper
+        description: "Invoke bmad-lens-bmad-skill --skill bmad-lens-quickplan to run full planning pipeline (business plan → tech plan → sprint plan) with Lens feature context and write boundaries enforced."
+      - step: 2
+        name: adversarial-review-party-mode
+        description: "Run bmad-lens-adversarial-review --phase expressplan --source phase-complete. Reviews business-plan.md and tech-plan.md with adversarial analysis and a required party-mode blind-spot challenge round. A fail verdict halts progression."
+      - step: 3
+        name: advance-to-finalizeplan
+        description: "On pass or pass-with-warnings: update feature.yaml phase to expressplan-complete and signal auto-advance to /finalizeplan for final governance bundle and PR handoff."
 
 # Phase ordering (canonical sequence for full track)
 # NOTE: 'dev' is NOT a lifecycle phase — it is a delegation command that hands off
@@ -290,15 +303,12 @@ tracks:
     feature_yaml: true
 
   express:
-    description: "Lightweight single-phase planning — all artifacts in one session, no milestone branches, no PRs"
-    phases: [expressplan]
-    milestones: [dev-ready]
+    description: "Accelerated planning — QuickPlan via Lens wrapper, adversarial review with party mode, then FinalizePlan for governance bundle and PR handoff"
+    phases: [expressplan, finalizeplan]
+    milestones: [finalizeplan, dev-ready]
     constitution_controlled_gates: [adversarial-review]
-    gate_mode: informational
     bypass_constitution_gate: false
     start_phase: expressplan
-    branch_model: single
-    pr_creation: disabled
     requires_constitution_permission: true
     topology: 2-branch
     feature_yaml: true
