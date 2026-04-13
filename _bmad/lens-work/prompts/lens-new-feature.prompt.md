@@ -10,8 +10,9 @@ The user wants to initialize a new **feature**. This means:
 2. Commit `feature.yaml` to governance `main` under `features/{domain}/{service}/{featureId}/feature.yaml`
 3. Register the feature in `feature-index.yaml` on `main`
 4. Create a `summary.md` stub on `main` under `features/{domain}/{service}/{featureId}/summary.md`
-5. For standard/quickplan track: open a PR from the plan branch to the feature branch in the control repo
+5. For non-`express` tracks: open a PR from the plan branch to the feature branch in the control repo
 6. For `express` track: defer the planning PR until planning artifacts exist on the plan branch
+7. After creation, report the returned `starting_phase` and recommend `/next` or the returned `recommended_command`; never hardcode `/quickplan`
 
 Apply progressive disclosure — ask only for feature name, domain, and service upfront; derive featureId and validate against `feature-index.yaml`; then require the user to choose a track explicitly before writing anything.
 

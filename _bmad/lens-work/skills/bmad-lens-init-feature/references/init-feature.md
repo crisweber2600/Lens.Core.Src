@@ -70,7 +70,7 @@ The script:
 2. Creates `feature.yaml` at `{governance-repo}/features/{domain}/{service}/{featureId}/feature.yaml`
 3. Adds an entry to `{governance-repo}/feature-index.yaml` (creates if absent)
 4. Creates `{governance-repo}/features/{domain}/{service}/{featureId}/summary.md` stub
-5. Returns `git_commands` and `gh_commands` arrays in the JSON output, plus `planning_pr_created` to indicate whether a PR should be opened immediately
+5. Returns `git_commands` and `gh_commands` arrays in the JSON output, plus `planning_pr_created`, `starting_phase`, `recommended_command`, and `router_command` so the handoff matches `lifecycle.yaml`
 
 ### Step 4: Execute Git and GitHub Commands
 
@@ -100,13 +100,15 @@ Present the initialization summary to the user:
 | Field | Value |
 |-------|-------|
 | Feature ID | `{featureId}` |
+| Start Phase | `{starting_phase}` |
+| Next Step | `/next` or `{recommended_command}` |
 | Feature Branch | `{featureId}` (control repo) |
 | Plan Branch | `{featureId}-plan` (control repo) |
 | Domain Marker | `features/{domain}/domain.yaml` ✓ |
 | Service Marker | `features/{domain}/{service}/service.yaml` ✓ |
 | Feature YAML | `features/{domain}/{service}/{featureId}/feature.yaml` (governance `main`) |
-| PR | Immediate planning PR for non-express tracks; deferred for `express` until planning artifacts exist |
+| PR | Immediate planning PR for non-`express` tracks; deferred for `express` until planning artifacts exist |
 | Index | `feature-index.yaml` (governance `main`) ✓ |
 | Summary | `features/{domain}/{service}/{featureId}/summary.md` (governance `main`) ✓ |
 
-Offer to run **Auto-Context Pull** to load domain context before handing off to planning.
+Offer to run **Auto-Context Pull** to load domain context before handing off to planning, then route into the lifecycle-aware next step with `/next` or the returned `{recommended_command}`.

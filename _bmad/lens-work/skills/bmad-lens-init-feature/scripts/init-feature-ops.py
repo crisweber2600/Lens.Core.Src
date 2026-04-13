@@ -23,6 +23,7 @@ import re
 import sys
 import tempfile
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 
 import yaml
@@ -42,6 +43,12 @@ VALID_TRACKS = [
 ]
 CONTEXT_DOC_SUFFIXES = {".md", ".yaml", ".yml"}
 AMBIGUOUS_SERVICE_NAMES = {"api", "auth", "common", "core", "data", "identity"}
+LIFECYCLE_PATH = Path(__file__).resolve().parents[3] / "lifecycle.yaml"
+
+# Legacy track names still appear in existing feature.yaml files.
+LEGACY_TRACK_ALIASES: dict[str, str] = {
+    "quickplan": "feature",
+}
 
 
 def validate_feature_id(value: str) -> str | None:
@@ -67,6 +74,46 @@ def validate_safe_id(value: str, field_name: str) -> str | None:
 def now_iso() -> str:
     """Return current UTC time as ISO 8601 string."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+@lru_cache(maxsize=1)
+def load_lifecycle() -> dict:
+    """Load and cache the lifecycle contract."""
+    try:
+        with open(LIFECYCLE_PATH) as f:
+            data = yaml.safe_load(f)
+    except (yaml.YAMLError, OSError) as exc:
+        raise RuntimeError(f"Failed to read lifecycle.yaml: {exc}") from exc
+
+    if not isinstance(data, dict):
+        raise RuntimeError("Failed to read lifecycle.yaml: expected a top-level mapping")
+
+    return data
+
+
+def normalize_track(track: str, lifecycle: dict) -> str:
+    """Map feature.yaml track names onto lifecycle track keys."""
+    tracks = lifecycle.get("tracks") or {}
+    if track in tracks:
+        return track
+    return LEGACY_TRACK_ALIASES.get(track, track)
+
+
+def resolve_start_phase(track: str) -> str:
+    """Resolve the lifecycle start phase for a selected track."""
+    lifecycle = load_lifecycle()
+    tracks = lifecycle.get("tracks") or {}
+    normalized_track = normalize_track(track, lifecycle)
+    track_def = tracks.get(normalized_track)
+
+    if not isinstance(track_def, dict):
+        raise RuntimeError(f"Track '{track}' is not defined in lifecycle.yaml")
+
+    start_phase = str(track_def.get("start_phase") or "").strip()
+    if not start_phase:
+        raise RuntimeError(f"Track '{track}' is missing start_phase in lifecycle.yaml")
+
+    return start_phase
 
 
 def read_feature_index(governance_repo: str) -> tuple[dict, bool]:
@@ -124,6 +171,7 @@ def make_feature_yaml(
     service: str,
     name: str,
     track: str,
+    phase: str,
     username: str,
     timestamp: str,
 ) -> dict:
@@ -134,7 +182,7 @@ def make_feature_yaml(
         "featureId": feature_id,
         "domain": domain,
         "service": service,
-        "phase": "preplan",
+        "phase": phase,
         "track": track,
         "milestones": {
             "businessplan": None,
@@ -150,7 +198,7 @@ def make_feature_yaml(
         "priority": "medium",
         "created": timestamp,
         "updated": timestamp,
-        "phase_transitions": [{"phase": "preplan", "timestamp": timestamp, "user": username}],
+        "phase_transitions": [{"phase": phase, "timestamp": timestamp, "user": username}],
         "docs": {
             "path": f"docs/{domain}/{service}/{feature_id}",
             "governance_docs_path": f"features/{domain}/{service}/{feature_id}/docs",
@@ -163,13 +211,14 @@ def make_summary_md(
     domain: str,
     service: str,
     name: str,
+    phase: str,
     username: str,
     timestamp: str,
 ) -> str:
     """Build the initial summary.md stub content."""
     return (
         f"# {name}\n\n"
-        f"> Status: preplan | Feature ID: `{feature_id}`\n\n"
+        f"> Status: {phase} | Feature ID: `{feature_id}`\n\n"
         f"Auto-generated stub. Update as planning progresses.\n\n"
         f"**Domain:** {domain}  \n"
         f"**Service:** {service}  \n"
@@ -615,6 +664,13 @@ def cmd_create(args: argparse.Namespace) -> dict:
         }
 
     try:
+        starting_phase = resolve_start_phase(track)
+    except RuntimeError as e:
+        return {"status": "fail", "error": str(e)}
+
+    recommended_command = f"/{starting_phase}"
+
+    try:
         index_data, _index_exists = read_feature_index(governance_repo)
     except RuntimeError as e:
         return {"status": "fail", "error": str(e)}
@@ -662,6 +718,9 @@ def cmd_create(args: argparse.Namespace) -> dict:
             "status": "pass",
             "dry_run": True,
             "featureId": feature_id,
+            "starting_phase": starting_phase,
+            "recommended_command": recommended_command,
+            "router_command": "/next",
             "feature_yaml_path": str(feature_yaml_path),
             "index_updated": True,
             "summary_path": str(summary_path),
@@ -671,7 +730,16 @@ def cmd_create(args: argparse.Namespace) -> dict:
             "planning_pr_created": bool(gh_cmds),
         }
 
-    feature_data = make_feature_yaml(feature_id, domain, service, name, track, username, timestamp)
+    feature_data = make_feature_yaml(
+        feature_id,
+        domain,
+        service,
+        name,
+        track,
+        starting_phase,
+        username,
+        timestamp,
+    )
     try:
         atomic_write_yaml(feature_yaml_path, feature_data)
     except OSError as e:
@@ -682,7 +750,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
         "featureId": feature_id,
         "domain": domain,
         "service": service,
-        "status": "preplan",
+        "status": starting_phase,
         "owner": username,
         # plan_branch refers to the control repo branch, not the governance repo.
         # Governance keeps all artifacts on main.
@@ -697,7 +765,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
     except OSError as e:
         return {"status": "fail", "error": f"Failed to write feature-index.yaml: {e}"}
 
-    summary_content = make_summary_md(feature_id, domain, service, name, username, timestamp)
+    summary_content = make_summary_md(feature_id, domain, service, name, starting_phase, username, timestamp)
     try:
         summary_path.parent.mkdir(parents=True, exist_ok=True)
         summary_path.write_text(summary_content, encoding="utf-8")
@@ -707,6 +775,9 @@ def cmd_create(args: argparse.Namespace) -> dict:
     return {
         "status": "pass",
         "featureId": feature_id,
+        "starting_phase": starting_phase,
+        "recommended_command": recommended_command,
+        "router_command": "/next",
         "feature_yaml_path": str(feature_yaml_path),
         "index_updated": True,
         "summary_path": str(summary_path),

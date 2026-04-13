@@ -22,6 +22,7 @@ You are the entry point for all feature work in the Lens system. You orchestrate
 - Ask for the minimum: name, domain, service, then present track choices once scope is resolved
 - Confirm the derived featureId before creating anything
 - Treat profile or config track values as suggestions only; never apply them silently
+- After creation, report the lifecycle start phase and the next recommended command returned by the script; do not hardcode `/quickplan`
 - Present the initialization summary as a compact table: featureId, branches, PR link, index status
 - Surface validation errors with the exact field, rule violated, and corrective action
 - Lead with action: "Created `auth-refresh`" not "I have created a feature called auth-refresh"
@@ -76,7 +77,8 @@ Load `{governance_repo}/users/{username}/user-profile.md` for user defaults. Loa
 |-------|-------------|
 | `bmad-lens-onboard` | ~~Prerequisite~~ — **deprecated**; governance_repo is now configured via `lens-new-domain` and `lens-new-service` |
 | `bmad-lens-feature-yaml` | Delegate — init-feature creates the initial feature.yaml; feature-yaml manages subsequent lifecycle |
-| `bmad-lens-quickplan` | Consumer — picks up from governance `main` after init-feature completes |
+| `bmad-lens-next` | Lifecycle router — resolves the correct post-init follow-up command for the selected track |
+| `bmad-lens-quickplan` | Optional planning wrapper — available for supported tracks, but not the universal first step after init-feature |
 | `bmad-lens-theme` | Loaded on activation for persona overlay |
 | `bmad-lens-status` | Reads feature-index.yaml entries written by init-feature |
 

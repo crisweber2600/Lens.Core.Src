@@ -69,6 +69,9 @@ def test_create_feature():
         assert_true("git_commands non-empty", len(result.get("git_commands", [])) > 0)
         assert_true("gh_commands non-empty", len(result.get("gh_commands", [])) > 0)
         assert_eq("planning_pr_created", result.get("planning_pr_created"), True)
+        assert_eq("starting_phase", result.get("starting_phase"), "businessplan")
+        assert_eq("recommended_command", result.get("recommended_command"), "/businessplan")
+        assert_eq("router_command", result.get("router_command"), "/next")
 
         domain_marker = Path(tmp) / "features" / "platform" / "domain.yaml"
         service_marker = Path(tmp) / "features" / "platform" / "identity" / "service.yaml"
@@ -83,7 +86,7 @@ def test_create_feature():
         assert_eq("featureId in yaml", data.get("featureId"), "auth-refresh")
         assert_eq("domain in yaml", data.get("domain"), "platform")
         assert_eq("service in yaml", data.get("service"), "identity")
-        assert_eq("phase in yaml", data.get("phase"), "preplan")
+        assert_eq("phase in yaml", data.get("phase"), "businessplan")
         assert_eq("track in yaml", data.get("track"), "quickplan")
         assert_eq("team lead", data.get("team", [{}])[0].get("role"), "lead")
         assert_eq("team username", data.get("team", [{}])[0].get("username"), "cweber")
@@ -101,15 +104,49 @@ def test_create_feature():
         entry = next(e for e in idx["features"] if e["id"] == "auth-refresh")
         assert_eq("index entry domain", entry.get("domain"), "platform")
         assert_eq("index entry service", entry.get("service"), "identity")
-        assert_eq("index entry status", entry.get("status"), "preplan")
+        assert_eq("index entry status", entry.get("status"), "businessplan")
         assert_eq("index entry owner", entry.get("owner"), "cweber")
         assert_eq("index entry plan_branch", entry.get("plan_branch"), "auth-refresh-plan")
 
         summary_path = Path(tmp) / "features" / "platform" / "identity" / "auth-refresh" / "summary.md"
         assert_eq("summary.md exists", summary_path.exists(), True)
         summary_text = summary_path.read_text()
+        assert_true("summary contains starting phase", "Status: businessplan" in summary_text)
         assert_true("summary contains feature name", "Auth Token Refresh" in summary_text)
         assert_true("summary contains featureId", "auth-refresh" in summary_text)
+
+
+def test_full_track_starts_in_preplan():
+    """Full track starts at preplan and recommends the preplan phase command."""
+    print("test_full_track_starts_in_preplan", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        result, code = run([
+            "create",
+            "--governance-repo", tmp,
+            "--feature-id", "full-feature",
+            "--domain", "platform",
+            "--service", "identity",
+            "--name", "Full Feature",
+            "--track", "full",
+            "--username", "cweber",
+        ])
+
+        assert_eq("full create status", result.get("status"), "pass")
+        assert_eq("full create exit code", code, 0)
+        assert_eq("full starting_phase", result.get("starting_phase"), "preplan")
+        assert_eq("full recommended_command", result.get("recommended_command"), "/preplan")
+        assert_eq("full router_command", result.get("router_command"), "/next")
+
+        feature_yaml = Path(tmp) / "features" / "platform" / "identity" / "full-feature" / "feature.yaml"
+        with open(feature_yaml) as f:
+            data = yaml.safe_load(f)
+        assert_eq("full phase in yaml", data.get("phase"), "preplan")
+
+        index_path = Path(tmp) / "feature-index.yaml"
+        with open(index_path) as f:
+            idx = yaml.safe_load(f)
+        entry = next(e for e in idx["features"] if e["id"] == "full-feature")
+        assert_eq("full index status", entry.get("status"), "preplan")
 
 
 def test_create_domain_marker():
@@ -258,6 +295,9 @@ def test_dry_run():
         assert_true("git_commands present", len(result.get("git_commands", [])) > 0)
         assert_true("gh_commands present", len(result.get("gh_commands", [])) > 0)
         assert_eq("dry run planning_pr_created", result.get("planning_pr_created"), True)
+        assert_eq("dry run starting_phase", result.get("starting_phase"), "businessplan")
+        assert_eq("dry run recommended_command", result.get("recommended_command"), "/businessplan")
+        assert_eq("dry run router_command", result.get("router_command"), "/next")
 
         feature_yaml = Path(tmp) / "features" / "platform" / "identity" / "dry-feature" / "feature.yaml"
         assert_eq("feature.yaml not created", feature_yaml.exists(), False)
@@ -282,9 +322,21 @@ def test_express_track_defers_planning_pr():
         assert_eq("express create exit code", code, 0)
         assert_eq("express planning_pr_created", result.get("planning_pr_created"), False)
         assert_eq("express gh_commands empty", result.get("gh_commands", []), [])
+        assert_eq("express starting_phase", result.get("starting_phase"), "expressplan")
+        assert_eq("express recommended_command", result.get("recommended_command"), "/expressplan")
+        assert_eq("express router_command", result.get("router_command"), "/next")
+
+        feature_yaml = Path(tmp) / "features" / "platform" / "identity" / "express-feature" / "feature.yaml"
+        with open(feature_yaml) as f:
+            data = yaml.safe_load(f)
+        assert_eq("express phase in yaml", data.get("phase"), "expressplan")
 
         index_path = Path(tmp) / "feature-index.yaml"
         assert_eq("index created", index_path.exists(), True)
+        with open(index_path) as f:
+            idx = yaml.safe_load(f)
+        entry = next(e for e in idx["features"] if e["id"] == "express-feature")
+        assert_eq("express index status", entry.get("status"), "expressplan")
 
 
 def test_invalid_feature_id():
@@ -1111,6 +1163,7 @@ def test_read_context_not_found():
 
 if __name__ == "__main__":
     test_create_feature()
+    test_full_track_starts_in_preplan()
     test_create_domain_marker()
     test_create_service_marker_creates_parent_domain()
     test_duplicate_domain_service_rejected()
