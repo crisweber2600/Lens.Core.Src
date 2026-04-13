@@ -51,6 +51,20 @@ def _find_field(entry: dict, *keys: str) -> str:
     return ""
 
 
+def _resolve_repo_path(target_root: Path, local_path: str = "", name: str = "") -> Path | None:
+    """Resolve inventory paths against either project root or TargetProjects root."""
+    if local_path:
+        candidate = Path(local_path)
+        if candidate.is_absolute():
+            return candidate.resolve()
+        if candidate.parts and candidate.parts[0] == target_root.name:
+            return (target_root.parent / candidate).resolve()
+        return (target_root / candidate).resolve()
+    if name:
+        return (target_root / name).resolve()
+    return None
+
+
 # ---------------------------------------------------------------------------
 # scan
 # ---------------------------------------------------------------------------
@@ -103,20 +117,14 @@ def cmd_scan(args: argparse.Namespace) -> int:
     inv_entries = _scan_inventory(inventory_path)
     disk_repos = _scan_disk(target_root)
 
-    # Build lookup sets
     # Inventory → keyed by resolved local_path (or derived name-based path)
     inv_by_local: dict[str, dict] = {}
     for entry in inv_entries:
         local = _find_field(entry, "local_path", "clone_path", "path")
         name = _find_field(entry, "name")
-        key = str(Path(local).resolve()) if local else None
-        if key:
-            inv_by_local[key] = entry
-        elif name:
-            derived = str((target_root / name).resolve())
-            inv_by_local[derived] = entry
-
-    disk_by_path: dict[str, Path] = {str(p): p for p in disk_repos}
+        resolved = _resolve_repo_path(target_root, local, name)
+        if resolved:
+            inv_by_local[str(resolved)] = entry
 
     # missing_from_disk: in inventory but directory not found on disk
     missing_from_disk: list[dict] = []
@@ -125,13 +133,8 @@ def cmd_scan(args: argparse.Namespace) -> int:
     for entry in inv_entries:
         local = _find_field(entry, "local_path", "clone_path", "path")
         name = _find_field(entry, "name")
-        local_or_name = local or name
-        # Check both target_root-relative and project-root-relative paths.
-        # Inventory local_path values may be project-root-relative (e.g. "TargetProjects/foo")
-        # while target_root is already TargetProjects — so try parent resolution as fallback.
-        exists_at_target = bool(local_or_name) and (target_root / Path(local_or_name)).exists()
-        exists_at_parent = bool(local) and (target_root.parent / Path(local)).exists()
-        if exists_at_target or exists_at_parent:
+        resolved = _resolve_repo_path(target_root, local, name)
+        if resolved and resolved.exists():
             already_cloned.append(entry)
         else:
             missing_from_disk.append(entry)
@@ -145,18 +148,11 @@ def cmd_scan(args: argparse.Namespace) -> int:
             matched = False
             for entry in inv_entries:
                 name = _find_field(entry, "name")
-                if name and str((target_root / name).resolve()) == path_str:
+                local = _find_field(entry, "local_path", "clone_path", "path")
+                resolved = _resolve_repo_path(target_root, local, name)
+                if resolved and str(resolved) == path_str:
                     matched = True
                     break
-                local = _find_field(entry, "local_path", "clone_path", "path")
-                if local:
-                    # Try both absolute and relative resolution
-                    if str(Path(local).resolve()) == path_str:
-                        matched = True
-                        break
-                    if str((target_root.parent / local).resolve()) == path_str:
-                        matched = True
-                        break
             if not matched:
                 remote_url = _detect_remote_url(repo_path)
                 rel = repo_path.relative_to(target_root.parent) if repo_path.is_relative_to(target_root.parent) else repo_path

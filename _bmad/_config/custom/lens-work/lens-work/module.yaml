@@ -49,6 +49,9 @@ skills:
   - id: bmad-lens-init-feature
     file: skills/bmad-lens-init-feature/SKILL.md
     description: "Feature initialization with 2-branch topology, feature YAML, and PR"
+  - id: bmad-lens-target-repo
+    file: skills/bmad-lens-target-repo/SKILL.md
+    description: "Provision and register feature target repos in GitHub, TargetProjects, and governance metadata"
   - id: bmad-lens-quickplan
     file: skills/bmad-lens-quickplan/SKILL.md
     description: "End-to-end planning pipeline from business plan through FinalizePlan"
@@ -216,6 +219,7 @@ prompts:
   - lens-new-domain.prompt.md
   - lens-new-service.prompt.md
   - lens-new-feature.prompt.md
+  - lens-target-repo.prompt.md
   - lens-preplan.prompt.md
   - lens-expressplan.prompt.md
   - lens-businessplan.prompt.md
@@ -282,6 +286,7 @@ adapters:
       - .github/prompts/lens-new-domain.prompt.md
       - .github/prompts/lens-new-service.prompt.md
       - .github/prompts/lens-new-feature.prompt.md
+      - .github/prompts/lens-target-repo.prompt.md
       - .github/prompts/lens-preplan.prompt.md
       - .github/prompts/lens-expressplan.prompt.md
       - .github/prompts/lens-businessplan.prompt.md
@@ -337,6 +342,7 @@ adapters:
       - .cursor/commands/bmad-lens-onboard.md
       - .cursor/commands/bmad-lens-preflight.md
       - .cursor/commands/bmad-lens-init-feature.md
+      - .cursor/commands/bmad-lens-target-repo.md
       - .cursor/commands/bmad-lens-preplan.md
       - .cursor/commands/bmad-lens-businessplan.md
       - .cursor/commands/bmad-lens-techplan.md
@@ -360,6 +366,7 @@ adapters:
       - .claude/commands/bmad-lens-onboard.md
       - .claude/commands/bmad-lens-preflight.md
       - .claude/commands/bmad-lens-init-feature.md
+      - .claude/commands/bmad-lens-target-repo.md
       - .claude/commands/bmad-lens-preplan.md
       - .claude/commands/bmad-lens-businessplan.md
       - .claude/commands/bmad-lens-techplan.md
@@ -384,6 +391,7 @@ adapters:
       - .codex/commands/bmad-lens-onboard.md
       - .codex/commands/bmad-lens-preflight.md
       - .codex/commands/bmad-lens-init-feature.md
+      - .codex/commands/bmad-lens-target-repo.md
       - .codex/commands/bmad-lens-preplan.md
       - .codex/commands/bmad-lens-businessplan.md
       - .codex/commands/bmad-lens-techplan.md
@@ -407,6 +415,7 @@ adapters:
       - .opencode/commands/bmad-lens-onboard.md
       - .opencode/commands/bmad-lens-preflight.md
       - .opencode/commands/bmad-lens-init-feature.md
+      - .opencode/commands/bmad-lens-target-repo.md
       - .opencode/commands/bmad-lens-preplan.md
       - .opencode/commands/bmad-lens-businessplan.md
       - .opencode/commands/bmad-lens-techplan.md

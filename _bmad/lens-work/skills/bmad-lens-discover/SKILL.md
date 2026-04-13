@@ -96,7 +96,10 @@ For each entry in `missing_from_disk`:
    ```bash
    git clone <remote_url> <dest_path>
    ```
-   Where `<dest_path>` is `{target_projects_path}/<entry.local_path>` if set, or `{target_projects_path}/<entry.name>` otherwise.
+  Where `<dest_path>` is resolved using this rule:
+  - if `local_path` starts with `TargetProjects/`, clone to `{project-root}/<entry.local_path>`
+  - otherwise, clone to `{target_projects_path}/<entry.local_path>`
+  - if `local_path` is absent, clone to `{target_projects_path}/<entry.name>`
 4. Report each result: `[ok] Cloned <name>` or `[fail] Clone failed: <name> — <error>`.
 5. On any failure: continue with remaining repos, report all failures at the end.
 
@@ -107,7 +110,7 @@ For each entry in `untracked`:
 1. If not `--headless`: present the detected entry (name, local_path, detected remote_url) and ask the user to confirm or modify:
    - "Name looks right?" (default: directory name)
    - "Use detected remote URL?" (default: detected value, or prompt if none detected)
-   - "Confirm local_path?" (default: detected relative path)
+  - "Confirm local_path?" (default: detected project-root-relative path, including the `TargetProjects/` prefix)
 2. If `--dry-run`: announce the add-entry call but do not execute.
 3. Otherwise, after confirmation, run:
    ```bash

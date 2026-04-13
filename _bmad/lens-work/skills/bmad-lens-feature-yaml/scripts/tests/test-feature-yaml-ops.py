@@ -216,6 +216,116 @@ def test_update_field():
         assert_eq("updated priority", result["value"], "high")
 
 
+def test_create_with_target_repos():
+    print("test_create_with_target_repos", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        result, code = run([
+            "create",
+            "--governance-repo", tmp,
+            "--feature-id", "repo-test",
+            "--domain", "plugins",
+            "--service", "hermes",
+            "--name", "Repo Test",
+            "--track", "full",
+            "--username", "testuser",
+            "--target-repos", "https://github.com/example/Lens.Hermes",
+        ])
+        assert_eq("target repo create status", result["status"], "pass")
+        assert_eq("target repo create exit code", code, 0)
+
+        repo_entry = result["data"]["target_repos"][0]
+        assert_eq("target repo name derived", repo_entry["name"], "Lens.Hermes")
+        assert_eq("target repo url stored", repo_entry["url"], "https://github.com/example/Lens.Hermes")
+        assert_eq("target repo remote_url stored", repo_entry["remote_url"], "https://github.com/example/Lens.Hermes")
+
+
+def test_update_target_repos_json():
+    print("test_update_target_repos_json", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        run([
+            "create",
+            "--governance-repo", tmp,
+            "--feature-id", "repo-update",
+            "--domain", "plugins",
+            "--service", "hermes",
+            "--name", "Repo Update",
+            "--track", "full",
+            "--username", "testuser",
+        ])
+
+        payload = json.dumps([
+            {
+                "name": "Lens.Hermes",
+                "url": "https://github.com/example/Lens.Hermes",
+                "local_path": "TargetProjects/plugins/hermes/Lens.Hermes",
+                "default_branch": "main",
+                "visibility": "public",
+            }
+        ])
+        result, code = run([
+            "update",
+            "--governance-repo", tmp,
+            "--feature-id", "repo-update",
+            "--set", f"target_repos={payload}",
+            "--username", "testuser",
+        ])
+        assert_eq("target repos update status", result["status"], "pass")
+        assert_eq("target repos update exit code", code, 0)
+
+        result, code = run([
+            "read",
+            "--governance-repo", tmp,
+            "--feature-id", "repo-update",
+        ])
+        repo_entry = result["data"]["target_repos"][0]
+        assert_eq("target repo name kept", repo_entry["name"], "Lens.Hermes")
+        assert_eq("target repo local path stored", repo_entry["local_path"], "TargetProjects/plugins/hermes/Lens.Hermes")
+        assert_eq("target repo default branch stored", repo_entry["default_branch"], "main")
+        assert_eq("target repo visibility stored", repo_entry["visibility"], "public")
+        assert_eq("target repo compatibility url kept", repo_entry["remote_url"], "https://github.com/example/Lens.Hermes")
+
+
+def test_validate_target_repo_local_path_warning():
+    print("test_validate_target_repo_local_path_warning", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        run([
+            "create",
+            "--governance-repo", tmp,
+            "--feature-id", "repo-validate",
+            "--domain", "plugins",
+            "--service", "hermes",
+            "--name", "Repo Validate",
+            "--track", "full",
+            "--username", "testuser",
+        ])
+
+        payload = json.dumps([
+            {
+                "url": "https://github.com/example/Lens.Hermes",
+                "local_path": "plugins/hermes/Lens.Hermes",
+            }
+        ])
+        run([
+            "update",
+            "--governance-repo", tmp,
+            "--feature-id", "repo-validate",
+            "--set", f"target_repos={payload}",
+            "--username", "testuser",
+        ])
+
+        result, code = run([
+            "validate",
+            "--governance-repo", tmp,
+            "--feature-id", "repo-validate",
+        ])
+        assert_eq("validate warns on noncanonical local path", result["status"], "warning")
+        assert_eq("validate warning exit code", code, 0)
+        assert_true(
+            "local path warning present",
+            any("local_path" in finding["issue"] for finding in result["findings"]),
+        )
+
+
 def test_validate_valid():
     print("test_validate_valid", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
@@ -623,6 +733,9 @@ if __name__ == "__main__":
     test_update_phase()
     test_update_phase_quickplan()
     test_update_field()
+    test_create_with_target_repos()
+    test_update_target_repos_json()
+    test_validate_target_repo_local_path_warning()
     test_validate_valid()
     test_validate_missing_fields()
     test_list()

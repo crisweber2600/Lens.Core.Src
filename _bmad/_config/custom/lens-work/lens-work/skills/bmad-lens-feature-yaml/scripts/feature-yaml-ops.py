@@ -27,6 +27,7 @@ VALID_PHASES = BASE_PHASES + [f"{phase}-complete" for phase in COMPLETABLE_PHASE
 VALID_TRACKS = ["quickplan", "full", "feature", "hotfix", "hotfix-express", "express", "spike", "tech-change"]
 VALID_PRIORITIES = ["critical", "high", "medium", "low"]
 VALID_ROLES = ["lead", "contributor", "reviewer"]
+VALID_VISIBILITIES = ["public", "private", "internal"]
 
 # Sanitization pattern for path-constructing identifiers
 SAFE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
@@ -163,6 +164,67 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def derive_repo_name(value: str) -> str:
+    """Derive a repository name from a URL or filesystem path."""
+    stripped = str(value or "").strip().rstrip("/")
+    if not stripped:
+        return ""
+    name = stripped.rsplit("/", 1)[-1]
+    if name.endswith(".git"):
+        name = name[:-4]
+    return name
+
+
+def normalize_target_repo_entry(entry: dict | str) -> dict:
+    """Normalize target repo metadata while keeping backward compatibility."""
+    if isinstance(entry, str):
+        entry = {"url": entry}
+    if not isinstance(entry, dict):
+        raise ValueError(f"target_repos entries must be mappings or strings, got {type(entry).__name__}")
+
+    remote_url = str(entry.get("remote_url") or entry.get("url") or "").strip()
+    url = str(entry.get("url") or remote_url).strip()
+    local_path = str(entry.get("local_path") or entry.get("path") or "").strip()
+    name = str(entry.get("name") or "").strip() or derive_repo_name(url or local_path)
+    branch = str(entry.get("branch") or "").strip()
+    default_branch = str(entry.get("default_branch") or "").strip()
+    visibility = str(entry.get("visibility") or "").strip().lower()
+
+    normalized: dict = {}
+    if name:
+        normalized["name"] = name
+    if url:
+        normalized["url"] = url
+    if remote_url:
+        normalized["remote_url"] = remote_url
+    elif url:
+        normalized["remote_url"] = url
+    if local_path:
+        normalized["local_path"] = local_path
+    if branch:
+        normalized["branch"] = branch
+    elif "branch" in entry:
+        normalized["branch"] = ""
+    if default_branch:
+        normalized["default_branch"] = default_branch
+    if visibility:
+        normalized["visibility"] = visibility
+    return normalized
+
+
+def normalize_target_repos(entries: list | None) -> list[dict]:
+    """Normalize a target repo list, preserving list order."""
+    if not entries:
+        return []
+    return [normalize_target_repo_entry(entry) for entry in entries]
+
+
+def parse_target_repos_arg(value: str) -> list[dict]:
+    """Parse the legacy comma-separated --target-repos argument into normalized entries."""
+    urls = [url.strip() for url in value.split(",") if url.strip()]
+    return normalize_target_repos(urls)
+
+
 def get_transitions_for_track(track: str) -> dict:
     """Get the phase transition map for a given track."""
     return TRACK_TRANSITIONS.get(track, TRACK_TRANSITIONS["full"])
@@ -223,7 +285,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
     }
 
     if args.target_repos:
-        data["target_repos"] = [{"url": url.strip(), "branch": ""} for url in args.target_repos.split(",")]
+        data["target_repos"] = parse_target_repos_arg(args.target_repos)
 
     try:
         feature_dir.mkdir(parents=True, exist_ok=True)
@@ -372,6 +434,26 @@ def cmd_update(args: argparse.Namespace) -> dict:
                 data["dependencies"] = {"depends_on": [], "depended_by": []}
             data["dependencies"]["depends_on"] = new_deps
             changes.append({"field": key, "old": old_deps, "new": new_deps})
+        elif key == "target_repos":
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError as exc:
+                return {
+                    "status": "fail",
+                    "error": f"Invalid JSON for target_repos: {exc.msg}",
+                }
+            if not isinstance(parsed, list):
+                return {
+                    "status": "fail",
+                    "error": "target_repos must be a JSON array",
+                }
+            old_repos = normalize_target_repos(data.get("target_repos", []))
+            try:
+                new_repos = normalize_target_repos(parsed)
+            except ValueError as exc:
+                return {"status": "fail", "error": str(exc)}
+            data["target_repos"] = new_repos
+            changes.append({"field": key, "old": old_repos, "new": new_repos})
         else:
             # Dot-notation path traversal
             keys = key.split(".")
@@ -544,6 +626,52 @@ def cmd_validate(args: argparse.Namespace) -> dict:
                     "category": "dependencies",
                     "issue": f"Cannot read dependency '{dep_id}': {e}",
                     "fix": "Check the dependency feature.yaml for corruption",
+                })
+
+    # Target repo integrity
+    target_repos = data.get("target_repos", [])
+    if target_repos and not isinstance(target_repos, list):
+        findings.append({
+            "severity": "high",
+            "category": "target_repos",
+            "issue": "target_repos must be a list",
+            "fix": "Rewrite target_repos as a YAML sequence of repo objects",
+        })
+    else:
+        for index, repo in enumerate(target_repos):
+            if not isinstance(repo, dict):
+                findings.append({
+                    "severity": "high",
+                    "category": "target_repos",
+                    "issue": f"target_repos[{index}] is not a mapping",
+                    "fix": "Convert each target repo entry into a YAML mapping",
+                })
+                continue
+
+            remote_url = repo.get("remote_url") or repo.get("url")
+            local_path = repo.get("local_path")
+            visibility = repo.get("visibility")
+
+            if not remote_url:
+                findings.append({
+                    "severity": "medium",
+                    "category": "target_repos",
+                    "issue": f"target_repos[{index}] is missing url/remote_url",
+                    "fix": "Add a reachable repository URL so downstream tooling can target the repo",
+                })
+            if local_path and not str(local_path).startswith("TargetProjects/"):
+                findings.append({
+                    "severity": "medium",
+                    "category": "target_repos",
+                    "issue": f"target_repos[{index}].local_path should be project-root-relative and start with TargetProjects/",
+                    "fix": "Rewrite local_path using the canonical TargetProjects/{domain}/{service}/{repo} form",
+                })
+            if visibility and str(visibility).lower() not in VALID_VISIBILITIES:
+                findings.append({
+                    "severity": "warning",
+                    "category": "target_repos",
+                    "issue": f"target_repos[{index}].visibility '{visibility}' is not recognized",
+                    "fix": "Use one of: public, private, internal",
                 })
 
     # Determine overall status

@@ -38,7 +38,9 @@ dependencies:
 
 # --- Target Repos ---
 target_repos: []
-# Each entry: { url: "", branch: "" }
+# Each entry may include:
+# { name: "", url: "", remote_url: "", local_path: "", branch: "", default_branch: "", visibility: "public|private|internal" }
+# `url` remains the compatibility field for downstream skills. `local_path` is project-root-relative and should include the TargetProjects prefix.
 
 # --- Docs ---
 docs:
