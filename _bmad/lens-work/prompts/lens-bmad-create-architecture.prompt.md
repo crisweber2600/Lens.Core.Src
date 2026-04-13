@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Run bmad-create-architecture with Lens feature, repo, and governance context.'
 ---
 

@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Universal two-pass batch intake for Lens planning targets.'
 ---
 

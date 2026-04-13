@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Run bmad-code-review with Lens feature scope, target repo, and governance-aware review context.'
 ---
 

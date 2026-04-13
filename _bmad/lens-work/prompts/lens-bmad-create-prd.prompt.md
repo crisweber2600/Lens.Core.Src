@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Run bmad-create-prd with Lens feature, governance, and output-path context.'
 ---
 

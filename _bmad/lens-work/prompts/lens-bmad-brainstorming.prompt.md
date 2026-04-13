@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Run bmad-brainstorming with Lens domain, service, feature, governance, and repo context.'
 ---
 

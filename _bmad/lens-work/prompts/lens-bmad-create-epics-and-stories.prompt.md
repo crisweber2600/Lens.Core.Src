@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Run bmad-create-epics-and-stories with Lens feature scope, governance, and artifact paths.'
 ---
 

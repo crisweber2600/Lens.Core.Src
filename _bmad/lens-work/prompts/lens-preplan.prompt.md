@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'PrePlan phase — brainstorm, research, and product brief for a feature.'
 ---
 

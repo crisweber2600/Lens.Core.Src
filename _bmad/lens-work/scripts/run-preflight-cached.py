@@ -33,7 +33,7 @@ def main() -> int:
         _cwd if (_cwd / "lens.core").exists()
         else next(p for p in script_dir.parents if (p / "lens.core").exists())
     )
-    cache_file = project_root / "docs/lens-work/personal/.preflight-cache"
+    cache_file = project_root / ".github/lens/personal/.preflight-cache"
 
     now = int(time.time())
     cached_at: int | None = None
