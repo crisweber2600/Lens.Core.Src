@@ -125,8 +125,13 @@ def cmd_scan(args: argparse.Namespace) -> int:
     for entry in inv_entries:
         local = _find_field(entry, "local_path", "clone_path", "path")
         name = _find_field(entry, "name")
-        resolved = str(Path(local).resolve()) if local else str((target_root / name).resolve()) if name else None
-        if resolved and (target_root / Path(local or name)).exists():
+        local_or_name = local or name
+        # Check both target_root-relative and project-root-relative paths.
+        # Inventory local_path values may be project-root-relative (e.g. "TargetProjects/foo")
+        # while target_root is already TargetProjects — so try parent resolution as fallback.
+        exists_at_target = bool(local_or_name) and (target_root / Path(local_or_name)).exists()
+        exists_at_parent = bool(local) and (target_root.parent / Path(local)).exists()
+        if exists_at_target or exists_at_parent:
             already_cloned.append(entry)
         else:
             missing_from_disk.append(entry)
