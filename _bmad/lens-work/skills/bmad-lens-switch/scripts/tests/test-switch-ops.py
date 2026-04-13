@@ -75,6 +75,22 @@ def write_feature(
         yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
 
+def write_domain(repo: str, domain: str, data: dict) -> None:
+    """Write a domain.yaml to the expected path."""
+    domain_dir = Path(repo) / "features" / domain
+    domain_dir.mkdir(parents=True, exist_ok=True)
+    with open(domain_dir / "domain.yaml", "w") as f:
+        yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+
+
+def write_service(repo: str, domain: str, service: str, data: dict) -> None:
+    """Write a service.yaml to the expected path."""
+    service_dir = Path(repo) / "features" / domain / service
+    service_dir.mkdir(parents=True, exist_ok=True)
+    with open(service_dir / "service.yaml", "w") as f:
+        yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+
+
 SAMPLE_INDEX_ENTRIES = [
     {
         "id": "auth-login",
@@ -166,14 +182,49 @@ def test_list_all_includes_archived():
         assert_true("includes archived", "legacy-sso" in ids)
 
 
-def test_list_missing_index():
-    """List fails when feature-index.yaml is absent."""
-    print("test_list_missing_index", file=sys.stderr)
+def test_list_missing_index_falls_back_to_domains():
+    """List falls back to empty domain inventory when feature-index.yaml is absent."""
+    print("test_list_missing_index_falls_back_to_domains", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
         result, code = run(["list", "--governance-repo", tmp])
-        assert_eq("missing index status", result["status"], "fail")
-        assert_eq("missing index exit code", code, 1)
-        assert_true("error mentions file", "feature-index.yaml" in result.get("error", ""))
+        assert_eq("fallback status", result["status"], "pass")
+        assert_eq("fallback exit code", code, 0)
+        assert_eq("fallback mode", result.get("mode"), "domains")
+        assert_eq("fallback total_domains", result.get("total_domains"), 0)
+        assert_eq("fallback total_services", result.get("total_services"), 0)
+
+
+def test_list_domain_fallback_with_domains():
+    """Domain fallback returns domain and service inventory from yaml files."""
+    print("test_list_domain_fallback_with_domains", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        write_domain(tmp, "platform", {
+            "kind": "domain", "id": "platform", "name": "Platform",
+            "domain": "platform", "status": "active", "owner": "cweber",
+        })
+        write_service(tmp, "platform", "identity", {
+            "kind": "service", "id": "platform-identity", "name": "Identity",
+            "domain": "platform", "service": "identity", "status": "active", "owner": "cweber",
+        })
+        write_domain(tmp, "core", {
+            "kind": "domain", "id": "core", "name": "Core",
+            "domain": "core", "status": "active", "owner": "ops",
+        })
+        result, code = run(["list", "--governance-repo", tmp])
+        assert_eq("domain fallback status", result["status"], "pass")
+        assert_eq("domain fallback exit code", code, 0)
+        assert_eq("domain fallback mode", result.get("mode"), "domains")
+        assert_eq("domain fallback total_domains", result.get("total_domains"), 2)
+        assert_eq("domain fallback total_services", result.get("total_services"), 1)
+        domains = result.get("domains", [])
+        assert_eq("domain count", len(domains), 2)
+        platform = next((d for d in domains if d["id"] == "platform"), None)
+        assert_true("platform domain present", platform is not None)
+        assert_eq("platform service count", len(platform["services"]), 1)
+        assert_eq("service id", platform["services"][0]["id"], "platform-identity")
+        core = next((d for d in domains if d["id"] == "core"), None)
+        assert_true("core domain present", core is not None)
+        assert_eq("core has no services", len(core["services"]), 0)
 
 
 def test_list_empty_index():
@@ -529,7 +580,8 @@ def main() -> None:
     test_list_features()
     test_list_active_only_excludes_archived()
     test_list_all_includes_archived()
-    test_list_missing_index()
+    test_list_missing_index_falls_back_to_domains()
+    test_list_domain_fallback_with_domains()
     test_list_empty_index()
     test_list_output_fields()
     test_switch_existing_feature()
