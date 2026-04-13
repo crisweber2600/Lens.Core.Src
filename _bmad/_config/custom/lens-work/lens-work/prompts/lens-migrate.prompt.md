@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Migration bridge between LENS v3 and Lens Next'
 ---
 

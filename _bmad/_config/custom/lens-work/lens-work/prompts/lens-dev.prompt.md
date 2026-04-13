@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Dev phase — epic implementation loop with story branching, review, and constitutional gates.'
 ---
 

@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'DevProposal phase — epics, stories, and implementation readiness for a feature.'
 ---
 

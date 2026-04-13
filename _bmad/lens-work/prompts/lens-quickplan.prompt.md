@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'End-to-end planning pipeline from business plan through story creation'
 ---
 

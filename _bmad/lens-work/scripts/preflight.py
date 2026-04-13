@@ -136,8 +136,8 @@ def main() -> int:
         else next(p for p in script_dir.parents if (p / "lens.core").exists())
     )
     release_dir = project_root / "lens.core"
-    timestamp_file = project_root / "docs/lens-work/personal/.preflight-timestamp"
-    hash_file = project_root / "docs/lens-work/personal/.github-hashes"
+    timestamp_file = project_root / ".github/lens/personal/.preflight-timestamp"
+    hash_file = project_root / ".github/lens/personal/.github-hashes"
     lifecycle_path = release_dir / "_bmad/lens-work/lifecycle.yaml"
     governance_path = Path(args.governance_path) if args.governance_path else None
 

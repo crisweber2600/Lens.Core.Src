@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'ExpressPlan phase — all planning artifacts in one session for a feature.'
 ---
 

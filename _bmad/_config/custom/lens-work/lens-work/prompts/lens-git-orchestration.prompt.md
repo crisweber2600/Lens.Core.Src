@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Git write operations for the Lens 2-branch feature model'
 ---
 

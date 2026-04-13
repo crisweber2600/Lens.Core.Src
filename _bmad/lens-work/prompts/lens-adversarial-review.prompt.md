@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Run Lens lifecycle adversarial review with a party-mode blind-spot challenge.'
 ---
 

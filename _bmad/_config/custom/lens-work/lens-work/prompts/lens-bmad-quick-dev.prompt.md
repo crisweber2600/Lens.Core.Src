@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Run bmad-quick-dev with Lens feature scope, target repo resolution, and write-boundary guidance.'
 ---
 

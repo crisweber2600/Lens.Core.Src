@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: '[DEPRECATED] First-run governance repo setup for Lens'
 ---
 

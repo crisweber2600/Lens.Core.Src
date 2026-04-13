@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'SprintPlan phase — sprint planning, story files, and dev handoff for a feature.'
 ---
 

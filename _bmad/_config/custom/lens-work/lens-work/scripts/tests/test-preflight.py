@@ -24,7 +24,7 @@ def _write_file(path: Path, content: str) -> None:
 
 
 def _write_hash_manifest(workspace: Path, entries: dict[str, str]) -> None:
-    manifest = workspace / "docs/lens-work/personal/.github-hashes"
+    manifest = workspace / ".github/lens/personal/.github-hashes"
     lines = []
 
     for rel_path, content in sorted(entries.items()):
@@ -40,7 +40,7 @@ def workspace(tmp_path: Path) -> Path:
     _write_file(root / "LENS_VERSION", "3.4\n")
     _write_file(root / "lens.core/_bmad/lens-work/lifecycle.yaml", "schema_version: 3.4\n")
     _write_file(
-        root / "docs/lens-work/personal/.preflight-timestamp",
+        root / ".github/lens/personal/.preflight-timestamp",
         datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     )
     return root
@@ -97,7 +97,7 @@ class TestGitHubSync:
         assert not (workspace / ".github/workflows/legacy").exists()
         assert not (workspace / ".github/prompts/lens-stale.prompt.md").exists()
 
-        manifest_text = (workspace / "docs/lens-work/personal/.github-hashes").read_text(encoding="utf-8")
+        manifest_text = (workspace / ".github/lens/personal/.github-hashes").read_text(encoding="utf-8")
         assert ".github/workflows/legacy/obsolete.yml" not in manifest_text
         assert ".github/prompts/lens-stale.prompt.md" not in manifest_text
         assert ".github/workflows/keep.yml" in manifest_text

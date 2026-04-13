@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'BusinessPlan phase — PRD creation and UX design for a feature.'
 ---
 
