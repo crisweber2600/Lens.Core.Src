@@ -48,3 +48,19 @@ def test_next_docs_describe_auto_delegate_behavior():
     assert "Resolve the one unblocked next command for the current feature and auto-delegate into it" in module_help
     assert "Resolve the one unblocked next step and load it immediately" in getting_started
     assert "/next` does not show a menu when the next step is deterministic" in getting_started
+
+
+def test_init_feature_handoff_surfaces_route_through_next():
+    module_help = _read("module-help.csv")
+    setup_help = _read("skills/bmad-lens-setup/assets/module-help.csv")
+    workbench_help = _read("bmad-lens-work-setup/assets/module-help.csv")
+    prompt = _read("prompts/lens-new-feature.prompt.md")
+    skill = _read("skills/bmad-lens-init-feature/SKILL.md")
+    reference = _read("skills/bmad-lens-init-feature/references/init-feature.md")
+
+    assert "Lens,bmad-lens-init-feature,init-feature,IF,Initialize a new feature with 2-branch topology and governance entries,create,<featureId> [--domain] [--service] --track <track> [--dry-run],anytime,,bmad-lens-next:suggest,false" in module_help
+    assert "Lens,bmad-lens-init-feature,init-feature,IF,Initialize a new feature with 2-branch topology and governance entries,create,<featureId> [--domain] [--service] --track <track> [--dry-run],anytime,bmad-lens-onboard:scaffold,bmad-lens-next:suggest,false" in setup_help
+    assert "Lens,bmad-lens-init-feature,Create Feature,IF,\"Initialize a new feature with 2-branch topology and governance entries\",create,<featureId> [--domain] [--service] --track <track> [--dry-run],anytime,,bmad-lens-next:suggest,false" in workbench_help
+    assert "report the returned `starting_phase` and recommend `/next` or the returned `recommended_command`" in prompt
+    assert "report the lifecycle start phase and the next recommended command returned by the script" in skill
+    assert "plus `planning_pr_created`, `starting_phase`, `recommended_command`, and `router_command`" in reference
