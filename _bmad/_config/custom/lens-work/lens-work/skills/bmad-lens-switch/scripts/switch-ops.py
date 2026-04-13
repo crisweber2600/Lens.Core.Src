@@ -127,10 +127,86 @@ def build_context_paths(
     return summaries, full_docs
 
 
+def scan_domain_inventory(governance_repo: str) -> dict:
+    """Scan features/ for domain.yaml and service.yaml files.
+
+    Fallback used when feature-index.yaml does not yet exist. Returns domain/service
+    inventory so the agent can orient the user without requiring feature initialization.
+    """
+    features_dir = Path(governance_repo) / "features"
+    domains: list[dict] = []
+
+    if features_dir.exists():
+        for domain_dir in sorted(d for d in features_dir.iterdir() if d.is_dir()):
+            domain_yaml = domain_dir / "domain.yaml"
+            if not domain_yaml.exists():
+                continue
+            try:
+                with open(domain_yaml) as f:
+                    domain_data = yaml.safe_load(f)
+            except (yaml.YAMLError, OSError):
+                continue
+            if not isinstance(domain_data, dict):
+                continue
+
+            services: list[dict] = []
+            for service_dir in sorted(d for d in domain_dir.iterdir() if d.is_dir()):
+                service_yaml = service_dir / "service.yaml"
+                if not service_yaml.exists():
+                    continue
+                try:
+                    with open(service_yaml) as f:
+                        service_data = yaml.safe_load(f)
+                except (yaml.YAMLError, OSError):
+                    continue
+                if not isinstance(service_data, dict):
+                    continue
+                services.append(
+                    {
+                        "id": service_data.get("id", ""),
+                        "name": service_data.get("name", ""),
+                        "service": service_data.get("service", ""),
+                        "status": service_data.get("status", "active"),
+                        "owner": service_data.get("owner", ""),
+                    }
+                )
+
+            domains.append(
+                {
+                    "id": domain_data.get("id", ""),
+                    "name": domain_data.get("name", ""),
+                    "domain": domain_data.get("domain", ""),
+                    "status": domain_data.get("status", "active"),
+                    "owner": domain_data.get("owner", ""),
+                    "services": services,
+                }
+            )
+
+    total_services = sum(len(d["services"]) for d in domains)
+    if domains:
+        message = "No features initialized yet. Showing domain/service inventory from governance repo."
+    else:
+        message = "No features initialized and no domains registered. Run /lens-init-feature to begin."
+    return {
+        "status": "pass",
+        "mode": "domains",
+        "domains": domains,
+        "total_domains": len(domains),
+        "total_services": total_services,
+        "message": message,
+    }
+
+
 def cmd_list(args: argparse.Namespace) -> dict:
-    """List features from feature-index.yaml with optional status filter."""
+    """List features from feature-index.yaml with optional status filter.
+
+    Falls back to domain/service inventory (scan_domain_inventory) when
+    feature-index.yaml does not yet exist in the governance repo.
+    """
     index_data, err = load_feature_index(args.governance_repo)
     if err:
+        if "not found" in err:
+            return scan_domain_inventory(args.governance_repo)
         return {"status": "fail", "error": err}
 
     raw_features: list[dict] = index_data.get("features") or []
@@ -153,7 +229,7 @@ def cmd_list(args: argparse.Namespace) -> dict:
         for f in raw_features
     ]
 
-    return {"status": "pass", "features": features, "total": len(features)}
+    return {"status": "pass", "mode": "features", "features": features, "total": len(features)}
 
 
 def cmd_switch(args: argparse.Namespace) -> dict:

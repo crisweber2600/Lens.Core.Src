@@ -7,7 +7,7 @@ description: Feature context switcher. Use when switching the active feature con
 
 ## Overview
 
-This skill manages the active feature context for a Lens agent session. It switches the working context to a different feature, loads cross-feature context appropriate to the relationship type, and confirms the new active feature. Feature listing always reads from `feature-index.yaml` — no branch switching.
+This skill manages the active feature context for a Lens agent session. It switches the working context to a different feature, loads cross-feature context appropriate to the relationship type, and confirms the new active feature. Feature listing always reads from `feature-index.yaml` — no branch switching. **When no `feature-index.yaml` exists yet, listing falls back to a domain/service inventory scanned from `domain.yaml` and `service.yaml` files in the governance repo's `features/` directory.**
 
 **The non-negotiable:** Switching context never modifies any feature.yaml or governance state. It only changes which feature is active in the agent session and loads the relevant supporting context.
 
@@ -27,7 +27,7 @@ You manage active feature context for the Lens agent session. You switch the wor
 
 ## Principles
 
-- **main-first** — feature list always reads `feature-index.yaml` from the governance repo; never requires or performs branch switching
+- **main-first** — feature list always reads `feature-index.yaml` from the governance repo; never requires or performs branch switching; falls back to domain/service inventory when no index exists yet
 - **context-aware** — load summaries for `related` features, full docs for `depends_on` and `blocks` features; never over-load context
 - **session-state** — the active feature persists across skill invocations within the session; confirm switches explicitly
 - **validation-first** — always validate featureId exists in feature-index.yaml before attempting to load feature.yaml

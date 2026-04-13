@@ -76,9 +76,51 @@ PLATFORM / IDENTITY
 
 Highlight the currently active feature (if any) with `→` prefix.
 
+## Domain Fallback (no features yet)
+
+When `feature-index.yaml` does not exist, the script falls back to scanning `features/` for `domain.yaml` and `service.yaml` files. The result shape changes to `mode: "domains"`:
+
+```json
+{
+  "status": "pass",
+  "mode": "domains",
+  "domains": [
+    {
+      "id": "lens.core",
+      "name": "Lens Core",
+      "domain": "lens.core",
+      "status": "active",
+      "owner": "crisweber2600",
+      "services": [
+        {
+          "id": "lens.core-src",
+          "name": "Src",
+          "service": "src",
+          "status": "active",
+          "owner": "crisweber2600"
+        }
+      ]
+    }
+  ],
+  "total_domains": 1,
+  "total_services": 1,
+  "message": "No features initialized yet. Showing domain/service inventory from governance repo."
+}
+```
+
+Present domain fallback results as an inventory grouped by domain:
+
+```
+No features initialized yet. Domain/service inventory (1 domain, 1 service):
+
+LENS.CORE — Lens Core
+  src   active   crisweber2600
+
+Run /lens-init-feature to create the first feature.
+```
+
 ## Errors
 
 | Error | Exit code | Cause |
 |-------|-----------|-------|
-| `feature-index.yaml not found at {path}` | 1 | Index file missing from governance repo |
-| `Failed to parse feature-index.yaml: ...` | 1 | YAML parse error in index |
+| `Failed to parse feature-index.yaml: ...` | 1 | YAML parse error in existing index |
