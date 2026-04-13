@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'TechPlan phase — architecture and technical design for a feature.'
 ---
 

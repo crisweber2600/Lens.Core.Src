@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Governance rules resolution with 4-level additive hierarchy'
 ---
 

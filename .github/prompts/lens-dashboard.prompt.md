@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Cross-feature dashboard generator with dependency graphs'
 ---
 
