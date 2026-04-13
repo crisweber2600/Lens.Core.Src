@@ -26,7 +26,7 @@ priority order — the first matching rule wins.
 | businessplan-complete | techplan | `/techplan` | BusinessPlan is complete — continue with `/techplan` |
 | techplan-complete | finalizeplan | `/finalizeplan` | TechPlan is complete — continue with `/finalizeplan` |
 | finalizeplan-complete | dev | `/dev` | FinalizePlan is complete — continue with `/dev` |
-| expressplan-complete | dev | `/dev` | ExpressPlan is complete — continue with `/dev` |
+| expressplan-complete | finalizeplan | `/finalizeplan` | ExpressPlan is complete — continue with `/finalizeplan` |
 | dev | dev | `/dev` | Feature is in dev execution — continue implementation and story flow |
 | complete | complete | `/complete` | Feature is at lifecycle closeout — finalize retrospective, documentation, and archival |
 | paused | pause-resume | `/pause-resume` | Feature is paused — resume when ready |
