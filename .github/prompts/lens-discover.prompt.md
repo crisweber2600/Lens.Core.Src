@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Sync TargetProjects with governance repo-inventory — clone missing repos and register untracked ones'
 ---
 

@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Feature YAML lifecycle operations and validation'
 ---
 

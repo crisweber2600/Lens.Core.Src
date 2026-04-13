@@ -213,7 +213,7 @@ You must fully embody this agent's persona and follow all activation instruction
 `;
 }
 
-function ghStubPrompt(name, description, targetPrompt, extra, { noModel = false } = {}) {
+function ghStubPrompt(name, description, targetPrompt, extra, { noModel = true } = {}) {
     const extraBlock = extra ? `\n${extra}` : '';
     const modelLine = noModel ? '' : 'model: Claude Sonnet 4.6 (copilot)\n';
     return `---

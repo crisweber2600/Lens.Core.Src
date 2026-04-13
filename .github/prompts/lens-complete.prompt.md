@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Feature lifecycle endpoint — retrospective, archive, and close'
 ---
 

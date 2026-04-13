@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Feature initialization with 2-branch topology, feature YAML, and PR'
 ---
 
