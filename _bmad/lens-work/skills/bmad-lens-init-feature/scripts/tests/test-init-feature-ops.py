@@ -934,6 +934,116 @@ def test_create_service_with_target_projects():
             )
 
 
+def test_create_domain_writes_context_yaml():
+    """create-domain with --personal-folder writes context.yaml with domain, service=null, updated_by=new-domain."""
+    print("test_create_domain_writes_context_yaml", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as gov_tmp:
+        with tempfile.TemporaryDirectory() as personal_tmp:
+            result, code = run([
+                "create-domain",
+                "--governance-repo", gov_tmp,
+                "--domain", "platform",
+                "--username", "cweber",
+                "--personal-folder", personal_tmp,
+            ])
+            assert_eq("create-domain with personal-folder status", result.get("status"), "pass")
+            assert_eq("exit code", code, 0)
+            assert_true("context_path in result", result.get("context_path"))
+
+            context_path = Path(personal_tmp) / "context.yaml"
+            assert_eq("context.yaml exists", context_path.exists(), True)
+
+            with open(context_path) as f:
+                ctx = yaml.safe_load(f)
+            assert_eq("context domain", ctx.get("domain"), "platform")
+            assert_eq("context service is null", ctx.get("service"), None)
+            assert_eq("context updated_by", ctx.get("updated_by"), "new-domain")
+            assert_true("context updated_at set", ctx.get("updated_at"))
+
+
+def test_create_service_writes_context_yaml():
+    """create-service with --personal-folder writes context.yaml with domain+service, updated_by=new-service."""
+    print("test_create_service_writes_context_yaml", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as gov_tmp:
+        with tempfile.TemporaryDirectory() as personal_tmp:
+            result, code = run([
+                "create-service",
+                "--governance-repo", gov_tmp,
+                "--domain", "platform",
+                "--service", "identity",
+                "--username", "cweber",
+                "--personal-folder", personal_tmp,
+            ])
+            assert_eq("create-service with personal-folder status", result.get("status"), "pass")
+            assert_eq("exit code", code, 0)
+            assert_true("context_path in result", result.get("context_path"))
+
+            context_path = Path(personal_tmp) / "context.yaml"
+            assert_eq("context.yaml exists", context_path.exists(), True)
+
+            with open(context_path) as f:
+                ctx = yaml.safe_load(f)
+            assert_eq("context domain", ctx.get("domain"), "platform")
+            assert_eq("context service", ctx.get("service"), "identity")
+            assert_eq("context updated_by", ctx.get("updated_by"), "new-service")
+            assert_true("context updated_at set", ctx.get("updated_at"))
+
+
+def test_create_domain_no_personal_folder_skips_context():
+    """create-domain without --personal-folder does not write context.yaml and result has no context_path key."""
+    print("test_create_domain_no_personal_folder_skips_context", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as gov_tmp:
+        result, code = run([
+            "create-domain",
+            "--governance-repo", gov_tmp,
+            "--domain", "platform",
+            "--username", "cweber",
+        ])
+        assert_eq("status still pass", result.get("status"), "pass")
+        assert_eq("no context_path key in result", "context_path" in result, False)
+
+
+def test_read_context_returns_domain_service():
+    """read-context returns domain and service from a previously written context.yaml."""
+    print("test_read_context_returns_domain_service", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as personal_tmp:
+        # First write a context.yaml via create-service
+        with tempfile.TemporaryDirectory() as gov_tmp:
+            run([
+                "create-service",
+                "--governance-repo", gov_tmp,
+                "--domain", "commerce",
+                "--service", "payments",
+                "--username", "cweber",
+                "--personal-folder", personal_tmp,
+            ])
+
+        # Now read it back
+        result, code = run([
+            "read-context",
+            "--personal-folder", personal_tmp,
+        ])
+        assert_eq("read-context status", result.get("status"), "pass")
+        assert_eq("exit code", code, 0)
+        assert_eq("read-context domain", result.get("domain"), "commerce")
+        assert_eq("read-context service", result.get("service"), "payments")
+        assert_eq("read-context updated_by", result.get("updated_by"), "new-service")
+        assert_true("read-context updated_at set", result.get("updated_at"))
+
+
+def test_read_context_not_found():
+    """read-context returns status=not-found when no context.yaml exists."""
+    print("test_read_context_not_found", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as empty_tmp:
+        result, code = run([
+            "read-context",
+            "--personal-folder", empty_tmp,
+        ])
+        assert_eq("status not-found", result.get("status"), "not-found")
+        assert_true("error message present", result.get("error"))
+        assert_eq("exit code is non-zero", code, 1)
+
+
 if __name__ == "__main__":
     test_create_feature()
     test_create_domain_marker()
@@ -962,6 +1072,11 @@ if __name__ == "__main__":
     test_create_service_creates_constitutions()
     test_create_domain_with_target_projects()
     test_create_service_with_target_projects()
+    test_create_domain_writes_context_yaml()
+    test_create_service_writes_context_yaml()
+    test_create_domain_no_personal_folder_skips_context()
+    test_read_context_returns_domain_service()
+    test_read_context_not_found()
 
     print(f"\nResults: {PASS} passed, {FAIL} failed", file=sys.stderr)
     sys.exit(1 if FAIL > 0 else 0)

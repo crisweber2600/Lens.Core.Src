@@ -55,6 +55,25 @@ Determine the target feature from `--featureId` argument. For workspace-wide que
 | Feature State | Load `./references/feature-state.md` |
 | Branch Queries | Load `./references/branch-queries.md` |
 | Active Features | Load `./references/active-features.md` |
+| Context Fallback (Non-Feature Branch) | See section below |
+
+## Context Fallback (Non-Feature Branch)
+
+When the current branch is not a Lens feature branch (e.g., `main`, `develop`, or a personal branch) and a workflow needs to know the active domain and/or service, use the context state file as a fallback:
+
+```bash
+uv run {project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-init-feature/scripts/init-feature-ops.py \
+  read-context --personal-folder {personal_output_folder}
+```
+
+**Outcome:**
+
+| Result | `status` field | Action |
+| ------ | -------------- | ------ |
+| Context found | `pass` | Use the returned `domain` and `service` values for the current operation |
+| No context file | `not-found` | Prompt the user to run `new-domain` or `new-service` first to establish context |
+
+The context file is written automatically by `create-domain` (sets `service` to `null`) and `create-service` (sets both `domain` and `service`) when `--personal-folder` is provided. It lives at `{personal_output_folder}/context.yaml` and is local-only (never committed).
 
 ## Script Reference
 
