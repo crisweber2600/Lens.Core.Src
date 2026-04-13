@@ -90,7 +90,8 @@ skills:
     description: "Cross-feature dashboard generator with dependency graphs"
   - id: bmad-lens-onboard
     file: skills/bmad-lens-onboard/SKILL.md
-    description: "First-run governance repo setup for Lens"
+    deprecated: true
+    description: "[DEPRECATED] First-run governance repo setup. Superseded by lens-new-domain, lens-new-service, and lens-init-feature."
   - id: bmad-lens-migrate
     file: skills/bmad-lens-migrate/SKILL.md
     description: "Migration bridge between LENS v3 and Lens Next"

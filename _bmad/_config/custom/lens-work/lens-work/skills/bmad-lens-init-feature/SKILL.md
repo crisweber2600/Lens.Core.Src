@@ -54,7 +54,7 @@ You are the entry point for all feature work in the Lens system. You orchestrate
 
 Load available config from `{project-root}/lens.core/_bmad/bmadconfig.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml` (root level and `lens` section). Resolve:
 
-- `{governance_repo}` — governance repo root path. **If not configured, halt and instruct user to run `bmad-lens-onboard` first.**
+- `{governance_repo}` — governance repo root path. **If not configured, halt and instruct user to run `lens-new-domain` to scaffold the governance structure first.**
 - `{control_repo}` (default: `{governance_repo}`) — source code repo root path
 - `{username}` (default: `git config user.name`) — current user
 - `{default_track}` (from `user-profile.md` `default_track` field, then config, then `quickplan`) — preferred lifecycle track hint; show it as a suggestion only and still ask the user to choose explicitly
@@ -74,7 +74,7 @@ Load `{governance_repo}/users/{username}/user-profile.md` for user defaults. Loa
 
 | Skill | Relationship |
 |-------|-------------|
-| `bmad-lens-onboard` | Prerequisite — must configure governance_repo before init-feature can run |
+| `bmad-lens-onboard` | ~~Prerequisite~~ — **deprecated**; governance_repo is now configured via `lens-new-domain` and `lens-new-service` |
 | `bmad-lens-feature-yaml` | Delegate — init-feature creates the initial feature.yaml; feature-yaml manages subsequent lifecycle |
 | `bmad-lens-quickplan` | Consumer — picks up from governance `main` after init-feature completes |
 | `bmad-lens-theme` | Loaded on activation for persona overlay |

@@ -15,8 +15,8 @@ agent:
     - "Detect first-run state by checking if docs/lens-work/personal/profile.yaml exists. If first-run: show condensed 5-item starter menu (OB, EP, NI, HP, CH) with a note that /bmad-help is available. If returning user: show the full menu."
   menu:
     - trigger: OB or fuzzy match on onboard
-      exec: "{project-root}/lens.core/_bmad/lens-work/workflows/utility/onboard/workflow.md"
-      description: "[OB] Onboard Control Repo: Bootstrap profile, auth, governance, and TargetProjects clones"
+      exec: "{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-onboard/SKILL.md"
+      description: "[DEPRECATED][OB] Onboard: This workflow is deprecated. Use /new-domain and /new-service to scaffold governance structure instead."
     - trigger: NI or fuzzy match on new-initiative
       exec: "{project-root}/lens.core/_bmad/lens-work/workflows/router/init-initiative/workflow.md"
       description: "[NI] Create Initiative: Start domain, service, or feature initiative scaffolding"
@@ -170,7 +170,7 @@ agent:
       description: "[FD] Feature Dashboard: Cross-feature HTML dashboard and dependency graph"
     - trigger: LO or fuzzy match on lens-onboard or governance setup
       exec: "{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-onboard/SKILL.md"
-      description: "[LO] Lens Onboard: First-run governance repo setup"
+      description: "[DEPRECATED][LO] Lens Onboard: Deprecated — use new-domain and new-service instead"
     - trigger: LM or fuzzy match on lens-migrate or migrate legacy
       exec: "{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-migrate/SKILL.md"
       description: "[LM] Lens Migrate: Migrate from LENS v3 initiative model to Lens Next feature model"
