@@ -153,6 +153,7 @@ def install_output_dirs() -> None:
         "docs/implementation-artifacts",
         "docs/lens-work",
         "docs/lens-work/initiatives",
+        "docs/lens-work/personal",
         ".github/lens/personal",
         "docs/reports/lens-work/quality-scan",
     ]:

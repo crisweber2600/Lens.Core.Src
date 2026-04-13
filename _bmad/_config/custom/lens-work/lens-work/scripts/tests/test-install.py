@@ -1,4 +1,5 @@
-"""Tests for install.py — subprocess-level tests only (no filesystem side effects)."""
+"""Tests for install.py."""
+import importlib.util
 import subprocess
 from pathlib import Path
 
@@ -12,6 +13,14 @@ def _run(*args, **kwargs):
         text=True,
         **kwargs,
     )
+
+
+def _load_script_module():
+    spec = importlib.util.spec_from_file_location("install_script", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    assert spec is not None and spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
 
 
 class TestHelpFlag:
@@ -43,6 +52,18 @@ class TestArgumentParsing:
     def test_dry_run_flag_accepted(self):
         result = _run("--dry-run")
         assert result.returncode == 0
+
+
+class TestOutputDirs:
+    def test_install_output_dirs_creates_personal_folder(self, tmp_path):
+        module = _load_script_module()
+        module._project_root = tmp_path
+        module._dry_run = False
+
+        module.install_output_dirs()
+
+        assert (tmp_path / "docs/lens-work/personal").is_dir()
+        assert (tmp_path / ".github/lens/personal").is_dir()
 
 
 # TODO: Test ensure_dir creates directories

@@ -9,7 +9,9 @@ The init-feature workflow creates the 2-branch topology ({featureId} and {featur
 writes feature.yaml to the governance repo, registers the feature in feature-index.yaml on main,
 and creates a summary.md stub. Domain and service container markers and constitutions are also
 created in the governance repo. When --target-projects-root is provided, a .gitkeep scaffold
-file is created inside the corresponding TargetProjects/{domain}/{service}/ folder.
+file is created inside the corresponding TargetProjects/{domain}/{service}/ folder. When
+--docs-root is provided, a .gitkeep scaffold file is created inside docs/{domain}/{service}/ in
+the control repo.
 
 Git/gh commands are returned as arrays — not executed directly.
 """
@@ -549,6 +551,27 @@ def build_container_git_commands(governance_repo: str, rel_paths: list[str], com
     ]
 
 
+def build_workspace_scaffold_commands(
+    scaffold_entries: list[tuple[str, str]],
+    scope: str,
+    identifier: str,
+) -> list[str]:
+    """Return git commands for control-repo scaffold files grouped by workspace root."""
+    grouped: dict[str, list[str]] = {}
+    for workspace_root, rel_path in scaffold_entries:
+        grouped.setdefault(workspace_root, []).append(rel_path)
+
+    cmds: list[str] = []
+    for workspace_root, rel_paths in grouped.items():
+        unique_rel_paths = unique_paths(rel_paths)
+        noun = "folder" if len(unique_rel_paths) == 1 else "folders"
+        cmds.extend([
+            f"git -C {workspace_root} add {' '.join(unique_rel_paths)}",
+            f'git -C {workspace_root} commit -m "scaffold({scope}): add {identifier} {noun}"',
+        ])
+    return cmds
+
+
 def build_gh_commands(control_repo: str, feature_id: str, name: str, track: str) -> list[str]:
     """Return the gh CLI commands for PR creation."""
     if track == "express":
@@ -705,6 +728,7 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
     name = args.name or domain
     username = args.username
     target_projects_root: str | None = getattr(args, "target_projects_root", None)
+    docs_root: str | None = getattr(args, "docs_root", None)
     timestamp = now_iso()
 
     marker_path = get_domain_marker_path(governance_repo, domain)
@@ -722,24 +746,26 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
     constitution_paths = [constitution_rel]
     gov_paths = marker_paths + constitution_paths
 
-    # Workspace .gitkeep path when target_projects_root is provided.
+    # Workspace .gitkeep paths when control-repo scaffolds are requested.
     tp_gitkeep_path: Path | None = None
-    tp_rel: str | None = None
+    docs_gitkeep_path: Path | None = None
+    workspace_scaffold_entries: list[tuple[str, str]] = []
     if target_projects_root:
         tp_gitkeep_path = Path(target_projects_root) / domain / ".gitkeep"
         workspace_root = str(Path(target_projects_root).parent)
-        tp_rel = str(tp_gitkeep_path.relative_to(workspace_root))
+        workspace_scaffold_entries.append((workspace_root, str(tp_gitkeep_path.relative_to(workspace_root))))
+    if docs_root:
+        docs_gitkeep_path = Path(docs_root) / domain / ".gitkeep"
+        docs_workspace_root = str(Path(docs_root).parent)
+        workspace_scaffold_entries.append((docs_workspace_root, str(docs_gitkeep_path.relative_to(docs_workspace_root))))
 
     git_cmds = build_container_git_commands(
         governance_repo,
         gov_paths,
         f"feat(domain): add {domain} container",
     )
-    if tp_gitkeep_path is not None and tp_rel is not None:
-        git_cmds.extend([
-            f"git -C {workspace_root} add {tp_rel}",
-            f'git -C {workspace_root} commit -m "scaffold(domain): add {domain} folder"',
-        ])
+    if workspace_scaffold_entries:
+        git_cmds.extend(build_workspace_scaffold_commands(workspace_scaffold_entries, "domain", domain))
 
     if args.dry_run:
         return {
@@ -751,6 +777,7 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
             "created_marker_paths": marker_paths,
             "created_constitution_paths": constitution_paths,
             "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
+            "docs_path": str(docs_gitkeep_path.parent) if docs_gitkeep_path else None,
             "git_commands": git_cmds,
         }
 
@@ -772,6 +799,13 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
         except OSError as e:
             return {"status": "fail", "error": f"Failed to scaffold TargetProjects domain folder: {e}"}
 
+    if docs_gitkeep_path is not None:
+        try:
+            docs_gitkeep_path.parent.mkdir(parents=True, exist_ok=True)
+            docs_gitkeep_path.touch()
+        except OSError as e:
+            return {"status": "fail", "error": f"Failed to scaffold docs domain folder: {e}"}
+
     personal_folder: str | None = getattr(args, "personal_folder", None)
     context_path: str | None = None
     if personal_folder:
@@ -788,6 +822,7 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
         "created_marker_paths": marker_paths,
         "created_constitution_paths": constitution_paths,
         "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
+        "docs_path": str(docs_gitkeep_path.parent) if docs_gitkeep_path else None,
         "git_commands": git_cmds,
     }
     if context_path is not None:
@@ -810,6 +845,7 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
     name = args.name or service
     username = args.username
     target_projects_root: str | None = getattr(args, "target_projects_root", None)
+    docs_root: str | None = getattr(args, "docs_root", None)
     timestamp = now_iso()
 
     service_path = get_service_marker_path(governance_repo, domain, service)
@@ -866,20 +902,30 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
         except OSError as e:
             return {"status": "fail", "error": f"Failed to write service constitution: {e}"}
 
-    # Workspace .gitkeep path when target_projects_root is provided.
+    # Workspace .gitkeep paths when control-repo scaffolds are requested.
     tp_gitkeep_path: Path | None = None
-    tp_rel: str | None = None
-    workspace_root: str | None = None
+    docs_gitkeep_path: Path | None = None
+    workspace_scaffold_entries: list[tuple[str, str]] = []
     if target_projects_root:
         tp_gitkeep_path = Path(target_projects_root) / domain / service / ".gitkeep"
         workspace_root = str(Path(target_projects_root).parent)
-        tp_rel = str(tp_gitkeep_path.relative_to(workspace_root))
+        workspace_scaffold_entries.append((workspace_root, str(tp_gitkeep_path.relative_to(workspace_root))))
         if not args.dry_run:
             try:
                 tp_gitkeep_path.parent.mkdir(parents=True, exist_ok=True)
                 tp_gitkeep_path.touch()
             except OSError as e:
                 return {"status": "fail", "error": f"Failed to scaffold TargetProjects service folder: {e}"}
+    if docs_root:
+        docs_gitkeep_path = Path(docs_root) / domain / service / ".gitkeep"
+        docs_workspace_root = str(Path(docs_root).parent)
+        workspace_scaffold_entries.append((docs_workspace_root, str(docs_gitkeep_path.relative_to(docs_workspace_root))))
+        if not args.dry_run:
+            try:
+                docs_gitkeep_path.parent.mkdir(parents=True, exist_ok=True)
+                docs_gitkeep_path.touch()
+            except OSError as e:
+                return {"status": "fail", "error": f"Failed to scaffold docs service folder: {e}"}
 
     all_gov_paths = unique_paths(created_marker_paths + created_constitution_paths)
     git_cmds = build_container_git_commands(
@@ -887,11 +933,8 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
         all_gov_paths,
         f"feat(service): add {domain}/{service} container",
     )
-    if tp_gitkeep_path is not None and tp_rel is not None and workspace_root is not None:
-        git_cmds.extend([
-            f"git -C {workspace_root} add {tp_rel}",
-            f'git -C {workspace_root} commit -m "scaffold(service): add {domain}/{service} folder"',
-        ])
+    if workspace_scaffold_entries:
+        git_cmds.extend(build_workspace_scaffold_commands(workspace_scaffold_entries, "service", f"{domain}/{service}"))
 
     personal_folder_svc: str | None = getattr(args, "personal_folder", None)
     context_path_svc: str | None = None
@@ -912,6 +955,7 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
         "created_marker_paths": created_marker_paths,
         "created_constitution_paths": created_constitution_paths,
         "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
+        "docs_path": str(docs_gitkeep_path.parent) if docs_gitkeep_path else None,
         "git_commands": git_cmds,
     }
     if context_path_svc is not None:
@@ -1102,6 +1146,12 @@ Examples:
         help="Path to TargetProjects folder; creates {domain}/.gitkeep scaffold if provided",
     )
     create_domain_p.add_argument(
+        "--docs-root",
+        default=None,
+        dest="docs_root",
+        help="Path to docs folder; creates {domain}/.gitkeep scaffold if provided",
+    )
+    create_domain_p.add_argument(
         "--personal-folder",
         default=None,
         dest="personal_folder",
@@ -1127,6 +1177,12 @@ Examples:
         default=None,
         dest="target_projects_root",
         help="Path to TargetProjects folder; creates {domain}/{service}/.gitkeep scaffold if provided",
+    )
+    create_service_p.add_argument(
+        "--docs-root",
+        default=None,
+        dest="docs_root",
+        help="Path to docs folder; creates {domain}/{service}/.gitkeep scaffold if provided",
     )
     create_service_p.add_argument(
         "--personal-folder",
