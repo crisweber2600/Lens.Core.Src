@@ -59,6 +59,18 @@ If both config files are absent, use all defaults. The session active feature is
 | ---------- | ----- |
 | Switch Feature | Load `./references/switch-feature.md` |
 | List Features | Load `./references/list-features.md` |
+| Numbered Menu | When invoked with no `--feature-id`, run List then present a numbered menu and prompt the user to enter a number to switch |
+
+### Numbered Menu Flow
+
+When `lens-switch` is invoked without a target feature (no `--feature-id` argument), default to the numbered menu:
+
+1. Run `switch-ops.py list` to get features with `num` fields (1-indexed)
+2. Render as a numbered list (see `list-features.md` for format)
+3. Prompt: `Enter a number to switch, or q to cancel:`
+4. On valid number input: resolve the feature id at that position and run `switch-ops.py switch --feature-id <id>`
+5. Confirm switch with one line — e.g., `[auth-login] active. Phase: dev.`
+6. On `q` or invalid input: cancel cleanly with no changes
 
 ## Script Reference
 

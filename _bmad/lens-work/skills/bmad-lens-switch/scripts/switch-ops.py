@@ -219,6 +219,7 @@ def cmd_list(args: argparse.Namespace) -> dict:
 
     features = [
         {
+            "num": i + 1,
             "id": f.get("id", ""),
             "domain": f.get("domain", ""),
             "service": f.get("service", ""),
@@ -226,7 +227,7 @@ def cmd_list(args: argparse.Namespace) -> dict:
             "owner": f.get("owner", ""),
             "summary": f.get("summary", ""),
         }
-        for f in raw_features
+        for i, f in enumerate(raw_features)
     ]
 
     return {"status": "pass", "mode": "features", "features": features, "total": len(features)}
