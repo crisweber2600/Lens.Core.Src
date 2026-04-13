@@ -11,8 +11,10 @@ targets, load cross-feature context paths, and confirm feature switches.
 
 import argparse
 import json
+import os
 import re
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -75,6 +77,114 @@ def find_feature_yaml(governance_repo: str, feature_id: str) -> Path | None:
         except (yaml.YAMLError, OSError):
             continue
     return None
+
+
+def write_context_yaml(personal_folder: str, domain: str, service: str, source: str) -> Path:
+    """Write context.yaml to the personal folder with current domain/service context."""
+    context_path = Path(personal_folder) / "context.yaml"
+    context_path.parent.mkdir(parents=True, exist_ok=True)
+    context_data = {
+        "domain": domain,
+        "service": service,
+        "updated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "updated_by": source,
+    }
+
+    fd, tmp_path = tempfile.mkstemp(dir=str(context_path.parent), suffix=".yaml.tmp")
+    try:
+        with os.fdopen(fd, "w") as f:
+            yaml.dump(context_data, f, default_flow_style=False, sort_keys=False)
+        os.replace(tmp_path, str(context_path))
+    except Exception:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
+
+    return context_path
+
+
+def find_service_by_id(governance_repo: str, service_id: str) -> dict | None:
+    """Find service metadata by service id from service.yaml files under features/."""
+    features_dir = Path(governance_repo) / "features"
+    if not features_dir.exists():
+        return None
+
+    for yaml_file in sorted(features_dir.rglob("service.yaml")):
+        try:
+            with open(yaml_file) as f:
+                data = yaml.safe_load(f)
+        except (yaml.YAMLError, OSError):
+            continue
+        if not isinstance(data, dict):
+            continue
+        if data.get("id") == service_id:
+            return {
+                "id": data.get("id", ""),
+                "name": data.get("name", ""),
+                "domain": data.get("domain", ""),
+                "service": data.get("service", ""),
+                "status": data.get("status", "active"),
+                "owner": data.get("owner", ""),
+            }
+    return None
+
+
+def load_service_by_path(governance_repo: str, domain: str, service: str) -> dict | None:
+    """Load service metadata using an explicit domain/service path."""
+    service_yaml = Path(governance_repo) / "features" / domain / service / "service.yaml"
+    if not service_yaml.exists():
+        return None
+    try:
+        with open(service_yaml) as f:
+            data = yaml.safe_load(f)
+    except (yaml.YAMLError, OSError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    return {
+        "id": data.get("id", f"{domain}-{service}"),
+        "name": data.get("name", ""),
+        "domain": data.get("domain", domain),
+        "service": data.get("service", service),
+        "status": data.get("status", "active"),
+        "owner": data.get("owner", ""),
+    }
+
+
+def resolve_service_context(
+    governance_repo: str,
+    selector_id: str,
+    domain: str | None,
+    service: str | None,
+) -> tuple[dict | None, str | None]:
+    """Resolve a service context from explicit domain/service or service id."""
+    if domain and service:
+        service_meta = load_service_by_path(governance_repo, domain, service)
+        if not service_meta:
+            return None, f"Service '{domain}/{service}' not found in governance repo"
+        return service_meta, None
+
+    service_meta = find_service_by_id(governance_repo, selector_id)
+    if service_meta:
+        return service_meta, None
+
+    return None, (
+        "feature-index.yaml not found and no matching service context found. "
+        f"Expected service id '{selector_id}' from domain inventory, or provide --domain and --service."
+    )
+
+
+def resolve_personal_folder(governance_repo: str, personal_folder: str | None) -> str:
+    """Resolve the personal folder used for context.yaml persistence.
+
+    If not provided explicitly, default to sibling of governance repo root:
+    <governance_repo_parent>/.github/lens/personal
+    """
+    if personal_folder:
+        return personal_folder
+    return str(Path(governance_repo).parent / ".github" / "lens" / "personal")
 
 
 def is_stale(feature_data: dict) -> bool:
@@ -239,9 +349,61 @@ def cmd_switch(args: argparse.Namespace) -> dict:
     if err:
         return {"status": "fail", "error": err}
 
+    if args.domain:
+        err = validate_identifier(args.domain, "domain")
+        if err:
+            return {"status": "fail", "error": err}
+    if args.service:
+        err = validate_identifier(args.service, "service")
+        if err:
+            return {"status": "fail", "error": err}
+
+    personal_folder = resolve_personal_folder(args.governance_repo, args.personal_folder)
+
     index_data, err = load_feature_index(args.governance_repo)
     if err:
-        return {"status": "fail", "error": err}
+        if "not found" not in err:
+            return {"status": "fail", "error": err}
+
+        service_meta, service_err = resolve_service_context(
+            args.governance_repo,
+            args.feature_id,
+            args.domain,
+            args.service,
+        )
+        if service_err:
+            return {"status": "fail", "error": service_err}
+
+        try:
+            context_path = str(
+                write_context_yaml(
+                    personal_folder,
+                    service_meta["domain"],
+                    service_meta["service"],
+                    "lens-switch",
+                )
+            )
+        except OSError as e:
+            return {"status": "fail", "error": f"Failed to write context.yaml: {e}"}
+
+        return {
+            "status": "pass",
+            "mode": "service-context",
+            "service_context": {
+                "id": service_meta["id"],
+                "name": service_meta["name"],
+                "domain": service_meta["domain"],
+                "service": service_meta["service"],
+                "status": service_meta["status"],
+                "owner": service_meta["owner"],
+                "context_path": context_path,
+            },
+            "context_to_load": {
+                "summaries": [],
+                "full_docs": [],
+            },
+            "message": "feature-index.yaml missing; switched to service context fallback.",
+        }
 
     raw_features: list[dict] = index_data.get("features") or []
     index_by_id = {f.get("id"): f for f in raw_features if f.get("id")}
@@ -271,6 +433,18 @@ def cmd_switch(args: argparse.Namespace) -> dict:
 
     summaries, full_docs = build_context_paths(feature_data, index_by_id)
 
+    try:
+        context_path = str(
+            write_context_yaml(
+                personal_folder,
+                str(feature_data.get("domain", "")),
+                str(feature_data.get("service", "")),
+                "lens-switch",
+            )
+        )
+    except OSError as e:
+        return {"status": "fail", "error": f"Failed to write context.yaml: {e}"}
+
     return {
         "status": "pass",
         "feature": {
@@ -285,6 +459,7 @@ def cmd_switch(args: argparse.Namespace) -> dict:
             "owner": index_entry.get("owner", ""),
             "stale": is_stale(feature_data),
             "updated": str(feature_data.get("updated", "")),
+            "context_path": context_path,
         },
         "context_to_load": {
             "summaries": summaries,
@@ -373,6 +548,24 @@ Examples:
     switch_p = subparsers.add_parser("switch", help="Validate and prepare context for a feature switch")
     switch_p.add_argument("--governance-repo", required=True, help="Governance repo root path")
     switch_p.add_argument("--feature-id", required=True, help="Target feature identifier")
+    switch_p.add_argument(
+        "--domain",
+        required=False,
+        help="Domain for service-context fallback when feature-index.yaml is missing",
+    )
+    switch_p.add_argument(
+        "--service",
+        required=False,
+        help="Service for service-context fallback when feature-index.yaml is missing",
+    )
+    switch_p.add_argument(
+        "--personal-folder",
+        required=False,
+        help=(
+            "Path to personal folder for context.yaml persistence. "
+            "If omitted, defaults to <governance_repo_parent>/.github/lens/personal"
+        ),
+    )
 
     # context-paths
     ctx_p = subparsers.add_parser("context-paths", help="Get cross-feature context file paths")

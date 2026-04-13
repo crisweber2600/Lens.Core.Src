@@ -283,6 +283,13 @@ def test_switch_existing_feature():
         assert_eq("feature status", feat.get("status"), "active")
         assert_eq("feature owner", feat.get("owner"), "cweber")
         assert_true("stale field present", "stale" in feat)
+        assert_true("context_path field present", "context_path" in feat)
+        context_path = Path(feat["context_path"])
+        assert_eq("feature switch context.yaml exists", context_path.exists(), True)
+        with open(context_path) as f:
+            context_data = yaml.safe_load(f)
+        assert_eq("feature switch context domain", context_data.get("domain"), "platform")
+        assert_eq("feature switch context service", context_data.get("service"), "identity")
 
         ctx = result.get("context_to_load", {})
         assert_true("has summaries key", "summaries" in ctx)
@@ -299,6 +306,111 @@ def test_switch_nonexistent_feature():
         assert_eq("not found status", result["status"], "fail")
         assert_eq("not found exit code", code, 1)
         assert_true("error mentions feature id", "does-not-exist" in result.get("error", ""))
+
+
+def test_switch_missing_index_uses_service_id_fallback():
+    """Switch falls back to service context when index is missing and feature-id is a service id."""
+    print("test_switch_missing_index_uses_service_id_fallback", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        write_domain(tmp, "plugins", {
+            "kind": "domain", "id": "plugins", "name": "Plugins",
+            "domain": "plugins", "status": "active", "owner": "cweber",
+        })
+        write_service(tmp, "plugins", "hermes", {
+            "kind": "service", "id": "plugins-hermes", "name": "Hermes",
+            "domain": "plugins", "service": "hermes", "status": "active", "owner": "cweber",
+        })
+
+        result, code = run([
+            "switch", "--governance-repo", tmp, "--feature-id", "plugins-hermes",
+        ])
+        assert_eq("fallback switch status", result["status"], "pass")
+        assert_eq("fallback switch exit code", code, 0)
+        assert_eq("fallback mode", result.get("mode"), "service-context")
+        service_ctx = result.get("service_context", {})
+        assert_eq("service context id", service_ctx.get("id"), "plugins-hermes")
+        assert_eq("service context domain", service_ctx.get("domain"), "plugins")
+        assert_eq("service context service", service_ctx.get("service"), "hermes")
+        fallback_context_path = Path(service_ctx.get("context_path", ""))
+        assert_eq("service-id fallback context.yaml exists", fallback_context_path.exists(), True)
+
+
+def test_switch_missing_index_uses_domain_service_fallback():
+    """Switch supports explicit --domain/--service fallback when index is missing."""
+    print("test_switch_missing_index_uses_domain_service_fallback", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        write_domain(tmp, "plugins", {
+            "kind": "domain", "id": "plugins", "name": "Plugins",
+            "domain": "plugins", "status": "active", "owner": "cweber",
+        })
+        write_service(tmp, "plugins", "hermes", {
+            "kind": "service", "id": "plugins-hermes", "name": "Hermes",
+            "domain": "plugins", "service": "hermes", "status": "active", "owner": "cweber",
+        })
+
+        result, code = run([
+            "switch",
+            "--governance-repo", tmp,
+            "--feature-id", "any-safe-id",
+            "--domain", "plugins",
+            "--service", "hermes",
+        ])
+        assert_eq("explicit fallback status", result["status"], "pass")
+        assert_eq("explicit fallback exit code", code, 0)
+        assert_eq("explicit fallback mode", result.get("mode"), "service-context")
+        service_ctx = result.get("service_context", {})
+        assert_eq("explicit service context domain", service_ctx.get("domain"), "plugins")
+        assert_eq("explicit service context service", service_ctx.get("service"), "hermes")
+        explicit_context_path = Path(service_ctx.get("context_path", ""))
+        assert_eq("explicit fallback context.yaml exists", explicit_context_path.exists(), True)
+
+
+def test_switch_missing_index_writes_context_yaml_when_personal_folder_set():
+    """Service-context fallback writes context.yaml when --personal-folder is provided."""
+    print("test_switch_missing_index_writes_context_yaml_when_personal_folder_set", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory() as personal_tmp:
+            write_domain(tmp, "plugins", {
+                "kind": "domain", "id": "plugins", "name": "Plugins",
+                "domain": "plugins", "status": "active", "owner": "cweber",
+            })
+            write_service(tmp, "plugins", "hermes", {
+                "kind": "service", "id": "plugins-hermes", "name": "Hermes",
+                "domain": "plugins", "service": "hermes", "status": "active", "owner": "cweber",
+            })
+
+            result, code = run([
+                "switch",
+                "--governance-repo", tmp,
+                "--feature-id", "plugins-hermes",
+                "--personal-folder", personal_tmp,
+            ])
+            assert_eq("personal fallback status", result["status"], "pass")
+            assert_eq("personal fallback exit code", code, 0)
+            context_path = Path(personal_tmp) / "context.yaml"
+            assert_eq("context.yaml exists", context_path.exists(), True)
+            with open(context_path) as f:
+                context_data = yaml.safe_load(f)
+            assert_eq("context domain", context_data.get("domain"), "plugins")
+            assert_eq("context service", context_data.get("service"), "hermes")
+            assert_eq("context updated_by", context_data.get("updated_by"), "lens-switch")
+
+
+def test_switch_missing_index_invalid_service_selection_fails():
+    """Missing index still fails cleanly when selected service cannot be resolved."""
+    print("test_switch_missing_index_invalid_service_selection_fails", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        write_domain(tmp, "plugins", {
+            "kind": "domain", "id": "plugins", "name": "Plugins",
+            "domain": "plugins", "status": "active", "owner": "cweber",
+        })
+
+        result, code = run([
+            "switch", "--governance-repo", tmp, "--feature-id", "plugins-hermes",
+        ])
+        assert_eq("invalid service fallback status", result["status"], "fail")
+        assert_eq("invalid service fallback exit code", code, 1)
+        assert_true("invalid service error message", "no matching service context" in result.get("error", "").lower())
 
 
 def test_switch_returns_context_depends_on():
@@ -601,6 +713,10 @@ def main() -> None:
     test_list_numbered_menu_fields()
     test_switch_existing_feature()
     test_switch_nonexistent_feature()
+    test_switch_missing_index_uses_service_id_fallback()
+    test_switch_missing_index_uses_domain_service_fallback()
+    test_switch_missing_index_writes_context_yaml_when_personal_folder_set()
+    test_switch_missing_index_invalid_service_selection_fails()
     test_switch_returns_context_depends_on()
     test_switch_returns_context_related()
     test_switch_stale_detection()
