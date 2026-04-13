@@ -27,6 +27,18 @@ def find_key(d: dict, *keys: str) -> str:
     return ""
 
 
+def resolve_dest(target_root: Path, local_path: str, name: str) -> Path:
+    """Resolve repo-inventory local_path values consistently from project root."""
+    if local_path:
+        candidate = Path(local_path)
+        if candidate.is_absolute():
+            return candidate
+        if candidate.parts and candidate.parts[0] == target_root.name:
+            return target_root.parent / candidate
+        return target_root / candidate
+    return target_root / name
+
+
 def git_clone(url: str, dest: Path, dry_run: bool) -> dict:
     if dry_run:
         return {"action": "clone", "url": url, "dest": str(dest), "dry_run": True}
@@ -77,7 +89,7 @@ def main() -> int:
     data = load_yaml(inventory_path)
     repos: list[dict] = data.get("repos", data.get("repositories", []))
 
-    target_root = Path(args.target_root)
+    target_root = Path(args.target_root).resolve()
     results: list[dict] = []
     errors = 0
 
@@ -91,7 +103,7 @@ def main() -> int:
             errors += 1
             continue
 
-        dest = Path(local) if local else target_root / name
+        dest = resolve_dest(target_root, local, name)
         if dest.is_dir():
             result = git_verify(dest)
         else:
