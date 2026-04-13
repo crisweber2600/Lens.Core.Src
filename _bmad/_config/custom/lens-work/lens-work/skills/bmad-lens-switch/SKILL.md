@@ -47,9 +47,10 @@ You manage active feature context for the Lens agent session. You switch the wor
 
 ## On Activation
 
-Load available config from `{project-root}/lens.core/_bmad/bmadconfig.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml` (root level and `lens` section). Expected config keys under `lens`: `governance_repo`. Resolve:
+Load available config from `{project-root}/lens.core/_bmad/bmadconfig.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml` (root level and `lens` section). Expected config keys under `lens`: `governance_repo`, `control_repo`. Resolve:
 
 - `{governance_repo}` (default: current repo) — governance repo root path
+- `{control_repo}` (default: `{project-root}`) — control repo root path; used for git branch checkout on switch
 
 If both config files are absent, use all defaults. The session active feature is not set until an explicit `switch` is performed.
 
@@ -87,9 +88,16 @@ python3 scripts/switch-ops.py list \
   --status-filter all
 
 # Validate and prepare context for switching to a feature
+# Without --control-repo: resolves context only, no branch checkout
 python3 scripts/switch-ops.py switch \
   --governance-repo /path/to/governance-repo/ \
   --feature-id auth-login
+
+# With --control-repo: also runs 'git checkout auth-login-plan' in that repo
+python3 scripts/switch-ops.py switch \
+  --governance-repo /path/to/governance-repo/ \
+  --feature-id auth-login \
+  --control-repo /path/to/control-repo/
 
 # Get file paths for cross-feature context
 python3 scripts/switch-ops.py context-paths \
@@ -98,6 +106,8 @@ python3 scripts/switch-ops.py context-paths \
   --domain platform \
   --service identity
 ```
+
+The `switch` result always includes `plan_branch` (`{featureId}-plan`). When `--control-repo` is provided, it also includes `branch_switched: true|false` and `branch_error` (if the checkout failed).
 
 ## Integration Points
 

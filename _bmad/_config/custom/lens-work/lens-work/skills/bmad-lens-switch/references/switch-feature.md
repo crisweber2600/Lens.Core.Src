@@ -24,7 +24,8 @@ Run the switch operation:
 ```bash
 python3 ./scripts/switch-ops.py switch \
   --governance-repo {governance_repo} \
-  --feature-id {target_feature_id}
+  --feature-id {target_feature_id} \
+  --control-repo {control_repo}
 ```
 
 ## Output
@@ -32,6 +33,8 @@ python3 ./scripts/switch-ops.py switch \
 ```json
 {
   "status": "pass",
+  "plan_branch": "auth-login-plan",
+  "branch_switched": true,
   "feature": {
     "id": "auth-login",
     "name": "User Authentication",
@@ -53,6 +56,16 @@ python3 ./scripts/switch-ops.py switch \
 ```
 
 `stale: true` is set when `updated` is more than 30 days old. `context_to_load.summaries` contains paths for `related` dependencies. `context_to_load.full_docs` contains paths for `depends_on` and `blocks` dependencies.
+
+`plan_branch` is always `{featureId}-plan`. `branch_switched: true` means the control repo was checked out to that branch. `branch_switched: false` with a `branch_error` means the checkout failed — typically the branch does not exist yet; run `/lens-init-feature` to initialize it.
+
+## Branch Checkout
+
+After running the switch command:
+
+- If `branch_switched: true` — confirm with: `[{featureId}] active. Branch: {plan_branch}.`
+- If `branch_switched: false` — include a warning: `⚠ Could not checkout {plan_branch}: {branch_error}. Run /lens-init-feature to create the feature branches.`
+- If `branch_switched` is absent (no `--control-repo` provided) — report `plan_branch` but no checkout was attempted.
 
 ## Stale Context Warning
 

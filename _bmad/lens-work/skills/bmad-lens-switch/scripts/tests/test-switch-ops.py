@@ -13,6 +13,7 @@ from pathlib import Path
 
 import yaml
 
+
 SCRIPT = str(Path(__file__).parent.parent / "switch-ops.py")
 PASS = 0
 FAIL = 0
@@ -697,6 +698,116 @@ def test_depends_on_not_duplicated_in_summaries():
         assert_false("oauth-provider not in summaries", any("oauth-provider" in p for p in summaries))
 
 
+def init_git_repo(path: str) -> None:
+    """Initialize a bare git repo with an initial commit."""
+    subprocess.run(["git", "init", path], capture_output=True, check=True)
+    subprocess.run(["git", "-C", path, "config", "user.email", "test@test.com"], capture_output=True, check=True)
+    subprocess.run(["git", "-C", path, "config", "user.name", "Test"], capture_output=True, check=True)
+    sentinel = Path(path) / ".gitkeep"
+    sentinel.write_text("")
+    subprocess.run(["git", "-C", path, "add", ".gitkeep"], capture_output=True, check=True)
+    subprocess.run(["git", "-C", path, "commit", "-m", "init"], capture_output=True, check=True)
+
+
+def create_branch(repo: str, branch: str) -> None:
+    """Create a branch in the given repo."""
+    subprocess.run(["git", "-C", repo, "checkout", "-b", branch], capture_output=True, check=True)
+    subprocess.run(["git", "-C", repo, "checkout", "-"], capture_output=True, check=True)
+
+
+def test_switch_with_control_repo_existing_plan_branch():
+    """Switch with --control-repo checks out {featureId}-plan when branch exists."""
+    print("test_switch_with_control_repo_existing_plan_branch", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as gov_tmp:
+        with tempfile.TemporaryDirectory() as ctrl_tmp:
+            write_index(gov_tmp, SAMPLE_INDEX_ENTRIES)
+            write_feature(gov_tmp, "platform", "identity", "auth-login", SAMPLE_FEATURE)
+            init_git_repo(ctrl_tmp)
+            create_branch(ctrl_tmp, "auth-login-plan")
+
+            result, code = run([
+                "switch",
+                "--governance-repo", gov_tmp,
+                "--feature-id", "auth-login",
+                "--control-repo", ctrl_tmp,
+            ])
+            assert_eq("switch with ctrl repo status", result["status"], "pass")
+            assert_eq("switch with ctrl repo exit code", code, 0)
+            assert_eq("plan_branch in result", result.get("plan_branch"), "auth-login-plan")
+            assert_eq("branch_switched true", result.get("branch_switched"), True)
+            assert_false("no branch_error", bool(result.get("branch_error")))
+
+            head = subprocess.run(
+                ["git", "-C", ctrl_tmp, "rev-parse", "--abbrev-ref", "HEAD"],
+                capture_output=True, text=True,
+            ).stdout.strip()
+            assert_eq("ctrl repo HEAD is plan branch", head, "auth-login-plan")
+
+
+def test_switch_with_control_repo_missing_plan_branch():
+    """Switch with --control-repo returns branch_switched: false when plan branch absent."""
+    print("test_switch_with_control_repo_missing_plan_branch", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as gov_tmp:
+        with tempfile.TemporaryDirectory() as ctrl_tmp:
+            write_index(gov_tmp, SAMPLE_INDEX_ENTRIES)
+            write_feature(gov_tmp, "platform", "identity", "auth-login", SAMPLE_FEATURE)
+            init_git_repo(ctrl_tmp)
+
+            result, code = run([
+                "switch",
+                "--governance-repo", gov_tmp,
+                "--feature-id", "auth-login",
+                "--control-repo", ctrl_tmp,
+            ])
+            assert_eq("missing branch status", result["status"], "pass")
+            assert_eq("missing branch exit code", code, 0)
+            assert_eq("plan_branch present", result.get("plan_branch"), "auth-login-plan")
+            assert_eq("branch_switched false", result.get("branch_switched"), False)
+            assert_true("branch_error populated", bool(result.get("branch_error")))
+
+
+def test_switch_without_control_repo_returns_plan_branch():
+    """Switch without --control-repo always returns plan_branch but no branch_switched."""
+    print("test_switch_without_control_repo_returns_plan_branch", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as gov_tmp:
+        write_index(gov_tmp, SAMPLE_INDEX_ENTRIES)
+        write_feature(gov_tmp, "platform", "identity", "auth-login", SAMPLE_FEATURE)
+
+        result, code = run([
+            "switch", "--governance-repo", gov_tmp, "--feature-id", "auth-login",
+        ])
+        assert_eq("no ctrl repo status", result["status"], "pass")
+        assert_eq("plan_branch present", result.get("plan_branch"), "auth-login-plan")
+        assert_false("branch_switched absent", "branch_switched" in result)
+
+
+def test_switch_service_context_with_control_repo_existing_branch():
+    """Service-context fallback with --control-repo checks out the plan branch."""
+    print("test_switch_service_context_with_control_repo_existing_branch", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as gov_tmp:
+        with tempfile.TemporaryDirectory() as ctrl_tmp:
+            write_domain(gov_tmp, "plugins", {
+                "kind": "domain", "id": "plugins", "name": "Plugins",
+                "domain": "plugins", "status": "active", "owner": "cweber",
+            })
+            write_service(gov_tmp, "plugins", "hermes", {
+                "kind": "service", "id": "plugins-hermes", "name": "Hermes",
+                "domain": "plugins", "service": "hermes", "status": "active", "owner": "cweber",
+            })
+            init_git_repo(ctrl_tmp)
+            create_branch(ctrl_tmp, "plugins-hermes-plan")
+
+            result, code = run([
+                "switch",
+                "--governance-repo", gov_tmp,
+                "--feature-id", "plugins-hermes",
+                "--control-repo", ctrl_tmp,
+            ])
+            assert_eq("svc ctx ctrl repo status", result["status"], "pass")
+            assert_eq("svc ctx plan_branch", result.get("plan_branch"), "plugins-hermes-plan")
+            assert_eq("svc ctx branch_switched", result.get("branch_switched"), True)
+
+
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
@@ -727,6 +838,10 @@ def main() -> None:
     test_context_paths_not_found()
     test_path_traversal_in_feature_id()
     test_depends_on_not_duplicated_in_summaries()
+    test_switch_with_control_repo_existing_plan_branch()
+    test_switch_with_control_repo_missing_plan_branch()
+    test_switch_without_control_repo_returns_plan_branch()
+    test_switch_service_context_with_control_repo_existing_branch()
 
     total = PASS + FAIL
     print(f"\n{PASS}/{total} tests passed", file=sys.stderr)
