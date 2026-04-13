@@ -16,7 +16,7 @@
 
 1. `GITHUB_PAT` environment variable
 2. `GH_TOKEN` environment variable
-3. `profile.yaml` (in `docs/lens-work/personal/`)
+3. `profile.yaml` (in `.github/lens/personal/`)
 4. URL-only fallback (manual PR creation instructions provided)
 
 ## PR Creation

@@ -136,7 +136,7 @@ uv run scripts/init-feature-ops.py create-domain \
   --username cweber \
   --target-projects-root /path/to/TargetProjects \
   --docs-root /path/to/docs \
-  --personal-folder /path/to/docs/lens-work/personal
+  --personal-folder /path/to/.github/lens/personal
 
 # Create a new service (service + domain markers + constitutions + optional TargetProjects scaffold)
 uv run scripts/init-feature-ops.py create-service \
@@ -147,11 +147,11 @@ uv run scripts/init-feature-ops.py create-service \
   --username cweber \
   --target-projects-root /path/to/TargetProjects \
   --docs-root /path/to/docs \
-  --personal-folder /path/to/docs/lens-work/personal
+  --personal-folder /path/to/.github/lens/personal
 
 # Read the active domain/service context (for non-feature-branch commands)
 uv run scripts/init-feature-ops.py read-context \
-  --personal-folder /path/to/docs/lens-work/personal
+  --personal-folder /path/to/.github/lens/personal
 ```
 
 ### Context State File
@@ -177,5 +177,5 @@ updated_by: "new-service"   # "new-domain" or "new-service"
 
 - `create-domain` writes `service: null` — switching domains clears any stale service context
 - `create-service` writes both `domain` and `service`
-- The file lives in `{personal_output_folder}/context.yaml` (default: `{project-root}/docs/lens-work/personal/context.yaml`) — local-only, never git-tracked
+- The file lives in `{personal_output_folder}/context.yaml` (default: `{project-root}/.github/lens/personal/context.yaml`) — local-only, never git-tracked
 - Use the `read-context` subcommand to retrieve the current context when not on a feature branch

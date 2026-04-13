@@ -52,11 +52,11 @@ class TestGitignoreEntries:
         module.ensure_gitignore_entries(tmp_path, dry_run=False)
 
         lines = (tmp_path / ".gitignore").read_text(encoding="utf-8").splitlines()
-        assert "docs/lens-work/personal/" in lines
         assert ".github/lens/personal/" in lines
         assert ".github/" in lines
         assert "lens.core/" in lines
         assert "TargetProjects/" in lines
+        assert "docs/lens-work/personal/" not in lines
 
     def test_ensure_gitignore_entries_is_idempotent(self, tmp_path):
         module = _load_script_module()
