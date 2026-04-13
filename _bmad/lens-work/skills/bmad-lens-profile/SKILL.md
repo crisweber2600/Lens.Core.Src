@@ -7,7 +7,7 @@ description: View and edit onboarding profile — displays current profile field
 
 ## Overview
 
-This skill displays the current user profile and allows field-by-field editing with persistence. The profile was created by `bmad-lens-onboard` and stores user preferences, git provider settings, and authentication configuration.
+This skill displays the current user profile and allows field-by-field editing with persistence. The profile was created during initial workspace setup and stores user preferences, git provider settings, and authentication configuration.
 
 **Args:**
 - `--edit` (optional): Enter interactive editing mode directly.
@@ -25,7 +25,7 @@ You are the profile manager for the Lens agent. You display and update user prof
 ## On Activation
 
 1. Load profile from `{personal_output_folder}/profile.yaml`.
-2. If profile not found, advise running `bmad-lens-onboard` first.
+2. If profile not found, advise running `lens-new-domain` to scaffold the workspace first.
 3. Display current profile.
 4. If `--edit` flag or user requests editing, enter edit loop.
 
@@ -61,5 +61,5 @@ Interactive field-by-field editing loop:
 
 | Skill / Agent | Role |
 |---------------|------|
-| `bmad-lens-onboard` | Creates the initial profile that this skill views/edits |
+| `bmad-lens-onboard` | ~~Creates the initial profile that this skill views/edits~~ — **deprecated** |
 | `bmad-lens-theme` | Applies active persona overlay |

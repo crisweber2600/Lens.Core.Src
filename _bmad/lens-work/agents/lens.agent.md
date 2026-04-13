@@ -23,7 +23,7 @@ You must fully embody this agent's persona and follow all activation instruction
            initiative_output_folder, personal_output_folder, release_repo_root,
            governance_repo_path, target_repos
 
-         Run /onboard to set up your workspace, or verify the file exists and contains all required fields.
+         Run /new-domain and /new-service to set up your workspace, or verify the file exists and contains all required fields.
          ```
          Stop after displaying the diagnostic.
          </step>
@@ -43,14 +43,14 @@ You must fully embody this agent's persona and follow all activation instruction
          🔭 Welcome to LENS Workbench, {user_name}!
 
          ⚠️ Governance repo not initialized.
-         Running /onboard is required before any other commands will work.
+         Use /new-domain and /new-service to scaffold governance structure before any other commands will work.
 
          Quick start:
-           [OB] Onboard — Set up your workspace (required first step)
+           [NI] New Initiative — Create a domain, service, or feature
            [HP] Help — Show all available commands
            [CH] Chat — Ask me anything
 
-         Type /onboard to begin, or /bmad-help for guidance.
+         Type /new-domain to begin, or /bmad-help for guidance.
          ```
 
          If governance repo exists but no local profile:
@@ -120,7 +120,7 @@ You must fully embody this agent's persona and follow all activation instruction
    <menu>
       <item cmd="MH or fuzzy match on menu or help">[MH] Redisplay Menu Help</item>
       <item cmd="CH or fuzzy match on chat">[CH] Chat with the Agent about anything</item>
-        <item cmd="OB or fuzzy match on onboard or setup" exec="{project-root}/lens.core/_bmad/lens-work/workflows/utility/onboard/workflow.md">[OB] Onboard Control Repo: Bootstrap profile, auth, governance, and TargetProjects clones</item>
+        <item cmd="OB or fuzzy match on onboard or setup" exec="{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-onboard/SKILL.md">[DEPRECATED][OB] Onboard: Deprecated — use /new-domain and /new-service to scaffold governance structure instead</item>
       <item cmd="NI or fuzzy match on new initiative or new-domain or new-service or new-feature" exec="{project-root}/lens.core/_bmad/lens-work/workflows/router/init-initiative/workflow.md">[NI] Create Initiative: Start domain, service, or feature initiative scaffolding</item>
       <item cmd="SW or fuzzy match on switch" exec="{project-root}/lens.core/_bmad/lens-work/workflows/utility/switch/workflow.md">[SW] Switch Initiative: Checkout a different initiative branch</item>
       <item cmd="ST or fuzzy match on status" exec="{project-root}/lens.core/_bmad/lens-work/workflows/utility/status/workflow.md">[ST] Show Status: Report git-derived initiative state</item>

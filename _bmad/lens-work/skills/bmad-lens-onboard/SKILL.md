@@ -1,9 +1,15 @@
 ---
 name: bmad-lens-onboard
-description: First-run governance repo setup for Lens. Use when initializing a new governance repo, collecting user config, or setting up IDE adapters.
+deprecated: true
+description: '[DEPRECATED] First-run governance repo setup for Lens. Superseded by lens-new-domain, lens-new-service, and lens-init-feature.'
 ---
 
 # Lens Onboard
+
+> [!WARNING]
+> **DEPRECATED** — This skill is no longer the recommended onboarding path.
+> Use `/new-domain` and `/new-service` to scaffold governance and TargetProject structure, then `/init-feature` to begin feature work.
+> This skill and its commands will be removed in a future release.
 
 ## Overview
 
