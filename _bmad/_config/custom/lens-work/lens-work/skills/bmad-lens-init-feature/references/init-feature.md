@@ -45,6 +45,7 @@ python3 ./scripts/init-feature-ops.py create \
   --name "{feature name}" \
   --track {track} \
   --username {username} \
+  --execute-governance-git \
   --dry-run
 ```
 
@@ -61,7 +62,8 @@ python3 ./scripts/init-feature-ops.py create \
   --service {service} \
   --name "{feature name}" \
   --track {track} \
-  --username {username}
+  --username {username} \
+  --execute-governance-git
 ```
 
 The script:
@@ -70,21 +72,18 @@ The script:
 2. Creates `feature.yaml` at `{governance-repo}/features/{domain}/{service}/{featureId}/feature.yaml`
 3. Adds an entry to `{governance-repo}/feature-index.yaml` (creates if absent)
 4. Creates `{governance-repo}/features/{domain}/{service}/{featureId}/summary.md` stub
-5. Returns `git_commands` and `gh_commands` arrays in the JSON output, plus `planning_pr_created`, `starting_phase`, `recommended_command`, and `router_command` so the handoff matches `lifecycle.yaml`
+5. Executes governance checkout/pull/add/commit/push directly on `main`
+6. Returns `governance_git_commands`, `control_repo_git_commands`, `remaining_git_commands`, `governance_git_executed`, and `governance_commit_sha`, plus `gh_commands`, plus `planning_pr_created`, `starting_phase`, `recommended_command`, and `router_command` so the handoff matches `lifecycle.yaml`
 
 ### Step 4: Execute Git and GitHub Commands
 
-Execute the `git_commands` returned by the script in sequence, then the `gh_commands` when present:
+When `--execute-governance-git` succeeds, the script has already published governance artifacts on `main`. Execute only the returned `remaining_git_commands`, then the `gh_commands` when present:
 
 ```bash
-# Each command in git_commands runs in order
-# Example output sequence:
+# Each command in remaining_git_commands runs in order
+# Example remaining commands after governance auto-publish:
 # git -C {control_repo} checkout -b {featureId}
 # git -C {control_repo} checkout -b {featureId}-plan
-# git -C {governance_repo} pull --rebase origin main
-# git -C {governance_repo} add features/{domain}/{service}/{featureId}/feature.yaml feature-index.yaml features/{domain}/{service}/{featureId}/summary.md [container markers...]
-# git -C {governance_repo} commit -m "feat({domain}/{service}): init {featureId}"
-# git -C {governance_repo} push origin main
 
 # Then gh_commands when `planning_pr_created == true`
 # (PR is in the control repo, not governance):
@@ -93,7 +92,9 @@ Execute the `git_commands` returned by the script in sequence, then the `gh_comm
 
 > **Note:** The governance repo stays on `main` throughout — no feature branches are created there. The 2-branch topology (`{featureId}` + `{featureId}-plan`) exists only in the control repo.
 
-> **Container note:** `create-domain` and `create-service` can be run with `--execute-governance-git`. In that mode the script performs the governance checkout/pull/add/commit/push itself and callers should surface only the returned `remaining_git_commands` for any manual workspace scaffold follow-up.
+> **Auto-publish note:** `create`, `create-domain`, and `create-service` can be run with `--execute-governance-git`. In that mode the script performs the governance checkout/pull/add/commit/push itself and callers should surface only the returned `remaining_git_commands` for any manual follow-up.
+
+> **Failure note:** If governance git preflight or execution fails, stop and surface the error. Do not fall back to a manual governance publish recipe.
 
 ### Step 5: Confirm Initialization
 

@@ -13,9 +13,10 @@ file is created inside the corresponding TargetProjects/{domain}/{service}/ fold
 --docs-root is provided, a .gitkeep scaffold file is created inside docs/{domain}/{service}/ in
 the control repo.
 
-Feature init still returns git/gh commands for the caller to execute. Domain and service init
-can optionally execute the governance checkout/pull/add/commit/push sequence directly when
---execute-governance-git is provided.
+Feature, domain, and service init can optionally execute the governance
+checkout/pull/add/commit/push sequence directly when --execute-governance-git is provided.
+Feature init still returns any remaining control-repo git commands and gh commands for the
+caller to execute.
 """
 
 import argparse
@@ -629,6 +630,56 @@ def detect_service_refs_from_texts(texts: list[str], candidate_services: list[st
     return unique_paths(detected)
 
 
+def build_control_repo_git_commands(control_repo: str | None, feature_id: str) -> list[str]:
+    """Return git commands for feature/control branch creation when a separate control repo exists."""
+    if not control_repo:
+        return []
+
+    plan_branch = f"{feature_id}-plan"
+    return [
+        f"git -C {control_repo} checkout -b {feature_id}",
+        f"git -C {control_repo} checkout -b {plan_branch}",
+    ]
+
+
+def build_feature_governance_rel_paths(
+    feature_id: str,
+    domain: str,
+    service: str,
+    container_rel_paths: list[str] | None = None,
+) -> list[str]:
+    """Return governance-relative paths staged for feature initialization."""
+    feature_yaml_rel = f"features/{domain}/{service}/{feature_id}/feature.yaml"
+    summary_rel = f"features/{domain}/{service}/{feature_id}/summary.md"
+    return [feature_yaml_rel, "feature-index.yaml", summary_rel, *(container_rel_paths or [])]
+
+
+def build_feature_governance_git_steps(
+    feature_id: str,
+    domain: str,
+    service: str,
+    container_rel_paths: list[str] | None = None,
+) -> list[list[str]]:
+    """Return ordered git argv steps for feature governance artifacts on main."""
+    all_paths = build_feature_governance_rel_paths(feature_id, domain, service, container_rel_paths)
+    commit_message = f"feat({domain}/{service}): init {feature_id}"
+    return build_container_git_steps(all_paths, commit_message)
+
+
+def build_feature_governance_git_commands(
+    governance_repo: str,
+    feature_id: str,
+    domain: str,
+    service: str,
+    container_rel_paths: list[str] | None = None,
+) -> list[str]:
+    """Return ordered governance git commands for feature initialization on main."""
+    return [
+        git_command_text(governance_repo, step)
+        for step in build_feature_governance_git_steps(feature_id, domain, service, container_rel_paths)
+    ]
+
+
 def build_git_commands(
     governance_repo: str,
     control_repo: str | None,
@@ -644,28 +695,13 @@ def build_git_commands(
     The 2-branch topology ({featureId} + {featureId}-plan) only exists in the
     control repo.
     """
-    gov = governance_repo
-    plan_branch = f"{feature_id}-plan"
-    feature_yaml_rel = f"features/{domain}/{service}/{feature_id}/feature.yaml"
-    summary_rel = f"features/{domain}/{service}/{feature_id}/summary.md"
-    all_paths = [feature_yaml_rel, "feature-index.yaml", summary_rel, *(container_rel_paths or [])]
-
-    cmds: list[str] = []
-
-    if control_repo:
-        cmds.extend([
-            f"git -C {control_repo} checkout -b {feature_id}",
-            f"git -C {control_repo} checkout -b {plan_branch}",
-        ])
-
-    cmds.extend([
-        f"git -C {gov} pull --rebase --autostash origin main",
-        f"git -C {gov} add {' '.join(all_paths)}",
-        f'git -C {gov} commit -m "feat({domain}/{service}): init {feature_id}"',
-        f"git -C {gov} push origin main",
-    ])
-
-    return cmds
+    return build_control_repo_git_commands(control_repo, feature_id) + build_feature_governance_git_commands(
+        governance_repo,
+        feature_id,
+        domain,
+        service,
+        container_rel_paths,
+    )
 
 
 def build_container_git_steps(rel_paths: list[str], commit_message: str) -> list[list[str]]:
@@ -700,6 +736,25 @@ def build_container_result_fields(
         "git_commands": all_git_commands,
         "governance_git_commands": governance_git_commands,
         "workspace_git_commands": workspace_git_commands,
+        "remaining_git_commands": remaining_git_commands,
+        "governance_git_executed": governance_git_executed,
+        "governance_commit_sha": governance_commit_sha,
+    }
+
+
+def build_feature_result_fields(
+    governance_git_commands: list[str],
+    control_repo_git_commands: list[str],
+    governance_git_executed: bool = False,
+    governance_commit_sha: str | None = None,
+) -> dict:
+    """Return structured git result fields for feature initialization flows."""
+    all_git_commands = control_repo_git_commands + governance_git_commands
+    remaining_git_commands = control_repo_git_commands if governance_git_executed else all_git_commands
+    return {
+        "git_commands": all_git_commands,
+        "governance_git_commands": governance_git_commands,
+        "control_repo_git_commands": control_repo_git_commands,
         "remaining_git_commands": remaining_git_commands,
         "governance_git_executed": governance_git_executed,
         "governance_commit_sha": governance_commit_sha,
@@ -762,6 +817,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
     name = args.name
     track = args.track
     username = args.username
+    execute_governance_git = bool(getattr(args, "execute_governance_git", False))
 
     if not track:
         return {
@@ -775,6 +831,19 @@ def cmd_create(args: argparse.Namespace) -> dict:
         return {"status": "fail", "error": str(e)}
 
     recommended_command = f"/{starting_phase}"
+
+    if execute_governance_git and not args.dry_run:
+        try:
+            sync_governance_main(governance_repo)
+        except RuntimeError as e:
+            return {
+                "status": "fail",
+                "featureId": feature_id,
+                "starting_phase": starting_phase,
+                "recommended_command": recommended_command,
+                "router_command": "/next",
+                "error": f"Governance git preflight failed: {e}",
+            }
 
     try:
         index_data, _index_exists = read_feature_index(governance_repo)
@@ -809,14 +878,14 @@ def cmd_create(args: argparse.Namespace) -> dict:
     ctrl_for_git = control_repo if (control_repo and control_repo != governance_repo) else None
     pr_repo = control_repo or governance_repo
 
-    git_cmds = build_git_commands(
-        governance_repo,
-        ctrl_for_git,
+    control_repo_git_commands = build_control_repo_git_commands(ctrl_for_git, feature_id)
+    governance_git_steps = build_feature_governance_git_steps(
         feature_id,
         domain,
         service,
         container_markers,
     )
+    governance_git_commands = [git_command_text(governance_repo, step) for step in governance_git_steps]
     gh_cmds = build_gh_commands(pr_repo, feature_id, name, track)
 
     if args.dry_run:
@@ -831,7 +900,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
             "index_updated": True,
             "summary_path": str(summary_path),
             "container_markers": container_markers,
-            "git_commands": git_cmds,
+            **build_feature_result_fields(governance_git_commands, control_repo_git_commands),
             "gh_commands": gh_cmds,
             "planning_pr_created": bool(gh_cmds),
         }
@@ -878,6 +947,35 @@ def cmd_create(args: argparse.Namespace) -> dict:
     except OSError as e:
         return {"status": "fail", "error": f"Failed to write summary.md: {e}"}
 
+    governance_commit_sha: str | None = None
+    governance_git_executed = False
+    if execute_governance_git:
+        try:
+            for step in governance_git_steps[2:]:
+                run_git(governance_repo, step)
+            governance_commit_sha = current_head_sha(governance_repo)
+            governance_git_executed = True
+        except RuntimeError as e:
+            return {
+                "status": "fail",
+                "featureId": feature_id,
+                "starting_phase": starting_phase,
+                "recommended_command": recommended_command,
+                "router_command": "/next",
+                "feature_yaml_path": str(feature_yaml_path),
+                "index_updated": True,
+                "summary_path": str(summary_path),
+                "container_markers": container_markers,
+                "error": f"Governance git execution failed: {e}",
+                **build_feature_result_fields(
+                    governance_git_commands,
+                    control_repo_git_commands,
+                    governance_commit_sha=current_head_sha(governance_repo),
+                ),
+                "gh_commands": gh_cmds,
+                "planning_pr_created": bool(gh_cmds),
+            }
+
     return {
         "status": "pass",
         "featureId": feature_id,
@@ -888,7 +986,12 @@ def cmd_create(args: argparse.Namespace) -> dict:
         "index_updated": True,
         "summary_path": str(summary_path),
         "container_markers": container_markers,
-        "git_commands": git_cmds,
+        **build_feature_result_fields(
+            governance_git_commands,
+            control_repo_git_commands,
+            governance_git_executed=governance_git_executed,
+            governance_commit_sha=governance_commit_sha,
+        ),
         "gh_commands": gh_cmds,
         "planning_pr_created": bool(gh_cmds),
     }
@@ -1387,6 +1490,10 @@ Examples:
   %(prog)s create --governance-repo /path/to/repo --feature-id auth-refresh \\
     --domain platform --service identity --name "Auth Token Refresh" --username cweber
 
+    %(prog)s create --governance-repo /path/to/repo --feature-id auth-refresh \
+        --domain platform --service identity --name "Auth Token Refresh" --username cweber \
+        --track quickplan --execute-governance-git
+
     %(prog)s create-domain --governance-repo /path/to/repo --domain platform \\
         --name "Platform" --username cweber
 
@@ -1534,6 +1641,12 @@ Examples:
         "--dry-run",
         action="store_true",
         help="Print planned operations without writing any files",
+    )
+    create_p.add_argument(
+        "--execute-governance-git",
+        action="store_true",
+        dest="execute_governance_git",
+        help="Automatically run governance checkout/pull/add/commit/push after creating the feature",
     )
 
     fetch_p = subparsers.add_parser("fetch-context", help="Fetch cross-feature context")
