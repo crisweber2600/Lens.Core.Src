@@ -441,7 +441,7 @@ def cmd_switch(args: argparse.Namespace) -> dict:
 
     personal_folder = resolve_personal_folder(args.governance_repo, args.personal_folder)
     plan_branch = f"{args.feature_id}-plan"
-    control_repo: str | None = getattr(args, "control_repo", None)
+    control_repo = getattr(args, "control_repo", ".") or "."
 
     index_data, err = load_feature_index(args.governance_repo)
     if err:
@@ -675,10 +675,11 @@ Examples:
     switch_p.add_argument(
         "--control-repo",
         required=False,
+        default=".",
         dest="control_repo",
         help=(
-            "Path to the control repo root. When provided, performs "
-            "'git checkout {featureId}-plan' in that repo after resolving the feature context."
+            "Path to the control repo root. Defaults to '.' (the workspace root) and performs "
+            "'git checkout {featureId}-plan' there after resolving the feature context."
         ),
     )
 

@@ -19,12 +19,28 @@ PASS = 0
 FAIL = 0
 
 
-def run(args: list[str]) -> tuple[dict, int]:
+def find_arg_value(args: list[str], flag: str) -> str | None:
+    """Return the value associated with a CLI flag, if present."""
+    try:
+        index = args.index(flag)
+    except ValueError:
+        return None
+    next_index = index + 1
+    if next_index >= len(args):
+        return None
+    return args[next_index]
+
+
+def run(args: list[str], cwd: str | None = None) -> tuple[dict, int]:
     """Run the script and return (parsed JSON output, exit code)."""
+    if cwd is None:
+        cwd = find_arg_value(args, "--governance-repo")
+
     result = subprocess.run(
         [sys.executable, SCRIPT] + args,
         capture_output=True,
         text=True,
+        cwd=cwd,
     )
     try:
         return json.loads(result.stdout), result.returncode
@@ -802,19 +818,30 @@ def test_switch_with_control_repo_missing_plan_branch():
             assert_true("branch_error populated", bool(result.get("branch_error")))
 
 
-def test_switch_without_control_repo_returns_plan_branch():
-    """Switch without --control-repo always returns plan_branch but no branch_switched."""
-    print("test_switch_without_control_repo_returns_plan_branch", file=sys.stderr)
+def test_switch_without_control_repo_defaults_to_current_directory():
+    """Switch without --control-repo checks out in the current working directory."""
+    print("test_switch_without_control_repo_defaults_to_current_directory", file=sys.stderr)
     with tempfile.TemporaryDirectory() as gov_tmp:
-        write_index(gov_tmp, SAMPLE_INDEX_ENTRIES)
-        write_feature(gov_tmp, "platform", "identity", "auth-login", SAMPLE_FEATURE)
+        with tempfile.TemporaryDirectory() as ctrl_tmp:
+            write_index(gov_tmp, SAMPLE_INDEX_ENTRIES)
+            write_feature(gov_tmp, "platform", "identity", "auth-login", SAMPLE_FEATURE)
+            init_git_repo(ctrl_tmp)
+            create_branch(ctrl_tmp, "auth-login-plan")
 
-        result, code = run([
-            "switch", "--governance-repo", gov_tmp, "--feature-id", "auth-login",
-        ])
-        assert_eq("no ctrl repo status", result["status"], "pass")
-        assert_eq("plan_branch present", result.get("plan_branch"), "auth-login-plan")
-        assert_false("branch_switched absent", "branch_switched" in result)
+            result, code = run([
+                "switch", "--governance-repo", gov_tmp, "--feature-id", "auth-login",
+            ], cwd=ctrl_tmp)
+            assert_eq("default ctrl repo status", result["status"], "pass")
+            assert_eq("default ctrl repo exit code", code, 0)
+            assert_eq("default plan_branch present", result.get("plan_branch"), "auth-login-plan")
+            assert_eq("default branch_switched true", result.get("branch_switched"), True)
+            assert_false("default has no branch_error", bool(result.get("branch_error")))
+
+            head = subprocess.run(
+                ["git", "-C", ctrl_tmp, "rev-parse", "--abbrev-ref", "HEAD"],
+                capture_output=True, text=True,
+            ).stdout.strip()
+            assert_eq("default ctrl repo HEAD is plan branch", head, "auth-login-plan")
 
 
 def test_switch_service_context_with_control_repo_existing_branch():
@@ -877,7 +904,7 @@ def main() -> None:
     test_depends_on_not_duplicated_in_summaries()
     test_switch_with_control_repo_existing_plan_branch()
     test_switch_with_control_repo_missing_plan_branch()
-    test_switch_without_control_repo_returns_plan_branch()
+    test_switch_without_control_repo_defaults_to_current_directory()
     test_switch_service_context_with_control_repo_existing_branch()
 
     total = PASS + FAIL

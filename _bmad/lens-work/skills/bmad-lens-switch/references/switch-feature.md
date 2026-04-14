@@ -65,7 +65,7 @@ After running the switch command:
 
 - If `branch_switched: true` — confirm with: `[{featureId}] active. Branch: {plan_branch}.`
 - If `branch_switched: false` — include a warning: `⚠ Could not checkout {plan_branch}: {branch_error}. Run /lens-init-feature to create the feature branches.`
-- If `branch_switched` is absent (no `--control-repo` provided) — report `plan_branch` but no checkout was attempted.
+- If `--control-repo` is omitted, the script defaults to `.` and attempts the checkout in the workspace root.
 
 ## Stale Context Warning
 

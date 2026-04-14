@@ -88,12 +88,12 @@ python3 scripts/switch-ops.py list \
   --status-filter all
 
 # Validate and prepare context for switching to a feature
-# Without --control-repo: resolves context only, no branch checkout
+# Without --control-repo: defaults to '.' (workspace root) and checks out there
 python3 scripts/switch-ops.py switch \
   --governance-repo /path/to/governance-repo/ \
   --feature-id auth-login
 
-# With --control-repo: also runs 'git checkout auth-login-plan' in that repo
+# With --control-repo: overrides the default checkout location
 python3 scripts/switch-ops.py switch \
   --governance-repo /path/to/governance-repo/ \
   --feature-id auth-login \
@@ -107,7 +107,7 @@ python3 scripts/switch-ops.py context-paths \
   --service identity
 ```
 
-The `switch` result always includes `plan_branch` (`{featureId}-plan`). When `--control-repo` is provided, it also includes `branch_switched: true|false` and `branch_error` (if the checkout failed).
+The `switch` result always includes `plan_branch` (`{featureId}-plan`). It also includes `branch_switched: true|false` and `branch_error` (if the checkout failed), using `.` as the default control-repo root when `--control-repo` is omitted.
 
 ## Integration Points
 
