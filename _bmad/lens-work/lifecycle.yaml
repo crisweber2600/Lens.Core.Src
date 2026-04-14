@@ -121,6 +121,7 @@ phases:
       gate: adversarial-review
       mode: party
       report: preplan-adversarial-review.md
+      ready_when_artifacts: [product-brief, research, brainstorm]
       reviewed_artifacts: [product-brief, research, brainstorm]
       outcomes: [pass, pass-with-warnings, fail]
 
@@ -140,6 +141,7 @@ phases:
       gate: adversarial-review
       mode: party
       report: businessplan-adversarial-review.md
+      ready_when_artifacts: [prd, ux-design]
       reviewed_artifacts: [prd, ux-design]
       outcomes: [pass, pass-with-warnings, fail]
 
@@ -158,6 +160,7 @@ phases:
       gate: adversarial-review
       mode: party
       report: techplan-adversarial-review.md
+      ready_when_artifacts: [architecture]
       reviewed_artifacts: [architecture]
       outcomes: [pass, pass-with-warnings, fail]
 
@@ -182,6 +185,7 @@ phases:
       gate: adversarial-review
       mode: party
       report: finalizeplan-review.md
+      ready_when_artifacts: [product-brief, research, brainstorm, prd, ux-design, architecture]
       reviewed_artifacts: [product-brief, research, brainstorm, prd, ux-design, architecture]
       outcomes: [pass, pass-with-warnings, fail]
     execution_contract:
@@ -214,6 +218,7 @@ phases:
       gate: adversarial-review
       mode: party
       report: expressplan-adversarial-review.md
+      ready_when_artifacts: [business-plan, tech-plan, sprint-plan]
       reviewed_artifacts: [business-plan, tech-plan]
       outcomes: [pass, pass-with-warnings, fail]
     execution_contract:

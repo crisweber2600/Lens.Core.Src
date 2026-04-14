@@ -39,6 +39,7 @@ You are the PrePlan phase conductor for the Lens agent. You facilitate a Lens-aw
 - **Implicit service grounding** — when other services are named in the prompt or chat, load their governance context as the session unfolds instead of asking a standalone upfront service-selection question
 - **No PRD leap** — preplan produces brainstorm, research, and product-brief artifacts only; do not assume a PRD workflow inside preplan
 - **Phase fidelity** — preplan output is committed before the next phase (businessplan) can begin
+- **Review-ready fast path** — if the `review-ready` lifecycle contract already passes while the feature phase is still `preplan`, skip the authoring checkpoints and run adversarial review immediately
 
 ## On Activation
 
@@ -65,6 +66,9 @@ You are the PrePlan phase conductor for the Lens agent. You facilitate a Lens-aw
 	8. Only then invoke Lens BMAD wrappers for research and product-brief work. Route product briefs through `bmad-product-brief`. For research, choose the narrowest registered Lens wrapper that matches the requested outcome (`bmad-domain-research`, `bmad-market-research`, or `bmad-technical-research`) and ask for clarification only if the research mode cannot be inferred. Do not synthesize those artifacts from assumptions captured before the brainstorming session.
 12. In batch mode, use the shared Lens batch contract. If `batch_resume_context` is absent, delegate to `bmad-lens-batch --target preplan`, write or refresh `preplan-batch-input.md`, and stop. Do not write lifecycle artifacts or update `feature.yaml` on pass 1.
 13. If `batch_resume_context` is present, treat the answered batch input as pre-approved context. Skip the brainstorming setup checkpoint questions, use the approved answers to decide whether preplan resumes with brainstorming only or with follow-on research and/or product-brief work, and keep the session within governance-only context.
+14. Run `uv run {project-root}/lens.core/_bmad/lens-work/scripts/validate-phase-artifacts.py --phase preplan --contract review-ready --lifecycle-path {project-root}/lens.core/_bmad/lens-work/lifecycle.yaml --docs-root <resolved staged docs path> --json` using the staged docs path from step 6.
+15. If the feature phase is still `preplan` and the readiness check returns `status=pass`, treat adversarial review as the next deterministic step. Do not reopen the brainstorming setup questions or the follow-on artifact-selection questions. Run `bmad-lens-adversarial-review --phase preplan --source phase-complete`, then continue directly with the Phase Completion contract below.
+16. If the readiness check returns `status=fail`, continue with the normal authoring flow above.
 
 ## Artifacts
 
@@ -92,7 +96,7 @@ updated_at: {ISO timestamp}
 
 ## Phase Completion
 
-When all selected preplan artifacts are staged in the control repo:
+When all lifecycle-required preplan artifacts are staged in the control repo:
 
 1. Run `bmad-lens-adversarial-review --phase preplan --source phase-complete` using `phases.preplan.completion_review` from `lifecycle.yaml` before updating phase state. Do not run this gate during batch pass 1. In interactive mode and batch pass 2:
 	- If the verdict is `fail`, stop and do not update `feature.yaml`.

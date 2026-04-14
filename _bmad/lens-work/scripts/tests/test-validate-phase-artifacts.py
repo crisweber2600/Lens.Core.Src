@@ -93,3 +93,62 @@ class TestValidatePhaseArtifactsStoryFiles:
         assert result.returncode == 0, result.stdout + result.stderr
         payload = json.loads(result.stdout)
         assert payload["status"] == "pass"
+
+    def test_completion_review_contract_checks_only_review_inputs(self, tmp_path):
+        docs_root = tmp_path / "docs"
+        docs_root.mkdir()
+        (docs_root / "business-plan.md").write_text("# Business\n", encoding="utf-8")
+        (docs_root / "tech-plan.md").write_text("# Tech\n", encoding="utf-8")
+
+        result = _run(
+            "--phase", "expressplan",
+            "--contract", "completion-review",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--json",
+        )
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["contract"] == "completion-review"
+        assert payload["status"] == "pass"
+
+    def test_review_ready_contract_requires_pre_review_outputs(self, tmp_path):
+        docs_root = tmp_path / "docs"
+        docs_root.mkdir()
+        (docs_root / "business-plan.md").write_text("# Business\n", encoding="utf-8")
+        (docs_root / "tech-plan.md").write_text("# Tech\n", encoding="utf-8")
+
+        result = _run(
+            "--phase", "expressplan",
+            "--contract", "review-ready",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--json",
+        )
+
+        assert result.returncode == 1, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["contract"] == "review-ready"
+        assert payload["status"] == "fail"
+        assert payload["missing"] == ["sprint-plan"]
+
+    def test_review_ready_contract_accepts_all_pre_review_outputs(self, tmp_path):
+        docs_root = tmp_path / "docs"
+        docs_root.mkdir()
+        (docs_root / "business-plan.md").write_text("# Business\n", encoding="utf-8")
+        (docs_root / "tech-plan.md").write_text("# Tech\n", encoding="utf-8")
+        (docs_root / "sprint-plan.md").write_text("# Sprint\n", encoding="utf-8")
+
+        result = _run(
+            "--phase", "expressplan",
+            "--contract", "review-ready",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--json",
+        )
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["contract"] == "review-ready"
+        assert payload["status"] == "pass"

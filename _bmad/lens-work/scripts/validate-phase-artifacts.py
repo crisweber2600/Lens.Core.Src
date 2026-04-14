@@ -3,7 +3,7 @@
 # requires-python = ">=3.11"
 # dependencies = ["pyyaml>=6.0"]
 # ///
-"""Check that required artifacts for a lifecycle phase exist and are non-empty."""
+"""Check that required lifecycle artifacts exist and are non-empty."""
 
 from __future__ import annotations
 
@@ -15,11 +15,23 @@ from pathlib import Path
 import yaml
 
 
-def get_required_artifacts(lifecycle_path: Path, phase: str) -> list[str]:
+def get_required_artifacts(lifecycle_path: Path, phase: str, contract: str) -> list[str]:
     data = yaml.safe_load(lifecycle_path.read_text(encoding="utf-8"))
     phases = data.get("phases", {})
     phase_data = phases.get(phase, {})
-    return phase_data.get("artifacts", [])
+    if contract == "phase-artifacts":
+        return phase_data.get("artifacts", [])
+
+    completion_review = phase_data.get("completion_review", {})
+    if contract == "completion-review":
+        return completion_review.get("reviewed_artifacts", [])
+    if contract == "review-ready":
+        return completion_review.get(
+            "ready_when_artifacts",
+            completion_review.get("reviewed_artifacts", []),
+        )
+
+    raise ValueError(f"Unsupported contract: {contract}")
 
 
 def is_batch_input(candidate: Path) -> bool:
@@ -98,9 +110,15 @@ def artifact_exists(docs_root: Path, name: str) -> bool:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Check that required artifacts for a lifecycle phase exist."
+        description="Check that required lifecycle artifacts for a phase exist."
     )
     parser.add_argument("--phase", required=True, help="Phase name")
+    parser.add_argument(
+        "--contract",
+        default="phase-artifacts",
+        choices=("phase-artifacts", "completion-review", "review-ready"),
+        help="Which lifecycle artifact contract to validate.",
+    )
     parser.add_argument("--lifecycle-path", required=True, help="Path to lifecycle.yaml")
     parser.add_argument("--docs-root", required=True, help="Path to docs root")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
@@ -113,14 +131,20 @@ def main() -> int:
         print(f"ERROR: lifecycle.yaml not found: {lifecycle_path}", file=sys.stderr)
         return 1
 
-    required = get_required_artifacts(lifecycle_path, args.phase)
+    required = get_required_artifacts(lifecycle_path, args.phase, args.contract)
 
     if not required:
         if args.json:
-            print(json.dumps({"phase": args.phase, "required": 0, "found": 0,
-                              "missing": [], "status": "no_artifacts_defined"}))
+            print(json.dumps({
+                "phase": args.phase,
+                "contract": args.contract,
+                "required": 0,
+                "found": 0,
+                "missing": [],
+                "status": "no_artifacts_defined",
+            }))
         else:
-            print(f"No artifacts defined for phase: {args.phase}")
+            print(f"No artifacts defined for phase contract: {args.phase} [{args.contract}]")
         return 0
 
     found: list[str] = []
@@ -137,6 +161,7 @@ def main() -> int:
     if args.json:
         print(json.dumps({
             "phase": args.phase,
+            "contract": args.contract,
             "required": len(required),
             "found": len(found),
             "missing": missing,
@@ -145,10 +170,21 @@ def main() -> int:
         }, indent=2))
     else:
         if passed:
-            print("Phase artifacts verified")
+            if args.contract == "phase-artifacts":
+                print("Phase artifacts verified")
+            elif args.contract == "completion-review":
+                print("Completion review artifacts verified")
+            else:
+                print("Review-ready artifacts verified")
         else:
-            print("Phase incomplete")
+            if args.contract == "phase-artifacts":
+                print("Phase incomplete")
+            elif args.contract == "completion-review":
+                print("Completion review incomplete")
+            else:
+                print("Review-ready contract incomplete")
         print(f"  Phase:    {args.phase}")
+        print(f"  Contract: {args.contract}")
         print(f"  Required: {len(required)}")
         print(f"  Found:    {len(found)}")
         print(f"  Missing:  {', '.join(missing) if missing else 'none'}")
