@@ -10,6 +10,7 @@ Subcommands:
   create-feature-branches  Create {featureId} + {featureId}-plan branches
   commit-artifacts         Stage and commit files with a structured message
   create-dev-branch        Create {featureId}-dev-{username} branch
+    prepare-dev-branch       Prepare the target repo working branch for a dev cycle
   merge-plan               Merge {featureId}-plan into {featureId}
     publish-to-governance    Copy staged planning docs into governance docs path
   push                     Push current (or named) branch to remote
@@ -56,6 +57,8 @@ PHASE_ARTIFACTS: dict[str, list[str]] = {
         "review-report",
     ],
 }
+
+DEV_BRANCH_MODES = ("direct-default", "feature-id", "feature-id-username")
 
 
 # ---------------------------------------------------------------------------
@@ -271,6 +274,21 @@ def validate_slug(value: str, field_name: str = "value") -> str | None:
     return None
 
 
+def build_dev_branch_name(feature_id: str, mode: str, username: str | None = None) -> str:
+    """Return the target-repo working branch for a repo-scoped dev mode."""
+    normalized_mode = (mode or "").strip().lower()
+    if normalized_mode == "direct-default":
+        return ""
+    if normalized_mode == "feature-id":
+        return f"feature/{feature_id}"
+    if normalized_mode == "feature-id-username":
+        if not username:
+            raise ValueError("username is required for mode 'feature-id-username'")
+        return f"feature/{feature_id}-{username}"
+    expected = ", ".join(DEV_BRANCH_MODES)
+    raise ValueError(f"invalid mode '{mode}' — expected one of: {expected}")
+
+
 # ---------------------------------------------------------------------------
 # dry-run runner
 # ---------------------------------------------------------------------------
@@ -462,6 +480,99 @@ def cmd_create_dev_branch(args: argparse.Namespace) -> tuple[dict[str, Any], int
         "dev_branch": dev_branch,
         "parent_branch": feature_id,
         "remote": f"origin/{dev_branch}",
+        "dry_run": args.dry_run,
+    }, 0
+
+
+def cmd_prepare_dev_branch(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    repo = args.repo
+    feature_id = args.feature_id
+    mode = (args.mode or "").strip().lower()
+    username = getattr(args, "username", None)
+
+    err = validate_slug(feature_id, "feature_id")
+    if err:
+        return {"error": "invalid_feature_id", "detail": err}, 1
+    if mode == "feature-id-username":
+        username_err = validate_slug(username or "", "username")
+        if username_err:
+            return {"error": "invalid_username", "detail": username_err}, 1
+    elif mode not in DEV_BRANCH_MODES:
+        expected = ", ".join(DEV_BRANCH_MODES)
+        return {"error": "invalid_mode", "detail": f"invalid mode '{args.mode}' — expected one of: {expected}"}, 1
+
+    default_branch = resolve_default_branch(repo, args.base_branch)
+    if not args.dry_run:
+        dirty = verify_clean(repo)
+        if dirty:
+            return {"error": "dirty_working_tree", "detail": dirty}, 1
+
+    runner = Runner(args.dry_run, repo)
+
+    if mode == "direct-default":
+        try:
+            runner.run(["checkout", default_branch])
+            try:
+                runner.run(["pull", "origin", default_branch])
+            except RuntimeError as exc:
+                return {"error": "pull_failed", "detail": str(exc)}, 1
+        except RuntimeError as exc:
+            return {"error": "prepare_branch_failed", "detail": str(exc)}, 1
+
+        return {
+            "feature_id": feature_id,
+            "mode": mode,
+            "base_branch": default_branch,
+            "working_branch": default_branch,
+            "created": False,
+            "reused": True,
+            "pushed": False,
+            "requires_pr": False,
+            "dry_run": args.dry_run,
+        }, 0
+
+    working_branch = build_dev_branch_name(feature_id, mode, username)
+    local_exists = branch_exists(repo, working_branch)
+    remote_exists = branch_exists(repo, working_branch, include_remote=True)
+    created = False
+    reused = False
+    pushed = False
+
+    try:
+        if local_exists:
+            runner.run(["checkout", working_branch])
+            if not args.dry_run and has_tracking_ref(repo):
+                runner.run(["pull"])
+            elif remote_exists and not args.dry_run:
+                runner.run(["branch", "--set-upstream-to", f"origin/{working_branch}", working_branch])
+                runner.run(["pull", "origin", working_branch])
+            reused = True
+        elif remote_exists:
+            runner.run(["checkout", "-b", working_branch, f"origin/{working_branch}"])
+            reused = True
+        else:
+            runner.run(["checkout", default_branch])
+            try:
+                runner.run(["pull", "origin", default_branch])
+            except RuntimeError as exc:
+                return {"error": "pull_failed", "detail": str(exc)}, 1
+            runner.run(["checkout", "-b", working_branch])
+            runner.run(["push", "--set-upstream", "origin", working_branch])
+            created = True
+            pushed = True
+    except RuntimeError as exc:
+        return {"error": "prepare_branch_failed", "detail": str(exc)}, 1
+
+    return {
+        "feature_id": feature_id,
+        "mode": mode,
+        "base_branch": default_branch,
+        "working_branch": working_branch,
+        "created": created,
+        "reused": reused,
+        "pushed": pushed,
+        "requires_pr": True,
+        "pr_base_branch": default_branch,
         "dry_run": args.dry_run,
     }, 0
 
@@ -853,6 +964,15 @@ def build_parser() -> argparse.ArgumentParser:
     cdb.add_argument("--repo", default=None)
     cdb.add_argument("--dry-run", action="store_true")
 
+    # prepare-dev-branch
+    pdb = sub.add_parser("prepare-dev-branch", help="Prepare the target repo working branch for a dev cycle")
+    pdb.add_argument("--repo", required=True)
+    pdb.add_argument("--feature-id", required=True)
+    pdb.add_argument("--mode", required=True, help="Repo-scoped dev mode: direct-default, feature-id, or feature-id-username")
+    pdb.add_argument("--username", default=None, help="Required when mode=feature-id-username")
+    pdb.add_argument("--base-branch", default=None, help="Override the repo default branch")
+    pdb.add_argument("--dry-run", action="store_true")
+
     # merge-plan
     mp = sub.add_parser("merge-plan", help="Merge {featureId}-plan into {featureId}")
     mp.add_argument("--governance-repo", required=True)
@@ -911,6 +1031,7 @@ def main() -> int:
         "create-feature-branches": cmd_create_feature_branches,
         "commit-artifacts": cmd_commit_artifacts,
         "create-dev-branch": cmd_create_dev_branch,
+        "prepare-dev-branch": cmd_prepare_dev_branch,
         "create-pr": cmd_create_pr,
         "merge-plan": cmd_merge_plan,
         "publish-to-governance": cmd_publish_to_governance,

@@ -108,6 +108,45 @@ def test_feature_existing():
         assert_eq("updated_at", result["feature"]["updated_at"], "2026-04-01T10:00:00Z")
 
 
+def test_feature_includes_target_repo_dev_state():
+    print("test_feature_includes_target_repo_dev_state", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        feature_path = make_feature_yaml(tmp, "platform", "identity", "auth-login", name="Auth Login")
+        with open(feature_path) as f:
+            data = yaml.safe_load(f)
+        data["target_repos"] = [
+            {
+                "name": "Lens.Hermes",
+                "remote_url": "https://github.com/crisweber2600/Lens.Hermes",
+                "local_path": "TargetProjects/plugins/hermes/Lens.Hermes",
+                "dev_branch_mode": "feature-id",
+                "dev_branch_name": "feature/auth-login",
+                "dev_base_branch": "main",
+                "final_pr_url": "https://github.com/crisweber2600/Lens.Hermes/pull/12",
+                "final_review_report": "docs/implementation-artifacts/dev-adversarial-review.md",
+                "final_party_mode_report": "docs/implementation-artifacts/dev-party-mode-review.md",
+            }
+        ]
+        with open(feature_path, "w") as f:
+            yaml.dump(data, f)
+
+        result, code = run([
+            "feature",
+            "--governance-repo", tmp,
+            "--feature-id", "auth-login",
+            "--domain", "platform",
+            "--service", "identity",
+        ])
+        assert_eq("target repo exit code", code, 0)
+        target_repo = result["feature"].get("target_repo")
+        assert_true("target repo payload present", target_repo is not None)
+        assert_eq("target repo mode", target_repo["dev_branch_mode"], "feature-id")
+        assert_eq("target repo working branch", target_repo["working_branch"], "feature/auth-login")
+        assert_eq("target repo base branch", target_repo["base_branch"], "main")
+        assert_eq("target repo final pr state", target_repo["final_pr_state"], "created")
+        assert_eq("target repo final pr url", target_repo["final_pr_url"], "https://github.com/crisweber2600/Lens.Hermes/pull/12")
+
+
 def test_feature_not_found():
     print("test_feature_not_found", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
@@ -307,6 +346,7 @@ def test_feature_index_missing():
 
 def main():
     test_feature_existing()
+    test_feature_includes_target_repo_dev_state()
     test_feature_not_found()
     test_feature_invalid_id_path_traversal()
     test_domain_multiple_features()
