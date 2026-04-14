@@ -117,14 +117,15 @@ Load `./references/push.md` for full guidance.
 
 ### publish-to-governance
 
-**Outcome:** Reviewed planning artifacts staged in the control repo docs path are mirrored into the feature's governance docs folder on `main`.
+**Outcome:** Reviewed planning artifacts staged in the control repo docs path are mirrored into the feature's governance docs folder on `main` by the publish CLI. Agents do not hand-copy or patch governance docs directly.
 
 **Process:**
 1. Resolve the feature's staged docs path from `feature.yaml.docs.path` (fallback: `docs/{domain}/{service}/{featureId}`)
 2. Resolve the governance mirror path from `feature.yaml.docs.governance_docs_path` (fallback: `features/{domain}/{service}/{featureId}/docs`)
 3. Select the phase artifact set (or explicit artifact overrides)
-4. Copy existing staged artifacts into the governance docs mirror; report any missing optional artifacts explicitly
-5. Return copied source and destination paths so the caller can stage and commit them in governance as needed
+4. Invoke the CLI-backed publish step, either through this skill or directly via `uv run {project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-git-orchestration/scripts/git-orchestration-ops.py publish-to-governance --governance-repo {governance_repo} --control-repo {control_repo} --feature-id {feature_id} --phase {phase}`
+5. Do not create governance files or directories directly with tool calls or patches; the publish CLI performs that copy into the mirror path
+6. Return copied source and destination paths so the caller can stage and commit them in governance as needed
 
 Load `./references/publish-to-governance.md` for full guidance.
 

@@ -20,7 +20,7 @@ You are the BusinessPlan phase conductor for the Lens agent. You invoke register
 ## Communication Style
 
 - Lead with the phase name and active workflow: `[businessplan:prd] in progress`
-- In interactive mode: present one workflow selection menu (`prd`, `ux-design`, or `both`); if BusinessPlan was invoked directly, explain that it will publish reviewed PrePlan artifacts and then launch the selected native workflow and wait for confirmation before any publication or artifact writes; if BusinessPlan was auto-delegated from `/next`, skip that run-confirmation prompt and proceed once the user has selected the workflow scope
+- In interactive mode: present one workflow selection menu (`prd`, `ux-design`, or `both`); if BusinessPlan was invoked directly, explain that it will invoke the governance publish CLI to copy reviewed PrePlan artifacts and then launch the selected native workflow and wait for confirmation before any publication or artifact writes; if BusinessPlan was auto-delegated from `/next`, skip that run-confirmation prompt and proceed once the user has selected the workflow scope
 - In batch mode: use the shared `/batch` intake flow; pass 1 writes or refreshes `businessplan-batch-input.md`, and pass 2 resumes the selected PRD and/or UX flow with approved answers loaded as context
 - Surface open questions from preplan artifacts — never ignore predecessor context
 - After delegation, let the selected native PRD or UX workflow own discovery questions, menus, and document authoring
@@ -46,9 +46,9 @@ You are the BusinessPlan phase conductor for the Lens agent. You invoke register
 8. If mode is `batch` and `batch_resume_context` is absent, delegate to `bmad-lens-batch --target businessplan`, write or refresh `businessplan-batch-input.md`, and stop. Do not publish reviewed PrePlan artifacts, launch native sessions, or update `feature.yaml` on pass 1.
 9. If mode is `batch` and `batch_resume_context` is present, derive workflow selection from the answered batch input and treat those answers as pre-approved context. Do not show the interactive workflow selection menu again unless the batch input leaves workflow scope ambiguous.
 10. If mode is `interactive`, present a workflow selection menu: `prd`, `ux-design`, or `both`.
-11. If mode is `interactive` and BusinessPlan was invoked directly, confirm that BusinessPlan will publish reviewed PrePlan artifacts and then launch the selected native session or sessions. Do not ask downstream discovery questions here. If the user does not confirm, stop cleanly with no changes.
+11. If mode is `interactive` and BusinessPlan was invoked directly, confirm that BusinessPlan will invoke the governance publish CLI to copy reviewed PrePlan artifacts and then launch the selected native session or sessions. Do not ask downstream discovery questions here. If the user does not confirm, stop cleanly with no changes.
 12. If mode is `interactive` and BusinessPlan was auto-delegated from `/next`, treat that delegation as already confirmed once the workflow selection is known. Do not ask a redundant yes/no prompt just to run BusinessPlan.
-13. Publish staged preplan artifacts, including the preplan review report when present, into the governance docs mirror via `bmad-lens-git-orchestration publish-to-governance --phase preplan` before creating BusinessPlan outputs.
+13. Publish staged preplan artifacts, including the preplan review report when present, into the governance docs mirror via the CLI-backed `bmad-lens-git-orchestration publish-to-governance --phase preplan` operation before creating BusinessPlan outputs. Do not create governance files or directories directly with tool calls or patches; the publish CLI performs that copy.
 14. Load preplan artifacts from the staged control-repo docs path for authoring context, and use the governance mirror as the published snapshot for cross-feature consumers.
 15. Load cross-feature context via `bmad-lens-init-feature` `fetch-context --depth full`.
 16. Load domain constitution via `bmad-lens-constitution`.
