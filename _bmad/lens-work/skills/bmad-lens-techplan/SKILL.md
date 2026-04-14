@@ -20,7 +20,7 @@ You are the TechPlan phase conductor for the Lens agent. You invoke the register
 ## Communication Style
 
 - Lead with the phase name and active workflow: `[techplan:architecture] in progress`
-- In interactive mode: if TechPlan was invoked directly, explain that it will publish reviewed BusinessPlan artifacts and launch the native architecture workflow, then wait for confirmation before any publication, copy, or write action; if TechPlan was auto-delegated from `/next`, skip that run-confirmation prompt and start the phase entry sequence immediately
+- In interactive mode: if TechPlan was invoked directly, explain that it will invoke the governance publish CLI to copy reviewed BusinessPlan artifacts and launch the native architecture workflow, then wait for confirmation before any publication, copy, or write action; if TechPlan was auto-delegated from `/next`, skip that run-confirmation prompt and start the phase entry sequence immediately
 - In batch mode: use the shared `/batch` intake flow; pass 1 writes or refreshes `techplan-batch-input.md`, and pass 2 resumes TechPlan with approved answers loaded as context
 - Surface PRD and UX design dependencies — architecture must reference them
 - After delegation, let the native architecture workflow own discovery questions, menus, and document authoring
@@ -46,9 +46,9 @@ You are the TechPlan phase conductor for the Lens agent. You invoke the register
 7. Determine mode: `interactive` (default) or `batch`.
 8. If mode is `batch` and `batch_resume_context` is absent, delegate to `bmad-lens-batch --target techplan`, write or refresh `techplan-batch-input.md`, and stop. Do not publish reviewed BusinessPlan artifacts, launch the architecture workflow, or update `feature.yaml` on pass 1.
 9. If mode is `batch` and `batch_resume_context` is present, treat the answered batch input as pre-approved context. Do not show a separate run-confirmation prompt before publication or delegation.
-10. If mode is `interactive` and TechPlan was invoked directly, announce that TechPlan will publish reviewed BusinessPlan artifacts to governance and then launch the native architecture workflow via `bmad-lens-bmad-skill`. Confirm before any publication, copy, or write action. If the user does not confirm, stop cleanly with no changes.
+10. If mode is `interactive` and TechPlan was invoked directly, announce that TechPlan will invoke the governance publish CLI to copy reviewed BusinessPlan artifacts and then launch the native architecture workflow via `bmad-lens-bmad-skill`. Confirm before any publication, copy, or write action. If the user does not confirm, stop cleanly with no changes.
 11. If mode is `interactive` and TechPlan was auto-delegated from `/next`, treat that delegation as already confirmed. Do not ask a redundant yes/no prompt; proceed directly into the phase entry sequence.
-12. Publish staged BusinessPlan artifacts, including the businessplan review report when present, into the governance docs mirror via `bmad-lens-git-orchestration publish-to-governance --phase businessplan` before creating TechPlan outputs.
+12. Publish staged BusinessPlan artifacts, including the businessplan review report when present, into the governance docs mirror via the CLI-backed `bmad-lens-git-orchestration publish-to-governance --phase businessplan` operation before creating TechPlan outputs. Do not create governance files or directories directly with tool calls or patches; the publish CLI performs that copy.
 13. Load BusinessPlan artifacts from the staged control-repo docs path for authoring context, and use the governance mirror as the published snapshot for cross-feature consumers.
 14. Load cross-feature context via `bmad-lens-init-feature` `fetch-context --depth full`.
 15. Load domain constitution via `bmad-lens-constitution`.

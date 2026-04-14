@@ -43,7 +43,7 @@ You are the Dev phase conductor for the Lens agent. You orchestrate the full imp
 2. Resolve `{governance_repo}` and `{feature_id}`.
 3. Load `feature.yaml` for the feature via `bmad-lens-feature-yaml`.
 4. Validate the feature's phase includes `dev` (finalizeplan must be complete).
-5. Before any story discovery or code writes, publish staged FinalizePlan artifacts into the governance docs mirror via `bmad-lens-git-orchestration publish-to-governance --phase finalizeplan`. Halt if required finalize planning artifacts are still missing.
+5. Before any story discovery or code writes, publish staged FinalizePlan artifacts into the governance docs mirror via the CLI-backed `bmad-lens-git-orchestration publish-to-governance --phase finalizeplan` operation. Do not create governance files or directories directly with tool calls or patches; the publish CLI performs that copy. Halt if required finalize planning artifacts are still missing.
 6. Load domain constitution via `bmad-lens-constitution`.
 7. Load cross-feature context via `bmad-lens-git-state`.
 8. Resolve the target repo:

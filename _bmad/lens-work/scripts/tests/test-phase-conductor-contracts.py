@@ -7,6 +7,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent.parent.parent
 
+PUBLISHING_CONDUCTORS = {
+    "skills/bmad-lens-businessplan/SKILL.md": "preplan",
+    "skills/bmad-lens-techplan/SKILL.md": "businessplan",
+    "skills/bmad-lens-devproposal/SKILL.md": "techplan",
+    "skills/bmad-lens-finalizeplan/SKILL.md": "techplan",
+    "skills/bmad-lens-sprintplan/SKILL.md": "devproposal",
+    "skills/bmad-lens-dev/SKILL.md": "finalizeplan",
+}
+
 
 def _read(relative_path: str) -> str:
     return (ROOT / relative_path).read_text(encoding="utf-8")
@@ -29,6 +38,26 @@ def test_businessplan_interactive_handoff_boundary_is_explicit():
     assert "Do not ask a redundant yes/no prompt just to run BusinessPlan" in text
     assert "run as two separate native sessions; after the first completes, ask before launching the second" in text
     assert "do not continue with conductor-side PRD or UX questioning or authoring" in text
+
+
+def test_governance_publish_steps_require_cli_copy_boundary():
+    for relative_path, phase in PUBLISHING_CONDUCTORS.items():
+        text = _read(relative_path)
+
+        assert f"publish-to-governance --phase {phase}" in text
+        assert "Do not create governance files or directories directly with tool calls or patches" in text
+
+
+def test_publish_to_governance_contract_requires_cli_execution():
+    skill = _read("skills/bmad-lens-git-orchestration/SKILL.md")
+    reference = _read("skills/bmad-lens-git-orchestration/references/publish-to-governance.md")
+
+    expected_cli = "uv run {project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-git-orchestration/scripts/git-orchestration-ops.py publish-to-governance"
+
+    assert expected_cli in skill
+    assert expected_cli in reference
+    assert "Do not create governance files or directories directly with tool calls or patches" in skill
+    assert "Do not create governance files or directories directly with tool calls or patches" in reference
 
 
 def test_wrapper_delegation_boundary_is_explicit():

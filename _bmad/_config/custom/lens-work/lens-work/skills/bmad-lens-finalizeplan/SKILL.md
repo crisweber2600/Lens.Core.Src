@@ -42,7 +42,7 @@ You are the FinalizePlan phase conductor for the Lens agent. You coordinate revi
 4. Validate the feature's track includes `finalizeplan` in its phases.
 5. Validate predecessor `techplan` phase is complete.
 6. Resolve the staged docs path from `feature.yaml.docs.path` (fallback: `docs/{domain}/{service}/{featureId}` in the control repo).
-7. Publish staged TechPlan artifacts, including the techplan review report when present, into the governance docs mirror via `bmad-lens-git-orchestration publish-to-governance --phase techplan` before starting FinalizePlan outputs.
+7. Publish staged TechPlan artifacts, including the techplan review report when present, into the governance docs mirror via the CLI-backed `bmad-lens-git-orchestration publish-to-governance --phase techplan` operation before starting FinalizePlan outputs. Do not create governance files or directories directly with tool calls or patches; the publish CLI performs that copy.
 8. Load staged PrePlan, BusinessPlan, and TechPlan artifacts for authoring context, and use the governance mirror as the published snapshot for cross-feature consumers.
 9. Load cross-feature context via `bmad-lens-init-feature` `fetch-context --depth full`.
 10. Run cross-initiative sensing so governance-impact risks, related services, and nearby feature docs are visible before the final review.
