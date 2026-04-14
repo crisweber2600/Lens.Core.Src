@@ -107,6 +107,9 @@ def test_create_feature():
         assert_true("container markers returned", len(result.get("container_markers", [])) == 2)
         assert_true("git_commands non-empty", len(result.get("git_commands", [])) > 0)
         assert_true("gh_commands non-empty", len(result.get("gh_commands", [])) > 0)
+        assert_eq("governance git executed default false", result.get("governance_git_executed"), False)
+        assert_eq("governance commit sha absent by default", result.get("governance_commit_sha"), None)
+        assert_eq("remaining git commands stay full plan", result.get("remaining_git_commands"), result.get("git_commands"))
         assert_eq("planning_pr_created", result.get("planning_pr_created"), True)
         assert_eq("starting_phase", result.get("starting_phase"), "businessplan")
         assert_eq("recommended_command", result.get("recommended_command"), "/businessplan")
@@ -333,6 +336,9 @@ def test_dry_run():
         assert_eq("dry run exit code", code, 0)
         assert_true("git_commands present", len(result.get("git_commands", [])) > 0)
         assert_true("gh_commands present", len(result.get("gh_commands", [])) > 0)
+        assert_eq("dry run governance executed false", result.get("governance_git_executed"), False)
+        assert_eq("dry run governance sha absent", result.get("governance_commit_sha"), None)
+        assert_eq("dry run remaining git commands stay full plan", result.get("remaining_git_commands"), result.get("git_commands"))
         assert_eq("dry run planning_pr_created", result.get("planning_pr_created"), True)
         assert_eq("dry run starting_phase", result.get("starting_phase"), "businessplan")
         assert_eq("dry run recommended_command", result.get("recommended_command"), "/businessplan")
@@ -867,6 +873,10 @@ def test_control_repo_git_commands():
             assert_eq("ctrl repo dry run status", result.get("status"), "pass")
             git_cmds = result.get("git_commands", [])
             assert_true(
+                "ctrl repo commands returned separately",
+                len(result.get("control_repo_git_commands", [])) > 0,
+            )
+            assert_true(
                 "ctrl repo checkout in git commands",
                 any(ctrl_tmp in c for c in git_cmds),
             )
@@ -878,6 +888,126 @@ def test_control_repo_git_commands():
                 "plan branch created in ctrl repo",
                 any("ctrl-test-plan" in c and ctrl_tmp in c for c in git_cmds),
             )
+
+
+def test_create_feature_execute_governance_git():
+    """Feature creation can publish governance artifacts automatically while leaving control-repo follow-up explicit."""
+    print("test_create_feature_execute_governance_git", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        governance_repo, remote = init_governance_git_repo(root)
+        control_repo = root / "control"
+        control_repo.mkdir(parents=True, exist_ok=True)
+
+        result, code = run([
+            "create",
+            "--governance-repo", str(governance_repo),
+            "--control-repo", str(control_repo),
+            "--feature-id", "auth-refresh",
+            "--domain", "platform",
+            "--service", "identity",
+            "--name", "Auth Token Refresh",
+            "--track", "quickplan",
+            "--username", "cweber",
+            "--execute-governance-git",
+        ])
+
+        assert_eq("feature execute status", result.get("status"), "pass")
+        assert_eq("feature execute exit code", code, 0)
+        assert_eq("feature governance git executed", result.get("governance_git_executed"), True)
+        assert_true("feature governance commit sha present", result.get("governance_commit_sha"))
+        assert_true("feature governance git commands present", result.get("governance_git_commands"))
+        assert_true("feature control repo git commands present", result.get("control_repo_git_commands"))
+        assert_eq(
+            "feature remaining commands limited to control repo",
+            result.get("remaining_git_commands"),
+            result.get("control_repo_git_commands"),
+        )
+        assert_true("feature gh commands still present", result.get("gh_commands"))
+
+        feature_yaml = governance_repo / "features" / "platform" / "identity" / "auth-refresh" / "feature.yaml"
+        summary_path = governance_repo / "features" / "platform" / "identity" / "auth-refresh" / "summary.md"
+        assert_eq("feature yaml exists after publish", feature_yaml.exists(), True)
+        assert_eq("summary exists after publish", summary_path.exists(), True)
+        assert_eq(
+            "feature short sha matches repo head",
+            result.get("governance_commit_sha"),
+            git(["rev-parse", "--short", "HEAD"], cwd=str(governance_repo)),
+        )
+        assert_eq(
+            "feature remote main updated",
+            remote_main_sha(remote),
+            git(["rev-parse", "HEAD"], cwd=str(governance_repo)),
+        )
+
+
+def test_create_feature_execute_governance_git_dry_run_skips_git():
+    """Dry-run with automatic governance enabled should still only preview feature publish commands."""
+    print("test_create_feature_execute_governance_git_dry_run_skips_git", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as gov_tmp:
+        with tempfile.TemporaryDirectory() as ctrl_tmp:
+            result, code = run([
+                "create",
+                "--governance-repo", gov_tmp,
+                "--control-repo", ctrl_tmp,
+                "--feature-id", "auth-refresh",
+                "--domain", "platform",
+                "--service", "identity",
+                "--name", "Auth Token Refresh",
+                "--track", "quickplan",
+                "--username", "cweber",
+                "--execute-governance-git",
+                "--dry-run",
+            ])
+
+            assert_eq("feature execute dry-run status", result.get("status"), "pass")
+            assert_eq("feature execute dry-run exit code", code, 0)
+            assert_eq("feature execute dry-run executed flag", result.get("governance_git_executed"), False)
+            assert_eq("feature execute dry-run commit sha", result.get("governance_commit_sha"), None)
+            assert_eq(
+                "feature execute dry-run remaining commands stay full plan",
+                result.get("remaining_git_commands"),
+                result.get("git_commands"),
+            )
+            assert_true("feature execute dry-run governance commands present", result.get("governance_git_commands"))
+            assert_true("feature execute dry-run control repo commands present", result.get("control_repo_git_commands"))
+            assert_eq(
+                "dry-run feature yaml absent",
+                (Path(gov_tmp) / "features" / "platform" / "identity" / "auth-refresh" / "feature.yaml").exists(),
+                False,
+            )
+
+
+def test_create_feature_execute_governance_git_requires_clean_repo():
+    """Feature auto-publish fails fast when the governance repo has local changes."""
+    print("test_create_feature_execute_governance_git_requires_clean_repo", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        governance_repo, _remote = init_governance_git_repo(root)
+
+        dirty_file = governance_repo / "DIRTY.md"
+        dirty_file.write_text("dirty\n", encoding="utf-8")
+
+        result, code = run([
+            "create",
+            "--governance-repo", str(governance_repo),
+            "--feature-id", "auth-refresh",
+            "--domain", "platform",
+            "--service", "identity",
+            "--name", "Auth Token Refresh",
+            "--track", "quickplan",
+            "--username", "cweber",
+            "--execute-governance-git",
+        ])
+
+        assert_eq("feature dirty repo status", result.get("status"), "fail")
+        assert_eq("feature dirty repo exit code", code, 1)
+        assert_true("feature dirty repo surfaced preflight error", "Governance git preflight failed" in (result.get("error") or ""))
+        assert_eq(
+            "feature yaml not created after dirty preflight failure",
+            (governance_repo / "features" / "platform" / "identity" / "auth-refresh" / "feature.yaml").exists(),
+            False,
+        )
 
 
 def make_feature_yaml_fixture(feature_id: str, domain: str, service: str) -> dict:
@@ -1389,6 +1519,9 @@ if __name__ == "__main__":
     test_create_service_with_target_projects()
     test_create_domain_with_docs_root()
     test_create_service_with_docs_root()
+    test_create_feature_execute_governance_git()
+    test_create_feature_execute_governance_git_dry_run_skips_git()
+    test_create_feature_execute_governance_git_requires_clean_repo()
     test_create_domain_execute_governance_git()
     test_create_service_execute_governance_git()
     test_create_domain_execute_governance_git_dry_run_skips_git()

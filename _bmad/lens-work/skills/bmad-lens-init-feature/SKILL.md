@@ -68,7 +68,7 @@ Load `{governance_repo}/users/{username}/user-profile.md` for user defaults. Loa
 
 | Capability | Outcome | Route |
 | ---------- | ------- | ----- |
-| Init Feature | Branches, feature.yaml, PR, index entry, and summary stub created atomically | Load `./references/init-feature.md` |
+| Init Feature | Branches, feature.yaml, PR, index entry, and summary stub created atomically; governance git can be auto-executed on `main` while remaining control-repo follow-up stays explicit | Load `./references/init-feature.md` |
 | Auto-Context Pull | Domain context, related summaries, and depends_on docs loaded | Load `./references/auto-context-pull.md` |
 | Create Domain | Domain marker (`domain.yaml`), constitution (`constitutions/{domain}/constitution.md`), optional TargetProjects scaffold, optional `docs/{domain}/` scaffold, and optional personal context file created; governance git can be auto-executed on `main` | Use `create-domain` subcommand |
 | Create Service | Service marker, domain constitution (if absent), service constitution, optional TargetProjects scaffold, optional `docs/{domain}/{service}/` scaffold, and optional personal context file created; governance git can be auto-executed on `main` | Use `create-service` subcommand |
@@ -90,7 +90,7 @@ Load `{governance_repo}/users/{username}/user-profile.md` for user defaults. Loa
 `./scripts/init-feature-ops.py` — Python script (uv-runnable) with two subcommands:
 
 ```bash
-# Initialize a new feature (validates + writes files + returns git/gh commands)
+# Initialize a new feature (validates + writes files + returns manual follow-up commands)
 uv run scripts/init-feature-ops.py create \
   --governance-repo /path/to/gov-repo \
   --feature-id auth-refresh \
@@ -99,6 +99,17 @@ uv run scripts/init-feature-ops.py create \
   --name "Auth Token Refresh" \
   --track quickplan \
   --username cweber
+
+# Initialize a new feature and push governance artifacts automatically
+uv run scripts/init-feature-ops.py create \
+  --governance-repo /path/to/gov-repo \
+  --feature-id auth-refresh \
+  --domain platform \
+  --service identity \
+  --name "Auth Token Refresh" \
+  --track quickplan \
+  --username cweber \
+  --execute-governance-git
 
 # With separate control repo
 uv run scripts/init-feature-ops.py create \
@@ -178,16 +189,20 @@ uv run scripts/init-feature-ops.py read-context \
   --personal-folder /path/to/.github/lens/personal
 ```
 
-### Automatic Governance Git for Containers
+### Automatic Governance Git for Feature and Containers
 
-`create-domain` and `create-service` accept an optional `--execute-governance-git` flag. When present, the script:
+`create`, `create-domain`, and `create-service` accept an optional `--execute-governance-git` flag. When present, the script:
 
 - verifies that `{governance_repo}` is a clean git worktree
 - checks out `main` and pulls latest before duplicate detection
 - stages, commits, and pushes governance artifacts automatically on `main`
-- returns `governance_git_commands`, `workspace_git_commands`, `remaining_git_commands`, `governance_git_executed`, and `governance_commit_sha`
+- returns `governance_git_commands`, `remaining_git_commands`, `governance_git_executed`, and `governance_commit_sha`
 
-`git_commands` remains the full planned command list for compatibility. When governance git already ran, callers should surface only `remaining_git_commands` to the user.
+Feature init also returns `control_repo_git_commands` so callers can surface any still-manual branch creation steps separately from the governance publish that already ran.
+
+`git_commands` remains the full planned command list for compatibility. When governance git already ran, callers should surface only `remaining_git_commands` plus any returned `gh_commands` to the user.
+
+If governance git preflight or execution fails, stop and surface the error. Do not fall back to a manual governance publish recipe in the chat response.
 
 ### Context State File
 

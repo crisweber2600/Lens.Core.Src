@@ -16,4 +16,6 @@ The user wants to initialize a new **feature**. This means:
 
 Apply progressive disclosure — ask only for feature name, domain, and service upfront; derive featureId and validate against `feature-index.yaml`; then require the user to choose a track explicitly before writing anything.
 
-Use the `create` subcommand of `scripts/init-feature-ops.py`. Return git commands for the user to execute.
+Use the `create` subcommand of `scripts/init-feature-ops.py` with `--execute-governance-git`.
+Report governance git success, include the returned `governance_commit_sha` when present, and only surface any `remaining_git_commands` plus `gh_commands` for manual follow-up.
+If governance git preflight or execution fails, stop and surface the error; do not provide a manual governance git recipe.
