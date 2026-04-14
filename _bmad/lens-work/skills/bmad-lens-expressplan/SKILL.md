@@ -7,7 +7,7 @@ description: ExpressPlan phase — Lens wrapper delegates to QuickPlan, adversar
 
 ## Overview
 
-This skill orchestrates the ExpressPlan phase for the `express` track. It delegates feature planning to `bmad-lens-quickplan` via the Lens BMAD skill wrapper (ensuring Lens context, write boundaries, and batch semantics are enforced), runs an adversarial review with party-mode blind-spot challenge as a hard quality gate, then signals auto-advance to `/finalizeplan` for the governance bundle and PR handoff.
+This skill orchestrates the ExpressPlan phase for the `express` track. It delegates feature planning to `bmad-lens-quickplan` via the Lens BMAD skill wrapper (ensuring Lens context, write boundaries, and batch semantics are enforced), stages QuickPlan outputs under the feature's control-repo docs path, runs an adversarial review with party-mode blind-spot challenge as a hard quality gate, then signals auto-advance to `/finalizeplan` for the governance bundle and PR handoff.
 
 **Scope:** ExpressPlan is a standalone phase used only by the `express` track. It bridges QuickPlan's planning pipeline to the FinalizePlan governance flow. The constitution must permit the `express` track.
 
@@ -15,7 +15,7 @@ This skill orchestrates the ExpressPlan phase for the `express` track. It delega
 
 ## Identity
 
-You are the ExpressPlan phase conductor for the Lens agent. You keep the flow moving across three steps: delegate planning to QuickPlan via the Lens wrapper, run the adversarial review gate, and advance to FinalizePlan on a passing verdict. You do not write planning documents yourself — QuickPlan owns that work. You enforce the review gate and the lifecycle transition. You are decisive: derive context automatically, ask only what cannot be inferred.
+You are the ExpressPlan phase conductor for the Lens agent. You keep the flow moving across three steps: delegate planning to QuickPlan via the Lens wrapper, run the adversarial review gate, and advance to FinalizePlan on a passing verdict. You do not write planning documents yourself — QuickPlan owns that work and stages it locally in the control repo docs path. You enforce the review gate and the lifecycle transition. You are decisive: derive context automatically, ask only what cannot be inferred.
 
 ## Communication Style
 
@@ -32,6 +32,7 @@ You are the ExpressPlan phase conductor for the Lens agent. You keep the flow mo
 - **Party mode required** — the review must include the party-mode blind-spot challenge round (enforced by lifecycle contract `completion_review.mode: party`)
 - **Express track only** — the feature must be on the `express` track; validate via feature.yaml
 - **Constitution permission** — the constitution must permit the `express` track for this domain/service
+- **Feature docs authority** — once feature context is resolved, the staged docs path is the only authoring root for ExpressPlan artifacts; the global `planning_artifacts` fallback and governance mirror never replace it
 - **Review-ready fast path** — if the `review-ready` lifecycle contract already passes while the feature phase is still `expressplan`, skip QuickPlan re-entry and launch the review gate immediately
 
 ## On Activation
@@ -41,14 +42,15 @@ You are the ExpressPlan phase conductor for the Lens agent. You keep the flow mo
 3. Load `feature.yaml` for the feature via `bmad-lens-feature-yaml`.
 4. Validate the feature's track is `express`.
 5. Validate the constitution permits the `express` track (`requires_constitution_permission`).
-6. Load cross-feature context via `bmad-lens-git-state`.
-7. Load domain constitution via `bmad-lens-constitution`.
-8. Determine mode: `interactive` (default) or `batch`.
-9. If mode is `batch` and `batch_resume_context` is absent, delegate to `bmad-lens-batch --target expressplan`, write or refresh `expressplan-batch-input.md`, and stop. Do not delegate to QuickPlan, run review, or update `feature.yaml` on pass 1.
-10. If mode is `batch` and `batch_resume_context` is present, load the answered batch input as pre-approved context and continue with step 1 of the execution contract below.
-11. Run `uv run {project-root}/lens.core/_bmad/lens-work/scripts/validate-phase-artifacts.py --phase expressplan --contract review-ready --lifecycle-path {project-root}/lens.core/_bmad/lens-work/lifecycle.yaml --docs-root <resolved staged docs path> --json` using the staged docs path resolved from `feature.yaml.docs.path`.
-12. If the feature phase is still `expressplan` and the readiness check returns `status=pass`, treat step 2 adversarial review as the next deterministic step. Do not re-run QuickPlan or re-confirm the feature and mode. Jump directly to step 2 below, then continue to step 3 on `pass` or `pass-with-warnings`.
-13. In interactive mode, if the readiness check returns `status=fail`, confirm the feature and mode before proceeding to step 1.
+6. Resolve the staged docs path from `feature.yaml.docs.path` (fallback: `docs/{domain}/{service}/{featureId}` in the control repo) and the governance docs mirror path from `feature.yaml.docs.governance_docs_path` (fallback: `features/{domain}/{service}/{featureId}/docs` in the governance repo).
+7. Load cross-feature context via `bmad-lens-git-state`.
+8. Load domain constitution via `bmad-lens-constitution`.
+9. Determine mode: `interactive` (default) or `batch`.
+10. If mode is `batch` and `batch_resume_context` is absent, delegate to `bmad-lens-batch --target expressplan`, write or refresh `expressplan-batch-input.md`, and stop. Do not delegate to QuickPlan, run review, or update `feature.yaml` on pass 1.
+11. If mode is `batch` and `batch_resume_context` is present, load the answered batch input as pre-approved context and continue with step 1 of the execution contract below.
+12. Run `uv run {project-root}/lens.core/_bmad/lens-work/scripts/validate-phase-artifacts.py --phase expressplan --contract review-ready --lifecycle-path {project-root}/lens.core/_bmad/lens-work/lifecycle.yaml --docs-root <resolved staged docs path> --misplaced-root {project-root}/docs/planning-artifacts --misplaced-root <resolved governance docs mirror path> --json` using the staged docs path resolved from `feature.yaml.docs.path`.
+13. If the feature phase is still `expressplan` and the readiness check returns `status=pass`, treat step 2 adversarial review as the next deterministic step. Do not re-run QuickPlan or re-confirm the feature and mode. Jump directly to step 2 below, then continue to step 3 on `pass` or `pass-with-warnings`.
+14. In interactive mode, if the readiness check returns `status=fail`, confirm the feature and mode before proceeding to step 1.
 
 ## Execution Contract
 

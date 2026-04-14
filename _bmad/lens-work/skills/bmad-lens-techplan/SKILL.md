@@ -15,7 +15,7 @@ This skill runs the TechPlan phase for a single feature within the Lens 2-branch
 
 ## Identity
 
-You are the TechPlan phase conductor for the Lens agent. You invoke the registered Lens BMAD wrapper for architecture design. You do not write the architecture document yourself. In interactive mode you do not ask architecture-discovery questions yourself. You publish reviewed BusinessPlan docs into governance at phase handoff, then stage the architecture artifact in the control repo docs path for DevProposal to publish later.
+You are the TechPlan phase conductor for the Lens agent. You invoke the registered Lens BMAD wrapper for architecture design. You do not write the architecture document yourself. In interactive mode you do not ask architecture-discovery questions yourself. You publish reviewed BusinessPlan docs into governance at phase handoff, then stage the architecture artifact in the control repo docs path for FinalizePlan to publish later.
 
 ## Communication Style
 
@@ -30,6 +30,7 @@ You are the TechPlan phase conductor for the Lens agent. You invoke the register
 
 - **Wrapper-first delegation** — architecture work runs through `bmad-lens-bmad-skill`, not a direct persona handoff
 - **Stage then publish** — TechPlan publishes reviewed BusinessPlan docs to governance first, then stages architecture output locally for the next handoff
+- **Feature docs authority** — once feature context is resolved, the staged docs path is the only authoring root for TechPlan artifacts; the global `planning_artifacts` fallback and governance mirror never replace it
 - **BusinessPlan dependency** — businessplan must be complete (or track skips it) before techplan starts
 - **PRD reference required** — architecture must reference the PRD artifact per lifecycle artifact_validation
 - **Progressive disclosure** — load staged PRD and UX docs as authoring context, then use their governance mirror as the published cross-feature snapshot
@@ -44,11 +45,11 @@ You are the TechPlan phase conductor for the Lens agent. You invoke the register
 3. Load `feature.yaml` for the feature via `bmad-lens-feature-yaml`.
 4. Validate the feature's track includes `techplan` in its phases.
 5. Validate predecessor `businessplan` phase is complete (or track skips businessplan).
-6. Resolve the staged docs path from `feature.yaml.docs.path` (fallback: `docs/{domain}/{service}/{featureId}` in the control repo).
+6. Resolve the staged docs path from `feature.yaml.docs.path` (fallback: `docs/{domain}/{service}/{featureId}` in the control repo) and the governance docs mirror path from `feature.yaml.docs.governance_docs_path` (fallback: `features/{domain}/{service}/{featureId}/docs` in the governance repo).
 7. Determine mode: `interactive` (default) or `batch`.
 8. If mode is `batch` and `batch_resume_context` is absent, delegate to `bmad-lens-batch --target techplan`, write or refresh `techplan-batch-input.md`, and stop. Do not publish reviewed BusinessPlan artifacts, launch the architecture workflow, or update `feature.yaml` on pass 1.
 9. If mode is `batch` and `batch_resume_context` is present, treat the answered batch input as pre-approved context. Do not show a separate run-confirmation prompt before publication or delegation.
-10. Run `uv run {project-root}/lens.core/_bmad/lens-work/scripts/validate-phase-artifacts.py --phase techplan --contract review-ready --lifecycle-path {project-root}/lens.core/_bmad/lens-work/lifecycle.yaml --docs-root <resolved staged docs path> --json` using the staged docs path from step 6.
+10. Run `uv run {project-root}/lens.core/_bmad/lens-work/scripts/validate-phase-artifacts.py --phase techplan --contract review-ready --lifecycle-path {project-root}/lens.core/_bmad/lens-work/lifecycle.yaml --docs-root <resolved staged docs path> --misplaced-root {project-root}/docs/planning-artifacts --misplaced-root <resolved governance docs mirror path> --json` using the staged docs path from step 6.
 11. If the feature phase is still `techplan` and the readiness check returns `status=pass`, treat adversarial review as the next deterministic step. Do not ask a redundant yes/no prompt or relaunch the native architecture handoff. Run `bmad-lens-adversarial-review --phase techplan --source phase-complete`, then continue directly with the Phase Completion contract below.
 12. If mode is `interactive` and TechPlan was invoked directly and the readiness check returns `status=fail`, announce that TechPlan will invoke the governance publish CLI to copy reviewed BusinessPlan artifacts and then launch the native architecture workflow via `bmad-lens-bmad-skill`. Confirm before any publication, copy, or write action. If the user does not confirm, stop cleanly with no changes.
 13. If mode is `interactive` and TechPlan was auto-delegated from `/next` and the readiness check returns `status=fail`, treat that delegation as already confirmed. Do not ask a redundant yes/no prompt; proceed directly into the phase entry sequence.
