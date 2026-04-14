@@ -78,7 +78,7 @@ When `lens-switch` is invoked without a target feature (no `--feature-id` argume
 `./scripts/switch-ops.py` — Python script (uv-runnable) with three subcommands:
 
 ```bash
-# List available features (active only by default)
+# List available features (non-archived by default)
 python3 scripts/switch-ops.py list \
   --governance-repo /path/to/governance-repo/
 
