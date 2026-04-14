@@ -12,7 +12,7 @@ Before calling finalize, confirm all of the following:
 
 - [ ] `check-preconditions` returned status `pass` or `warn` (not `fail`)
 - [ ] `retrospective.md` exists in the feature directory (or user confirmed skip)
-- [ ] Project documentation captured (at minimum `docs/README.md`)
+- [ ] Project documentation captured via `bmad-lens-document-project`
 - [ ] User has explicitly confirmed finalize (this is irreversible)
 
 ## Confirmation Gate
@@ -29,7 +29,8 @@ Always display this confirmation before executing:
 │                                              │
 │  Archive will include:                       │
 │  ✓ retrospective.md                          │
-│  ✓ docs/README.md                            │
+│  ✓ project documentation captured via        │
+│    bmad-lens-document-project                │
 │  ✓ summary.md (will be written now)          │
 │                                              │
 │  Confirm? (yes/no)                           │
@@ -115,9 +116,8 @@ Retrospective:
   retrospective.md
 
 Project documentation:
-  docs/README.md
-  docs/deployment.md (if present)
-  docs/api.md (if present)
+  docs/                  ← captured via bmad-lens-document-project
+  governance-facing documentation artifacts mirrored into the feature archive
 
 Archive record:
   summary.md            ← written at {archived_at}

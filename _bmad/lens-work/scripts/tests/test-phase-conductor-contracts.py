@@ -74,6 +74,27 @@ def test_dev_contract_uses_repo_scoped_branch_modes_and_final_review_gate():
     assert "before any final PR is created, run a full dev-closeout adversarial review and a required party-mode blind-spot challenge" in text
 
 
+def test_complete_contract_delegates_documentation_to_wrapped_skill():
+    skill = _read("skills/bmad-lens-complete/SKILL.md")
+    doc_reference = _read("skills/bmad-lens-complete/references/document-project.md")
+    finalize_reference = _read("skills/bmad-lens-complete/references/finalize-feature.md")
+    module_help = _read("module-help.csv")
+
+    assert "delegates final project documentation to the wrapped Lens document-project workflow" in skill
+    assert "Load `./references/document-project.md` and delegate to `bmad-lens-document-project`" in skill
+
+    assert "Load `../../bmad-lens-document-project/SKILL.md` with the current feature context." in doc_reference
+    assert "Successful completion of that wrapped run satisfies the documentation gate for the complete workflow" in doc_reference
+    assert "docs/README.md" not in doc_reference
+    assert "docs/deployment.md" not in doc_reference
+
+    assert "Project documentation captured via `bmad-lens-document-project`" in finalize_reference
+    assert "project documentation captured via" in finalize_reference
+    assert "docs/README.md" not in finalize_reference
+
+    assert "Lens,bmad-lens-complete,document-project,DC,Run wrapped project documentation workflow before archival" in module_help
+
+
 def test_git_orchestration_contract_documents_prepare_dev_branch_modes():
     text = _read("skills/bmad-lens-git-orchestration/SKILL.md")
 
