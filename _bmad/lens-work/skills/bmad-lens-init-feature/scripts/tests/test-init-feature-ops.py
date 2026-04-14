@@ -31,6 +31,45 @@ def run(args: list[str]) -> tuple[dict, int]:
         return {"error": result.stderr, "stdout": result.stdout}, result.returncode
 
 
+def git(args: list[str], cwd: str | None = None) -> str:
+    """Run a git command for test setup and return stdout."""
+    result = subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise AssertionError(
+            f"git {' '.join(args)} failed (cwd={cwd}): {(result.stderr or result.stdout).strip()}"
+        )
+    return result.stdout.strip()
+
+
+def init_governance_git_repo(root: Path, name: str = "governance") -> tuple[Path, Path]:
+    """Create a local bare remote plus a seeded governance clone on main."""
+    remote = root / f"{name}-remote.git"
+    worktree = root / name
+
+    git(["init", "--bare", "--initial-branch=main", str(remote)])
+    git(["clone", str(remote), str(worktree)])
+    git(["config", "user.name", "Test User"], cwd=str(worktree))
+    git(["config", "user.email", "test@example.com"], cwd=str(worktree))
+
+    (worktree / "README.md").write_text("seed\n", encoding="utf-8")
+    git(["add", "README.md"], cwd=str(worktree))
+    git(["commit", "-m", "seed"], cwd=str(worktree))
+    git(["push", "-u", "origin", "main"], cwd=str(worktree))
+
+    return worktree, remote
+
+
+def remote_main_sha(remote: Path) -> str:
+    """Return the current SHA for refs/heads/main in a bare remote."""
+    output = git(["ls-remote", str(remote), "refs/heads/main"])
+    return output.split()[0]
+
+
 def assert_eq(name: str, actual, expected):
     global PASS, FAIL
     if actual == expected:
@@ -1051,6 +1090,164 @@ def test_create_service_with_docs_root():
             )
 
 
+def test_create_domain_execute_governance_git():
+    """Domain creation can sync, commit, and push governance artifacts while leaving workspace git manual."""
+    print("test_create_domain_execute_governance_git", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        governance_repo, remote = init_governance_git_repo(root)
+        workspace_root = root / "workspace"
+        target_projects_root = workspace_root / "TargetProjects"
+        docs_root = workspace_root / "docs"
+
+        result, code = run([
+            "create-domain",
+            "--governance-repo", str(governance_repo),
+            "--domain", "platform",
+            "--name", "Platform",
+            "--username", "cweber",
+            "--target-projects-root", str(target_projects_root),
+            "--docs-root", str(docs_root),
+            "--execute-governance-git",
+        ])
+
+        assert_eq("domain execute status", result.get("status"), "pass")
+        assert_eq("domain execute exit code", code, 0)
+        assert_eq("domain governance git executed", result.get("governance_git_executed"), True)
+        assert_true("domain governance commit sha present", result.get("governance_commit_sha"))
+        assert_true("domain governance git commands present", result.get("governance_git_commands"))
+        assert_true("domain workspace git commands present", result.get("workspace_git_commands"))
+        assert_eq(
+            "domain remaining commands limited to workspace",
+            result.get("remaining_git_commands"),
+            result.get("workspace_git_commands"),
+        )
+
+        marker_path = governance_repo / "features" / "platform" / "domain.yaml"
+        constitution_path = governance_repo / "constitutions" / "platform" / "constitution.md"
+        assert_eq("domain marker pushed locally", marker_path.exists(), True)
+        assert_eq("domain constitution pushed locally", constitution_path.exists(), True)
+        assert_eq(
+            "domain short sha matches repo head",
+            result.get("governance_commit_sha"),
+            git(["rev-parse", "--short", "HEAD"], cwd=str(governance_repo)),
+        )
+        assert_eq(
+            "domain remote main updated",
+            remote_main_sha(remote),
+            git(["rev-parse", "HEAD"], cwd=str(governance_repo)),
+        )
+
+
+def test_create_service_execute_governance_git():
+    """Service creation can sync, commit, and push governance artifacts on main automatically."""
+    print("test_create_service_execute_governance_git", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        governance_repo, remote = init_governance_git_repo(root)
+
+        result, code = run([
+            "create-service",
+            "--governance-repo", str(governance_repo),
+            "--domain", "platform",
+            "--service", "identity",
+            "--name", "Identity",
+            "--username", "cweber",
+            "--execute-governance-git",
+        ])
+
+        assert_eq("service execute status", result.get("status"), "pass")
+        assert_eq("service execute exit code", code, 0)
+        assert_eq("service governance git executed", result.get("governance_git_executed"), True)
+        assert_true("service governance commit sha present", result.get("governance_commit_sha"))
+        assert_eq("service remaining commands empty", result.get("remaining_git_commands"), [])
+        assert_eq("service workspace commands empty", result.get("workspace_git_commands"), [])
+        assert_eq("service created domain marker flag", result.get("created_domain_marker"), True)
+        assert_eq("service created domain constitution flag", result.get("created_domain_constitution"), True)
+
+        domain_marker = governance_repo / "features" / "platform" / "domain.yaml"
+        service_marker = governance_repo / "features" / "platform" / "identity" / "service.yaml"
+        service_constitution = governance_repo / "constitutions" / "platform" / "identity" / "constitution.md"
+        assert_eq("service domain marker exists", domain_marker.exists(), True)
+        assert_eq("service marker exists", service_marker.exists(), True)
+        assert_eq("service constitution exists", service_constitution.exists(), True)
+        assert_eq(
+            "service short sha matches repo head",
+            result.get("governance_commit_sha"),
+            git(["rev-parse", "--short", "HEAD"], cwd=str(governance_repo)),
+        )
+        assert_eq(
+            "service remote main updated",
+            remote_main_sha(remote),
+            git(["rev-parse", "HEAD"], cwd=str(governance_repo)),
+        )
+
+
+def test_create_domain_execute_governance_git_dry_run_skips_git():
+    """Dry-run with automatic governance enabled should still only preview commands."""
+    print("test_create_domain_execute_governance_git_dry_run_skips_git", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as gov_tmp:
+        result, code = run([
+            "create-domain",
+            "--governance-repo", gov_tmp,
+            "--domain", "platform",
+            "--username", "cweber",
+            "--execute-governance-git",
+            "--dry-run",
+        ])
+
+        assert_eq("domain execute dry-run status", result.get("status"), "pass")
+        assert_eq("domain execute dry-run exit code", code, 0)
+        assert_eq("domain execute dry-run executed flag", result.get("governance_git_executed"), False)
+        assert_eq("domain execute dry-run commit sha", result.get("governance_commit_sha"), None)
+        assert_eq(
+            "domain execute dry-run remaining commands stay full plan",
+            result.get("remaining_git_commands"),
+            result.get("git_commands"),
+        )
+        assert_eq("dry-run domain marker absent", (Path(gov_tmp) / "features" / "platform" / "domain.yaml").exists(), False)
+
+
+def test_create_domain_execute_governance_git_syncs_before_duplicate_check():
+    """Automatic governance git pulls latest main before checking for duplicate domains."""
+    print("test_create_domain_execute_governance_git_syncs_before_duplicate_check", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        governance_repo, remote = init_governance_git_repo(root, "primary")
+        secondary_repo = root / "secondary"
+
+        git(["clone", str(remote), str(secondary_repo)])
+        git(["config", "user.name", "Test User"], cwd=str(secondary_repo))
+        git(["config", "user.email", "test@example.com"], cwd=str(secondary_repo))
+
+        pushed_result, pushed_code = run([
+            "create-domain",
+            "--governance-repo", str(secondary_repo),
+            "--domain", "platform",
+            "--username", "cweber",
+            "--execute-governance-git",
+        ])
+        assert_eq("secondary domain create status", pushed_result.get("status"), "pass")
+        assert_eq("secondary domain create exit code", pushed_code, 0)
+
+        stale_result, stale_code = run([
+            "create-domain",
+            "--governance-repo", str(governance_repo),
+            "--domain", "platform",
+            "--username", "cweber",
+            "--execute-governance-git",
+        ])
+
+        assert_eq("stale clone duplicate status", stale_result.get("status"), "fail")
+        assert_eq("stale clone duplicate exit code", stale_code, 1)
+        assert_true("stale clone duplicate surfaced marker error", "already exists" in (stale_result.get("error") or ""))
+        assert_eq(
+            "stale clone pulled duplicate marker before failing",
+            (governance_repo / "features" / "platform" / "domain.yaml").exists(),
+            True,
+        )
+
+
 def test_create_domain_writes_context_yaml():
     """create-domain with --personal-folder writes context.yaml with domain, service=null, updated_by=new-domain."""
     print("test_create_domain_writes_context_yaml", file=sys.stderr)
@@ -1192,6 +1389,10 @@ if __name__ == "__main__":
     test_create_service_with_target_projects()
     test_create_domain_with_docs_root()
     test_create_service_with_docs_root()
+    test_create_domain_execute_governance_git()
+    test_create_service_execute_governance_git()
+    test_create_domain_execute_governance_git_dry_run_skips_git()
+    test_create_domain_execute_governance_git_syncs_before_duplicate_check()
     test_create_domain_writes_context_yaml()
     test_create_service_writes_context_yaml()
     test_create_domain_no_personal_folder_skips_context()

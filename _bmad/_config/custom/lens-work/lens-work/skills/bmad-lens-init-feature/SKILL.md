@@ -70,8 +70,8 @@ Load `{governance_repo}/users/{username}/user-profile.md` for user defaults. Loa
 | ---------- | ------- | ----- |
 | Init Feature | Branches, feature.yaml, PR, index entry, and summary stub created atomically | Load `./references/init-feature.md` |
 | Auto-Context Pull | Domain context, related summaries, and depends_on docs loaded | Load `./references/auto-context-pull.md` |
-| Create Domain | Domain marker (`domain.yaml`), constitution (`constitutions/{domain}/constitution.md`), optional TargetProjects scaffold, optional `docs/{domain}/` scaffold, and optional personal context file created | Use `create-domain` subcommand |
-| Create Service | Service marker, domain constitution (if absent), service constitution, optional TargetProjects scaffold, optional `docs/{domain}/{service}/` scaffold, and optional personal context file created | Use `create-service` subcommand |
+| Create Domain | Domain marker (`domain.yaml`), constitution (`constitutions/{domain}/constitution.md`), optional TargetProjects scaffold, optional `docs/{domain}/` scaffold, and optional personal context file created; governance git can be auto-executed on `main` | Use `create-domain` subcommand |
+| Create Service | Service marker, domain constitution (if absent), service constitution, optional TargetProjects scaffold, optional `docs/{domain}/{service}/` scaffold, and optional personal context file created; governance git can be auto-executed on `main` | Use `create-service` subcommand |
 
 ## Integration Points
 
@@ -143,6 +143,15 @@ uv run scripts/init-feature-ops.py create-domain \
   --docs-root /path/to/docs \
   --personal-folder /path/to/.github/lens/personal
 
+# Create a new domain and push governance artifacts automatically
+uv run scripts/init-feature-ops.py create-domain \
+  --governance-repo /path/to/gov-repo \
+  --domain platform \
+  --name "Platform" \
+  --username cweber \
+  --personal-folder /path/to/.github/lens/personal \
+  --execute-governance-git
+
 # Create a new service (service + domain markers + constitutions + optional TargetProjects scaffold)
 uv run scripts/init-feature-ops.py create-service \
   --governance-repo /path/to/gov-repo \
@@ -154,10 +163,31 @@ uv run scripts/init-feature-ops.py create-service \
   --docs-root /path/to/docs \
   --personal-folder /path/to/.github/lens/personal
 
+# Create a new service and push governance artifacts automatically
+uv run scripts/init-feature-ops.py create-service \
+  --governance-repo /path/to/gov-repo \
+  --domain platform \
+  --service identity \
+  --name "Identity" \
+  --username cweber \
+  --personal-folder /path/to/.github/lens/personal \
+  --execute-governance-git
+
 # Read the active domain/service context (for non-feature-branch commands)
 uv run scripts/init-feature-ops.py read-context \
   --personal-folder /path/to/.github/lens/personal
 ```
+
+### Automatic Governance Git for Containers
+
+`create-domain` and `create-service` accept an optional `--execute-governance-git` flag. When present, the script:
+
+- verifies that `{governance_repo}` is a clean git worktree
+- checks out `main` and pulls latest before duplicate detection
+- stages, commits, and pushes governance artifacts automatically on `main`
+- returns `governance_git_commands`, `workspace_git_commands`, `remaining_git_commands`, `governance_git_executed`, and `governance_commit_sha`
+
+`git_commands` remains the full planned command list for compatibility. When governance git already ran, callers should surface only `remaining_git_commands` to the user.
 
 ### Context State File
 
@@ -168,7 +198,8 @@ Both `create-domain` and `create-service` accept an optional `--docs-root` argum
 - `create-domain` creates `docs/{domain}/.gitkeep`
 - `create-service` creates `docs/{domain}/{service}/.gitkeep`
 - The returned JSON includes `docs_path` when the scaffold was created or planned
-- The returned `git_commands` include the required `git add` and scaffold commit for the control repo
+- `workspace_git_commands` and `remaining_git_commands` include the required control-repo scaffold follow-up commands
+- `governance_git_commands` exposes the governance publish sequence, and `governance_commit_sha` identifies the pushed commit when `--execute-governance-git` succeeds
 
 Both `create-domain` and `create-service` accept an optional `--personal-folder` argument. When provided, they write a `context.yaml` file to that folder after successfully creating the governance artifacts. This file persists the user's active domain and service so that commands can resolve them without an active feature branch.
 

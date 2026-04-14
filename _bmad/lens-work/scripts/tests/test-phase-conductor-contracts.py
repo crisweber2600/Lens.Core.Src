@@ -93,3 +93,20 @@ def test_init_feature_handoff_surfaces_route_through_next():
     assert "report the returned `starting_phase` and recommend `/next` or the returned `recommended_command`" in prompt
     assert "report the lifecycle start phase and the next recommended command returned by the script" in skill
     assert "plus `planning_pr_created`, `starting_phase`, `recommended_command`, and `router_command`" in reference
+
+
+def test_container_init_prompts_require_automatic_governance_git():
+    domain_prompt = _read("prompts/lens-new-domain.prompt.md")
+    service_prompt = _read("prompts/lens-new-service.prompt.md")
+    skill = _read("skills/bmad-lens-init-feature/SKILL.md")
+
+    assert "--execute-governance-git" in domain_prompt
+    assert "--execute-governance-git" in service_prompt
+    assert "Report governance git success" in domain_prompt
+    assert "Report governance git success" in service_prompt
+    assert "`remaining_git_commands`" in domain_prompt
+    assert "`remaining_git_commands`" in service_prompt
+    assert "Return the git commands for the user to execute." not in domain_prompt
+    assert "Return the git commands for the user to execute." not in service_prompt
+    assert "governance_commit_sha" in skill
+    assert "remaining_git_commands" in skill

@@ -13,13 +13,17 @@ file is created inside the corresponding TargetProjects/{domain}/{service}/ fold
 --docs-root is provided, a .gitkeep scaffold file is created inside docs/{domain}/{service}/ in
 the control repo.
 
-Git/gh commands are returned as arrays — not executed directly.
+Feature init still returns git/gh commands for the caller to execute. Domain and service init
+can optionally execute the governance checkout/pull/add/commit/push sequence directly when
+--execute-governance-git is provided.
 """
 
 import argparse
 import json
 import os
 import re
+import shlex
+import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
@@ -74,6 +78,81 @@ def validate_safe_id(value: str, field_name: str) -> str | None:
 def now_iso() -> str:
     """Return current UTC time as ISO 8601 string."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def git_command_argv(repo: str, args: list[str]) -> list[str]:
+    """Build a git command argv list scoped to a repository."""
+    return ["git", "-C", repo, *args]
+
+
+def git_command_text(repo: str, args: list[str]) -> str:
+    """Build a shell-safe git command string scoped to a repository."""
+    return shlex.join(git_command_argv(repo, args))
+
+
+def run_git(repo: str, args: list[str]) -> subprocess.CompletedProcess[str]:
+    """Run a git command and raise a clear error on failure."""
+    result = subprocess.run(
+        git_command_argv(repo, args),
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        output = (result.stderr or result.stdout).strip()
+        raise RuntimeError(
+            f"{git_command_text(repo, args)} failed: {output or f'exit code {result.returncode}'}"
+        )
+    return result
+
+
+def ensure_git_worktree(repo: str) -> None:
+    """Ensure a path is a git worktree before write automation runs."""
+    result = subprocess.run(
+        git_command_argv(repo, ["rev-parse", "--is-inside-work-tree"]),
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0 or result.stdout.strip() != "true":
+        raise RuntimeError(f"{repo} is not a git worktree")
+
+
+def ensure_clean_worktree(repo: str) -> None:
+    """Fail fast when automatic governance writes would touch a dirty repo."""
+    result = subprocess.run(
+        git_command_argv(repo, ["status", "--short"]),
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        output = (result.stderr or result.stdout).strip()
+        raise RuntimeError(
+            f"{git_command_text(repo, ['status', '--short'])} failed: {output or f'exit code {result.returncode}'}"
+        )
+    if result.stdout.strip():
+        raise RuntimeError(
+            "Governance repo has local changes. Commit or stash them before using --execute-governance-git."
+        )
+
+
+def current_head_sha(repo: str, short: bool = True) -> str | None:
+    """Return the current HEAD SHA, or None when git is unavailable."""
+    args = ["rev-parse", "--short", "HEAD"] if short else ["rev-parse", "HEAD"]
+    result = subprocess.run(
+        git_command_argv(repo, args),
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip() or None
+
+
+def sync_governance_main(governance_repo: str) -> None:
+    """Sync governance main before container writes so duplicate checks see remote state."""
+    ensure_git_worktree(governance_repo)
+    ensure_clean_worktree(governance_repo)
+    run_git(governance_repo, ["checkout", "main"])
+    run_git(governance_repo, ["pull", "--rebase", "--autostash", "origin", "main"])
 
 
 @lru_cache(maxsize=1)
@@ -589,15 +668,42 @@ def build_git_commands(
     return cmds
 
 
+def build_container_git_steps(rel_paths: list[str], commit_message: str) -> list[list[str]]:
+    """Return the ordered git argv steps for domain/service markers on main."""
+    return [
+        ["checkout", "main"],
+        ["pull", "--rebase", "--autostash", "origin", "main"],
+        ["add", *rel_paths],
+        ["commit", "-m", commit_message],
+        ["push", "origin", "main"],
+    ]
+
+
 def build_container_git_commands(governance_repo: str, rel_paths: list[str], commit_message: str) -> list[str]:
     """Return the ordered git commands needed to commit domain/service markers on main."""
     return [
-        f"git -C {governance_repo} checkout main",
-        f"git -C {governance_repo} pull --rebase --autostash origin main",
-        f"git -C {governance_repo} add {' '.join(rel_paths)}",
-        f'git -C {governance_repo} commit -m "{commit_message}"',
-        f"git -C {governance_repo} push origin main",
+        git_command_text(governance_repo, step)
+        for step in build_container_git_steps(rel_paths, commit_message)
     ]
+
+
+def build_container_result_fields(
+    governance_git_commands: list[str],
+    workspace_git_commands: list[str],
+    governance_git_executed: bool = False,
+    governance_commit_sha: str | None = None,
+) -> dict:
+    """Return structured git result fields for container initialization flows."""
+    all_git_commands = governance_git_commands + workspace_git_commands
+    remaining_git_commands = workspace_git_commands if governance_git_executed else all_git_commands
+    return {
+        "git_commands": all_git_commands,
+        "governance_git_commands": governance_git_commands,
+        "workspace_git_commands": workspace_git_commands,
+        "remaining_git_commands": remaining_git_commands,
+        "governance_git_executed": governance_git_executed,
+        "governance_commit_sha": governance_commit_sha,
+    }
 
 
 def build_workspace_scaffold_commands(
@@ -801,15 +907,10 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
     target_projects_root: str | None = getattr(args, "target_projects_root", None)
     docs_root: str | None = getattr(args, "docs_root", None)
     timestamp = now_iso()
+    execute_governance_git = bool(getattr(args, "execute_governance_git", False))
 
     marker_path = get_domain_marker_path(governance_repo, domain)
     constitution_path = get_domain_constitution_path(governance_repo, domain)
-
-    if marker_path.exists():
-        return {
-            "status": "fail",
-            "error": f"Domain '{domain}' already exists at {marker_path}",
-        }
 
     marker_rel = str(marker_path.relative_to(governance_repo))
     constitution_rel = str(constitution_path.relative_to(governance_repo))
@@ -830,13 +931,31 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
         docs_workspace_root = str(Path(docs_root).parent)
         workspace_scaffold_entries.append((docs_workspace_root, str(docs_gitkeep_path.relative_to(docs_workspace_root))))
 
-    git_cmds = build_container_git_commands(
-        governance_repo,
-        gov_paths,
-        f"feat(domain): add {domain} container",
+    commit_message = f"feat(domain): add {domain} container"
+    governance_git_steps = build_container_git_steps(gov_paths, commit_message)
+    governance_git_commands = [git_command_text(governance_repo, step) for step in governance_git_steps]
+    workspace_git_commands = (
+        build_workspace_scaffold_commands(workspace_scaffold_entries, "domain", domain)
+        if workspace_scaffold_entries
+        else []
     )
-    if workspace_scaffold_entries:
-        git_cmds.extend(build_workspace_scaffold_commands(workspace_scaffold_entries, "domain", domain))
+
+    if execute_governance_git and not args.dry_run:
+        try:
+            sync_governance_main(governance_repo)
+        except RuntimeError as e:
+            return {
+                "status": "fail",
+                "scope": "domain",
+                "error": f"Governance git preflight failed: {e}",
+                **build_container_result_fields(governance_git_commands, workspace_git_commands),
+            }
+
+    if marker_path.exists():
+        return {
+            "status": "fail",
+            "error": f"Domain '{domain}' already exists at {marker_path}",
+        }
 
     if args.dry_run:
         return {
@@ -849,7 +968,7 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
             "created_constitution_paths": constitution_paths,
             "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
             "docs_path": str(docs_gitkeep_path.parent) if docs_gitkeep_path else None,
-            "git_commands": git_cmds,
+            **build_container_result_fields(governance_git_commands, workspace_git_commands),
         }
 
     try:
@@ -885,6 +1004,33 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
         except OSError as e:
             return {"status": "fail", "error": f"Failed to write context.yaml: {e}"}
 
+    governance_commit_sha: str | None = None
+    governance_git_executed = False
+    if execute_governance_git:
+        try:
+            for step in governance_git_steps[2:]:
+                run_git(governance_repo, step)
+            governance_commit_sha = current_head_sha(governance_repo)
+            governance_git_executed = True
+        except RuntimeError as e:
+            return {
+                "status": "fail",
+                "scope": "domain",
+                "path": str(marker_path),
+                "constitution_path": str(constitution_path),
+                "created_marker_paths": marker_paths,
+                "created_constitution_paths": constitution_paths,
+                "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
+                "docs_path": str(docs_gitkeep_path.parent) if docs_gitkeep_path else None,
+                "context_path": context_path,
+                "error": f"Governance git execution failed: {e}",
+                **build_container_result_fields(
+                    governance_git_commands,
+                    workspace_git_commands,
+                    governance_commit_sha=current_head_sha(governance_repo),
+                ),
+            }
+
     result: dict = {
         "status": "pass",
         "scope": "domain",
@@ -894,7 +1040,12 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
         "created_constitution_paths": constitution_paths,
         "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
         "docs_path": str(docs_gitkeep_path.parent) if docs_gitkeep_path else None,
-        "git_commands": git_cmds,
+        **build_container_result_fields(
+            governance_git_commands,
+            workspace_git_commands,
+            governance_git_executed=governance_git_executed,
+            governance_commit_sha=governance_commit_sha,
+        ),
     }
     if context_path is not None:
         result["context_path"] = context_path
@@ -918,8 +1069,67 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
     target_projects_root: str | None = getattr(args, "target_projects_root", None)
     docs_root: str | None = getattr(args, "docs_root", None)
     timestamp = now_iso()
+    execute_governance_git = bool(getattr(args, "execute_governance_git", False))
 
     service_path = get_service_marker_path(governance_repo, domain, service)
+    service_constitution_path = get_service_constitution_path(governance_repo, domain, service)
+    domain_constitution_path = get_domain_constitution_path(governance_repo, domain)
+
+    predicted_marker_paths = unique_paths([
+        str(get_domain_marker_path(governance_repo, domain).relative_to(governance_repo)),
+        str(service_path.relative_to(governance_repo)),
+    ])
+    predicted_constitution_paths = unique_paths([
+        str(domain_constitution_path.relative_to(governance_repo)),
+        str(service_constitution_path.relative_to(governance_repo)),
+    ])
+
+    # Workspace .gitkeep paths when control-repo scaffolds are requested.
+    tp_gitkeep_path: Path | None = None
+    docs_gitkeep_path: Path | None = None
+    workspace_scaffold_entries: list[tuple[str, str]] = []
+    if target_projects_root:
+        tp_gitkeep_path = Path(target_projects_root) / domain / service / ".gitkeep"
+        workspace_root = str(Path(target_projects_root).parent)
+        workspace_scaffold_entries.append((workspace_root, str(tp_gitkeep_path.relative_to(workspace_root))))
+        if not args.dry_run:
+            try:
+                tp_gitkeep_path.parent.mkdir(parents=True, exist_ok=True)
+                tp_gitkeep_path.touch()
+            except OSError as e:
+                return {"status": "fail", "error": f"Failed to scaffold TargetProjects service folder: {e}"}
+    if docs_root:
+        docs_gitkeep_path = Path(docs_root) / domain / service / ".gitkeep"
+        docs_workspace_root = str(Path(docs_root).parent)
+        workspace_scaffold_entries.append((docs_workspace_root, str(docs_gitkeep_path.relative_to(docs_workspace_root))))
+        if not args.dry_run:
+            try:
+                docs_gitkeep_path.parent.mkdir(parents=True, exist_ok=True)
+                docs_gitkeep_path.touch()
+            except OSError as e:
+                return {"status": "fail", "error": f"Failed to scaffold docs service folder: {e}"}
+
+    all_gov_paths = unique_paths(predicted_marker_paths + predicted_constitution_paths)
+    commit_message = f"feat(service): add {domain}/{service} container"
+    governance_git_steps = build_container_git_steps(all_gov_paths, commit_message)
+    governance_git_commands = [git_command_text(governance_repo, step) for step in governance_git_steps]
+    workspace_git_commands = (
+        build_workspace_scaffold_commands(workspace_scaffold_entries, "service", f"{domain}/{service}")
+        if workspace_scaffold_entries
+        else []
+    )
+
+    if execute_governance_git and not args.dry_run:
+        try:
+            sync_governance_main(governance_repo)
+        except RuntimeError as e:
+            return {
+                "status": "fail",
+                "scope": "service",
+                "error": f"Governance git preflight failed: {e}",
+                **build_container_result_fields(governance_git_commands, workspace_git_commands),
+            }
+
     if service_path.exists():
         return {
             "status": "fail",
@@ -936,9 +1146,6 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
         dry_run=args.dry_run,
     )
 
-    # Constitution paths.
-    domain_constitution_path = get_domain_constitution_path(governance_repo, domain)
-    service_constitution_path = get_service_constitution_path(governance_repo, domain, service)
     domain_name = domain  # display name falls back to id for auto-created domain
     created_constitution_paths: list[str] = []
 
@@ -973,40 +1180,6 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
         except OSError as e:
             return {"status": "fail", "error": f"Failed to write service constitution: {e}"}
 
-    # Workspace .gitkeep paths when control-repo scaffolds are requested.
-    tp_gitkeep_path: Path | None = None
-    docs_gitkeep_path: Path | None = None
-    workspace_scaffold_entries: list[tuple[str, str]] = []
-    if target_projects_root:
-        tp_gitkeep_path = Path(target_projects_root) / domain / service / ".gitkeep"
-        workspace_root = str(Path(target_projects_root).parent)
-        workspace_scaffold_entries.append((workspace_root, str(tp_gitkeep_path.relative_to(workspace_root))))
-        if not args.dry_run:
-            try:
-                tp_gitkeep_path.parent.mkdir(parents=True, exist_ok=True)
-                tp_gitkeep_path.touch()
-            except OSError as e:
-                return {"status": "fail", "error": f"Failed to scaffold TargetProjects service folder: {e}"}
-    if docs_root:
-        docs_gitkeep_path = Path(docs_root) / domain / service / ".gitkeep"
-        docs_workspace_root = str(Path(docs_root).parent)
-        workspace_scaffold_entries.append((docs_workspace_root, str(docs_gitkeep_path.relative_to(docs_workspace_root))))
-        if not args.dry_run:
-            try:
-                docs_gitkeep_path.parent.mkdir(parents=True, exist_ok=True)
-                docs_gitkeep_path.touch()
-            except OSError as e:
-                return {"status": "fail", "error": f"Failed to scaffold docs service folder: {e}"}
-
-    all_gov_paths = unique_paths(created_marker_paths + created_constitution_paths)
-    git_cmds = build_container_git_commands(
-        governance_repo,
-        all_gov_paths,
-        f"feat(service): add {domain}/{service} container",
-    )
-    if workspace_scaffold_entries:
-        git_cmds.extend(build_workspace_scaffold_commands(workspace_scaffold_entries, "service", f"{domain}/{service}"))
-
     personal_folder_svc: str | None = getattr(args, "personal_folder", None)
     context_path_svc: str | None = None
     if personal_folder_svc and not args.dry_run:
@@ -1014,6 +1187,39 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
             context_path_svc = str(write_context_yaml(personal_folder_svc, domain, service, "new-service"))
         except OSError as e:
             return {"status": "fail", "error": f"Failed to write context.yaml: {e}"}
+
+    all_gov_paths = unique_paths(created_marker_paths + created_constitution_paths)
+    governance_git_steps = build_container_git_steps(all_gov_paths, commit_message)
+    governance_git_commands = [git_command_text(governance_repo, step) for step in governance_git_steps]
+
+    governance_commit_sha: str | None = None
+    governance_git_executed = False
+    if execute_governance_git and not args.dry_run:
+        try:
+            for step in governance_git_steps[2:]:
+                run_git(governance_repo, step)
+            governance_commit_sha = current_head_sha(governance_repo)
+            governance_git_executed = True
+        except RuntimeError as e:
+            return {
+                "status": "fail",
+                "scope": "service",
+                "path": str(service_path),
+                "constitution_path": str(service_constitution_path),
+                "created_domain_marker": any(path.endswith("/domain.yaml") for path in created_marker_paths),
+                "created_domain_constitution": any("constitutions/" in path and path.endswith(f"{domain}/constitution.md") for path in created_constitution_paths),
+                "created_marker_paths": created_marker_paths,
+                "created_constitution_paths": created_constitution_paths,
+                "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
+                "docs_path": str(docs_gitkeep_path.parent) if docs_gitkeep_path else None,
+                "context_path": context_path_svc,
+                "error": f"Governance git execution failed: {e}",
+                **build_container_result_fields(
+                    governance_git_commands,
+                    workspace_git_commands,
+                    governance_commit_sha=current_head_sha(governance_repo),
+                ),
+            }
 
     svc_result: dict = {
         "status": "pass",
@@ -1027,7 +1233,12 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
         "created_constitution_paths": created_constitution_paths,
         "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
         "docs_path": str(docs_gitkeep_path.parent) if docs_gitkeep_path else None,
-        "git_commands": git_cmds,
+        **build_container_result_fields(
+            governance_git_commands,
+            workspace_git_commands,
+            governance_git_executed=governance_git_executed,
+            governance_commit_sha=governance_commit_sha,
+        ),
     }
     if context_path_svc is not None:
         svc_result["context_path"] = context_path_svc
@@ -1179,6 +1390,9 @@ Examples:
     %(prog)s create-domain --governance-repo /path/to/repo --domain platform \\
         --name "Platform" --username cweber
 
+
+    %(prog)s create-domain --governance-repo /path/to/repo --domain platform \
+        --name "Platform" --username cweber --execute-governance-git
     %(prog)s create-domain --governance-repo /path/to/repo --domain platform \\
         --name "Platform" --username cweber \\
         --target-projects-root /path/to/TargetProjects
@@ -1186,6 +1400,10 @@ Examples:
     %(prog)s create-service --governance-repo /path/to/repo --domain platform \\
         --service identity --name "Identity" --username cweber
 
+
+    %(prog)s create-service --governance-repo /path/to/repo --domain platform \
+        --service identity --name "Identity" --username cweber \
+        --execute-governance-git
     %(prog)s create-service --governance-repo /path/to/repo --domain platform \\
         --service identity --name "Identity" --username cweber \\
         --target-projects-root /path/to/TargetProjects
@@ -1233,6 +1451,12 @@ Examples:
         action="store_true",
         help="Print planned operations without writing any files",
     )
+    create_domain_p.add_argument(
+        "--execute-governance-git",
+        action="store_true",
+        dest="execute_governance_git",
+        help="Automatically run governance checkout/pull/add/commit/push after creating the container",
+    )
 
     create_service_p = subparsers.add_parser(
         "create-service",
@@ -1265,6 +1489,12 @@ Examples:
         "--dry-run",
         action="store_true",
         help="Print planned operations without writing any files",
+    )
+    create_service_p.add_argument(
+        "--execute-governance-git",
+        action="store_true",
+        dest="execute_governance_git",
+        help="Automatically run governance checkout/pull/add/commit/push after creating the container",
     )
 
     read_context_p = subparsers.add_parser(
