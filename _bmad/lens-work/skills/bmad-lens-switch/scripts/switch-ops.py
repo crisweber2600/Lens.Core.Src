@@ -385,10 +385,10 @@ def cmd_list(args: argparse.Namespace) -> dict:
     raw_features: list[dict] = index_data.get("features") or []
 
     status_filter: str = args.status_filter
-    if status_filter != "all":
-        raw_features = [
-            f for f in raw_features if f.get("status", "active") == status_filter
-        ]
+    if status_filter == "archived":
+        raw_features = [f for f in raw_features if f.get("status") == "archived"]
+    elif status_filter != "all":
+        raw_features = [f for f in raw_features if f.get("status") != "archived"]
 
     features = []
     for i, f in enumerate(raw_features):
@@ -647,7 +647,7 @@ Examples:
         "--status-filter",
         default="active",
         choices=["all", "active", "archived"],
-        help="Filter by feature status (default: active)",
+        help="Filter by feature status (default: non-archived features)",
     )
 
     # switch

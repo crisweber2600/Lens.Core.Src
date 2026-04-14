@@ -121,7 +121,7 @@ SAMPLE_INDEX_ENTRIES = [
         "id": "user-profile",
         "domain": "platform",
         "service": "identity",
-        "status": "active",
+        "status": "businessplan-complete",
         "owner": "amelia",
         "summary": "User profile management",
     },
@@ -178,25 +178,29 @@ def test_list_features():
         result, code = run(["list", "--governance-repo", tmp])
         assert_eq("list status", result["status"], "pass")
         assert_eq("list exit code", code, 0)
-        # Default filter: active only — 2 active entries
-        assert_eq("list active count", result["total"], 2)
+        # Default filter: everything except archived terminal items
+        assert_eq("list visible count", result["total"], 2)
         ids = [f["id"] for f in result["features"]]
         assert_true("contains auth-login", "auth-login" in ids)
         assert_true("contains user-profile", "user-profile" in ids)
         assert_false("excludes archived", "legacy-sso" in ids)
+        statuses = {f["id"]: f["status"] for f in result["features"]}
+        assert_eq("keeps non-archived phase status", statuses.get("user-profile"), "businessplan-complete")
 
 
-def test_list_active_only_excludes_archived():
-    """Active filter excludes archived features."""
-    print("test_list_active_only_excludes_archived", file=sys.stderr)
+def test_list_active_filter_excludes_archived():
+    """Active filter means non-archived features, not literal status == active."""
+    print("test_list_active_filter_excludes_archived", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
         write_index(tmp, SAMPLE_INDEX_ENTRIES)
 
         result, code = run(["list", "--governance-repo", tmp, "--status-filter", "active"])
         assert_eq("active filter status", result["status"], "pass")
         assert_eq("active count", result["total"], 2)
-        for f in result["features"]:
-            assert_eq(f"feature {f['id']} is active", f["status"], "active")
+        ids = [f["id"] for f in result["features"]]
+        assert_true("active filter keeps auth-login", "auth-login" in ids)
+        assert_true("active filter keeps businessplan-complete feature", "user-profile" in ids)
+        assert_false("active filter excludes archived", "legacy-sso" in ids)
 
 
 def test_list_all_includes_archived():
@@ -878,7 +882,7 @@ def test_switch_service_context_with_control_repo_existing_branch():
 
 def main() -> None:
     test_list_features()
-    test_list_active_only_excludes_archived()
+    test_list_active_filter_excludes_archived()
     test_list_all_includes_archived()
     test_list_missing_index_falls_back_to_domains()
     test_list_domain_fallback_with_domains()

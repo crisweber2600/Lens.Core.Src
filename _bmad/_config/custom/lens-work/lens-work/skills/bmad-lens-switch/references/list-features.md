@@ -21,7 +21,7 @@ python3 ./scripts/switch-ops.py list \
   --governance-repo {governance_repo}
 ```
 
-Optional status filter (default: active only):
+Optional status filter (default: all non-archived features):
 
 ```bash
 # Show all features including archived
@@ -29,7 +29,7 @@ python3 ./scripts/switch-ops.py list \
   --governance-repo {governance_repo} \
   --status-filter all
 
-# Show only archived
+# Show only archived/completed items
 python3 ./scripts/switch-ops.py list \
   --governance-repo {governance_repo} \
   --status-filter archived
@@ -58,7 +58,7 @@ Each feature entry includes a `num` field (1-indexed integer) for menu selection
       "id": "user-profile",
       "domain": "platform",
       "service": "identity",
-      "status": "active",
+      "status": "businessplan-complete",
       "owner": "amelia",
       "summary": "User profile management and preferences"
     }
@@ -75,8 +75,8 @@ Present results as a numbered menu grouped by domain/service. Use `→` to mark 
 Available features (2):
 
 PLATFORM / IDENTITY
-  1  auth-login     active   cweber    User authentication flow with JWT tokens
-  2  user-profile   active   amelia    User profile management and preferences
+  1  auth-login             active                 cweber    User authentication flow with JWT tokens
+  2  user-profile           businessplan-complete  amelia    User profile management and preferences
 
 Enter a number to switch, or q to cancel:
 ```
