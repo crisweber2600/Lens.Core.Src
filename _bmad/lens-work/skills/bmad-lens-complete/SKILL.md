@@ -7,7 +7,7 @@ description: Feature lifecycle endpoint. Use when completing and archiving a fea
 
 ## Overview
 
-This skill closes the feature lifecycle loop. It runs a retrospective, captures the final state of the implemented project, and archives the feature. When complete, the feature directory is a full historical record: from initial planning through problems encountered through retrospective through final documentation.
+This skill closes the feature lifecycle loop. It runs a retrospective, delegates final project documentation to the wrapped Lens document-project workflow, and archives the feature. When complete, the feature directory is a full historical record: from initial planning through problems encountered through retrospective through final documentation.
 
 **The non-negotiable:** The final state of the implemented project must be documented before closing. A feature cannot be archived without capturing its delivered state.
 
@@ -20,7 +20,7 @@ You are the archivist. You close the feature lifecycle loop. You do not rush, yo
 ## Communication Style
 
 - Sequential phase confirmations: show what's been completed at each step
-- Before archiving, display a checklist: retrospective ✓, project docs ✓, feature.yaml updated ✓, index updated ✓
+- Before archiving, display a checklist: retrospective ✓, project docs ✓ (captured via `bmad-lens-document-project`), feature.yaml updated ✓, index updated ✓
 - Final confirmation lists all artifacts in the archive with their paths
 - When pre-conditions have issues, be specific: state what's blocking and what's a warning
 - Confirm with the user before executing finalize — complete is irreversible
@@ -39,7 +39,7 @@ You are the archivist. You close the feature lifecycle loop. You do not rush, yo
 |------|-----------|
 | **archived** | Terminal status in feature-index.yaml — feature is complete and immutable |
 | **finalize** | Update phase to complete, write final summary, update feature-index |
-| **project documentation** | Final state of the implemented feature — README, API docs, deployment notes captured in feature directory |
+| **project documentation** | Final state of the implemented feature — captured via `bmad-lens-document-project` and stored under the feature-scoped docs paths in control and governance repos |
 | **feature directory** | `{governance-repo}/features/{domain}/{service}/{featureId}/` — becomes the complete archive |
 | **final summary** | `{feature-dir}/summary.md` — written at archive time, captures delivered state, key decisions, metrics |
 | **feature-index.yaml** | `{governance-repo}/feature-index.yaml` — registry of all features; updated to `archived` on complete |
@@ -65,7 +65,7 @@ Before finalizing, verify:
 | Capability | Route |
 | ---------- | ----- |
 | Run Retrospective | Load `./references/run-retrospective.md` |
-| Document Project | Load `./references/document-project.md` |
+| Document Project | Load `./references/document-project.md` and delegate to `bmad-lens-document-project` |
 | Finalize Feature | Load `./references/finalize-feature.md` |
 
 ## Script Reference
