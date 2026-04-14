@@ -5,6 +5,7 @@ description: 'On-demand workspace preflight sync and validation'
 # lens-preflight (Stub)
 
 > **This is a stub.** Load and execute the full prompt from the release module.
+> When appropriate, use `vscode_askQuestions` to get feedback from users if the tool is available.
 
 ```
 Run the shared preflight script from the workspace root:

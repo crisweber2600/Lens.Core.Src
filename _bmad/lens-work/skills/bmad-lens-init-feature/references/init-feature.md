@@ -93,6 +93,8 @@ Execute the `git_commands` returned by the script in sequence, then the `gh_comm
 
 > **Note:** The governance repo stays on `main` throughout — no feature branches are created there. The 2-branch topology (`{featureId}` + `{featureId}-plan`) exists only in the control repo.
 
+> **Container note:** `create-domain` and `create-service` can be run with `--execute-governance-git`. In that mode the script performs the governance checkout/pull/add/commit/push itself and callers should surface only the returned `remaining_git_commands` for any manual workspace scaffold follow-up.
+
 ### Step 5: Confirm Initialization
 
 Present the initialization summary to the user:

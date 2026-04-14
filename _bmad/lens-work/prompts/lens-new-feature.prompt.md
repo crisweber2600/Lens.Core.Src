@@ -1,9 +1,9 @@
----
 mode: agent
 description: "Initialize a new feature with 2-branch topology, feature YAML, and PR"
----
 
 Load and follow the skill at: `lens.core/_bmad/lens-work/skills/bmad-lens-init-feature/SKILL.md`
+
+When appropriate, use `vscode_askQuestions` to get feedback from users if the tool is available.
 
 The user wants to initialize a new **feature**. This means:
 1. Create a 2-branch topology (`{featureId}` and `{featureId}-plan`) in the control repo
