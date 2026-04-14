@@ -36,7 +36,7 @@ Load available config from `{project-root}/lens.core/_bmad/config.yaml` and `{pr
 - `{governance_repo}` — path to the governance repo (required)
 - `{control_repo}` — path to the control/working repo (defaults to governance_repo)
 - `{username}` — used for dev branch naming (`{featureId}-dev-{username}`)
-- `{default_branch}` — repo default branch (default: `main`)
+- `{default_branch}` — optional override for the repo default branch; otherwise detect the remote default branch and fall back to `main`
 
 ## Capabilities
 
@@ -48,9 +48,10 @@ Load available config from `{project-root}/lens.core/_bmad/config.yaml` and `{pr
 1. Validate `{featureId}` — must be lowercase alphanumeric + hyphens, no slashes
 2. Confirm `feature.yaml` exists for this feature in the governance repo
 3. Confirm neither branch already exists (fail with clear message if either does)
-4. Create `{featureId}` from `{default_branch}`, push with `--set-upstream`
-5. Create `{featureId}-plan` from `{featureId}`, push with `--set-upstream`
-6. Report: branch names, parent, remote tracking refs
+4. Resolve the control repo default branch, honoring `{default_branch}` when explicitly supplied
+5. Create `{featureId}` from the resolved default branch, push with `--set-upstream`
+6. Create `{featureId}-plan` from `{featureId}`, push with `--set-upstream`
+7. Report: branch names, parent, remote tracking refs
 
 Load `./references/create-feature-branches.md` for full guidance.
 

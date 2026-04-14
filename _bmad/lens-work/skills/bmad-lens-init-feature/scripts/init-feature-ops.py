@@ -91,6 +91,11 @@ def git_command_text(repo: str, args: list[str]) -> str:
     return shlex.join(git_command_argv(repo, args))
 
 
+def uv_script_command_text(script_path: Path, args: list[str]) -> str:
+    """Build a shell-safe uv command for a frontmatter script."""
+    return shlex.join(["uv", "run", "--script", str(script_path), *args])
+
+
 def run_git(repo: str, args: list[str]) -> subprocess.CompletedProcess[str]:
     """Run a git command and raise a clear error on failure."""
     result = subprocess.run(
@@ -630,15 +635,30 @@ def detect_service_refs_from_texts(texts: list[str], candidate_services: list[st
     return unique_paths(detected)
 
 
-def build_control_repo_git_commands(control_repo: str | None, feature_id: str) -> list[str]:
-    """Return git commands for feature/control branch creation when a separate control repo exists."""
+def build_control_repo_git_commands(governance_repo: str, control_repo: str | None, feature_id: str) -> list[str]:
+    """Return control-repo commands that create the 2-branch topology from the repo default branch."""
     if not control_repo:
         return []
 
-    plan_branch = f"{feature_id}-plan"
+    git_orchestration_script = (
+        Path(__file__).resolve().parents[2]
+        / "bmad-lens-git-orchestration"
+        / "scripts"
+        / "git-orchestration-ops.py"
+    )
     return [
-        f"git -C {control_repo} checkout -b {feature_id}",
-        f"git -C {control_repo} checkout -b {plan_branch}",
+        uv_script_command_text(
+            git_orchestration_script,
+            [
+                "create-feature-branches",
+                "--governance-repo",
+                governance_repo,
+                "--repo",
+                control_repo,
+                "--feature-id",
+                feature_id,
+            ],
+        )
     ]
 
 
@@ -695,7 +715,7 @@ def build_git_commands(
     The 2-branch topology ({featureId} + {featureId}-plan) only exists in the
     control repo.
     """
-    return build_control_repo_git_commands(control_repo, feature_id) + build_feature_governance_git_commands(
+    return build_control_repo_git_commands(governance_repo, control_repo, feature_id) + build_feature_governance_git_commands(
         governance_repo,
         feature_id,
         domain,
@@ -878,7 +898,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
     ctrl_for_git = control_repo if (control_repo and control_repo != governance_repo) else None
     pr_repo = control_repo or governance_repo
 
-    control_repo_git_commands = build_control_repo_git_commands(ctrl_for_git, feature_id)
+    control_repo_git_commands = build_control_repo_git_commands(governance_repo, ctrl_for_git, feature_id)
     governance_git_steps = build_feature_governance_git_steps(
         feature_id,
         domain,

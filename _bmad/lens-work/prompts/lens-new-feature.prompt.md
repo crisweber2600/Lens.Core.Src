@@ -18,4 +18,5 @@ Apply progressive disclosure — ask only for feature name, domain, and service 
 
 Use the `create` subcommand of `scripts/init-feature-ops.py` with `--execute-governance-git`.
 Report governance git success, include the returned `governance_commit_sha` when present, and only surface any `remaining_git_commands` plus `gh_commands` for manual follow-up.
+Execute the returned branch-creation command exactly as provided; do not replace it with manual `git checkout -b` steps, because it resolves the control repo default branch before creating `{featureId}` and `{featureId}-plan`.
 If governance git preflight or execution fails, stop and surface the error; do not provide a manual governance git recipe.

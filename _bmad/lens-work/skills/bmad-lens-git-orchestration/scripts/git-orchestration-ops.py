@@ -94,6 +94,24 @@ def current_branch(repo: str) -> str:
     return result.stdout.strip()
 
 
+def resolve_default_branch(repo: str, requested_branch: str | None = None) -> str:
+    """Resolve the repo default branch, honoring an explicit override when given."""
+    if requested_branch:
+        return requested_branch
+
+    result = git(["symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"], cwd=repo, check=False)
+    if result.returncode == 0:
+        remote_ref = result.stdout.strip()
+        if remote_ref.startswith("origin/"):
+            return remote_ref.removeprefix("origin/")
+
+    for candidate in ("main", "master", "develop", "trunk"):
+        if branch_exists(repo, candidate, include_remote=True):
+            return candidate
+
+    return current_branch(repo)
+
+
 def branch_exists(repo: str, branch: str, include_remote: bool = False) -> bool:
     """Return True if branch exists locally (or remotely when include_remote=True)."""
     result = git(["branch", "--list", branch], cwd=repo)
@@ -177,6 +195,7 @@ def artifact_candidates(docs_root: Path, name: str) -> list[Path]:
         case "research":
             candidates = [docs_root / "research.md"]
             candidates += list(docs_root.glob("research-*.md"))
+            candidates += list((docs_root / "research").glob("*.md"))
         case "brainstorm":
             candidates = [docs_root / "brainstorm.md"]
         case "prd":
@@ -203,6 +222,7 @@ def artifact_candidates(docs_root: Path, name: str) -> list[Path]:
                 docs_root / "preplan-adversarial-review.md",
                 docs_root / "businessplan-adversarial-review.md",
                 docs_root / "techplan-adversarial-review.md",
+                docs_root / "expressplan-adversarial-review.md",
                 docs_root / "finalizeplan-review.md",
             ]
         case _:
@@ -283,7 +303,7 @@ def cmd_create_feature_branches(args: argparse.Namespace) -> tuple[dict[str, Any
     feature_id = args.feature_id
     governance_repo = args.governance_repo
     repo = args.repo or governance_repo
-    default_branch = args.default_branch
+    default_branch = resolve_default_branch(repo, args.default_branch)
 
     err = validate_slug(feature_id, "feature_id")
     if err:
@@ -810,7 +830,7 @@ def build_parser() -> argparse.ArgumentParser:
     cfb.add_argument("--governance-repo", required=True)
     cfb.add_argument("--feature-id", required=True)
     cfb.add_argument("--repo", default=None, help="Working repo path (defaults to governance-repo)")
-    cfb.add_argument("--default-branch", default="main")
+    cfb.add_argument("--default-branch", default=None, help="Override the repo default branch")
     cfb.add_argument("--dry-run", action="store_true")
 
     # commit-artifacts
