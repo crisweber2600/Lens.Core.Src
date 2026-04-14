@@ -16,13 +16,20 @@ def test_lifecycle_declares_completion_review_for_preplan_businessplan_and_techp
     text = _read("lifecycle.yaml")
 
     assert "report: preplan-adversarial-review.md" in text
+    assert "ready_when_artifacts: [product-brief, research, brainstorm]" in text
     assert "reviewed_artifacts: [product-brief, research, brainstorm]" in text
     assert "report: businessplan-adversarial-review.md" in text
+    assert "ready_when_artifacts: [prd, ux-design]" in text
     assert "reviewed_artifacts: [prd, ux-design]" in text
     assert "report: techplan-adversarial-review.md" in text
+    assert "ready_when_artifacts: [architecture]" in text
     assert "reviewed_artifacts: [architecture]" in text
     assert "report: finalizeplan-review.md" in text
+    assert "ready_when_artifacts: [product-brief, research, brainstorm, prd, ux-design, architecture]" in text
     assert "reviewed_artifacts: [product-brief, research, brainstorm, prd, ux-design, architecture]" in text
+    assert "report: expressplan-adversarial-review.md" in text
+    assert "ready_when_artifacts: [business-plan, tech-plan, sprint-plan]" in text
+    assert "reviewed_artifacts: [business-plan, tech-plan]" in text
 
 
 def test_phase_conductors_block_completion_until_review_gate_passes():
@@ -38,6 +45,25 @@ def test_phase_conductors_block_completion_until_review_gate_passes():
 
     assert "Run `bmad-lens-adversarial-review --phase techplan --source phase-complete`" in techplan
     assert "If the verdict is `fail`, stop and do not update `feature.yaml`." in techplan
+
+
+def test_phase_conductors_resume_directly_into_review_when_review_is_next_step():
+    preplan = _read("skills/bmad-lens-preplan/SKILL.md")
+    businessplan = _read("skills/bmad-lens-businessplan/SKILL.md")
+    techplan = _read("skills/bmad-lens-techplan/SKILL.md")
+    expressplan = _read("skills/bmad-lens-expressplan/SKILL.md")
+
+    assert "--phase preplan --contract review-ready" in preplan
+    assert "treat adversarial review as the next deterministic step" in preplan
+
+    assert "--phase businessplan --contract review-ready" in businessplan
+    assert "Do not reopen the workflow selection menu or ask the direct-run confirmation prompt." in businessplan
+
+    assert "--phase techplan --contract review-ready" in techplan
+    assert "Do not ask a redundant yes/no prompt or relaunch the native architecture handoff." in techplan
+
+    assert "--phase expressplan --contract review-ready" in expressplan
+    assert "Do not re-run QuickPlan or re-confirm the feature and mode." in expressplan
 
 
 def test_handoff_docs_publish_review_artifacts_with_predecessor_phase_outputs():
