@@ -46,6 +46,7 @@ def artifact_candidates(docs_root: Path, name: str) -> list[Path]:
         case "research":
             candidates = [docs_root / "research.md"]
             candidates += list(docs_root.glob("research-*.md"))
+            candidates += list((docs_root / "research").glob("*.md"))
         case "brainstorm":
             candidates = [docs_root / "brainstorm.md"]
         case "prd":
@@ -69,11 +70,19 @@ def artifact_candidates(docs_root: Path, name: str) -> list[Path]:
             candidates = [
                 docs_root / "review-report.md",
                 docs_root / "adversarial-review.md",
+                docs_root / "preplan-adversarial-review.md",
+                docs_root / "businessplan-adversarial-review.md",
+                docs_root / "techplan-adversarial-review.md",
+                docs_root / "expressplan-adversarial-review.md",
                 docs_root / "finalizeplan-review.md",
             ]
         case _:
             candidates = [docs_root / f"{name}.md"]
     return [candidate for candidate in candidates if not is_batch_input(candidate)]
+
+
+def existing_artifact_files(docs_root: Path, name: str) -> list[Path]:
+    return [candidate for candidate in artifact_candidates(docs_root, name) if candidate.exists() and candidate.stat().st_size > 0]
 
 
 def story_file_candidates(docs_root: Path) -> list[Path]:
@@ -102,10 +111,7 @@ def story_file_candidates(docs_root: Path) -> list[Path]:
 
 
 def artifact_exists(docs_root: Path, name: str) -> bool:
-    for candidate in artifact_candidates(docs_root, name):
-        if candidate.exists() and candidate.stat().st_size > 0:
-            return True
-    return False
+    return bool(existing_artifact_files(docs_root, name))
 
 
 def main() -> int:
@@ -121,6 +127,12 @@ def main() -> int:
     )
     parser.add_argument("--lifecycle-path", required=True, help="Path to lifecycle.yaml")
     parser.add_argument("--docs-root", required=True, help="Path to docs root")
+    parser.add_argument(
+        "--misplaced-root",
+        action="append",
+        default=[],
+        help="Optional root to scan for required artifacts that were written outside docs-root",
+    )
     parser.add_argument("--json", action="store_true", help="Output as JSON")
     args = parser.parse_args()
 
@@ -132,6 +144,7 @@ def main() -> int:
         return 1
 
     required = get_required_artifacts(lifecycle_path, args.phase, args.contract)
+    misplaced_roots = [Path(root) for root in args.misplaced_root]
 
     if not required:
         if args.json:
@@ -149,12 +162,20 @@ def main() -> int:
 
     found: list[str] = []
     missing: list[str] = []
+    misplaced: dict[str, list[str]] = {}
 
     for artifact in required:
         if artifact_exists(docs_root, artifact):
             found.append(artifact)
         else:
             missing.append(artifact)
+            misplaced_files: list[str] = []
+            for misplaced_root in misplaced_roots:
+                if not misplaced_root.exists():
+                    continue
+                misplaced_files.extend(str(path) for path in existing_artifact_files(misplaced_root, artifact))
+            if misplaced_files:
+                misplaced[artifact] = sorted(set(misplaced_files))
 
     passed = len(missing) == 0
 
@@ -166,6 +187,8 @@ def main() -> int:
             "found": len(found),
             "missing": missing,
             "found_list": found,
+            "misplaced": misplaced,
+            "failure_reason": None if passed else ("misplaced_artifacts" if misplaced else "missing_artifacts"),
             "status": "pass" if passed else "fail",
         }, indent=2))
     else:
@@ -188,6 +211,10 @@ def main() -> int:
         print(f"  Required: {len(required)}")
         print(f"  Found:    {len(found)}")
         print(f"  Missing:  {', '.join(missing) if missing else 'none'}")
+        if misplaced:
+            print("  Misplaced artifacts found outside docs-root:")
+            for artifact, paths in misplaced.items():
+                print(f"    {artifact}: {', '.join(paths)}")
 
     return 0 if passed else 1
 

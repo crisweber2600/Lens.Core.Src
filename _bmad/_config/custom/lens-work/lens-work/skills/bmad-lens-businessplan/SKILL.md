@@ -30,6 +30,7 @@ You are the BusinessPlan phase conductor for the Lens agent. You invoke register
 
 - **Wrapper-first delegation** — PRD and UX work runs through `bmad-lens-bmad-skill`, not direct persona handoffs
 - **Stage then publish** — BusinessPlan publishes reviewed PrePlan artifacts to governance first, then stages BusinessPlan outputs locally for the next handoff
+- **Feature docs authority** — once feature context is resolved, the staged docs path is the only authoring root for BusinessPlan artifacts; the global `planning_artifacts` fallback and governance mirror never replace it
 - **Preplan dependency** — preplan must be complete before businessplan can start; validate via feature.yaml
 - **Progressive disclosure** — load staged product brief and research as authoring context, then use the governance mirror as the published cross-feature snapshot
 - **Interactive handoff boundary** — in interactive mode, BusinessPlan chooses which native planning workflow to launch, then yields all downstream questions and document authoring to that native workflow
@@ -43,11 +44,11 @@ You are the BusinessPlan phase conductor for the Lens agent. You invoke register
 3. Load `feature.yaml` for the feature via `bmad-lens-feature-yaml`.
 4. Validate the feature's track includes `businessplan` in its phases.
 5. Validate predecessor `preplan` phase is complete (or track skips preplan).
-6. Resolve the staged docs path from `feature.yaml.docs.path` (fallback: `docs/{domain}/{service}/{featureId}` in the control repo).
+6. Resolve the staged docs path from `feature.yaml.docs.path` (fallback: `docs/{domain}/{service}/{featureId}` in the control repo) and the governance docs mirror path from `feature.yaml.docs.governance_docs_path` (fallback: `features/{domain}/{service}/{featureId}/docs` in the governance repo).
 7. Determine mode: `interactive` (default) or `batch`.
 8. If mode is `batch` and `batch_resume_context` is absent, delegate to `bmad-lens-batch --target businessplan`, write or refresh `businessplan-batch-input.md`, and stop. Do not publish reviewed PrePlan artifacts, launch native sessions, or update `feature.yaml` on pass 1.
 9. If mode is `batch` and `batch_resume_context` is present, derive workflow selection from the answered batch input and treat those answers as pre-approved context. Do not show the interactive workflow selection menu again unless the batch input leaves workflow scope ambiguous.
-10. Run `uv run {project-root}/lens.core/_bmad/lens-work/scripts/validate-phase-artifacts.py --phase businessplan --contract review-ready --lifecycle-path {project-root}/lens.core/_bmad/lens-work/lifecycle.yaml --docs-root <resolved staged docs path> --json` using the staged docs path from step 6.
+10. Run `uv run {project-root}/lens.core/_bmad/lens-work/scripts/validate-phase-artifacts.py --phase businessplan --contract review-ready --lifecycle-path {project-root}/lens.core/_bmad/lens-work/lifecycle.yaml --docs-root <resolved staged docs path> --misplaced-root {project-root}/docs/planning-artifacts --misplaced-root <resolved governance docs mirror path> --json` using the staged docs path from step 6.
 11. If the feature phase is still `businessplan` and the readiness check returns `status=pass`, treat adversarial review as the next deterministic step. Do not reopen the workflow selection menu or ask the direct-run confirmation prompt. Run `bmad-lens-adversarial-review --phase businessplan --source phase-complete`, then continue directly with the Phase Completion contract below.
 12. If mode is `interactive` and the readiness check returns `status=fail`, present a workflow selection menu: `prd`, `ux-design`, or `both`.
 13. If mode is `interactive` and BusinessPlan was invoked directly and the readiness check returns `status=fail`, confirm that BusinessPlan will invoke the governance publish CLI to copy reviewed PrePlan artifacts and then launch the selected native session or sessions. Do not ask downstream discovery questions here. If the user does not confirm, stop cleanly with no changes.

@@ -641,6 +641,8 @@ async function install(options) {
                 '',
                 `project_name: ${toYamlString(path.basename(projectRoot))}`,
                 'user_skill_level: intermediate',
+                '# Fallback only when Lens feature context is unavailable.',
+                '# Lens-wrapped planning workflows stage artifacts under feature.yaml.docs.path first.',
                 'planning_artifacts: "{project-root}/docs/planning-artifacts"',
                 'implementation_artifacts: "{project-root}/docs/implementation-artifacts"',
                 'project_knowledge: "{project-root}/docs"',

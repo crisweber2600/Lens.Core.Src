@@ -77,20 +77,23 @@ The script:
 
 ### Step 4: Execute Git and GitHub Commands
 
-When `--execute-governance-git` succeeds, the script has already published governance artifacts on `main`. Execute only the returned `remaining_git_commands`, then the `gh_commands` when present:
+When `--execute-governance-git` succeeds, the script has already published governance artifacts on `main`. Execute only the returned `remaining_git_commands`, then the `gh_commands` when present. Do not rewrite the returned branch-creation step into raw `git checkout -b` commands; the generated git-orchestration command anchors the feature topology to the control repo's default branch.
 
 ```bash
 # Each command in remaining_git_commands runs in order
 # Example remaining commands after governance auto-publish:
-# git -C {control_repo} checkout -b {featureId}
-# git -C {control_repo} checkout -b {featureId}-plan
+# uv run --script {project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-git-orchestration/scripts/git-orchestration-ops.py \
+#   create-feature-branches \
+#   --governance-repo {governance_repo} \
+#   --repo {control_repo} \
+#   --feature-id {featureId}
 
 # Then gh_commands when `planning_pr_created == true`
 # (PR is in the control repo, not governance):
 # gh pr create --repo {control_repo} --head {featureId}-plan --base {featureId} ...
 ```
 
-> **Note:** The governance repo stays on `main` throughout — no feature branches are created there. The 2-branch topology (`{featureId}` + `{featureId}-plan`) exists only in the control repo.
+> **Note:** The governance repo stays on `main` throughout — no feature branches are created there. The 2-branch topology (`{featureId}` + `{featureId}-plan`) exists only in the control repo and should be created through git-orchestration so `{featureId}` starts from the repo default branch.
 
 > **Auto-publish note:** `create`, `create-domain`, and `create-service` can be run with `--execute-governance-git`. In that mode the script performs the governance checkout/pull/add/commit/push itself and callers should surface only the returned `remaining_git_commands` for any manual follow-up.
 

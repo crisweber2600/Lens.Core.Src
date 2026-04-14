@@ -198,7 +198,7 @@ uv run scripts/init-feature-ops.py read-context \
 - stages, commits, and pushes governance artifacts automatically on `main`
 - returns `governance_git_commands`, `remaining_git_commands`, `governance_git_executed`, and `governance_commit_sha`
 
-Feature init also returns `control_repo_git_commands` so callers can surface any still-manual branch creation steps separately from the governance publish that already ran.
+Feature init also returns `control_repo_git_commands` so callers can surface any still-manual branch creation steps separately from the governance publish that already ran. These commands route through `bmad-lens-git-orchestration create-feature-branches` so `{featureId}` is created from the control repo default branch before `{featureId}-plan` is created.
 
 `git_commands` remains the full planned command list for compatibility. When governance git already ran, callers should surface only `remaining_git_commands` plus any returned `gh_commands` to the user.
 

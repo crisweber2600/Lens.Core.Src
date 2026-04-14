@@ -6,6 +6,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).parent.parent.parent
+CONTROL_REPO_ROOT = ROOT.parents[5]
 
 PUBLISHING_CONDUCTORS = {
     "skills/bmad-lens-businessplan/SKILL.md": "preplan",
@@ -66,6 +67,35 @@ def test_wrapper_delegation_boundary_is_explicit():
     assert "Delegate and stop" in text
     assert "does not continue phase-conductor execution" in text
     assert "Do not ask follow-on workflow questions" in text
+
+
+def test_wrapper_declares_feature_scoped_planning_authority():
+    text = _read("skills/bmad-lens-bmad-skill/SKILL.md")
+
+    assert "feature.yaml.docs.path` as the authoritative `planning_artifacts` root" in text
+    assert "global `docs/planning-artifacts` fallback is only for no-feature runs" in text
+    assert "governance copies must not be authored directly" in text
+
+
+def test_planning_conductors_validate_misplaced_roots_before_progression():
+    for relative_path in (
+        "skills/bmad-lens-preplan/SKILL.md",
+        "skills/bmad-lens-businessplan/SKILL.md",
+        "skills/bmad-lens-techplan/SKILL.md",
+        "skills/bmad-lens-expressplan/SKILL.md",
+    ):
+        text = _read(relative_path)
+
+        assert "--misplaced-root {project-root}/docs/planning-artifacts" in text
+        assert "resolved governance docs mirror path" in text
+
+
+def test_control_repo_instructions_require_control_first_artifact_authority():
+    text = (CONTROL_REPO_ROOT / ".github/instructions/lens-control-repo.instructions.md").read_text(encoding="utf-8")
+
+    assert "TargetProjects/lens.core/src/Lens.Core.Src/" in text
+    assert "stage feature artifacts under the feature's control-repo docs path" in text
+    assert "Governance mirrors are populated only by explicit handoff tooling" in text
 
 
 def test_next_docs_describe_auto_delegate_behavior():

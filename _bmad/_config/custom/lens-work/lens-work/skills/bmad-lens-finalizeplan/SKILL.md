@@ -33,6 +33,8 @@ You are the FinalizePlan phase conductor for the Lens agent. You coordinate revi
 - **Bundled wrapper delegation** — epics, stories, implementation readiness, sprint planning, and story-file creation all route through `bmad-lens-bmad-skill`
 - **Final PR required** — step 3 ends by opening the final `{featureId}` → `main` PR so `/dev` starts from an already-reviewed planning set
 - **TechPlan handoff stays durable** — include the techplan review report when present when publishing reviewed TechPlan artifacts into governance
+- **Feature docs authority** — the feature's control-repo docs path remains the source of truth for staged planning artifacts; governance is a mirror populated only by publish tooling
+- **No ad hoc branch creation** — FinalizePlan assumes init-feature already created `{featureId}` from the control repo default branch and `{featureId}-plan` from `{featureId}`; if either branch is missing, stop and route to `bmad-lens-init-feature` or `bmad-lens-git-orchestration create-feature-branches`
 
 ## On Activation
 
@@ -41,7 +43,7 @@ You are the FinalizePlan phase conductor for the Lens agent. You coordinate revi
 3. Load `feature.yaml` for the feature via `bmad-lens-feature-yaml`.
 4. Validate the feature's track includes `finalizeplan` in its phases.
 5. Validate predecessor `techplan` phase is complete.
-6. Resolve the staged docs path from `feature.yaml.docs.path` (fallback: `docs/{domain}/{service}/{featureId}` in the control repo).
+6. Resolve the staged docs path from `feature.yaml.docs.path` (fallback: `docs/{domain}/{service}/{featureId}` in the control repo) and the governance docs mirror path from `feature.yaml.docs.governance_docs_path` (fallback: `features/{domain}/{service}/{featureId}/docs` in the governance repo).
 7. Publish staged TechPlan artifacts, including the techplan review report when present, into the governance docs mirror via the CLI-backed `bmad-lens-git-orchestration publish-to-governance --phase techplan` operation before starting FinalizePlan outputs. Do not create governance files or directories directly with tool calls or patches; the publish CLI performs that copy.
 8. Load staged PrePlan, BusinessPlan, and TechPlan artifacts for authoring context, and use the governance mirror as the published snapshot for cross-feature consumers.
 9. Load cross-feature context via `bmad-lens-init-feature` `fetch-context --depth full`.
@@ -63,6 +65,7 @@ You are the FinalizePlan phase conductor for the Lens agent. You coordinate revi
 
 ### Step 2 — Confirm Ready To PR/Merge
 
+0. Confirm `{featureId}` and `{featureId}-plan` already exist in the control repo. If either branch is missing, stop and route back to init-feature or `bmad-lens-git-orchestration create-feature-branches`; do not create branches ad hoc inside FinalizePlan.
 1. Create or validate the planning PR from `{featureId}-plan` to `{featureId}` via `bmad-lens-git-orchestration merge-plan --strategy pr`.
 2. If the user wants the initial PR to auto-merge, enable it here and report whether auto-merge was accepted.
 3. Stop if the PR cannot be created, if reviewers or branch protections block readiness, or if the user does not approve moving to the downstream bundle.

@@ -854,7 +854,7 @@ def test_fetch_context_service_context_without_service_marker():
 
 
 def test_control_repo_git_commands():
-    """When control-repo differs from governance-repo, git commands include both repos."""
+    """When control-repo differs from governance-repo, follow-up uses git-orchestration branch creation."""
     print("test_control_repo_git_commands", file=sys.stderr)
     with tempfile.TemporaryDirectory() as gov_tmp:
         with tempfile.TemporaryDirectory() as ctrl_tmp:
@@ -885,8 +885,28 @@ def test_control_repo_git_commands():
                 any(gov_tmp in c for c in git_cmds),
             )
             assert_true(
-                "plan branch created in ctrl repo",
-                any("ctrl-test-plan" in c and ctrl_tmp in c for c in git_cmds),
+                "control repo branch creation delegated to git orchestration",
+                any("git-orchestration-ops.py create-feature-branches" in c for c in git_cmds),
+            )
+            assert_true(
+                "control repo command includes governance repo",
+                any(f"--governance-repo {gov_tmp}" in c for c in git_cmds),
+            )
+            assert_true(
+                "control repo command includes working repo",
+                any(f"--repo {ctrl_tmp}" in c for c in git_cmds),
+            )
+            assert_true(
+                "control repo command includes feature id",
+                any("--feature-id ctrl-test" in c for c in git_cmds),
+            )
+            assert_true(
+                "raw checkout feature command removed",
+                not any(f"git -C {ctrl_tmp} checkout -b ctrl-test" == c for c in git_cmds),
+            )
+            assert_true(
+                "raw checkout plan command removed",
+                not any(f"git -C {ctrl_tmp} checkout -b ctrl-test-plan" == c for c in git_cmds),
             )
 
 

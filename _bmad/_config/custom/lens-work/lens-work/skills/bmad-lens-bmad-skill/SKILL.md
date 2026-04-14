@@ -30,6 +30,7 @@ You are the Lens BMAD skill router. You load the skill registry, resolve Lens co
 - **Registry-driven** — skill metadata comes from `assets/lens-bmad-skill-registry.json`. Unknown skill IDs are rejected.
 - **Context modes** — `feature-optional` skills run without feature context; `feature-required` skills prompt for missing domain/service/feature.
 - **Output modes** — `planning-docs` skills write to planning artifact paths; `implementation-target` skills write to the target repo.
+- **Feature docs authority** — when feature context exists, planning-doc skills treat `feature.yaml.docs.path` as the authoritative `planning_artifacts` root. The global `docs/planning-artifacts` fallback is only for no-feature runs.
 - **Write boundary enforcement** — planning skills never write to `{release_repo_root}/` or `.github/`; implementation skills write only to the target repo.
 - **Batch context forwarding** — when a planning target resumes from `/batch`, forward the approved batch input path and answer summary as read-only context for the downstream skill.
 - **Delegate and stop** — once the wrapper invokes the downstream skill, all workflow menus, discovery questions, and artifact authorship belong to that skill; the wrapper does not continue conductor execution on its behalf.
@@ -69,9 +70,12 @@ Based on `outputMode`:
 - **`planning-docs`**:
   ```
   output_path = docs_path ?? "{output_folder}/planning-artifacts"
+  planning_artifacts = output_path
   write_scope = output_path
   ```
-  Blocked: `{release_repo_root}/`, `.github/`
+  Blocked: `{governance_repo_path}/`, `{release_repo_root}/`, `.github/`
+
+  When feature context exists, the resolved docs path is authoritative. The global `docs/planning-artifacts` fallback never overrides `feature.yaml.docs.path`, and governance copies must not be authored directly.
 
 - **`implementation-target`**:
   ```
@@ -88,6 +92,8 @@ Load domain constitution via `bmad-lens-constitution` and cache for delegation.
 
 Pass the following `lens_context` to the downstream BMAD skill:
 
+When `outputMode == planning-docs` and feature context is available, downstream skills must treat `planning_artifacts` as `{resolved_output_path}`. The global `docs/planning-artifacts` fallback never overrides the feature docs path, and governance copies must not be authored directly.
+
 ```yaml
 domain: "{domain}"
 service: "{service}"
@@ -95,8 +101,10 @@ feature_id: "{featureId}"
 phase: "{phase}"
 track: "{track}"
 output_path: "{resolved_output_path}"
+docs_path: "{resolved_output_path}"
 target_repo_path: "{target_repo_path}"
 governance_repo_path: "{governance_repo_path}"
+governance_docs_path: "{resolved_governance_docs_path}"
 constitutional_context: "{resolved_context}"
 write_scope: "{write_scope}"
 batch_input_path: "{batch_resume_context.batch_input_path ?? ''}"

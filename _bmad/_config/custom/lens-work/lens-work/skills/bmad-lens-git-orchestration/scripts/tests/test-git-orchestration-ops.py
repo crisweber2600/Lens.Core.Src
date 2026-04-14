@@ -46,11 +46,16 @@ def repo(tmp_path):
 @pytest.fixture()
 def repo_pair(tmp_path):
     """Two repos: 'remote' (bare) and 'local' (cloned from remote). Simulates push/pull."""
+    return init_repo_pair(tmp_path)
+
+
+def init_repo_pair(tmp_path: Path, default_branch: str = "main"):
+    """Create a local clone paired with a bare remote using the requested default branch."""
     remote_path = tmp_path / "remote.git"
     local_path = tmp_path / "local"
     # Create bare remote
     subprocess.run(
-        ["git", "-c", "init.defaultBranch=main", "init", "--bare", str(remote_path)],
+        ["git", "-c", f"init.defaultBranch={default_branch}", "init", "--bare", str(remote_path)],
         check=True, capture_output=True
     )
     # Clone from remote
@@ -62,7 +67,7 @@ def repo_pair(tmp_path):
     readme.write_text("# Test\n")
     subprocess.run(["git", "-C", str(local_path), "add", "."], check=True, capture_output=True)
     subprocess.run(["git", "-C", str(local_path), "commit", "-m", "init"], check=True, capture_output=True)
-    subprocess.run(["git", "-C", str(local_path), "push", "-u", "origin", "main"], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(local_path), "push", "-u", "origin", default_branch], check=True, capture_output=True)
     return local_path, remote_path
 
 
@@ -101,7 +106,7 @@ def _no_args(**kwargs):
     """Build a simple namespace object."""
     class A:
         dry_run = False
-        default_branch = "main"
+        default_branch = None
     a = A()
     for k, v in kwargs.items():
         setattr(a, k, v)
@@ -183,7 +188,7 @@ class TestFindFeatureYaml:
 # ---------------------------------------------------------------------------
 
 class TestCreateFeatureBranches:
-    def _args(self, repo, feature_id, dry_run=False, default_branch="main"):
+    def _args(self, repo, feature_id, dry_run=False, default_branch=None):
         return _no_args(
             governance_repo=str(repo),
             feature_id=feature_id,
@@ -233,12 +238,27 @@ class TestCreateFeatureBranches:
             governance_repo=str(local),
             feature_id="new-feat",
             repo=None,
-            default_branch="main",
+            default_branch=None,
             dry_run=False,
         ))
         assert code == 0
         assert ops.branch_exists(str(local), "new-feat")
         assert ops.branch_exists(str(local), "new-feat-plan")
+
+    def test_detects_remote_default_branch_when_not_overridden(self, tmp_path):
+        local, remote = init_repo_pair(tmp_path, default_branch="develop")
+        write_feature_yaml(local, "develop-feat")
+        result, code = ops.cmd_create_feature_branches(_no_args(
+            governance_repo=str(local),
+            feature_id="develop-feat",
+            repo=None,
+            default_branch=None,
+            dry_run=False,
+        ))
+        assert code == 0
+        assert result["created_from"] == "develop"
+        assert ops.branch_exists(str(local), "develop-feat")
+        assert ops.branch_exists(str(local), "develop-feat-plan")
 
 
 # ---------------------------------------------------------------------------
@@ -484,6 +504,32 @@ class TestPublishToGovernance:
         assert (governance / "features" / "platform" / "identity" / "publish-feat" / "docs" / "product-brief.md").exists()
         assert (governance / "features" / "platform" / "identity" / "publish-feat" / "docs" / "research.md").exists()
         assert "brainstorm" in result["missing_artifacts"]
+
+    def test_publish_to_governance_copies_research_files_from_research_subdir(self, tmp_path):
+        governance = tmp_path / "governance"
+        control = tmp_path / "control"
+        governance.mkdir()
+        control.mkdir()
+
+        write_feature_yaml(governance, "publish-research-subdir", domain="platform", service="identity", phase="preplan")
+
+        control_docs = control / "docs" / "platform" / "identity" / "publish-research-subdir"
+        research_dir = control_docs / "research"
+        research_dir.mkdir(parents=True, exist_ok=True)
+        nested_research = research_dir / "technical-auth-research-2026-04-14.md"
+        nested_research.write_text("# Research\n")
+
+        result, code = ops.cmd_publish_to_governance(_no_args(
+            governance_repo=str(governance),
+            control_repo=str(control),
+            feature_id="publish-research-subdir",
+            phase="preplan",
+            artifact=["research"],
+            dry_run=False,
+        ))
+        assert code == 0
+        assert str(nested_research) in result["copied_from"]
+        assert (governance / "features" / "platform" / "identity" / "publish-research-subdir" / "docs" / "technical-auth-research-2026-04-14.md").exists()
 
     def test_publish_to_governance_dry_run_reports_targets(self, tmp_path):
         governance = tmp_path / "governance"
