@@ -39,8 +39,10 @@ dependencies:
 # --- Target Repos ---
 target_repos: []
 # Each entry may include:
-# { name: "", url: "", remote_url: "", local_path: "", branch: "", default_branch: "", visibility: "public|private|internal" }
+# { name: "", url: "", remote_url: "", local_path: "", branch: "", default_branch: "", visibility: "public|private|internal", dev_branch_mode: "direct-default|feature-id|feature-id-username", dev_branch_name: "", dev_base_branch: "", final_pr_url: "", final_review_report: "", final_party_mode_report: "" }
 # `url` remains the compatibility field for downstream skills. `local_path` is project-root-relative and should include the TargetProjects prefix.
+# `dev_branch_mode` is the repo-scoped `/dev` branch preference persisted across runs.
+# `dev_branch_name`, `dev_base_branch`, `final_pr_url`, `final_review_report`, and `final_party_mode_report` are optional closeout snapshots written by downstream workflows.
 
 # --- Docs ---
 docs:

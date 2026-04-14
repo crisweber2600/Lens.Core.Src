@@ -21,6 +21,48 @@ import yaml
 SAFE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
 
 
+def normalize_target_repo_state(feature_data: dict) -> dict | None:
+    """Return the primary target repo dev state summary from feature metadata."""
+    target_repos = feature_data.get("target_repos") or []
+    if not isinstance(target_repos, list):
+        return None
+
+    primary = next((entry for entry in target_repos if isinstance(entry, dict)), None)
+    if not primary:
+        return None
+
+    dev_branch_mode = str(primary.get("dev_branch_mode") or "").strip() or None
+    working_branch = (
+        str(primary.get("dev_branch_name") or primary.get("working_branch") or primary.get("branch") or "").strip() or None
+    )
+    base_branch = str(primary.get("dev_base_branch") or primary.get("default_branch") or "").strip() or None
+    final_pr_url = str(primary.get("final_pr_url") or "").strip() or None
+    final_review_report = str(primary.get("final_review_report") or "").strip() or None
+    final_party_mode_report = str(primary.get("final_party_mode_report") or "").strip() or None
+
+    if dev_branch_mode == "direct-default":
+        final_pr_state = "not-required"
+    elif final_pr_url:
+        final_pr_state = "created"
+    elif dev_branch_mode:
+        final_pr_state = "pending"
+    else:
+        final_pr_state = "unknown"
+
+    return {
+        "name": primary.get("name", ""),
+        "local_path": primary.get("local_path", ""),
+        "remote_url": primary.get("remote_url") or primary.get("url", ""),
+        "dev_branch_mode": dev_branch_mode,
+        "working_branch": working_branch,
+        "base_branch": base_branch,
+        "final_pr_state": final_pr_state,
+        "final_pr_url": final_pr_url,
+        "final_review_report": final_review_report,
+        "final_party_mode_report": final_party_mode_report,
+    }
+
+
 def validate_identifier(value: str, field_name: str) -> str | None:
     """Validate that a path-constructing identifier is safe. Returns error message or None."""
     if not SAFE_ID_PATTERN.match(value):
@@ -80,6 +122,7 @@ def cmd_feature(args: argparse.Namespace) -> dict:
 
     context = data.get("context") or {}
     stale = bool(context.get("stale", False))
+    target_repo = normalize_target_repo_state(data)
 
     return {
         "status": "pass",
@@ -94,6 +137,7 @@ def cmd_feature(args: argparse.Namespace) -> dict:
             "updated_at": data.get("updated", ""),
             "domain": data.get("domain", args.domain),
             "service": data.get("service", args.service),
+            "target_repo": target_repo,
         },
     }
 

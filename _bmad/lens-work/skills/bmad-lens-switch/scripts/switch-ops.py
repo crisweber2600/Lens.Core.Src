@@ -27,6 +27,68 @@ MAX_INDEX_BYTES = 1_000_000  # 1 MB sanity cap on feature-index.yaml
 STALE_DAYS = 30
 
 
+def normalize_target_repo_state(feature_data: dict) -> dict | None:
+    """Return the primary target repo dev state summary from feature metadata."""
+    target_repos = feature_data.get("target_repos") or []
+    if not isinstance(target_repos, list):
+        return None
+
+    primary = next((entry for entry in target_repos if isinstance(entry, dict)), None)
+    if not primary:
+        return None
+
+    dev_branch_mode = str(primary.get("dev_branch_mode") or "").strip() or None
+    working_branch = (
+        str(primary.get("dev_branch_name") or primary.get("working_branch") or primary.get("branch") or "").strip() or None
+    )
+    base_branch = str(primary.get("dev_base_branch") or primary.get("default_branch") or "").strip() or None
+    final_pr_url = str(primary.get("final_pr_url") or "").strip() or None
+    final_review_report = str(primary.get("final_review_report") or "").strip() or None
+    final_party_mode_report = str(primary.get("final_party_mode_report") or "").strip() or None
+
+    if dev_branch_mode == "direct-default":
+        final_pr_state = "not-required"
+    elif final_pr_url:
+        final_pr_state = "created"
+    elif dev_branch_mode:
+        final_pr_state = "pending"
+    else:
+        final_pr_state = "unknown"
+
+    return {
+        "name": primary.get("name", ""),
+        "local_path": primary.get("local_path", ""),
+        "remote_url": primary.get("remote_url") or primary.get("url", ""),
+        "dev_branch_mode": dev_branch_mode,
+        "working_branch": working_branch,
+        "base_branch": base_branch,
+        "final_pr_state": final_pr_state,
+        "final_pr_url": final_pr_url,
+        "final_review_report": final_review_report,
+        "final_party_mode_report": final_party_mode_report,
+    }
+
+
+def load_feature_yaml_for_index_entry(governance_repo: str, entry: dict) -> dict | None:
+    """Load feature.yaml for an index entry when available."""
+    feature_id = str(entry.get("id") or entry.get("featureId") or "").strip()
+    domain = str(entry.get("domain") or "").strip()
+    service = str(entry.get("service") or "").strip()
+    if not feature_id or not domain or not service:
+        return None
+
+    feature_path = Path(governance_repo) / "features" / domain / service / feature_id / "feature.yaml"
+    if not feature_path.exists():
+        return None
+
+    try:
+        with open(feature_path) as f:
+            data = yaml.safe_load(f)
+    except (yaml.YAMLError, OSError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
 def validate_identifier(value: str, field_name: str) -> str | None:
     """Validate that a path-constructing identifier is safe. Returns error message or None."""
     if not SAFE_ID_PATTERN.match(value):
@@ -328,18 +390,21 @@ def cmd_list(args: argparse.Namespace) -> dict:
             f for f in raw_features if f.get("status", "active") == status_filter
         ]
 
-    features = [
-        {
-            "num": i + 1,
-            "id": f.get("id", ""),
-            "domain": f.get("domain", ""),
-            "service": f.get("service", ""),
-            "status": f.get("status", "active"),
-            "owner": f.get("owner", ""),
-            "summary": f.get("summary", ""),
-        }
-        for i, f in enumerate(raw_features)
-    ]
+    features = []
+    for i, f in enumerate(raw_features):
+        feature_data = load_feature_yaml_for_index_entry(args.governance_repo, f)
+        features.append(
+            {
+                "num": i + 1,
+                "id": f.get("id", ""),
+                "domain": f.get("domain", ""),
+                "service": f.get("service", ""),
+                "status": f.get("status", "active"),
+                "owner": f.get("owner", ""),
+                "summary": f.get("summary", ""),
+                "target_repo": normalize_target_repo_state(feature_data or {}),
+            }
+        )
 
     return {"status": "pass", "mode": "features", "features": features, "total": len(features)}
 
@@ -495,6 +560,7 @@ def cmd_switch(args: argparse.Namespace) -> dict:
             "stale": is_stale(feature_data),
             "updated": str(feature_data.get("updated", "")),
             "context_path": context_path,
+            "target_repo": normalize_target_repo_state(feature_data),
         },
         "context_to_load": {
             "summaries": summaries,

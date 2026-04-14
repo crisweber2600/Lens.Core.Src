@@ -61,6 +61,41 @@ def test_publish_to_governance_contract_requires_cli_execution():
     assert "Do not create governance files or directories directly with tool calls or patches" in reference
 
 
+def test_dev_contract_uses_repo_scoped_branch_modes_and_final_review_gate():
+    text = _read("skills/bmad-lens-dev/SKILL.md")
+
+    assert "one target repo working branch for the entire dev cycle" in text
+    assert "present a repo-scoped branching menu on the first dev workflow run for that repo" in text
+    assert "`direct-default` — commit on the target repo default branch with no PR" in text
+    assert "`feature-id` — create or reuse `feature/{featureId}` and open a single final PR to the target repo default branch. This is the default." in text
+    assert "`feature-id-username` — create or reuse `feature/{featureId}-{username}` and open a single final PR to the target repo default branch." in text
+    assert "set-dev-branch-mode" in text
+    assert "Every task and subtask implementation must be delegated with `runSubagent`." in text
+    assert "before any final PR is created, run a full dev-closeout adversarial review and a required party-mode blind-spot challenge" in text
+
+
+def test_git_orchestration_contract_documents_prepare_dev_branch_modes():
+    text = _read("skills/bmad-lens-git-orchestration/SKILL.md")
+
+    assert "prepare-dev-branch" in text
+    assert "`direct-default`" in text
+    assert "`feature-id`" in text
+    assert "`feature-id-username`" in text
+    assert "feature/{featureId}" in text
+    assert "feature/{featureId}-{username}" in text
+
+
+def test_feature_template_documents_dev_closeout_repo_fields():
+    text = _read("skills/bmad-lens-feature-yaml/assets/feature-template.yaml")
+
+    assert "dev_branch_mode" in text
+    assert "dev_branch_name" in text
+    assert "dev_base_branch" in text
+    assert "final_pr_url" in text
+    assert "final_review_report" in text
+    assert "final_party_mode_report" in text
+
+
 def test_wrapper_delegation_boundary_is_explicit():
     text = _read("skills/bmad-lens-bmad-skill/SKILL.md")
 

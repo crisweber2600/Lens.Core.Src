@@ -382,6 +382,74 @@ class TestCreateDevBranch:
         assert result["error"] == "branch_already_exists"
 
 
+class TestBuildDevBranchName:
+    def test_feature_id_mode(self):
+        assert ops.build_dev_branch_name("payments-auth", "feature-id") == "feature/payments-auth"
+
+    def test_feature_id_username_mode(self):
+        assert ops.build_dev_branch_name("payments-auth", "feature-id-username", "alice") == "feature/payments-auth-alice"
+
+    def test_direct_default_returns_empty_branch_name(self):
+        assert ops.build_dev_branch_name("payments-auth", "direct-default") == ""
+
+
+class TestPrepareDevBranch:
+    def _args(self, repo, feature_id, mode, username=None, base_branch=None, dry_run=False):
+        return _no_args(
+            repo=str(repo),
+            feature_id=feature_id,
+            mode=mode,
+            username=username,
+            base_branch=base_branch,
+            dry_run=dry_run,
+        )
+
+    def test_invalid_mode_rejected(self, repo):
+        result, code = ops.cmd_prepare_dev_branch(self._args(repo, "payments-auth", "weird-mode", dry_run=True))
+        assert code == 1
+        assert result["error"] == "invalid_mode"
+
+    def test_direct_default_checks_out_default_branch(self, repo_pair):
+        local, remote = repo_pair
+        make_branch(local, "scratch")
+        subprocess.run(["git", "-C", str(local), "checkout", "scratch"], check=True, capture_output=True)
+
+        result, code = ops.cmd_prepare_dev_branch(self._args(local, "payments-auth", "direct-default", dry_run=False))
+
+        assert code == 0
+        assert result["working_branch"] == "main"
+        assert result["requires_pr"] is False
+        assert ops.current_branch(str(local)) == "main"
+
+    def test_feature_id_mode_creates_and_pushes_working_branch(self, repo_pair):
+        local, remote = repo_pair
+
+        result, code = ops.cmd_prepare_dev_branch(self._args(local, "payments-auth", "feature-id", dry_run=False))
+
+        assert code == 0
+        assert result["working_branch"] == "feature/payments-auth"
+        assert result["created"] is True
+        assert result["requires_pr"] is True
+        assert ops.branch_exists(str(local), "feature/payments-auth") is True
+        assert ops.current_branch(str(local)) == "feature/payments-auth"
+
+    def test_feature_id_username_mode_reuses_remote_branch(self, repo_pair):
+        local, remote = repo_pair
+        branch = "feature/payments-auth-alice"
+        subprocess.run(["git", "-C", str(local), "checkout", "-b", branch], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(local), "push", "--set-upstream", "origin", branch], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(local), "checkout", "main"], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(local), "branch", "-D", branch], check=True, capture_output=True)
+
+        result, code = ops.cmd_prepare_dev_branch(self._args(local, "payments-auth", "feature-id-username", username="alice", dry_run=False))
+
+        assert code == 0
+        assert result["working_branch"] == branch
+        assert result["created"] is False
+        assert result["reused"] is True
+        assert ops.current_branch(str(local)) == branch
+
+
 # ---------------------------------------------------------------------------
 # cmd_merge_plan (direct strategy — no gh CLI needed)
 # ---------------------------------------------------------------------------
@@ -753,6 +821,20 @@ class TestCLIIntegration:
         assert proc.returncode == 0
         data = json.loads(proc.stdout)
         assert data["dev_branch"] == "cli-dev-feat-dev-alice"
+
+    def test_prepare_dev_branch_dry_run(self, repo):
+        proc = subprocess.run(
+            ["uv", "run", "--script", self._script(),
+             "prepare-dev-branch",
+             "--repo", str(repo),
+             "--feature-id", "cli-feature",
+             "--mode", "feature-id",
+             "--dry-run"],
+            capture_output=True, text=True
+        )
+        assert proc.returncode == 0
+        data = json.loads(proc.stdout)
+        assert data["working_branch"] == "feature/cli-feature"
 
 
 # ---------------------------------------------------------------------------

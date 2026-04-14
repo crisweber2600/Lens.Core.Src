@@ -23,6 +23,7 @@ import yaml
 
 REPO_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$")
 VALID_VISIBILITIES = {"public", "private", "internal"}
+VALID_DEV_BRANCH_MODES = {"direct-default", "feature-id", "feature-id-username"}
 
 
 def now_iso() -> str:
@@ -78,6 +79,35 @@ def derive_repo_name(value: str) -> str:
     if name.endswith(".git"):
         name = name[:-4]
     return name
+
+
+def normalize_dev_branch_mode(value: str) -> str:
+    normalized = str(value or "").strip().lower()
+    if normalized not in VALID_DEV_BRANCH_MODES:
+        expected = ", ".join(sorted(VALID_DEV_BRANCH_MODES))
+        raise ValueError(f"Invalid dev branch mode: {value!r}. Expected one of: {expected}")
+    return normalized
+
+
+def select_repo_entry(entries: list[dict], repo_name: str = "", local_path: str = "", remote_url: str = "") -> dict | None:
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        if repo_name and entry.get("name") == repo_name:
+            return entry
+        if local_path and entry.get("local_path") == local_path:
+            return entry
+        entry_remote = entry.get("remote_url") or entry.get("url")
+        if remote_url and entry_remote == remote_url:
+            return entry
+
+    if any((repo_name, local_path, remote_url)):
+        return None
+
+    for entry in entries:
+        if isinstance(entry, dict):
+            return entry
+    return None
 
 
 def normalize_local_path(project_root: Path, target_root: Path, local_path: str, domain: str, service: str, repo_name: str) -> str:
@@ -251,7 +281,25 @@ def upsert_feature_target_repo(feature_path: Path, repo_entry: dict, dry_run: bo
     return {"status": action, "entry": repo_entry}
 
 
-def build_feature_repo_entry(repo_name: str, remote_url: str, local_path: str, default_branch: str, visibility: str) -> dict:
+def build_inventory_repo_entry(repo_name: str, remote_url: str, local_path: str, dev_branch_mode: str | None = None) -> dict:
+    entry = {
+        "name": repo_name,
+        "remote_url": remote_url,
+        "local_path": local_path,
+    }
+    if dev_branch_mode:
+        entry["dev_branch_mode"] = dev_branch_mode
+    return entry
+
+
+def build_feature_repo_entry(
+    repo_name: str,
+    remote_url: str,
+    local_path: str,
+    default_branch: str,
+    visibility: str,
+    dev_branch_mode: str | None = None,
+) -> dict:
     entry = {
         "name": repo_name,
         "url": remote_url,
@@ -261,6 +309,8 @@ def build_feature_repo_entry(repo_name: str, remote_url: str, local_path: str, d
         "default_branch": default_branch,
         "visibility": visibility,
     }
+    if dev_branch_mode:
+        entry["dev_branch_mode"] = dev_branch_mode
     return entry
 
 
@@ -297,11 +347,7 @@ def cmd_provision(args: argparse.Namespace) -> dict:
 
     dest = project_root / local_path
     inventory_path = governance_repo / "repo-inventory.yaml"
-    inventory_entry = {
-        "name": args.repo_name,
-        "remote_url": remote_url,
-        "local_path": local_path,
-    }
+    inventory_entry = build_inventory_repo_entry(args.repo_name, remote_url, local_path)
     feature_repo_entry = build_feature_repo_entry(args.repo_name, remote_url, local_path, args.default_branch, visibility)
 
     try:
@@ -337,6 +383,63 @@ def cmd_provision(args: argparse.Namespace) -> dict:
     }
 
 
+def cmd_set_dev_branch_mode(args: argparse.Namespace) -> dict:
+    governance_repo = Path(args.governance_repo).resolve()
+    feature_path = find_feature(governance_repo, args.feature_id)
+    if not feature_path:
+        return {"status": "fail", "error": f"Feature not found: {args.feature_id}"}
+
+    try:
+        dev_branch_mode = normalize_dev_branch_mode(args.mode)
+    except ValueError as exc:
+        return {"status": "fail", "error": str(exc)}
+
+    feature = load_yaml(feature_path)
+    target_repos = feature.get("target_repos") or []
+    if not isinstance(target_repos, list) or not target_repos:
+        return {"status": "fail", "error": "Feature has no target_repos to update"}
+
+    selected_repo = select_repo_entry(
+        target_repos,
+        repo_name=args.repo_name,
+        local_path=args.local_path,
+        remote_url=args.remote_url,
+    )
+    if not selected_repo:
+        return {"status": "fail", "error": "No matching target repo found for the supplied selectors"}
+
+    repo_name = str(selected_repo.get("name") or derive_repo_name(selected_repo.get("url") or selected_repo.get("remote_url") or args.remote_url))
+    remote_url = str(selected_repo.get("remote_url") or selected_repo.get("url") or args.remote_url or "").strip()
+    local_path = str(selected_repo.get("local_path") or args.local_path or "").strip()
+    if not repo_name or not remote_url or not local_path:
+        return {
+            "status": "fail",
+            "error": "Target repo entry must include name, local_path, and url/remote_url before a repo-scoped dev branch mode can be stored",
+        }
+
+    inventory_path = governance_repo / "repo-inventory.yaml"
+    inventory_entry = build_inventory_repo_entry(repo_name, remote_url, local_path, dev_branch_mode)
+    feature_repo_entry = dict(selected_repo)
+    feature_repo_entry["dev_branch_mode"] = dev_branch_mode
+
+    inventory_result = upsert_inventory(inventory_path, inventory_entry, args.dry_run)
+    feature_result = upsert_feature_target_repo(feature_path, feature_repo_entry, args.dry_run)
+
+    return {
+        "status": "pass",
+        "feature_id": args.feature_id,
+        "repo_name": repo_name,
+        "local_path": local_path,
+        "remote_url": remote_url,
+        "dev_branch_mode": dev_branch_mode,
+        "inventory": inventory_result,
+        "feature": feature_result,
+        "inventory_path": str(inventory_path),
+        "feature_path": str(feature_path),
+        "dry_run": bool(args.dry_run),
+    }
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Provision feature target repos.")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -354,6 +457,15 @@ def build_parser() -> argparse.ArgumentParser:
     provision.add_argument("--create-remote", action="store_true", help="Create the remote repo when it is missing")
     provision.add_argument("--dry-run", action="store_true", help="Report planned actions without writing files")
 
+    set_mode = subparsers.add_parser("set-dev-branch-mode", help="Persist a repo-scoped dev branch mode for a feature target repo")
+    set_mode.add_argument("--governance-repo", required=True, help="Path to the governance repo root")
+    set_mode.add_argument("--feature-id", required=True, help="Feature identifier")
+    set_mode.add_argument("--mode", required=True, help="Repo-scoped dev branch mode: direct-default, feature-id, or feature-id-username")
+    set_mode.add_argument("--repo-name", default="", help="Optional target repo name selector")
+    set_mode.add_argument("--remote-url", default="", help="Optional target repo remote URL selector")
+    set_mode.add_argument("--local-path", default="", help="Optional target repo local path selector")
+    set_mode.add_argument("--dry-run", action="store_true", help="Report planned actions without writing files")
+
     return parser
 
 
@@ -363,6 +475,7 @@ def main() -> int:
 
     commands = {
         "provision": cmd_provision,
+        "set-dev-branch-mode": cmd_set_dev_branch_mode,
     }
     result = commands[args.command](args)
     json.dump(result, sys.stdout, indent=2)

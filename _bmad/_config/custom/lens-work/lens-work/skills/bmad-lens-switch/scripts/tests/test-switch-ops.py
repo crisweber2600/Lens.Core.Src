@@ -132,6 +132,19 @@ SAMPLE_FEATURE = {
         "depends_on": [],
         "depended_by": [],
     },
+    "target_repos": [
+        {
+            "name": "Lens.Hermes",
+            "remote_url": "https://github.com/crisweber2600/Lens.Hermes",
+            "local_path": "TargetProjects/plugins/hermes/Lens.Hermes",
+            "dev_branch_mode": "feature-id",
+            "dev_branch_name": "feature/auth-login",
+            "dev_base_branch": "main",
+            "final_pr_url": "https://github.com/crisweber2600/Lens.Hermes/pull/12",
+            "final_review_report": "docs/implementation-artifacts/dev-adversarial-review.md",
+            "final_party_mode_report": "docs/implementation-artifacts/dev-party-mode-review.md",
+        }
+    ],
 }
 
 
@@ -249,6 +262,24 @@ def test_list_output_fields():
                 assert_true(f"feature has {key}", key in feature)
 
 
+def test_list_includes_target_repo_state_when_feature_yaml_exists():
+    """List output includes target repo dev state for initialized features."""
+    print("test_list_includes_target_repo_state_when_feature_yaml_exists", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        write_index(tmp, SAMPLE_INDEX_ENTRIES)
+        write_feature(tmp, "platform", "identity", "auth-login", SAMPLE_FEATURE)
+
+        result, code = run(["list", "--governance-repo", tmp])
+        assert_eq("list target repo status", result["status"], "pass")
+        assert_eq("list target repo exit code", code, 0)
+        feature = next(f for f in result["features"] if f["id"] == "auth-login")
+        target_repo = feature.get("target_repo")
+        assert_true("list target repo present", target_repo is not None)
+        assert_eq("list target repo mode", target_repo["dev_branch_mode"], "feature-id")
+        assert_eq("list target repo working branch", target_repo["working_branch"], "feature/auth-login")
+        assert_eq("list target repo final pr state", target_repo["final_pr_state"], "created")
+
+
 def test_list_numbered_menu_fields():
     """List output includes sequential 1-based num field for numbered menu."""
     print("test_list_numbered_menu_fields", file=sys.stderr)
@@ -285,6 +316,11 @@ def test_switch_existing_feature():
         assert_eq("feature owner", feat.get("owner"), "cweber")
         assert_true("stale field present", "stale" in feat)
         assert_true("context_path field present", "context_path" in feat)
+        target_repo = feat.get("target_repo")
+        assert_true("target repo field present", target_repo is not None)
+        assert_eq("switch target repo mode", target_repo.get("dev_branch_mode"), "feature-id")
+        assert_eq("switch target repo working branch", target_repo.get("working_branch"), "feature/auth-login")
+        assert_eq("switch target repo final pr state", target_repo.get("final_pr_state"), "created")
         context_path = Path(feat["context_path"])
         assert_eq("feature switch context.yaml exists", context_path.exists(), True)
         with open(context_path) as f:
@@ -821,6 +857,7 @@ def main() -> None:
     test_list_domain_fallback_with_domains()
     test_list_empty_index()
     test_list_output_fields()
+    test_list_includes_target_repo_state_when_feature_yaml_exists()
     test_list_numbered_menu_fields()
     test_switch_existing_feature()
     test_switch_nonexistent_feature()

@@ -7,11 +7,11 @@ description: Provision or register a feature target repo in GitHub, TargetProjec
 
 ## Overview
 
-This skill provisions or registers a feature-owned target repository. It verifies or creates the remote repository, clones it into the canonical `TargetProjects/{domain}/{service}/{repo}` location, updates governance `repo-inventory.yaml`, and persists the repo metadata into `feature.yaml` so downstream Lens workflows can resolve the implementation root without improvisation.
+This skill provisions or registers a feature-owned target repository. It verifies or creates the remote repository, clones it into the canonical `TargetProjects/{domain}/{service}/{repo}` location, updates governance `repo-inventory.yaml`, and persists the repo metadata into `feature.yaml` so downstream Lens workflows can resolve the implementation root without improvisation. It also persists the repo-scoped `dev_branch_mode` selected by `/dev` so the target repo's branching strategy is remembered across dev runs.
 
 **Scope:** This skill handles repository orchestration only. It does not author planning artifacts, inspect target-project source trees for planning, or advance lifecycle phases.
 
-**Args:** Accepts `provision` as the first argument plus `--feature-id`, `--repo-name`, and either `--remote-url` or `--owner`. Use `--create-remote` when the remote repo should be created if it does not already exist.
+**Args:** Accepts `provision` as the primary entrypoint plus `--feature-id`, `--repo-name`, and either `--remote-url` or `--owner`. Use `--create-remote` when the remote repo should be created if it does not already exist. The companion script also supports `set-dev-branch-mode` for persisting the repo-scoped target-repo branching mode used by `/dev`.
 
 ## Identity
 
@@ -29,6 +29,7 @@ You are the repository provisioning path for Lens features. You turn a repo requ
 
 - **Canonical path first** — default clone path is `TargetProjects/{domain}/{service}/{repo}` and stored project-root-relative with the `TargetProjects/` prefix
 - **Governance alignment** — every provisioned repo must be reflected in both `repo-inventory.yaml` and `feature.yaml.target_repos`
+- **Repo-scoped branch memory** — when `/dev` selects a target-repo branch mode, store it in both `repo-inventory.yaml` and the matching `feature.yaml.target_repos[]` entry so later dev runs reuse the same mode
 - **GitHub-first creation** — automatic remote creation is supported for GitHub hosts via `gh`; for other providers, fail fast with manual guidance
 - **Idempotent updates** — rerunning the same provision request should verify and reconcile rather than duplicating entries
 - **Planning boundary respected** — this skill handles repo orchestration so phase skills such as PrePlan stay governance-only
@@ -73,6 +74,13 @@ uv run scripts/target-repo-ops.py provision \
   --visibility public \
   --create-remote \
   --dry-run
+
+# Persist the repo-scoped dev branch mode selected on the first /dev run
+uv run scripts/target-repo-ops.py set-dev-branch-mode \
+  --governance-repo /path/to/governance \
+  --feature-id hermes-lens-plugin \
+  --repo-name Lens.Hermes \
+  --mode feature-id
 ```
 
 ## Integration Points
@@ -82,4 +90,4 @@ uv run scripts/target-repo-ops.py provision \
 | `bmad-lens-preplan` | Route repo-creation requests here, then resume brainstorming |
 | `bmad-lens-discover` | Reconcile and validate repo inventory after provisioning |
 | `bmad-lens-feature-yaml` | Persist target repo metadata into `feature.yaml` |
-| `bmad-lens-dev` | Consumes `target_repos[0].local_path` as the implementation root |
+| `bmad-lens-dev` | Consumes `target_repos[0].local_path` as the implementation root and `target_repos[0].dev_branch_mode` as the repo-scoped branch preference |

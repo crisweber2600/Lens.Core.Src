@@ -185,10 +185,91 @@ def test_provision_normalizes_relative_local_path() -> None:
         assert_eq("normalized local path", result["local_path"], "TargetProjects/plugins/hermes/Lens.Hermes")
 
 
+def test_set_dev_branch_mode_updates_feature_and_inventory() -> None:
+    print("test_set_dev_branch_mode_updates_feature_and_inventory", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        project_root = Path(tmp)
+        governance_repo = project_root / "TargetProjects" / "lens" / "lens-governance"
+        governance_repo.mkdir(parents=True, exist_ok=True)
+        governance_repo.joinpath("repo-inventory.yaml").write_text("repositories: []\n", encoding="utf-8")
+        write_feature(governance_repo, "hermes-lens-plugin")
+        remote_url = init_remote_repo(project_root / "remotes", "Lens.Hermes")
+
+        provision_result, provision_code = run([
+            "provision",
+            "--governance-repo", str(governance_repo),
+            "--feature-id", "hermes-lens-plugin",
+            "--repo-name", "Lens.Hermes",
+            "--remote-url", remote_url,
+            "--default-branch", "main",
+        ])
+        assert_eq("provision before set mode", provision_code, 0)
+        assert_eq("provision before set mode status", provision_result["status"], "pass")
+
+        result, code = run([
+            "set-dev-branch-mode",
+            "--governance-repo", str(governance_repo),
+            "--feature-id", "hermes-lens-plugin",
+            "--mode", "feature-id-username",
+            "--repo-name", "Lens.Hermes",
+        ])
+        assert_eq("set mode status", result["status"], "pass")
+        assert_eq("set mode exit code", code, 0)
+        assert_eq("set mode payload", result["dev_branch_mode"], "feature-id-username")
+
+        inventory = yaml.safe_load((governance_repo / "repo-inventory.yaml").read_text(encoding="utf-8"))
+        entry = inventory["repositories"][0]
+        assert_eq("inventory dev branch mode", entry["dev_branch_mode"], "feature-id-username")
+
+        feature = yaml.safe_load((governance_repo / "features" / "plugins" / "hermes" / "hermes-lens-plugin" / "feature.yaml").read_text(encoding="utf-8"))
+        repo_entry = feature["target_repos"][0]
+        assert_eq("feature dev branch mode", repo_entry["dev_branch_mode"], "feature-id-username")
+
+
+def test_set_dev_branch_mode_dry_run_does_not_write() -> None:
+    print("test_set_dev_branch_mode_dry_run_does_not_write", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        project_root = Path(tmp)
+        governance_repo = project_root / "TargetProjects" / "lens" / "lens-governance"
+        governance_repo.mkdir(parents=True, exist_ok=True)
+        governance_repo.joinpath("repo-inventory.yaml").write_text("repositories: []\n", encoding="utf-8")
+        write_feature(governance_repo, "hermes-lens-plugin")
+        remote_url = init_remote_repo(project_root / "remotes", "Lens.Hermes")
+
+        provision_result, provision_code = run([
+            "provision",
+            "--governance-repo", str(governance_repo),
+            "--feature-id", "hermes-lens-plugin",
+            "--repo-name", "Lens.Hermes",
+            "--remote-url", remote_url,
+            "--default-branch", "main",
+        ])
+        assert_eq("dry-run provision exit code", provision_code, 0)
+        assert_eq("dry-run provision status", provision_result["status"], "pass")
+
+        result, code = run([
+            "set-dev-branch-mode",
+            "--governance-repo", str(governance_repo),
+            "--feature-id", "hermes-lens-plugin",
+            "--mode", "feature-id",
+            "--repo-name", "Lens.Hermes",
+            "--dry-run",
+        ])
+        assert_eq("dry-run set mode status", result["status"], "pass")
+        assert_eq("dry-run set mode exit code", code, 0)
+        assert_true("dry-run set mode flag", result["dry_run"])
+
+        inventory = yaml.safe_load((governance_repo / "repo-inventory.yaml").read_text(encoding="utf-8"))
+        entry = inventory["repositories"][0]
+        assert_true("inventory dev branch mode absent after dry run", "dev_branch_mode" not in entry)
+
+
 if __name__ == "__main__":
     test_provision_existing_remote()
     test_provision_dry_run_create_remote()
     test_provision_normalizes_relative_local_path()
+    test_set_dev_branch_mode_updates_feature_and_inventory()
+    test_set_dev_branch_mode_dry_run_does_not_write()
 
     print(f"\n{'=' * 40}", file=sys.stderr)
     print(f"Results: {PASS} passed, {FAIL} failed", file=sys.stderr)

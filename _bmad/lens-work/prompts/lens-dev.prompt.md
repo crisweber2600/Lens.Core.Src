@@ -1,5 +1,5 @@
 ---
-description: 'Dev phase — epic implementation loop with story branching, review, and constitutional gates.'
+description: 'Dev phase — epic implementation loop with repo-scoped working branches, delegated task execution, and final review gates.'
 ---
 
 # lens-dev (Stub)
