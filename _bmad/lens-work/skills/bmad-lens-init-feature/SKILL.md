@@ -152,7 +152,7 @@ uv run scripts/init-feature-ops.py create-domain \
   --username cweber \
   --target-projects-root /path/to/TargetProjects \
   --docs-root /path/to/docs \
-  --personal-folder /path/to/.lens
+  --personal-folder /path/to/.lens/personal
 
 # Create a new domain and push governance artifacts automatically
 uv run scripts/init-feature-ops.py create-domain \
@@ -160,7 +160,7 @@ uv run scripts/init-feature-ops.py create-domain \
   --domain platform \
   --name "Platform" \
   --username cweber \
-  --personal-folder /path/to/.lens \
+  --personal-folder /path/to/.lens/personal \
   --execute-governance-git
 
 # Create a new service (service + domain markers + constitutions + optional TargetProjects scaffold)
@@ -172,7 +172,7 @@ uv run scripts/init-feature-ops.py create-service \
   --username cweber \
   --target-projects-root /path/to/TargetProjects \
   --docs-root /path/to/docs \
-  --personal-folder /path/to/.lens
+  --personal-folder /path/to/.lens/personal
 
 # Create a new service and push governance artifacts automatically
 uv run scripts/init-feature-ops.py create-service \
@@ -181,12 +181,12 @@ uv run scripts/init-feature-ops.py create-service \
   --service identity \
   --name "Identity" \
   --username cweber \
-  --personal-folder /path/to/.lens \
+  --personal-folder /path/to/.lens/personal \
   --execute-governance-git
 
 # Read the active domain/service context (for non-feature-branch commands)
 uv run scripts/init-feature-ops.py read-context \
-  --personal-folder /path/to/.lens
+  --personal-folder /path/to/.lens/personal
 ```
 
 ### Automatic Governance Git for Feature and Containers
@@ -228,5 +228,5 @@ updated_by: "new-service"   # "new-domain" or "new-service"
 
 - `create-domain` writes `service: null` — switching domains clears any stale service context
 - `create-service` writes both `domain` and `service`
-- The file lives in `{personal_output_folder}/context.yaml` (default: `{project-root}/.lens/context.yaml`) — local-only, never git-tracked
+- The file lives in `{personal_output_folder}/context.yaml` (default: `{project-root}/.lens/personal/context.yaml`) — local-only, never git-tracked
 - Use the `read-context` subcommand to retrieve the current context when not on a feature branch

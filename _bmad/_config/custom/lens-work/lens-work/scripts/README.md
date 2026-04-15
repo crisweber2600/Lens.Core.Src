@@ -189,7 +189,7 @@ Open VS Code with GitHub Copilot Chat and type:
 The onboard workflow will:
 - Validate your authentication
 - Read `governance-setup.yaml` to locate your governance repo
-- Create your personal profile (`.lens/profile.yaml`)
+- Create your personal profile (`.lens/personal/profile.yaml`)
 - Clone target project repos from the governance `repo-inventory.yaml`
 
 ### 5. (Optional) Install non-Copilot IDE adapters

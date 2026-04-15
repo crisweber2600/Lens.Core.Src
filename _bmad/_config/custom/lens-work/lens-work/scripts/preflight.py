@@ -69,8 +69,12 @@ def remove_empty_parent_dirs(start_dir: Path, stop_dir: Path) -> None:
         current = current.parent
 
 
-def personal_dir(project_root: Path) -> Path:
+def lens_dir(project_root: Path) -> Path:
     return project_root / ".lens"
+
+
+def personal_dir(project_root: Path) -> Path:
+    return lens_dir(project_root) / "personal"
 
 
 def legacy_personal_dir(project_root: Path) -> Path:
@@ -79,17 +83,21 @@ def legacy_personal_dir(project_root: Path) -> Path:
 
 def migrate_legacy_personal_dir(project_root: Path) -> Path:
     active_dir = personal_dir(project_root)
+    active_root = lens_dir(project_root)
     legacy_dir = legacy_personal_dir(project_root)
 
     if active_dir.exists():
         if legacy_dir.exists():
-            echo("[preflight] .lens already exists; leaving the legacy personal directory untouched")
+            echo("[preflight] .lens/personal already exists; leaving the legacy personal directory untouched")
         return active_dir
+
+    active_root.mkdir(parents=True, exist_ok=True)
 
     if not legacy_dir.exists():
+        active_dir.mkdir(parents=True, exist_ok=True)
         return active_dir
 
-    echo("[preflight] Migrating local personal state from the legacy personal directory to .lens...")
+    echo("[preflight] Migrating local personal state from the legacy personal directory to .lens/personal...")
     import shutil
 
     shutil.move(str(legacy_dir), str(active_dir))
@@ -190,7 +198,7 @@ def _should_include_prompt(stem: str, experience: str, role: str) -> bool:
 
 
 def _load_user_profile(project_root: Path) -> dict[str, str]:
-    """Read .lens/profile.yaml; return defaults if missing."""
+    """Read .lens/personal/profile.yaml; return defaults if missing."""
     profile_path = personal_dir(project_root) / "profile.yaml"
     defaults: dict[str, str] = {"experience_mode": "full", "primary_role": "both"}
     if not profile_path.is_file():
@@ -249,9 +257,10 @@ def main() -> int:
         else next(p for p in script_dir.parents if (p / "lens.core").exists())
     )
     active_personal_dir = migrate_legacy_personal_dir(project_root)
+    active_lens_dir = lens_dir(project_root)
     release_dir = project_root / "lens.core"
-    timestamp_file = active_personal_dir / ".preflight-timestamp"
-    hash_file = active_personal_dir / ".github-hashes"
+    timestamp_file = active_lens_dir / ".preflight-timestamp"
+    hash_file = active_lens_dir / ".github-hashes"
     lifecycle_path = release_dir / "_bmad/lens-work/lifecycle.yaml"
     governance_path = Path(args.governance_path) if args.governance_path else None
 

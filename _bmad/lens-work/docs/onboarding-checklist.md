@@ -72,7 +72,7 @@ powershell uv run setup-control-repo.py
 - [ ] The onboard workflow will:
   - Detect your git provider (GitHub, GitLab, Azure DevOps)
   - Validate your PAT authentication
-  - Create your user profile at `.lens/profile.yaml`
+  - Create your user profile at `.lens/personal/profile.yaml`
   - Auto-clone any missing TargetProjects repos from the governance inventory
 - [ ] Verify: `profile.yaml` exists and contains your username and provider
 

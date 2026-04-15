@@ -75,4 +75,4 @@ Lens,bmad-lens-approval-status,approval-status,AS,Show pending promotion PR appr
 Lens,bmad-lens-module-management,module-management,MM,Check module version and guide self-service updates,check,,anytime,,,false,,version check results
 Lens,bmad-lens-rollback,rollback,RB,Safely roll back to a previous lifecycle phase,rollback,<featureId> [--target-phase] [--dry-run],anytime,,,false,,rollback results
 Lens,bmad-lens-upgrade,upgrade,UG,Migrate control repo schema to current version,upgrade,[--dry-run],anytime,,,false,,migration results
-Lens,bmad-lens-profile,profile,PF,View and edit onboarding profile,view,[--edit],anytime,,,false,.lens,profile.yaml
+Lens,bmad-lens-profile,profile,PF,View and edit onboarding profile,view,[--edit],anytime,,,false,.lens/personal,profile.yaml

@@ -442,11 +442,11 @@ def main() -> int:
 
     # 4. Output directories
     if not dry_run:
-        for rel in ["docs/lens-work/initiatives", ".lens"]:
+        for rel in ["docs/lens-work/initiatives", ".lens", ".lens/personal"]:
             (project_root / rel).mkdir(parents=True, exist_ok=True)
         print("[OK]   Output directory structure verified")
     else:
-        print("[INFO] [DRY-RUN] Would create docs/lens-work/initiatives and .lens")
+        print("[INFO] [DRY-RUN] Would create docs/lens-work/initiatives, .lens, and .lens/personal")
 
     # 4b. governance-setup.yaml
     gov_setup = project_root / "docs/lens-work/governance-setup.yaml"
