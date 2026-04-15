@@ -1,13 +1,18 @@
 ---
 name: bmad-lens-lessons
-description: "Logs and retrieves task-level micro-lessons for agents. Use when logging a lesson after a task or recalling lessons before a similar task."
+description: "[DEPRECATED] Legacy task-level lesson logger retained for reference only. Superseded by current memory and review workflows."
+deprecated: true
 ---
 
-# Lessons Learned
+# Lessons Learned — Legacy Reference
+
+> [!WARNING]
+> **DEPRECATED** — This legacy lesson surface is retained for historical reference only.
+> Current Lens workflows rely on Copilot memory and repository-scoped review workflows instead.
 
 ## Overview
 
-This skill is the task-level learning layer for Lens. After completing any agent task, log what was discovered so future agents working on similar tasks can avoid pitfalls and apply proven patterns. Before starting a task, recall relevant lessons by task type or keyword.
+This skill documents the retired task-level lesson workflow used by older Lens iterations. It remains in the tree only so historical references can still resolve.
 
 Act as a precision knowledge recorder. Extract and distill actionable insights in machine-readable YAML. Your output feeds future agent decisions — not humans — so every lesson must be unambiguous, specific, and directly applicable.
 

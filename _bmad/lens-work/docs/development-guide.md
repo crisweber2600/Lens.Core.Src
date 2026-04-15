@@ -173,7 +173,7 @@ cat tests/contracts/sensing.md           # Overlap detection scenarios
 
 ### Development TODOs (from TODO.md)
 
-- ☐ Deep validation on representative workflows (router/dev, router/sprintplan)
+- ☐ Deep validation on representative workflows (router/dev, router/finalizeplan)
 - ☐ Smoke test installer output for all IDEs
 - ☐ Verify module-help.csv command ordering aligned with LENS agent menu
 - ☐ Confirm install-question naming consistency

@@ -315,6 +315,7 @@ const STUB_PROMPTS = [
     { file: 'lens-new-domain.prompt.md', name: 'lens-new-domain', desc: 'Create new domain-level constitution scaffolding', target: 'lens-new-domain.prompt.md' },
     { file: 'lens-new-service.prompt.md', name: 'lens-new-service', desc: 'Create new service-level constitution scaffolding within a domain', target: 'lens-new-service.prompt.md' },
     { file: 'lens-new-feature.prompt.md', name: 'lens-new-feature', desc: 'Initialize a new feature with 2-branch topology, feature YAML, and PR', target: 'lens-new-feature.prompt.md' },
+    { file: 'lens-new-project.prompt.md', name: 'lens-new-project', desc: 'Bootstrap a new project by creating or reusing domain/service containers, initializing a feature, and provisioning a target repo', target: 'lens-new-project.prompt.md' },
     { file: 'lens-target-repo.prompt.md', name: 'lens-target-repo', desc: 'Provision or register a feature target repo in GitHub, TargetProjects, and governance metadata', target: 'lens-target-repo.prompt.md' },
     { file: 'lens-preplan.prompt.md', name: 'lens-preplan', desc: 'Run PrePlan phase (brainstorm, research, product brief)', target: 'lens-preplan.prompt.md' },
     { file: 'lens-businessplan.prompt.md', name: 'lens-businessplan', desc: 'Run BusinessPlan phase (PRD, UX design)', target: 'lens-businessplan.prompt.md' },
@@ -360,6 +361,7 @@ const STUB_PROMPTS = [
     { file: 'lens-module-management.prompt.md', name: 'lens-module-management', desc: 'Check module version and guide self-service updates', target: 'lens-module-management.prompt.md' },
     { file: 'lens-upgrade.prompt.md', name: 'lens-upgrade', desc: 'Migrate control repo schema to current version', target: 'lens-upgrade.prompt.md' },
     { file: 'lens-dashboard.prompt.md', name: 'lens-dashboard', desc: 'Cross-feature dashboard with dependency graphs', target: 'lens-dashboard.prompt.md' },
+    { file: 'lens-discover.prompt.md', name: 'lens-discover', desc: 'Sync TargetProjects with governance repo inventory', target: 'lens-discover.prompt.md' },
     { file: 'lens-feature-yaml.prompt.md', name: 'lens-feature-yaml', desc: 'Feature YAML lifecycle operations', target: 'lens-feature-yaml.prompt.md' },
     { file: 'lens-git-orchestration.prompt.md', name: 'lens-git-orchestration', desc: 'Git write operations for Lens features', target: 'lens-git-orchestration.prompt.md' },
     { file: 'lens-git-state.prompt.md', name: 'lens-git-state', desc: 'Read-only git queries for Lens features', target: 'lens-git-state.prompt.md' },
@@ -389,6 +391,7 @@ const IDE_COMMANDS = [
     { file: 'bmad-lens-audit.md', name: 'audit', desc: 'Run cross-initiative compliance audit dashboard', wf: 'skills/bmad-lens-audit/SKILL.md' },
     { file: 'bmad-lens-sensing.md', name: 'sensing', desc: 'Cross-initiative overlap detection on demand', wf: 'skills/bmad-lens-sensing/SKILL.md' },
     { file: 'bmad-lens-module-management.md', name: 'module-management', desc: 'Check module version and guide self-service updates', wf: 'skills/bmad-lens-module-management/SKILL.md' },
+    { file: 'bmad-lens-discover.md', name: 'discover', desc: 'Sync TargetProjects with governance repo inventory', wf: 'skills/bmad-lens-discover/SKILL.md' },
 ];
 
 const IDE_COMMAND_FILES = new Set(IDE_COMMANDS.map(cmd => cmd.file));

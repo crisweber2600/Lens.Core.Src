@@ -1,15 +1,21 @@
 ---
 name: bmad-lens-devproposal
-description: DevProposal phase — epics, stories, and implementation readiness for a feature with Lens governance.
+description: "[DEPRECATED] Legacy v3 DevProposal phase retained for migration reference only. Superseded by FinalizePlan."
+deprecated: true
+superseded_by: bmad-lens-finalizeplan
 ---
 
-# DevProposal — Feature Implementation Proposal Phase
+# DevProposal — Legacy Reference
+
+> [!WARNING]
+> **DEPRECATED** — `DevProposal` is no longer part of the active Lens v4 lifecycle.
+> Use `FinalizePlan` for current planning handoff work.
 
 ## Overview
 
-This skill runs the DevProposal phase for a single feature within the Lens 2-branch model. It publishes the reviewed TechPlan docs from the control repo into governance, then stages DevProposal artifacts locally for the SprintPlan handoff. Epic and story creation plus implementation readiness run through registered Lens BMAD wrappers. In batch mode it uses the shared Lens two-pass batch contract: pass 1 writes or refreshes `devproposal-batch-input.md` and stops; pass 2 resumes DevProposal with the approved answers loaded before publication and wrapper delegation.
+This skill captures the historical DevProposal phase from the pre-FinalizePlan lifecycle. It remains in the tree only to support migration lookup and older archived references.
 
-**Scope:** DevProposal follows TechPlan and produces the implementation breakdown — epics, stories, and readiness assessment. This is the sole phase in the devproposal milestone.
+**Scope:** Historical reference only. In the active v4 lifecycle, this work is packaged under `FinalizePlan`.
 
 **Args:** Accepts `--feature-id <id>` to target a specific feature and `--mode interactive|batch` to control flow.
 

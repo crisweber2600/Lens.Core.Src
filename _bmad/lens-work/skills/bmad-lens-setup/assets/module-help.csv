@@ -36,6 +36,7 @@ Lens,bmad-lens-split-feature,move-stories,MS,Move story files from source to spl
 Lens,bmad-lens-dashboard,collect-data,CD,Collect cross-feature data from feature-index.yaml,collect,[--governance-dir],anytime,,bmad-lens-dashboard:generate,false,,features data JSON
 Lens,bmad-lens-dashboard,dependency-graph,DG,Build dependency graph data for all features,dependency-data,[--governance-dir],anytime,,bmad-lens-dashboard:generate,false,,dependency graph JSON
 Lens,bmad-lens-dashboard,generate-dashboard,GD,Generate self-contained HTML dashboard for all features,generate,[--governance-dir] --output <path>,anytime,bmad-lens-dashboard:collect,,false,output_folder,dashboard.html
+Lens,bmad-lens-discover,discover,DR,Sync TargetProjects with governance repo inventory,sync,[--headless|-H] [--dry-run],anytime,,,false,,repo inventory sync report
 Lens,bmad-lens-onboard,preflight,PF,Check prerequisites before governance repo setup,preflight,--governance-dir <path>,anytime,,bmad-lens-onboard:scaffold,true,,preflight check results
 Lens,bmad-lens-onboard,onboard,OB,Scaffold governance repo and write initial config,scaffold,--governance-dir <path> --owner <username> [--dry-run],anytime,bmad-lens-onboard:preflight,bmad-lens-init-feature:create,true,,governance repo structure
 Lens,bmad-lens-onboard,write-config,WC,Write user preferences to user-profile.md and config.user.yaml,write-config,--governance-dir <path> --username <n> [--dry-run],anytime,bmad-lens-onboard:scaffold,,false,,"user-profile.md, config.user.yaml"
