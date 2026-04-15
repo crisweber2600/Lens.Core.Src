@@ -19,7 +19,7 @@ global: false
 # Lifecycle Contract
 lifecycle:
   file: lifecycle.yaml
-  schema_version: 3.5
+  schema_version: 4
 
 # Dependencies
 dependencies:

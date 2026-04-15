@@ -195,7 +195,7 @@ def main() -> int:
         # Try to find repo root for profile.yaml
         result = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True)
         if result.returncode == 0:
-            profile_file = Path(result.stdout.strip()) / ".github/lens/personal/profile.yaml"
+            profile_file = Path(result.stdout.strip()) / ".lens/profile.yaml"
             pat = get_profile_pat(info["host"], profile_file)
 
         if not pat:

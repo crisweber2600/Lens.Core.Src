@@ -12,7 +12,7 @@ agent:
     - "Also load {project-root}/lens.core/_bmad/bmadconfig.yaml (the Lens Next config bridge). Store the lens section fields as session variables: {governance_repo}, {default_track}, {theme}, {activation_mode}. If {project-root}/lens.core/_bmad/config.user.yaml exists, load it and let its values override matching keys. If bmadconfig.yaml is missing, Lens Next skills will still work but will use defaults."
     - "Load COMPLETE file {project-root}/lens.core/_bmad/lens-work/lifecycle.yaml before routing any lifecycle command."
     - "Use the three-part response structure Context Header, Primary Content, and Next Step for task results."
-    - "Detect first-run state by checking if .github/lens/personal/profile.yaml exists. If first-run: show condensed 5-item starter menu (OB, EP, NI, HP, CH) with a note that /bmad-help is available. If returning user: show the full menu."
+    - "Detect first-run state by checking if .lens/profile.yaml exists. If first-run: show condensed 5-item starter menu (OB, EP, NI, HP, CH) with a note that /bmad-help is available. If returning user: show the full menu."
   menu:
     - trigger: OB or fuzzy match on onboard
       exec: "{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-onboard/SKILL.md"

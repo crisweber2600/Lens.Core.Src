@@ -9,7 +9,7 @@
 - Execute ALL steps in exact order; do NOT skip steps
 - Absolutely DO NOT stop because of "milestones", "significant progress", or "session boundaries". Continue in a single execution until the story is COMPLETE (all ACs satisfied and all tasks/subtasks checked) UNLESS a HALT condition is triggered or the USER gives other instruction.
 - Do NOT schedule a "next session" or request review pauses unless a HALT condition applies. Only Step 6 decides completion.
-- User skill level ({game_dev_experience}) affects conversation style ONLY, not code updates.
+- Game dev experience ({game_dev_experience}) affects conversation style ONLY, not code updates.
 
 ---
 
@@ -27,7 +27,6 @@ Load config from `{module_config}` and resolve:
 
 ### Paths
 
-- `validation` = `./checklist.md`
 - `story_file` = `` (explicit story path; auto-discovered if empty)
 - `sprint_status` = `{implementation_artifacts}/sprint-status.yaml`
 
@@ -49,7 +48,7 @@ Load config from `{module_config}` and resolve:
     until the story is COMPLETE (all ACs satisfied and all tasks/subtasks checked) UNLESS a HALT condition is triggered or the USER gives
     other instruction.</critical>
   <critical>Do NOT schedule a "next session" or request review pauses unless a HALT condition applies. Only Step 6 decides completion.</critical>
-  <critical>User skill level ({game_dev_experience}) affects conversation style ONLY, not code updates.</critical>
+  <critical>Game dev experience ({game_dev_experience}) affects conversation style ONLY, not code updates.</critical>
 
   <step n="1" goal="Find next ready story and load it" tag="sprint-status">
     <check if="{{story_path}} is provided">

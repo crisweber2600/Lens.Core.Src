@@ -24,7 +24,7 @@ def _write_file(path: Path, content: str) -> None:
 
 
 def _write_hash_manifest(workspace: Path, entries: dict[str, str]) -> None:
-    manifest = workspace / ".github/lens/personal/.github-hashes"
+    manifest = workspace / ".lens/.github-hashes"
     lines = []
 
     for rel_path, content in sorted(entries.items()):
@@ -37,10 +37,10 @@ def _write_hash_manifest(workspace: Path, entries: dict[str, str]) -> None:
 @pytest.fixture()
 def workspace(tmp_path: Path) -> Path:
     root = tmp_path / "workspace"
-    _write_file(root / "LENS_VERSION", "3.4\n")
-    _write_file(root / "lens.core/_bmad/lens-work/lifecycle.yaml", "schema_version: 3.4\n")
+    _write_file(root / "LENS_VERSION", "4\n")
+    _write_file(root / "lens.core/_bmad/lens-work/lifecycle.yaml", "schema_version: 4\n")
     _write_file(
-        root / ".github/lens/personal/.preflight-timestamp",
+        root / ".lens/.preflight-timestamp",
         datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     )
     return root
@@ -97,11 +97,28 @@ class TestGitHubSync:
         assert not (workspace / ".github/workflows/legacy").exists()
         assert not (workspace / ".github/prompts/lens-stale.prompt.md").exists()
 
-        manifest_text = (workspace / ".github/lens/personal/.github-hashes").read_text(encoding="utf-8")
+        manifest_text = (workspace / ".lens/.github-hashes").read_text(encoding="utf-8")
         assert ".github/workflows/legacy/obsolete.yml" not in manifest_text
         assert ".github/prompts/lens-stale.prompt.md" not in manifest_text
         assert ".github/workflows/keep.yml" in manifest_text
         assert ".github/prompts/lens-keep.prompt.md" in manifest_text
+
+    def test_migrates_legacy_personal_state_when_lens_missing(self, tmp_path: Path):
+        workspace = tmp_path / "workspace"
+        _write_file(workspace / "LENS_VERSION", "4\n")
+        _write_file(workspace / "lens.core/_bmad/lens-work/lifecycle.yaml", "schema_version: 4\n")
+        _write_file(workspace / "lens.core/.github/workflows/keep.yml", "name: keep\n")
+        _write_file(workspace / ".github/lens/personal/profile.yaml", "experience_mode: lite\n")
+        _write_file(
+            workspace / ".github/lens/personal/.preflight-timestamp",
+            datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        )
+
+        result = _run(cwd=workspace)
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert (workspace / ".lens/profile.yaml").read_text(encoding="utf-8") == "experience_mode: lite\n"
+        assert not (workspace / ".github/lens/personal/profile.yaml").exists()
 
     def test_preserves_untracked_non_prompt_github_files(self, workspace: Path):
         _write_file(workspace / "lens.core/.github/workflows/keep.yml", "name: keep\n")

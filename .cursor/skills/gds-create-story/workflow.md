@@ -1,14 +1,10 @@
----
-name: gds-create-story
-description: 'Creates a dedicated story file with all the context the agent will need to implement it later. Use when the user says "create the next story" or "create story [story identifier]"'
----
-
 # Create Story Workflow
 
 **Goal:** Create a comprehensive story file that gives the dev agent everything needed for flawless implementation.
 
 **Your Role:** Story context engine that prevents LLM developer mistakes, omissions, or disasters.
-- Communicate all responses in {communication_language} and generate all documents in {document_output_language}
+- Communicate all responses in {communication_language} and language MUST be tailored to {game_dev_experience}
+- Generate all documents in {document_output_language}
 - Your purpose is NOT to copy from epics - it's to create a comprehensive, optimized story file that gives the DEV agent EVERYTHING needed for flawless implementation
 - COMMON LLM MISTAKES TO PREVENT: reinventing wheels, wrong libraries, wrong file locations, breaking regressions, ignoring UX, vague implementations, lying about completion, not learning from past work
 - EXHAUSTIVE ANALYSIS REQUIRED: You must thoroughly analyze ALL artifacts to extract critical context - do NOT be lazy or skim! This is the most important function in the entire development process!
@@ -32,9 +28,6 @@ Load config from `{module_config}` and resolve:
 
 ### Paths
 
-- `installed_path` = `.`
-- `template` = `./template.md`
-- `validation` = `./checklist.md`
 - `sprint_status` = `{implementation_artifacts}/sprint-status.yaml`
 - `epics_file` = `{planning_artifacts}/epics.md`
 - `gdd_file` = `{planning_artifacts}/gdd.md`
@@ -218,10 +211,10 @@ Load config from `{module_config}` and resolve:
 </step>
 
 <step n="2" goal="Load and analyze core artifacts">
-  <critical>🔬 EXHAUSTIVE ARTIFACT ANALYSIS - This is where you prevent future developer fuckups!</critical>
+  <critical>🔬 EXHAUSTIVE ARTIFACT ANALYSIS - This is where you prevent future developer mistakes!</critical>
 
   <!-- Load all available content through discovery protocol -->
-  <action>Read fully and follow `{installed_path}/discover-inputs.md` to load all input files</action>
+  <action>Read fully and follow `./discover-inputs.md` to load all input files</action>
   <note>Available content: {epics_content}, {gdd_content}, {architecture_content}, {ux_content},
   {project_context}</note>
 
@@ -241,7 +234,7 @@ Load config from `{module_config}` and resolve:
   all learnings that could impact current story implementation</action>
   </check>
 
-  <!-- Project context analysis -->
+  <!-- Project context analysis (game-dev extension for project-context.md extraction) -->
   <check if="{project_context} was loaded and is not empty">
     <action>Analyze {project_context} for story-relevant rules and constraints:</action>
     **PROJECT CONTEXT EXTRACTION:**
@@ -350,7 +343,7 @@ Load config from `{module_config}` and resolve:
     <template-output file="{default_output_file}">latest_tech_information</template-output>
   </check>
 
-  <!-- Project context rules - embed extracted rules from project-context.md -->
+  <!-- Project context rules - embed extracted rules from project-context.md (game-dev extension) -->
   <check if="{{project_rules}} is not empty">
     <template-output file="{default_output_file}">project_context_reference</template-output>
     <action>Populate the Project Context Rules section with ALL extracted {{project_rules}} including:
@@ -371,7 +364,7 @@ Load config from `{module_config}` and resolve:
 </step>
 
 <step n="6" goal="Update sprint status and finalize">
-  <action>Validate the newly created story file {story_file} against {installed_path}/checklist.md and apply any required fixes before finalizing</action>
+  <action>Validate the newly created story file {default_output_file} against `./checklist.md` and apply any required fixes before finalizing</action>
   <action>Save story document unconditionally</action>
 
   <!-- Update sprint status -->

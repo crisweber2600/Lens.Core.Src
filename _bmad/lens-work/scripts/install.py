@@ -155,7 +155,7 @@ def install_output_dirs() -> None:
         "docs/implementation-artifacts",
         "docs/lens-work",
         "docs/lens-work/initiatives",
-        ".github/lens/personal",
+        ".lens",
         "docs/reports/lens-work/quality-scan",
     ]:
         ensure_dir(_project_root / rel)

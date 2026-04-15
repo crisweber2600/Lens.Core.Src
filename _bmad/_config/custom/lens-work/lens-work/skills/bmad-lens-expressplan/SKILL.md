@@ -48,7 +48,7 @@ You are the ExpressPlan phase conductor for the Lens agent. You keep the flow mo
 9. Determine mode: `interactive` (default) or `batch`.
 10. If mode is `batch` and `batch_resume_context` is absent, delegate to `bmad-lens-batch --target expressplan`, write or refresh `expressplan-batch-input.md`, and stop. Do not delegate to QuickPlan, run review, or update `feature.yaml` on pass 1.
 11. If mode is `batch` and `batch_resume_context` is present, load the answered batch input as pre-approved context and continue with step 1 of the execution contract below.
-12. Run `uv run {project-root}/lens.core/_bmad/lens-work/scripts/validate-phase-artifacts.py --phase expressplan --contract review-ready --lifecycle-path {project-root}/lens.core/_bmad/lens-work/lifecycle.yaml --docs-root <resolved staged docs path> --misplaced-root {project-root}/docs/planning-artifacts --misplaced-root <resolved governance docs mirror path> --json` using the staged docs path resolved from `feature.yaml.docs.path`.
+12. Run `uv run {project-root}/lens.core/_bmad/lens-work/scripts/validate-phase-artifacts.py --phase expressplan --contract review-ready --lifecycle-path {project-root}/lens.core/_bmad/lens-work/lifecycle.yaml --docs-root <resolved staged docs path> --json` using the staged docs path resolved from `feature.yaml.docs.path`.
 13. If the feature phase is still `expressplan` and the readiness check returns `status=pass`, treat step 2 adversarial review as the next deterministic step. Do not re-run QuickPlan or re-confirm the feature and mode. Jump directly to step 2 below, then continue to step 3 on `pass` or `pass-with-warnings`.
 14. In interactive mode, if the readiness check returns `status=fail`, confirm the feature and mode before proceeding to step 1.
 

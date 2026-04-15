@@ -15,7 +15,8 @@ This workspace is a **BMAD control repo** that orchestrates planning and develop
 The top-level workspace. This is an **operational workspace**, not a code repo. It contains:
 
 - `.github/` — Copilot adapter stubs (agents, skills, prompts) that reference the release module by path
-- `.github/lens-work/` — Personal profile (`profile.yaml`) and governance setup config (`governance-setup.yaml`)
+- `.lens/` — Local-only personal profile and context files (`profile.yaml`, `context.yaml`, `repo-inventory.yaml`)
+- `docs/lens-work/governance-setup.yaml` — Governance setup config written by control repo bootstrap
 - `docs/` — All lens-work initiative artifacts, organized as `docs/{domain}/{service}/{feature}/`
 - `setup-control-repo.py` — Bootstrap script
 
@@ -83,4 +84,4 @@ The lens-work module manages a 5-phase planning lifecycle with audience-based pr
 - Never duplicate module content into `.github/` — module updates propagate through path references
 - The `lens.core/` submodule branch matters: on `alpha`, run full preflight at most once per hour; on `beta`, run full preflight at most once every 3 hours
 - Initiative artifacts live at `docs/{domain}/{service}/{feature}/`
-- Lens-work personal config and governance setup live at `.github/lens-work/`
+- Lens-work personal config lives at `.lens/`, and governance setup lives at `docs/lens-work/governance-setup.yaml`

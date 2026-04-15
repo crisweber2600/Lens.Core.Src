@@ -175,54 +175,40 @@ class TestValidatePhaseArtifactsStoryFiles:
         assert payload["status"] == "pass"
         assert payload["misplaced"] == {}
 
-    def test_reports_misplaced_artifacts_in_fallback_root(self, tmp_path):
+    def test_reports_missing_artifacts_when_docs_root_is_empty(self, tmp_path):
         docs_root = tmp_path / "feature-docs"
         docs_root.mkdir()
-        misplaced_root = tmp_path / "docs" / "planning-artifacts"
-        misplaced_root.mkdir(parents=True)
-        (misplaced_root / "product-brief.md").write_text("# Brief\n", encoding="utf-8")
-        (misplaced_root / "brainstorm.md").write_text("# Brainstorm\n", encoding="utf-8")
-        research_dir = misplaced_root / "research"
-        research_dir.mkdir()
-        (research_dir / "technical-auth-research-2026-04-14.md").write_text("# Research\n", encoding="utf-8")
 
         result = _run(
             "--phase", "preplan",
             "--contract", "review-ready",
             "--lifecycle-path", str(LIFECYCLE),
             "--docs-root", str(docs_root),
-            "--misplaced-root", str(misplaced_root),
             "--json",
         )
 
         assert result.returncode == 1, result.stdout + result.stderr
         payload = json.loads(result.stdout)
         assert payload["status"] == "fail"
-        assert payload["failure_reason"] == "misplaced_artifacts"
-        assert payload["misplaced"]["product-brief"][0].endswith("product-brief.md")
-        assert payload["misplaced"]["brainstorm"][0].endswith("brainstorm.md")
-        assert payload["misplaced"]["research"][0].endswith("technical-auth-research-2026-04-14.md")
+        assert payload["failure_reason"] == "missing_artifacts"
+        assert payload["missing"] == ["product-brief", "research", "brainstorm"]
+        assert payload["misplaced"] == {}
 
-    def test_reports_misplaced_artifacts_in_governance_mirror_root(self, tmp_path):
+    def test_reports_missing_businessplan_artifacts_when_docs_root_is_empty(self, tmp_path):
         docs_root = tmp_path / "feature-docs"
         docs_root.mkdir()
-        governance_docs = tmp_path / "governance" / "features" / "platform" / "identity" / "auth-refresh" / "docs"
-        governance_docs.mkdir(parents=True)
-        (governance_docs / "prd.md").write_text("# PRD\n", encoding="utf-8")
-        (governance_docs / "ux-design.md").write_text("# UX\n", encoding="utf-8")
 
         result = _run(
             "--phase", "businessplan",
             "--contract", "review-ready",
             "--lifecycle-path", str(LIFECYCLE),
             "--docs-root", str(docs_root),
-            "--misplaced-root", str(governance_docs),
             "--json",
         )
 
         assert result.returncode == 1, result.stdout + result.stderr
         payload = json.loads(result.stdout)
         assert payload["status"] == "fail"
-        assert payload["failure_reason"] == "misplaced_artifacts"
-        assert payload["misplaced"]["prd"][0].endswith("prd.md")
-        assert payload["misplaced"]["ux-design"][0].endswith("ux-design.md")
+        assert payload["failure_reason"] == "missing_artifacts"
+        assert payload["missing"] == ["prd", "ux-design"]
+        assert payload["misplaced"] == {}

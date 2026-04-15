@@ -133,7 +133,7 @@ def test_wrapper_declares_feature_scoped_planning_authority():
     assert "governance copies must not be authored directly" in text
 
 
-def test_planning_conductors_validate_misplaced_roots_before_progression():
+def test_planning_conductors_validate_staged_docs_before_progression():
     for relative_path in (
         "skills/bmad-lens-preplan/SKILL.md",
         "skills/bmad-lens-businessplan/SKILL.md",
@@ -142,8 +142,8 @@ def test_planning_conductors_validate_misplaced_roots_before_progression():
     ):
         text = _read(relative_path)
 
-        assert "--misplaced-root {project-root}/docs/planning-artifacts" in text
-        assert "resolved governance docs mirror path" in text
+        assert "--docs-root <resolved staged docs path>" in text or "--docs-root <resolved staged docs path resolved from `feature.yaml.docs.path`>" in text
+        assert "--misplaced-root" not in text
 
 
 def test_control_repo_instructions_require_control_first_artifact_authority():

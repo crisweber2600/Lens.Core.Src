@@ -69,6 +69,35 @@ def remove_empty_parent_dirs(start_dir: Path, stop_dir: Path) -> None:
         current = current.parent
 
 
+def personal_dir(project_root: Path) -> Path:
+    return project_root / ".lens"
+
+
+def legacy_personal_dir(project_root: Path) -> Path:
+    return project_root / ".github" / "lens" / "personal"
+
+
+def migrate_legacy_personal_dir(project_root: Path) -> Path:
+    active_dir = personal_dir(project_root)
+    legacy_dir = legacy_personal_dir(project_root)
+
+    if active_dir.exists():
+        if legacy_dir.exists():
+            echo("[preflight] .lens already exists; leaving the legacy personal directory untouched")
+        return active_dir
+
+    if not legacy_dir.exists():
+        return active_dir
+
+    echo("[preflight] Migrating local personal state from the legacy personal directory to .lens...")
+    import shutil
+
+    shutil.move(str(legacy_dir), str(active_dir))
+    remove_empty_parent_dirs(legacy_dir.parent, project_root / ".github")
+    echo("[preflight] Personal state migration complete")
+    return active_dir
+
+
 def prune_stale_synced_github_files(
     project_root: Path,
     stored_hashes: dict[str, str],
@@ -161,8 +190,8 @@ def _should_include_prompt(stem: str, experience: str, role: str) -> bool:
 
 
 def _load_user_profile(project_root: Path) -> dict[str, str]:
-    """Read .github/lens/personal/profile.yaml; return defaults if missing."""
-    profile_path = project_root / ".github" / "lens" / "personal" / "profile.yaml"
+    """Read .lens/profile.yaml; return defaults if missing."""
+    profile_path = personal_dir(project_root) / "profile.yaml"
     defaults: dict[str, str] = {"experience_mode": "full", "primary_role": "both"}
     if not profile_path.is_file():
         return defaults
@@ -219,9 +248,10 @@ def main() -> int:
         _cwd if (_cwd / "lens.core").exists()
         else next(p for p in script_dir.parents if (p / "lens.core").exists())
     )
+    active_personal_dir = migrate_legacy_personal_dir(project_root)
     release_dir = project_root / "lens.core"
-    timestamp_file = project_root / ".github/lens/personal/.preflight-timestamp"
-    hash_file = project_root / ".github/lens/personal/.github-hashes"
+    timestamp_file = active_personal_dir / ".preflight-timestamp"
+    hash_file = active_personal_dir / ".github-hashes"
     lifecycle_path = release_dir / "_bmad/lens-work/lifecycle.yaml"
     governance_path = Path(args.governance_path) if args.governance_path else None
 

@@ -243,11 +243,11 @@ def resolve_personal_folder(governance_repo: str, personal_folder: str | None) -
     """Resolve the personal folder used for context.yaml persistence.
 
     If not provided explicitly, default to sibling of governance repo root:
-    <governance_repo_parent>/.github/lens/personal
+    <governance_repo_parent>/.lens
     """
     if personal_folder:
         return personal_folder
-    return str(Path(governance_repo).parent / ".github" / "lens" / "personal")
+    return str(Path(governance_repo).parent / ".lens")
 
 
 def is_stale(feature_data: dict) -> bool:
@@ -669,7 +669,7 @@ Examples:
         required=False,
         help=(
             "Path to personal folder for context.yaml persistence. "
-            "If omitted, defaults to <governance_repo_parent>/.github/lens/personal"
+            "If omitted, defaults to <governance_repo_parent>/.lens"
         ),
     )
     switch_p.add_argument(
