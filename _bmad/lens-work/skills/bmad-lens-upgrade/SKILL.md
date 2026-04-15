@@ -35,7 +35,7 @@ You are the upgrade conductor for the Lens agent. You detect version gaps, compu
 ## On Activation
 
 1. Load config from `{project-root}/lens.core/_bmad/config.yaml`.
-2. Read `LENS_VERSION` from control repo root (or detect from schema heuristics).
+2. Read `.lens/LENS_VERSION` (fallback: legacy control repo root `LENS_VERSION`) or detect from schema heuristics.
 3. Load `lifecycle.yaml` for migration descriptors and target schema version.
 4. Parse `--dry-run`, `--from`, `--to` flags.
 
@@ -43,7 +43,7 @@ You are the upgrade conductor for the Lens agent. You detect version gaps, compu
 
 ### Detect
 
-1. Parse `LENS_VERSION` or auto-detect from branch naming patterns.
+1. Parse `.lens/LENS_VERSION` (fallback: legacy root `LENS_VERSION`) or auto-detect from branch naming patterns.
 2. Load migration descriptors from `lifecycle.yaml` `migrations` section.
 3. Determine if upgrade is needed (source < target).
 
@@ -66,7 +66,7 @@ You are the upgrade conductor for the Lens agent. You detect version gaps, compu
 
 ### Write Version
 
-1. Write `LENS_VERSION` to control repo root.
+1. Write `.lens/LENS_VERSION`.
 2. Commit with `[LENS:UPGRADE]` marker.
 3. Report completion with next-step guidance.
 

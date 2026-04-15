@@ -37,7 +37,7 @@ def _write_hash_manifest(workspace: Path, entries: dict[str, str]) -> None:
 @pytest.fixture()
 def workspace(tmp_path: Path) -> Path:
     root = tmp_path / "workspace"
-    _write_file(root / "LENS_VERSION", "4\n")
+    _write_file(root / ".lens/LENS_VERSION", "4\n")
     _write_file(root / "lens.core/_bmad/lens-work/lifecycle.yaml", "schema_version: 4\n")
     _write_file(
         root / ".lens/.preflight-timestamp",
@@ -118,6 +118,7 @@ class TestGitHubSync:
 
         assert result.returncode == 0, result.stdout + result.stderr
         assert (workspace / ".lens/personal/profile.yaml").read_text(encoding="utf-8") == "experience_mode: lite\n"
+        assert (workspace / ".lens/LENS_VERSION").read_text(encoding="utf-8") == "4"
         assert not (workspace / ".github/lens/personal/profile.yaml").exists()
 
     def test_preserves_untracked_non_prompt_github_files(self, workspace: Path):

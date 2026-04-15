@@ -73,6 +73,14 @@ def lens_dir(project_root: Path) -> Path:
     return project_root / ".lens"
 
 
+def lens_version_file(project_root: Path) -> Path:
+    return lens_dir(project_root) / "LENS_VERSION"
+
+
+def legacy_lens_version_file(project_root: Path) -> Path:
+    return project_root / "LENS_VERSION"
+
+
 def personal_dir(project_root: Path) -> Path:
     return lens_dir(project_root) / "personal"
 
@@ -104,6 +112,23 @@ def migrate_legacy_personal_dir(project_root: Path) -> Path:
     remove_empty_parent_dirs(legacy_dir.parent, project_root / ".github")
     echo("[preflight] Personal state migration complete")
     return active_dir
+
+
+def ensure_lens_version_file(project_root: Path) -> str:
+    active_file = lens_version_file(project_root)
+    legacy_file = legacy_lens_version_file(project_root)
+
+    if active_file.is_file():
+        return active_file.read_text(encoding="utf-8").strip()
+
+    if not legacy_file.is_file():
+        return ""
+
+    lens_dir(project_root).mkdir(parents=True, exist_ok=True)
+    version = legacy_file.read_text(encoding="utf-8").strip()
+    active_file.write_text(version, encoding="utf-8")
+    echo("[preflight] Seeded .lens/LENS_VERSION from the legacy root LENS_VERSION file")
+    return version
 
 
 def prune_stale_synced_github_files(
@@ -294,8 +319,7 @@ def main() -> int:
         echo("VERSION MISMATCH: lifecycle.yaml is missing or has empty 'schema_version:'. Run /lens-upgrade.")
         return 1
 
-    lens_version_file = project_root / "LENS_VERSION"
-    control_version = lens_version_file.read_text(encoding="utf-8").strip() if lens_version_file.is_file() else ""
+    control_version = ensure_lens_version_file(project_root)
 
     if not control_version or (control_version != module_schema and control_version != f"{module_schema}.0.0"):
         display_version = control_version or "missing"
