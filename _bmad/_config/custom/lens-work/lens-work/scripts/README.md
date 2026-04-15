@@ -87,7 +87,11 @@ After a successful run, your control repo will look like this:
 │       ├── governance-setup.yaml               ← governance coordinates
 │       ├── initiatives/                        ← initiative state (empty)
 │       └── personal/                           ← user profile (gitignored)
-├── LENS_VERSION                                ← version compatibility file
+├── .lens/
+│   ├── LENS_VERSION                            ← version compatibility file
+│   ├── .preflight-cache                        ← local preflight cache
+│   ├── .preflight-timestamp                    ← last successful preflight time
+│   └── .github-hashes                          ← managed .github sync manifest
 └── .gitignore                                  ← updated with required entries
 ```
 
@@ -96,7 +100,7 @@ After a successful run, your control repo will look like this:
 | File | Purpose | Overwritten on re-run? |
 |---|---|---|
 | `docs/lens-work/governance-setup.yaml` | Stores governance repo path and remote URL for preflight and `/onboard` | Yes |
-| `LENS_VERSION` | Version compatibility check — preflight compares this against `lifecycle.yaml` | Yes |
+| `.lens/LENS_VERSION` | Version compatibility check — preflight compares this against `lifecycle.yaml` | Yes |
 | `.gitignore` entries | Excludes cloned repos and personal data from version control | Appended (idempotent) |
 | `.github/` | GitHub Copilot adapter files copied from the release module | Replaced |
 
@@ -110,13 +114,13 @@ governance_remote_url: "https://github.com/your-username/myproject.bmad.governan
 
 This file is read by the preflight system and `/onboard` workflow to locate your governance repo without re-prompting.
 
-### Generated File: `LENS_VERSION`
+### Generated File: `.lens/LENS_VERSION`
 
 ```
 3.2.0.0
 ```
 
-The version is extracted from `lens.core/_bmad/lens-work/lifecycle.yaml` (`schema_version` field) with `.0.0` appended. Preflight hard-stops if this doesn't match the module's expected version.
+The version is extracted from `lens.core/_bmad/lens-work/lifecycle.yaml` (`schema_version` field) with `.0.0` appended. Preflight hard-stops if `.lens/LENS_VERSION` doesn't match the module's expected version.
 
 ### `.gitignore` Entries
 
@@ -256,7 +260,7 @@ The script is idempotent and safe to re-run at any time:
 - **`.github/`**: Deleted and re-copied from release module
 - **Governance repo**: `git pull` if already cloned, clone (or create) if not
 - **`governance-setup.yaml`**: Overwritten with current values
-- **`LENS_VERSION`**: Overwritten from current `lifecycle.yaml`
+- **`.lens/LENS_VERSION`**: Overwritten from current `lifecycle.yaml`
 - **`.gitignore`**: Entries appended only if not already present
 - **Output directories**: Created if missing, left alone if present
 
@@ -288,7 +292,7 @@ The script automatically falls back to the remote's default branch if the reques
 [WARN] owner/repo does not have branch 'beta'. Using default branch 'main' instead.
 ```
 
-### `LENS_VERSION` mismatch after update
+### `.lens/LENS_VERSION` mismatch after update
 
 If preflight reports a version mismatch after pulling a new release module:
 
@@ -296,7 +300,7 @@ If preflight reports a version mismatch after pulling a new release module:
 /lens-upgrade
 ```
 
-Or re-run the setup script — it will rewrite `LENS_VERSION` from the current `lifecycle.yaml`.
+Or re-run the setup script — it will rewrite `.lens/LENS_VERSION` from the current `lifecycle.yaml`.
 
 ### Missing `repo-inventory.yaml` during `/onboard`
 

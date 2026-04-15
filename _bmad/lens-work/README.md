@@ -120,7 +120,7 @@ The setup script will:
 3. **Clone your governance repo** (auto-creates it as a private repo if `gh` CLI is available)
 4. **Create output directories** — `docs/lens-work/initiatives/`, `.lens/`, and `.lens/personal/`
 5. **Write `governance-setup.yaml`** — stores governance repo coordinates for preflight and `/onboard`
-6. **Write `LENS_VERSION`** — version compatibility file read by preflight
+6. **Write `.lens/LENS_VERSION`** — version compatibility file read by preflight
 7. **Update `.gitignore`** — excludes cloned repos and personal data
 
 ### Step 4: Store your GitHub PAT

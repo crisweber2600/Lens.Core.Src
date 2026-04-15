@@ -478,10 +478,12 @@ def main() -> int:
             print(f"[ERR]  schema_version not found in {lifecycle_path}", file=sys.stderr)
             return 1
         version_str = f"{schema_version}.0.0"
-        (project_root / "LENS_VERSION").write_text(version_str, encoding="utf-8")
-        print(f"[OK]   LENS_VERSION written: {version_str}")
+        lens_version_path = project_root / ".lens" / "LENS_VERSION"
+        lens_version_path.parent.mkdir(parents=True, exist_ok=True)
+        lens_version_path.write_text(version_str, encoding="utf-8")
+        print(f"[OK]   .lens/LENS_VERSION written: {version_str}")
     else:
-        print("[INFO] [DRY-RUN] Would write LENS_VERSION")
+        print("[INFO] [DRY-RUN] Would write .lens/LENS_VERSION")
 
     # 6. .gitignore
     ensure_gitignore_entries(project_root, dry_run)

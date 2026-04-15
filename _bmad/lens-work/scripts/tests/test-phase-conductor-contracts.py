@@ -92,7 +92,8 @@ def test_complete_contract_delegates_documentation_to_wrapped_skill():
     assert "project documentation captured via" in finalize_reference
     assert "docs/README.md" not in finalize_reference
 
-    assert "Lens,bmad-lens-complete,document-project,DC,Run wrapped project documentation workflow before archival" in module_help
+    assert "Lens,bmad-lens-complete,complete-doc-check,CK,Run wrapped project documentation gate before archival" in module_help
+    assert "Lens,bmad-lens-document-project,bmad-document-project,DC,Run BMAD document-project with Lens feature docs scope and governance mirroring" in module_help
 
 
 def test_git_orchestration_contract_documents_prepare_dev_branch_modes():

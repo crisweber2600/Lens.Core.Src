@@ -355,6 +355,7 @@ const STUB_PROMPTS = [
     { file: 'lens-bmad-create-story.prompt.md', name: 'lens-bmad-create-story', desc: 'Run BMAD create story with Lens context', target: 'lens-bmad-create-story.prompt.md' },
     { file: 'lens-bmad-quick-dev.prompt.md', name: 'lens-bmad-quick-dev', desc: 'Run BMAD quick dev with Lens context', target: 'lens-bmad-quick-dev.prompt.md' },
     { file: 'lens-bmad-code-review.prompt.md', name: 'lens-bmad-code-review', desc: 'Run BMAD code review with Lens context', target: 'lens-bmad-code-review.prompt.md' },
+    { file: 'lens-bmad-document-project.prompt.md', name: 'lens-bmad-document-project', desc: 'Run BMAD document-project with Lens-aware feature docs scope', target: 'lens-bmad-document-project.prompt.md' },
     { file: 'lens-setup.prompt.md', name: 'lens-setup', desc: 'Module configuration and help registry setup', target: 'lens-setup.prompt.md' },
     { file: 'lens-module-management.prompt.md', name: 'lens-module-management', desc: 'Check module version and guide self-service updates', target: 'lens-module-management.prompt.md' },
     { file: 'lens-upgrade.prompt.md', name: 'lens-upgrade', desc: 'Migrate control repo schema to current version', target: 'lens-upgrade.prompt.md' },
