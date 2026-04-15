@@ -132,7 +132,7 @@ def ahead_count(repo: str, base: str, head: str) -> int | None:
 # Feature YAML resolution
 # ---------------------------------------------------------------------------
 
-FEATURE_YAML_SEARCH_ROOTS = ["features", "_bmad-output/features"]
+FEATURE_YAML_SEARCH_ROOTS = ["features"]
 
 
 def find_feature_yaml(repo: str, feature_id: str) -> Path | None:

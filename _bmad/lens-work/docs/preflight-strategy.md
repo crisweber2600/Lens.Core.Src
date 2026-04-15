@@ -17,10 +17,10 @@ The preflight pull strategy uses different freshness windows depending on the cu
 
 ## Managed `.github/` Reconciliation
 
-- `.github/lens/personal/.github-hashes` tracks the `.github/` files last synchronized from `lens.core/.github/`.
+- `.lens/.github-hashes` tracks the `.github/` files last synchronized from `lens.core/.github/`.
 - Preflight removes only files that were previously synced and are no longer present in `lens.core/.github/`.
 - Untracked local `.github/` files are preserved, except for `.github/prompts/*.prompt.md` files that fall outside the published `lens-*.prompt.md` contract.
 
 ## Timestamp Mechanism
 
-The timestamp file (`.github/lens/personal/.preflight-timestamp`) stores the last successful full preflight time as an ISO 8601 UTC datetime. This file is local-only (not committed) and lives in the personal output directory to avoid cross-developer interference.
+The timestamp file (`.lens/.preflight-timestamp`) stores the last successful full preflight time as an ISO 8601 UTC datetime. This file is local-only (not committed) and lives in the personal output directory to avoid cross-developer interference.

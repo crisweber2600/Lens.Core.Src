@@ -180,7 +180,7 @@ jobs:
             --user-name "CrisWeber" \
             --communication-language "English" \
             --document-output-language "English" \
-            --output-folder "_bmad-output" \
+            --output-folder "docs" \
             --yes
 
           echo "✅ BMAD framework installed"
@@ -354,7 +354,7 @@ jobs:
           if [ -f "$INSTRUCTIONS" ]; then
             # Fix the project name (BMAD CLI uses directory name)
             sed -i 's/- \*\*Project\*\*: build-output/- **Project**: Lens.Core.Release/' "$INSTRUCTIONS"
-            sed -i 's/- \*\*Output Folder\*\*: _bmad-output/- **Output Folder**: _bmad-output/' "$INSTRUCTIONS"
+            sed -i -E 's#- \*\*Output Folder\*\*: .*#- **Output Folder**: docs#' "$INSTRUCTIONS"
             echo "✅ copilot-instructions.md patched"
           fi
 

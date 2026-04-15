@@ -62,7 +62,7 @@ class TestOutputDirs:
 
         module.install_output_dirs()
 
-        assert (tmp_path / ".github/lens/personal").is_dir()
+        assert (tmp_path / ".lens").is_dir()
         assert not (tmp_path / "docs/lens-work/personal").exists()
 
 

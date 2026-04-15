@@ -127,12 +127,6 @@ def main() -> int:
     )
     parser.add_argument("--lifecycle-path", required=True, help="Path to lifecycle.yaml")
     parser.add_argument("--docs-root", required=True, help="Path to docs root")
-    parser.add_argument(
-        "--misplaced-root",
-        action="append",
-        default=[],
-        help="Optional root to scan for required artifacts that were written outside docs-root",
-    )
     parser.add_argument("--json", action="store_true", help="Output as JSON")
     args = parser.parse_args()
 
@@ -144,7 +138,6 @@ def main() -> int:
         return 1
 
     required = get_required_artifacts(lifecycle_path, args.phase, args.contract)
-    misplaced_roots = [Path(root) for root in args.misplaced_root]
 
     if not required:
         if args.json:
@@ -162,20 +155,12 @@ def main() -> int:
 
     found: list[str] = []
     missing: list[str] = []
-    misplaced: dict[str, list[str]] = {}
 
     for artifact in required:
         if artifact_exists(docs_root, artifact):
             found.append(artifact)
         else:
             missing.append(artifact)
-            misplaced_files: list[str] = []
-            for misplaced_root in misplaced_roots:
-                if not misplaced_root.exists():
-                    continue
-                misplaced_files.extend(str(path) for path in existing_artifact_files(misplaced_root, artifact))
-            if misplaced_files:
-                misplaced[artifact] = sorted(set(misplaced_files))
 
     passed = len(missing) == 0
 
@@ -187,8 +172,8 @@ def main() -> int:
             "found": len(found),
             "missing": missing,
             "found_list": found,
-            "misplaced": misplaced,
-            "failure_reason": None if passed else ("misplaced_artifacts" if misplaced else "missing_artifacts"),
+            "misplaced": {},
+            "failure_reason": None if passed else "missing_artifacts",
             "status": "pass" if passed else "fail",
         }, indent=2))
     else:
@@ -211,10 +196,6 @@ def main() -> int:
         print(f"  Required: {len(required)}")
         print(f"  Found:    {len(found)}")
         print(f"  Missing:  {', '.join(missing) if missing else 'none'}")
-        if misplaced:
-            print("  Misplaced artifacts found outside docs-root:")
-            for artifact, paths in misplaced.items():
-                print(f"    {artifact}: {', '.join(paths)}")
 
     return 0 if passed else 1
 

@@ -1,5 +1,5 @@
 # =============================================================================
-# Lens-Work Lifecycle Contract v3.4
+# Lens-Work Lifecycle Contract v4.0
 # =============================================================================
 # The single source of truth for lens-work lifecycle behavior.
 # The @lens agent (with 5 skills) and all workflows import
@@ -13,9 +13,11 @@
 #        feature.yaml as optional state source, per-track topology config.
 # v3.5: FinalizePlan collapses the old DevProposal + SprintPlan chain into
 #        a single post-TechPlan planning phase with explicit PR handoffs.
+# v4.0: Local personal state lives in .lens and active generated docs live
+#       under docs/ rather than the legacy output folder.
 # =============================================================================
 
-schema_version: 3.5
+schema_version: 4
 close_states: [completed, abandoned, superseded]
 initiative_state_schema: initiative-state.yaml
 artifact_publication:
@@ -755,11 +757,12 @@ data_zones:
       merge_target: "{initiative_root}"
 
   personal:
-    description: "User profile and preferences"
-    local_path: .github/lens-work/
+    description: "Local-only user profile, context, and preferences"
+    local_path: .lens/
     artifacts:
       - profile.yaml
-      - governance-setup.yaml
+      - context.yaml
+      - repo-inventory.yaml
 
 # -----------------------------------------------------------------------------
 # CREDENTIAL POLICY (NFR4)
@@ -831,7 +834,7 @@ required_frontmatter:
 features_registry:
   enabled: false                    # Opt-in — enable via constitution or /lens-upgrade
   file: "docs/lens-work/feature-index.yaml"
-  legacy_file: "_bmad-output/lens-work/features.yaml"  # v3.2 compatibility fallback
+  legacy_file: "docs/lens-work/features.yaml"  # v3.2 compatibility fallback after docs consolidation
   schema:
     features:
       "{feature-name}":
@@ -933,7 +936,7 @@ migrations:
         value: features_registry
       - type: add_section
         path: features_registry
-        value: { index_file: "_bmad-output/lens-work/features.yaml", scope: per-domain-service }
+        value: { index_file: "docs/lens-work/features.yaml", scope: per-domain-service }
       - type: add_section
         path: problem_logging
         value: { enabled: true, consumed_by: retrospective }
@@ -966,9 +969,38 @@ migrations:
         path: features_registry
         description: "Evolve features.yaml → feature-index.yaml with cross-feature visibility"
         value:
-          file: "_bmad-output/lens-work/feature-index.yaml"
-          legacy_file: "_bmad-output/lens-work/features.yaml"
+          file: "docs/lens-work/feature-index.yaml"
+          legacy_file: "docs/lens-work/features.yaml"
           new_fields: [owner, plan_branch, updated_at, summary, relationships]
+
+  - from_version: 3.5
+    to_version: 4
+    breaking: true
+    migration_command: "/lens-upgrade --from 3.5 --to 4"
+    branch_rename_required: false
+    changes:
+      - type: replace_value
+        path: data_zones.personal.local_path
+        old_value: .github/lens-work/
+        new_value: .lens/
+      - type: replace_value
+        path: config.personal_output_folder
+        old_value: "{project-root}/.github/lens/personal"
+        new_value: "{project-root}/.lens"
+      - type: replace_value
+        path: config.output_folder
+        old_value: "{project-root}/_bmad-output"
+        new_value: "{project-root}/docs"
+      - type: replace_value
+        path: features_registry.legacy_file
+        old_value: "_bmad-output/lens-work/features.yaml"
+        new_value: "docs/lens-work/features.yaml"
+    optional_migrations:
+      - name: migrate-personal-state
+        description: "Move local-only personal files from the legacy personal directory into .lens"
+        steps:
+          - "If .lens does not exist and the legacy personal directory exists, move the full directory to .lens"
+          - "If both paths exist, prefer .lens and leave the legacy directory untouched until manual cleanup"
 
   - from_version: 3.4
     to_version: 3.5

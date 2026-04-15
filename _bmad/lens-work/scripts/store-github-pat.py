@@ -74,7 +74,7 @@ def main() -> int:
         _cwd if (_cwd / "lens.core").exists()
         else next(p for p in script_dir.parents if (p / "lens.core").exists())
     )
-    inventory_path = project_root / ".github/lens/personal/repo-inventory.yaml"
+    inventory_path = project_root / ".lens/repo-inventory.yaml"
 
     hosts = detect_github_hosts(inventory_path)
 

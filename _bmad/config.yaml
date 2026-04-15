@@ -7,7 +7,7 @@
 user_name: "${github_username}"
 communication_language: English
 document_output_language: English
-output_folder: "{project-root}/_bmad-output"
+output_folder: "{project-root}/docs"
 
 # --- Lens section (consumed by bmad-lens-* skills) ---
 lens:
@@ -23,7 +23,7 @@ lens:
   skills_path: "lens.core/_bmad/lens-work/skills"
   prompts_path: "lens.core/_bmad/lens-work/prompts"
   lifecycle_contract: "{project-root}/lens.core/_bmad/lens-work/lifecycle.yaml"
-  output_folder: "{project-root}/_bmad-output/lens-work"
+  output_folder: "{project-root}/docs"
 
 # --- Reference: Authoritative config ---
 # The canonical bmadconfig.yaml for this project lives at:
