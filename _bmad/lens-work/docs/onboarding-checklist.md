@@ -83,20 +83,23 @@ powershell uv run setup-control-repo.py
 
 ---
 
-## Phase 4: Your First Initiative
+## Phase 4: Your First Project
 
-- [ ] Create a new feature initiative:
+- [ ] Create a new project stack:
 
 ```
-/new-feature
+/new-project
 ```
 
 - [ ] LENS will ask you:
   - **Feature name** — short, descriptive (e.g., `user-auth`, `dark-mode`)
-  - **Domain** — which business area (e.g., `payments`, `frontend`)
-  - **Service** — which service within the domain (e.g., `api`, `web`)
+  - **Domain** — reuse an existing business area or create a new one (e.g., `payments`, `frontend`)
+  - **Service** — reuse an existing service or create a new one within the domain (e.g., `api`, `web`)
   - **Track** — lifecycle profile (pick `express` for your first time)
-- [ ] Verify: An initiative branch exists in git and `initiative.yaml` is committed
+  - **Target repo** — clone an existing remote or create one now so implementation has a canonical `TargetProjects/{domain}/{service}/{repo}` home
+- [ ] Verify: The feature exists in governance metadata, the initiative branch exists in git, and the target repo is cloned if you chose repo provisioning
+
+> **Advanced use:** Run `/new-feature`, `/new-domain`, `/new-service`, or `/target-repo` directly when you only need a single step from the combined bootstrap flow.
 
 ---
 
@@ -137,7 +140,7 @@ flowchart TD
     I -->|Yes| J[/dev — delegate to implementation]
     I -->|No| E
     J --> K[/retrospective — review what happened]
-    K --> L[/close — formally end initiative]
+    K --> L[/complete — formally archive initiative]
 ```
 
 ### Quick Reference
@@ -148,8 +151,8 @@ flowchart TD
 | Don't know what's next | `/next` |
 | Switch to different work | `/switch` |
 | Something broke | `/log-problem` |
-| Feature is done | `/close --completed` |
-| Feature was cancelled | `/close --abandoned` |
+| Feature is done | `/complete` |
+| Feature was cancelled | mark the feature abandoned via the completion flow or governance process |
 | Need help | `/help` |
 
 ---
@@ -162,7 +165,7 @@ flowchart TD
 | **Target repo** | A code repo under `TargetProjects/` where implementation happens |
 | **Initiative** | A unit of work tracked by LENS (feature, tech change, spike, etc.) |
 | **Track** | A lifecycle profile that determines which phases to run |
-| **Phase** | A planning stage (preplan, businessplan, techplan, devproposal, sprintplan) |
+| **Phase** | A planning stage (preplan, businessplan, techplan, finalizeplan, or expressplan) |
 | **Milestone** | A promotion boundary between phases (approved via PR) |
 | **Constitution** | Governance rules that apply at org, domain, service, or repo level |
 | **Sensing** | Automatic detection of overlap between initiatives |

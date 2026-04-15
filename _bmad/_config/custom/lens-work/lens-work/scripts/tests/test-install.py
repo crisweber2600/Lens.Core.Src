@@ -67,6 +67,36 @@ class TestOutputDirs:
         assert not (tmp_path / "docs/lens-work/personal").exists()
 
 
+class TestGeneratedAdapters:
+    def test_github_copilot_generation_includes_discover_and_quickplan_prompts(self, tmp_path):
+        module = _load_script_module()
+        module._project_root = tmp_path
+        module._dry_run = False
+        module._update = False
+
+        module.install_github_copilot()
+
+        discover_prompt = tmp_path / ".github/prompts/lens-discover.prompt.md"
+        quickplan_prompt = tmp_path / ".github/prompts/lens-quickplan.prompt.md"
+
+        assert discover_prompt.is_file()
+        assert quickplan_prompt.is_file()
+        assert "lens.core/_bmad/lens-work/prompts/lens-discover.prompt.md" in discover_prompt.read_text(encoding="utf-8")
+        assert "lens.core/_bmad/lens-work/prompts/lens-quickplan.prompt.md" in quickplan_prompt.read_text(encoding="utf-8")
+
+    def test_cursor_generation_includes_discover_command(self, tmp_path):
+        module = _load_script_module()
+        module._project_root = tmp_path
+        module._dry_run = False
+        module._update = False
+
+        module.install_cursor()
+
+        discover_command = tmp_path / ".cursor/commands/bmad-lens-discover.md"
+
+        assert discover_command.is_file()
+        assert "skills/bmad-lens-discover/SKILL.md" in discover_command.read_text(encoding="utf-8")
+
+
 # TODO: Test ensure_dir creates directories
 # TODO: Test write_file respects --update flag
-# TODO: Test GitHub Copilot stub generation produces correct files

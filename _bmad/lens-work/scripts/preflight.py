@@ -186,6 +186,7 @@ _PROMPT_METADATA: dict[str, tuple[str, str | None]] = {
     "lens-move-feature":                  ("full",  "plan"),
     "lens-new-domain":                    ("any",   "plan"),
     "lens-new-feature":                   ("both",  "any"),
+    "lens-new-project":                   ("both",  "any"),
     "lens-new-service":                   ("both",  "any"),
     "lens-next":                          ("both",  "any"),
     "lens-preflight":                     ("both",  "any"),

@@ -1,6 +1,6 @@
 # Architecture — LENS Workbench Module (lens-work)
 
-> ⚠️ **Partial Update Notice (v4.0):** This document's branch topology diagrams still reflect the v3.x 5-branch lazy-creation model. The current architecture uses a **2-branch feature model** (schema 3.4). Core architectural patterns (skills, workflows, delegation) remain accurate.
+> **Current Contract Notice (v4.0):** This document reflects the default schema 4 Lens model: `FinalizePlan` replaces the old `DevProposal` plus `SprintPlan` chain, and the active feature topology is the **2-branch control-repo model**. References to milestone branches apply only to legacy migration paths that explicitly opt out of the default topology.
 
 **Generated:** 2026-04-01 | **Scan Level:** Deep | **Module Version:** 4.0.0
 
@@ -30,52 +30,45 @@ The module operates as a **stateless orchestrator**: it reads state exclusively 
 
 ### 3.1 The Lifecycle Contract
 
-`lifecycle.yaml` (schema v3.2) is the single source of truth for all lifecycle behavior. It defines:
+`lifecycle.yaml` (schema 4) is the single source of truth for lifecycle behavior. It defines:
 
-- **Fundamental Truths** — 3 non-negotiable design axioms
-- **Milestones** — 5 promotion backbone points (techplan → devproposal → sprintplan → dev-ready → dev-complete)
-- **Phases** — 6 planning phases (preplan → businessplan → techplan → devproposal → sprintplan + expressplan)
-- **Tracks** — 8 predefined lifecycle profiles (full, feature, tech-change, hotfix, hotfix-express, spike, quickdev, express)
-- **Audience Tiers** — Progressive review scope (small → medium → large → base)
-- **Artifact Validation** — Per-artifact structural validators with constitutional overrides
-- **Sensing Configuration** — Scope and content overlap detection thresholds
-- **Gate Collapsing** — Constitution-driven `collapse_gates` capability for auto-advancing devproposal → sprintplan
+- **Fundamental Truths** — non-negotiable planning and governance axioms
+- **Milestones** — `techplan`, `finalizeplan`, `dev-ready`, and optional `dev-complete`
+- **Phases** — `preplan`, `businessplan`, `techplan`, `finalizeplan`, plus standalone `expressplan`
+- **Tracks** — `full`, `feature`, `tech-change`, `hotfix`, `hotfix-express`, `spike`, `quickdev`, `express`
+- **2-branch topology** — `{featureId}` plus `{featureId}-plan` in the control repo
+- **Governance publication rules** — approved docs are mirrored to governance `main` at handoff or explicit publish steps
 
 ### 3.2 Phase-to-Milestone Mapping
 
-```
+```text
 Milestone: techplan
-  └── Phases: preplan → businessplan → techplan
-       Agents: Mary (Analyst) → John (PM) + Sally → Winston (Architect)
+  Phases: preplan -> businessplan -> techplan
+  Agents: Mary -> John + Sally -> Winston
 
-Milestone: devproposal
-  └── Phase: devproposal
-       Agent: John (PM)
-       Entry gate: adversarial-review (party mode)
-
-Milestone: sprintplan
-  └── Phase: sprintplan
-       Agent: Bob (Scrum Master)
-       Entry gate: stakeholder-approval
+Milestone: finalizeplan
+  Phase: finalizeplan
+  Agent: Lens
+  Entry gate: adversarial-review (party mode)
 
 Milestone: dev-ready
-  └── No phases (constitution-gated)
+  No phases
+  Entry gate: constitution-gate
 
 Milestone: dev-complete (optional)
-  └── No phases (tracks story/epic completion)
+  No phases
+  Entry gate: dev-complete-validation
 ```
 
-### 3.3 Branch Topology — Lazy Creation Model
+### 3.3 Branch Topology — Default 2-Branch Model
 
-```
-{initiative-root}                 ← Created at init (only branch created eagerly)
-{initiative-root}-techplan        ← Created at techplan milestone completion
-{initiative-root}-devproposal     ← Created at devproposal milestone completion
-{initiative-root}-sprintplan      ← Created at sprintplan milestone completion
-{initiative-root}-dev-ready       ← Created at dev-ready gate passage
+```text
+{featureId}        ← approved feature branch in the control repo
+{featureId}-plan   ← planning drafts and review reports in the control repo
+governance main    ← canonical feature state plus mirrored approved docs
 ```
 
-**Key insight:** Branch existence is a meaningful lifecycle signal. If `{root}-devproposal` exists, the devproposal phase is definitively complete.
+**Key insight:** milestone progression is tracked in `feature.yaml`, not by creating milestone branches for the default topology.
 
 ### 3.3.1 Feature-Only Branch Naming (v3.2)
 
@@ -100,14 +93,14 @@ Sensing resolves feature-only names via this registry during overlap detection a
 
 ### 3.4 Promotion Flow
 
-```
-Phase branch (e.g., foo-bar-auth-preplan)
-    ↓ [auto_advance — within-milestone phase transition]
-Next phase (e.g., foo-bar-auth-businessplan)
-    ↓ [auto_advance_promote — cross-milestone promotion PR]
-Milestone branch (e.g., foo-bar-auth-techplan)
-    ↓ [/promote — approval + gate verification]
-Next milestone branch (e.g., foo-bar-auth-devproposal)
+```text
+{featureId}-plan drafts
+  ↓ [phase completion + reviewed predecessor publication]
+FinalizePlan review and plan PR readiness
+  ↓ [plan PR: {featureId}-plan -> {featureId}]
+Approved feature branch
+  ↓ [final PR: {featureId} -> main]
+Implementation complete
 ```
 
 ---
@@ -152,7 +145,7 @@ The LENS Workbench agent is the single entry point for all user interaction. It 
 | Category | Count | Purpose |
 |----------|-------|---------|
 | **Core** | 3 | Infrastructure — phase lifecycle, audience promotion, milestone promotion |
-| **Router** | 11 | User-facing phase flows — init, preplan, businessplan, techplan, devproposal, sprintplan, dev, discover, close, expressplan, retrospective |
+| **Router** | 11 | User-facing phase flows — init, preplan, businessplan, techplan, adversarial-review, finalizeplan, dev, discover, complete, expressplan, retrospective |
 
 #### Core Workflow Details
 
@@ -166,9 +159,9 @@ Core workflows are **internal infrastructure** — never invoked directly by use
 | **Utility** | 17 | Operational — onboard, status, next, switch, help, promote, module-management, upgrade, dashboard, log-problem, move-feature, split-feature, approval-status, pause-epic, resume-epic, rollback-phase, profile |
 | **Governance** | 4 | Compliance — audit-all, compliance-check, cross-initiative, resolve-constitution |
 
-#### Express Track (v3.2)
+#### Express Track
 
-The **express** track provides combined planning in a single session — no milestone branches, no PRs, ~5 steps total. Ideal for small features or quick changes where full ceremony is unnecessary. Uses the `/expressplan` command. Gate collapsing via `collapse_gates` constitution capability allows auto-advancing devproposal → sprintplan on this track.
+The **express** track runs `expressplan` on the code branch, then hands off into `finalizeplan` for the same review, packaging, and PR readiness steps used by the other tracks. It reduces early ceremony, but it does not reintroduce the old `devproposal` or `sprintplan` phases.
 
 ### 5.2 Step-File Pattern
 
@@ -321,13 +314,18 @@ artifacts:
 ### 11.1 Module Configuration (`module.yaml`)
 
 ```yaml
-version: 3.2.0
+code: lens
+module_version: "4.0.0"
 type: standalone
 global: false
-lifecycle_contract: lifecycle.yaml
+lifecycle:
+  file: lifecycle.yaml
+  schema_version: 4
 dependencies:
-  required: [core]
-  optional: [cis, tea]
+  - core
+optional_dependencies:
+  - cis
+  - tea
 ```
 
 ### 11.2 Runtime Configuration (`bmadconfig.yaml`)
@@ -362,7 +360,7 @@ Workflows that resolve constitutions or read lifecycle contracts require access 
 | `/cross-check` (cross-initiative) | Required | Constitution for sensing thresholds; overlap policies |
 | `/move-feature` | Optional | Constitution for target domain/service validation |
 | `/audit-all` | Required | Full constitution hierarchy for compliance scanning |
-| `/sprintplan` | Read-only | Lifecycle contract for phase/track validation |
+| `/finalizeplan` | Read-only | Lifecycle contract for phase/track validation |
 | `/status` | None | Uses only local git state and initiative-state.yaml |
 | `/next` | None | Derives actions from local initiative state |
 | `/onboard` | None | Creates local config only |

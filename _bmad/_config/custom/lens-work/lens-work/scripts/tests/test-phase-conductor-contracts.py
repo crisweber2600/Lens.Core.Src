@@ -212,3 +212,16 @@ def test_container_init_prompts_require_automatic_governance_git():
     assert "Return the git commands for the user to execute." not in service_prompt
     assert "governance_commit_sha" in skill
     assert "remaining_git_commands" in skill
+
+
+def test_new_project_prompt_sequences_domain_service_feature_and_repo_bootstrap():
+    prompt = _read("prompts/lens-new-project.prompt.md")
+
+    assert "do not need to know or sequence the lower-level commands themselves" in prompt
+    assert "use the `create-domain` subcommand of `scripts/init-feature-ops.py` with `--execute-governance-git`" in prompt
+    assert "use the `create-service` subcommand of `scripts/init-feature-ops.py` with `--execute-governance-git`" in prompt
+    assert "Do **not** rely on the feature `create` subcommand to bootstrap a new domain or service" in prompt
+    assert "use the `create` subcommand of `scripts/init-feature-ops.py` with `--execute-governance-git`" in prompt
+    assert "use `scripts/target-repo-ops.py provision` only after feature init succeeds" in prompt
+    assert "Support both repo modes in the same flow: an existing remote via `--remote-url`, or a GitHub owner plus repo name via `--owner`, `--repo-name`, and `--create-remote`" in prompt
+    assert "recommend `/next` or the returned `recommended_command`" in prompt

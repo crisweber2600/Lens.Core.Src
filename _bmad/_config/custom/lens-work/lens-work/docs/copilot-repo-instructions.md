@@ -64,25 +64,25 @@ This is enforced by the dev workflow's "Write Scope — Target Repo Only" rule: 
 
 ## Lens-Work Lifecycle Summary
 
-The lens-work module manages a 5-phase planning lifecycle with audience-based promotion gates:
+The lens-work module manages a 4-phase planning lifecycle plus an express entrypoint in the default schema 4 model:
 
-| Phase | Agent | Audience |
+| Phase | Agent | Branch |
 |---|---|---|
-| PrePlan | Mary (Analyst) | small |
-| BusinessPlan | John (PM) | small |
-| TechPlan | Winston (Architect) | small |
-| DevProposal | John (PM) | small (branches from medium) |
-| SprintPlan | Bob (Scrum Master) | small (branches from large) |
+| PrePlan | Mary (Analyst) | `{featureId}-plan` |
+| BusinessPlan | John (PM) + Sally (UX) | `{featureId}-plan` |
+| TechPlan | Winston (Architect) | `{featureId}-plan` |
+| FinalizePlan | Lens | `{featureId}-plan` |
+| ExpressPlan | Lens | `{featureId}` |
 
-- **Dev** is NOT a lifecycle phase — it is a delegation command that hands off to implementation agents in target projects
-- Promotions (small → medium → large → base) are independent review gates, not phase assignments
-- Git is the only source of truth — branch existence, PR metadata, and committed artifacts determine state
-- PRs are the only gating mechanism — no side-channel approvals
+- **FinalizePlan** replaces the old `DevProposal` plus `SprintPlan` chain.
+- **Dev** is not a lifecycle phase — it is a delegation command that hands off to implementation agents in target projects.
+- **Git is the only source of truth** — branch state, PR metadata, and committed artifacts determine lifecycle state.
+- **PRs are the only gating mechanism** — no side-channel approvals.
 
 ## Key Conventions
 
 - All `.github/prompts/` and `.github/skills/` files are **stubs** that redirect to full implementations in `lens.core/`
 - Never duplicate module content into `.github/` — module updates propagate through path references
 - The `lens.core/` submodule branch matters: on `alpha`, run full preflight at most once per hour; on `beta`, run full preflight at most once every 3 hours
-- Initiative artifacts live at `docs/{domain}/{service}/{feature}/`
+- Initiative artifacts live at the feature-scoped staged docs path resolved from `feature.yaml.docs.path` (fallback: `docs/{domain}/{service}/{feature}/`)
 - Lens-work universal local state lives at `.lens/`, personal config lives at `.lens/personal/`, and governance setup lives at `docs/lens-work/governance-setup.yaml`

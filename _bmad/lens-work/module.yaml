@@ -91,6 +91,9 @@ skills:
   - id: bmad-lens-dashboard
     file: skills/bmad-lens-dashboard/SKILL.md
     description: "Cross-feature dashboard generator with dependency graphs"
+  - id: bmad-lens-discover
+    file: skills/bmad-lens-discover/SKILL.md
+    description: "Sync TargetProjects with governance repo inventory"
   - id: bmad-lens-onboard
     file: skills/bmad-lens-onboard/SKILL.md
     deprecated: true
@@ -219,6 +222,7 @@ prompts:
   - lens-new-domain.prompt.md
   - lens-new-service.prompt.md
   - lens-new-feature.prompt.md
+  - lens-new-project.prompt.md
   - lens-target-repo.prompt.md
   - lens-preplan.prompt.md
   - lens-expressplan.prompt.md
@@ -287,6 +291,7 @@ adapters:
       - .github/prompts/lens-new-domain.prompt.md
       - .github/prompts/lens-new-service.prompt.md
       - .github/prompts/lens-new-feature.prompt.md
+      - .github/prompts/lens-new-project.prompt.md
       - .github/prompts/lens-target-repo.prompt.md
       - .github/prompts/lens-preplan.prompt.md
       - .github/prompts/lens-expressplan.prompt.md

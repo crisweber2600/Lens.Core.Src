@@ -1,15 +1,21 @@
 ---
 name: bmad-lens-sprintplan
-description: SprintPlan phase — sprint planning, story file creation, and dev handoff for a feature with Lens governance.
+description: "[DEPRECATED] Legacy v3 SprintPlan phase retained for migration reference only. Superseded by FinalizePlan."
+deprecated: true
+superseded_by: bmad-lens-finalizeplan
 ---
 
-# SprintPlan — Feature Sprint Planning Phase
+# SprintPlan — Legacy Reference
+
+> [!WARNING]
+> **DEPRECATED** — `SprintPlan` is no longer part of the active Lens v4 lifecycle.
+> Use `FinalizePlan` for current planning handoff work.
 
 ## Overview
 
-This skill runs the SprintPlan phase for a single feature within the Lens 2-branch model. It publishes the reviewed DevProposal docs from the control repo into governance, then stages SprintPlan artifacts locally for the Dev handoff. Sprint planning and story creation run through registered Lens BMAD wrappers. In batch mode it uses the shared Lens two-pass batch contract: pass 1 writes or refreshes `sprintplan-batch-input.md` and stops; pass 2 resumes SprintPlan with the approved answers loaded before publication and wrapper delegation.
+This skill captures the historical SprintPlan phase from the pre-FinalizePlan lifecycle. It remains in the tree only to support migration lookup and older archived references.
 
-**Scope:** SprintPlan follows DevProposal and is the final planning phase before development. It organises stories into sprints, creates individual story files, and validates readiness for developer handoff.
+**Scope:** Historical reference only. In the active v4 lifecycle, this work is packaged under `FinalizePlan`.
 
 **Args:** Accepts `--feature-id <id>` to target a specific feature and `--mode interactive|batch` to control flow.
 

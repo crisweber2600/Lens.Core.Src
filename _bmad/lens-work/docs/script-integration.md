@@ -65,7 +65,7 @@ params:
 
 ## Next Steps
 
-1. Complete `businessplan`, `techplan`, and `devproposal` PR script integration.
-2. Run end-to-end workflow testing from `preplan` through `sprintplan`.
+1. Complete `businessplan`, `techplan`, and `finalizeplan` PR script integration.
+2. Run end-to-end workflow testing from `preplan` through `finalizeplan` and the `/dev` handoff.
 3. Verify PAT configuration in `profile.yaml` or environment.
 4. Keep user-facing documentation aligned with the script-based PR policy.
