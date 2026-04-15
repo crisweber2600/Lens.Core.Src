@@ -11,6 +11,7 @@ Lens,bmad-lens-sensing,Sensing,SN,"Run cross-initiative overlap detection on dem
 Lens,bmad-lens-constitution,Constitution,CN,"Resolve and display constitutional governance",,,anytime,,,,,
 Lens,bmad-lens-module-management,Module Management,MM,"Check module version and guide self-service updates",,,anytime,,,,,
 Lens,bmad-lens-complete,Complete Feature,CL,"Formally complete a feature — retrospective archive and close",,,anytime,,,,,
+Lens,bmad-lens-document-project,BMad Document Project,DC,"Run BMAD document-project with Lens feature docs scope and governance mirroring",,,anytime,,,,feature.yaml.docs.path,"project-overview.md index.md"
 Lens,bmad-lens-upgrade,Lens Upgrade,UG,"Migrate control repo schema to current version",,,anytime,,,,,
 Lens,bmad-lens-preplan,PrePlan,PP,"Run PrePlan phase — brainstorm research product brief",,,phase-1,,,false,docs/lens-work/initiatives,"product-brief research brainstorm"
 Lens,bmad-lens-businessplan,BusinessPlan,BP,"Run BusinessPlan phase — PRD creation UX design",,,phase-2,PP,,false,docs/lens-work/initiatives,"prd ux-design"

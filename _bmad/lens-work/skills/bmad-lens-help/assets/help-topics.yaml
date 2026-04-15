@@ -195,6 +195,13 @@ topics:
     tracks: [all]
     category: planning
 
+  - id: bmad-document-project
+    command: /bmad-document-project
+    description: Capture project structure docs using the active Lens feature context and governance mirror paths
+    phases: [all]
+    tracks: [all]
+    category: implementation
+
   - id: bmad-quick-dev
     command: /bmad-quick-dev
     description: Run quick dev against the active Lens feature and resolved target repo

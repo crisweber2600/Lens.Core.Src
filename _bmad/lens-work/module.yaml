@@ -256,6 +256,7 @@ prompts:
   - lens-bmad-create-story.prompt.md
   - lens-bmad-quick-dev.prompt.md
   - lens-bmad-code-review.prompt.md
+  - lens-bmad-document-project.prompt.md
   - lens-setup.prompt.md
   - lens-module-management.prompt.md
   - lens-upgrade.prompt.md
@@ -322,6 +323,7 @@ adapters:
       - .github/prompts/lens-bmad-create-story.prompt.md
       - .github/prompts/lens-bmad-quick-dev.prompt.md
       - .github/prompts/lens-bmad-code-review.prompt.md
+      - .github/prompts/lens-bmad-document-project.prompt.md
       - .github/prompts/lens-setup.prompt.md
       - .github/prompts/lens-module-management.prompt.md
       - .github/prompts/lens-upgrade.prompt.md
