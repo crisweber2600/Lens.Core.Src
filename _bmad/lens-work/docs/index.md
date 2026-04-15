@@ -12,6 +12,7 @@
 | Follow the setup checklist | [Onboarding Checklist](./onboarding-checklist.md) |
 | See example configurations | [Configuration Examples](./configuration-examples.md) |
 | Understand the project | [Project Overview](./project-overview.md) |
+| Understand the source repo behind this release | [Source Project Guide](./source-project/index.md) |
 | See the architecture | [Architecture](./architecture.md) |
 | Browse the file tree | [Source Tree Analysis](./source-tree-analysis.md) |
 | Find a skill/workflow/script | [Component Inventory](./component-inventory.md) |
@@ -46,6 +47,16 @@
 | [Source Tree Analysis](./source-tree-analysis.md) | Full annotated directory tree with critical folder descriptions | ✅ Generated |
 | [Component Inventory](./component-inventory.md) | Complete inventory: 34 skills, 35 workflows, 76 prompts, 15 script pairs, 1 agent | ✅ Generated |
 | [Development Guide](./development-guide.md) | Prerequisites, installation, environment setup, scripts reference, testing | ✅ Generated |
+
+---
+
+## Source Project Documentation (Exhaustive Scan — 2026-04-15)
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [Source Project Guide](./source-project/index.md) | Entry point for the Lens.Core.Src source-project scan bundle | ✅ Embedded |
+| [Source Project Overview](./source-project/project-overview.md) | What the editable source repo is and how it differs from the release payload | ✅ Embedded |
+| [Source Project Contribution Guide](./source-project/contribution-guide.md) | Source-of-truth boundaries, validation expectations, and release impact | ✅ Embedded |
 
 ---
 
