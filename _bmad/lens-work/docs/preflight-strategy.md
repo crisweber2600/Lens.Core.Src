@@ -23,4 +23,4 @@ The preflight pull strategy uses different freshness windows depending on the cu
 
 ## Timestamp Mechanism
 
-The timestamp file (`.lens/.preflight-timestamp`) stores the last successful full preflight time as an ISO 8601 UTC datetime. This file is local-only (not committed) and lives in the personal output directory to avoid cross-developer interference.
+The timestamp file (`.lens/.preflight-timestamp`) stores the last successful full preflight time as an ISO 8601 UTC datetime. This file is local-only (not committed) and lives in the universal Lens settings directory so it can stay separate from personal profile state.

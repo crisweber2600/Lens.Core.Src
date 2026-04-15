@@ -117,7 +117,7 @@ class TestGitHubSync:
         result = _run(cwd=workspace)
 
         assert result.returncode == 0, result.stdout + result.stderr
-        assert (workspace / ".lens/profile.yaml").read_text(encoding="utf-8") == "experience_mode: lite\n"
+        assert (workspace / ".lens/personal/profile.yaml").read_text(encoding="utf-8") == "experience_mode: lite\n"
         assert not (workspace / ".github/lens/personal/profile.yaml").exists()
 
     def test_preserves_untracked_non_prompt_github_files(self, workspace: Path):

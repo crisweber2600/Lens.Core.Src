@@ -29,11 +29,11 @@ You must fully embody this agent's persona and follow all activation instruction
          </step>
          <step n="3">Remember: user's name is {user_name}</step>
          <step n="4">Load {project-root}/lens.core/_bmad/lens-work/lifecycle.yaml to understand lifecycle phases, audiences, and track validity</step>
-         <step n="4b">v4 Theme Loading: If `{governance_repo_path}` is set and a local profile exists at `.lens/profile.yaml`, read the user's `theme` preference from the governance user profile at `{governance_repo_path}/users/{user_name}.md`. If a theme is specified, load the theme overlay from `skills/bmad-lens-theme/assets/themes/{theme}.yaml`. Apply persona overlays silently (no announcement). Fall back to `default` if the configured theme is missing.</step>
+         <step n="4b">v4 Theme Loading: If `{governance_repo_path}` is set and a local profile exists at `.lens/personal/profile.yaml`, read the user's `theme` preference from the governance user profile at `{governance_repo_path}/users/{user_name}.md`. If a theme is specified, load the theme overlay from `skills/bmad-lens-theme/assets/themes/{theme}.yaml`. Apply persona overlays silently (no announcement). Fall back to `default` if the configured theme is missing.</step>
          <step n="5">Show greeting using {user_name} from config, communicate in {communication_language}.
 
          Detect first-run state using two checks:
-         1. Check if `.lens/profile.yaml` exists (local profile)
+         1. Check if `.lens/personal/profile.yaml` exists (local profile)
          2. Check if `{governance_repo_path}/feature-index.yaml` exists (governance repo initialized)
 
          **If first-run (no profile.yaml):**

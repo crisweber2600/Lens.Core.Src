@@ -342,6 +342,7 @@ def test_switch_existing_feature():
         assert_eq("switch target repo working branch", target_repo.get("working_branch"), "feature/auth-login")
         assert_eq("switch target repo final pr state", target_repo.get("final_pr_state"), "created")
         context_path = Path(feat["context_path"])
+        assert_eq("feature switch default context path", context_path, Path(tmp).parent / ".lens" / "personal" / "context.yaml")
         assert_eq("feature switch context.yaml exists", context_path.exists(), True)
         with open(context_path) as f:
             context_data = yaml.safe_load(f)

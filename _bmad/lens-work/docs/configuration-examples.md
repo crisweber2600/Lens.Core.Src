@@ -20,7 +20,7 @@ default_git_remote: "github"
 lifecycle_contract: "lens.core/_bmad/lens-work/lifecycle.yaml"
 governance_repo_path: "../TargetProjects/lens/lens-governance"
 initiative_output_folder: "docs/lens-work/initiatives"
-personal_output_folder: ".lens"
+personal_output_folder: ".lens/personal"
 ```
 
 **Recommended constitution settings:**
@@ -49,7 +49,7 @@ default_git_remote: "github"
 lifecycle_contract: "lens.core/_bmad/lens-work/lifecycle.yaml"
 governance_repo_path: "../TargetProjects/lens/lens-governance"
 initiative_output_folder: "docs/lens-work/initiatives"
-personal_output_folder: ".lens"
+personal_output_folder: ".lens/personal"
 ```
 
 **Recommended constitution settings:**
@@ -81,7 +81,7 @@ default_git_remote: "github"
 lifecycle_contract: "lens.core/_bmad/lens-work/lifecycle.yaml"
 governance_repo_path: "../TargetProjects/lens/lens-governance"
 initiative_output_folder: "docs/lens-work/initiatives"
-personal_output_folder: ".lens"
+personal_output_folder: ".lens/personal"
 ```
 
 **Recommended constitution settings:**
@@ -112,7 +112,7 @@ default_git_remote: "azure-devops"
 lifecycle_contract: "lens.core/_bmad/lens-work/lifecycle.yaml"
 governance_repo_path: "../TargetProjects/lens/lens-governance"
 initiative_output_folder: "docs/lens-work/initiatives"
-personal_output_folder: ".lens"
+personal_output_folder: ".lens/personal"
 ```
 
 > **Note:** Azure DevOps uses the same REST API PR creation scripts. PAT scope requires `Code (Read & Write)` and `Pull Request Threads (Read & Write)`.
@@ -131,7 +131,7 @@ default_git_remote: "gitlab"
 lifecycle_contract: "lens.core/_bmad/lens-work/lifecycle.yaml"
 governance_repo_path: "../TargetProjects/lens/lens-governance"
 initiative_output_folder: "docs/lens-work/initiatives"
-personal_output_folder: ".lens"
+personal_output_folder: ".lens/personal"
 ```
 
 > **Note:** GitLab PAT requires `api` scope. The provider adapter detects GitLab URLs and uses the GitLab REST API for merge request creation.
