@@ -308,7 +308,7 @@ See \`lens.core/_bmad/lens-work/module-help.csv\` for the complete command list.
 const SKILLS = [];
 
 const STUB_PROMPTS = [
-    { file: 'lens-onboard.prompt.md', name: 'lens-onboard', desc: 'Bootstrap control repo — detect provider, validate auth, create profile, auto-clone TargetProjects', target: 'lens-onboard.prompt.md' },
+    { file: 'lens-onboard.prompt.md', name: 'lens-onboard', desc: 'Run shared preflight and show role-aware next steps', target: 'lens-onboard.prompt.md' },
     { file: 'lens-preflight.prompt.md', name: 'lens-preflight', desc: 'Run shared workspace preflight sync and validation', target: 'lens-preflight.prompt.md' },
     { file: 'lens-init-feature.prompt.md', name: 'lens-init-feature', desc: 'Create a new feature with 2-branch topology', target: 'lens-init-feature.prompt.md' },
     { file: 'lens-new-domain.prompt.md', name: 'lens-new-domain', desc: 'Create new domain-level constitution scaffolding', target: 'lens-new-domain.prompt.md' },
@@ -368,7 +368,7 @@ const STUB_PROMPTS = [
 ];
 
 const IDE_COMMANDS = [
-    { file: 'bmad-lens-onboard.md', name: 'onboard', desc: 'Create profile + run bootstrap + auto-clone TargetProjects', wf: 'skills/bmad-lens-onboard/SKILL.md' },
+    { file: 'bmad-lens-onboard.md', name: 'onboard', desc: 'Run shared preflight and show role-aware next steps', wf: 'skills/bmad-lens-onboard/SKILL.md' },
     { file: 'bmad-lens-preflight.md', name: 'preflight', desc: 'Run shared workspace preflight sync and validation', wf: 'prompts/lens-preflight.prompt.md' },
     { file: 'bmad-lens-init-feature.md', name: 'init-feature', desc: 'Create new feature with 2-branch topology', wf: 'skills/bmad-lens-init-feature/SKILL.md' },
     { file: 'bmad-lens-target-repo.md', name: 'target-repo', desc: 'Provision or register a feature target repo and persist governance metadata', wf: 'skills/bmad-lens-target-repo/SKILL.md' },

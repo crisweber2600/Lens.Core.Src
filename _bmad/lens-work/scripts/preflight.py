@@ -378,6 +378,22 @@ def _load_user_profile(project_root: Path) -> dict[str, str]:
     return defaults
 
 
+def emit_onboard_next_steps(project_root: Path) -> None:
+    """Print the role-aware next-step handoff for the /onboard prompt."""
+    profile = _load_user_profile(project_root)
+    role = profile.get("primary_role", "both").strip().lower()
+
+    echo("")
+    echo("[onboard] Next steps:")
+    if role == "dev":
+        echo("  1. Use /switch to load the feature you want to work on.")
+        echo("  2. Then use /dev to continue implementation for that feature.")
+    else:
+        echo("  Use /switch to continue existing work.")
+        echo("  Use /new-* to create new work.")
+    echo("  Use /next anytime to get the recommended next command for the current context.")
+
+
 def parse_timestamp(raw: str) -> datetime | None:
     val = raw.strip()
     if not val:
@@ -602,7 +618,7 @@ def main() -> int:
 
     if missing_repos:
         if args.caller == "onboard":
-            echo("[preflight] Authority repos incomplete — onboard will bootstrap")
+            echo("[preflight] Authority repos incomplete — continuing so /onboard can show next steps")
         else:
             echo("")
             echo("⚠️  Missing authority repos — this workspace needs onboarding first.")
@@ -625,6 +641,8 @@ def main() -> int:
         echo("[preflight] Timestamp updated")
 
     echo("[preflight] Preflight complete ✓")
+    if args.caller == "onboard":
+        emit_onboard_next_steps(project_root)
     return 0
 
 
