@@ -127,7 +127,7 @@ flowchart LR
 |---------|---------|
 | `/new-domain`, `/new-service`, `/new-feature`, `/new-project` | Bootstrap lifecycle scope |
 | `/target-repo` | Provision or register a target repo |
-| `/status`, `/dashboard` | Report state across features |
+| `/dashboard` | Report state across features |
 | `/next` | Route to the next unblocked action |
 | `/batch` | Generate or resume batch intake |
 | `/switch` | Change active feature context |

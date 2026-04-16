@@ -90,6 +90,5 @@ python3 ./scripts/dashboard-ops.py generate \
 
 | Skill | How dashboard is used |
 |-------|----------------------|
-| `bmad-lens-status` | Dashboard supplements status with cross-feature visualization |
 | `bmad-lens-git-state` | Git state context can be surfaced in the team view section |
 | All planning skills | Dashboard provides an overview before sprint planning or retrospectives |

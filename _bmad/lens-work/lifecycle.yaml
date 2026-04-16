@@ -458,7 +458,7 @@ dashboard:
   description: >
     Generate a consolidated view of all active initiatives across domains,
     showing current phase, milestone, blocking PRs, and sensing alerts.
-    Replaces the need to /switch + /status repeatedly.
+    Replaces the need to repeatedly `/switch` between initiatives just to inspect portfolio state.
   output_format: mermaid
   data_sources:
     - git_branch_list               # All initiative branches

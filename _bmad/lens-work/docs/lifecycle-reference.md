@@ -109,7 +109,7 @@ Milestones are logical checkpoints in `feature.yaml`, not separate control-repo 
 | `/new-feature` | Create a feature with lifecycle state |
 | `/new-project` | Bootstrap domain, service, feature, and target-repo setup in one flow |
 | `/target-repo` | Provision or register a target repo |
-| `/status` | Show feature or portfolio status |
+| `/dashboard` | Show portfolio state and cross-feature reporting |
 | `/next` | Resolve the next unblocked action |
 | `/batch` | Generate or resume batch intake |
 | `/switch` | Switch active feature context |

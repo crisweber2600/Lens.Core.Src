@@ -82,7 +82,7 @@ When `feature.yaml.target_repos` is empty:
 
 - Validate `initiative.phase_status[finalizeplan]`.
 - Check large-to-base promotion status.
-- If promotion not in `["complete", "passed", "passed_with_warnings"]`: halt and direct the user to inspect lifecycle state with `/status` before continuing.
+- If promotion not in `["complete", "passed", "passed_with_warnings"]`: halt and direct the user to inspect lifecycle state with `/dashboard` or `/next` before continuing.
 
 ## Constitutional Context
 

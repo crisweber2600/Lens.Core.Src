@@ -117,5 +117,4 @@ uv run scripts/move-feature-ops.py patch-references \
 |-------|-------------|
 | `bmad-lens-feature-yaml` | Provides `find_feature` pattern and `feature.yaml` structure conventions |
 | `bmad-lens-git-state` | Used to commit index + reference changes to main after move |
-| `bmad-lens-status` | Reads `feature-index.yaml` — move must update it to keep status accurate |
 | `bmad-lens-init-feature` | Creates the structures this skill relocates |

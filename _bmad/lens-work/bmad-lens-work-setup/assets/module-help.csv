@@ -3,7 +3,6 @@ Lens,bmad-lens-onboard,Onboard,OB,"[DEPRECATED] Bootstrap control repo — use n
 Lens,bmad-lens-init-feature,Create Feature,IF,"Initialize a new feature with 2-branch topology and governance entries",create,<featureId> [--domain] [--service] --track <track> [--dry-run],anytime,,bmad-lens-next:suggest,false,,"feature.yaml feature-index.yaml entry"
 Lens,bmad-lens-target-repo,Target Repo,TR,"Provision or register a feature target repo and persist governance metadata",provision,<featureId> --repo-name <name> [--owner <owner>|--remote-url <url>] [--create-remote] [--local-path <path>] [--dry-run],anytime,bmad-lens-init-feature:create,bmad-lens-dev:implement,false,,"repo-inventory.yaml entry target_repos metadata cloned repo"
 Lens,bmad-lens-switch,Switch,SW,"Switch to a different feature via git checkout",,,anytime,,,,,
-Lens,bmad-lens-status,Status,ST,"Show current feature state derived from git",,,anytime,,,,,
 Lens,bmad-lens-next,Next,NX,"Recommend next action based on lifecycle state",,,anytime,,,,,
 Lens,bmad-lens-help,Help,HP,"Show available commands and usage",,,anytime,,,,,
 Lens,bmad-lens-sensing,Sensing,SN,"Run cross-initiative overlap detection on demand",,,anytime,,,,,

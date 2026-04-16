@@ -79,7 +79,7 @@ lens-work/                              # Module root
 │   │
 │   ├── utility/                        # [17] Operational support workflows
 │   │   ├── onboard/                    #   /onboard — bootstrap profile, auth, governance
-│   │   ├── status/                     #   /status — git-derived initiative state report
+│   │   ├── dashboard/                  #   /dashboard — cross-feature reporting
 │   │   ├── next/                       #   /next — recommend next action
 │   │   ├── switch/                     #   /switch — checkout different initiative
 │   │   ├── help/                       #   /help — command reference

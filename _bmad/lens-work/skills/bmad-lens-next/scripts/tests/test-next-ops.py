@@ -232,6 +232,18 @@ def test_paused_phase():
         assert_eq("command", result["recommendation"]["command"], "/pause-resume")
 
 
+def test_unknown_phase_falls_back_to_help():
+    """Unknown phases fall back to /help instead of the removed status command."""
+    print("test_unknown_phase_falls_back_to_help", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        make_feature(tmp, "unknown-feat", phase="mystery-phase")
+        result, code = run(["suggest", "--governance-repo", tmp, "--feature-id", "unknown-feat"])
+        assert_eq("status pass", result["status"], "pass")
+        assert_eq("exit code 0", code, 0)
+        assert_eq("action help", result["recommendation"]["action"], "help")
+        assert_eq("command", result["recommendation"]["command"], "/help")
+
+
 def test_missing_phase_uses_track_start_phase():
     """Missing phase falls back to the lifecycle start phase for the track."""
     print("test_missing_phase_uses_track_start_phase", file=sys.stderr)

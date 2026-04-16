@@ -39,7 +39,7 @@ This inventory summarizes the active lens-work surfaces in the editable source m
 | `/new-domain`, `/new-service`, `/new-feature` | init-feature family | Scope creation |
 | `/new-project` | prompt plus init stack | Combined bootstrap flow |
 | `/target-repo` | `skills/bmad-lens-target-repo/SKILL.md` | Repo provisioning and registration |
-| `/status`, `/dashboard` | status and dashboard skills | State reporting |
+| `/dashboard` | `skills/bmad-lens-dashboard/SKILL.md` | Cross-feature state reporting |
 | `/next` | `skills/bmad-lens-next/SKILL.md` | Next-action routing |
 | `/batch` | `skills/bmad-lens-batch/SKILL.md` | Two-pass batch intake |
 | `/switch` | `skills/bmad-lens-switch/SKILL.md` | Feature context switching |
