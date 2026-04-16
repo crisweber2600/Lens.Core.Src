@@ -224,6 +224,32 @@ class TestGitHubSync:
         assert not (workspace / ".github/prompts/lens-stale.prompt.md").exists()
         assert not (workspace / ".github/prompts/custom.prompt.md").exists()
 
+    def test_onboard_caller_prints_dev_next_steps(self, workspace: Path):
+        _write_file(workspace / "lens.core/.github/workflows/keep.yml", "name: keep\n")
+        _write_file(workspace / ".lens/personal/profile.yaml", "primary_role: dev\n")
+        _write_hash_manifest(workspace, {})
+
+        result = _run("--caller", "onboard", cwd=workspace)
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert "[onboard] Next steps:" in result.stdout
+        assert "Use /switch to load the feature you want to work on." in result.stdout
+        assert "Then use /dev to continue implementation for that feature." in result.stdout
+        assert "Use /next anytime to get the recommended next command for the current context." in result.stdout
+
+    def test_onboard_caller_prints_non_dev_next_steps(self, workspace: Path):
+        _write_file(workspace / "lens.core/.github/workflows/keep.yml", "name: keep\n")
+        _write_file(workspace / ".lens/personal/profile.yaml", "primary_role: planner\n")
+        _write_hash_manifest(workspace, {})
+
+        result = _run("--caller", "onboard", cwd=workspace)
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert "[onboard] Next steps:" in result.stdout
+        assert "Use /switch to continue existing work." in result.stdout
+        assert "Use /new-* to create new work." in result.stdout
+        assert "Use /next anytime to get the recommended next command for the current context." in result.stdout
+
 
 # TODO: Test version comparison logic (requires monkeypatch or script refactor)
 # TODO: Test TTL window calculation

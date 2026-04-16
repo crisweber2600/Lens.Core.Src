@@ -72,16 +72,19 @@ powershell uv run setup-control-repo.py
 ```
 
 - [ ] The onboard workflow will:
-  - Detect your git provider (GitHub, GitLab, Azure DevOps)
-  - Validate your PAT authentication
-  - Create your user profile at `.lens/personal/profile.yaml`
-  - Auto-clone any missing TargetProjects repos from the governance inventory
-- [ ] Verify: `profile.yaml` exists and contains your username and provider
+  - Run the shared workspace preflight
+  - Stop on real preflight failures before you start work
+  - Read `.lens/personal/profile.yaml` and tailor the next-step guidance to your `primary_role`
+  - Tell all users about `/next` for the recommended next command
+- [ ] Follow the guidance shown after preflight:
+  - If `primary_role: dev`, use `/switch` and then `/dev`
+  - Otherwise, use `/switch` for existing work or `/new-*` to create new work
+- [ ] Verify: preflight completed successfully and the next-step guidance matches your role
 
 > **Troubleshooting:**
 > - "No governance repo found" → Run `setup-control-repo.py` first (Phase 2)
-> - "PAT validation failed" → Re-run `store-github-pat.py` (Phase 1)
-> - "TargetProjects path not found" → Check `bmadconfig.yaml` has the correct `target_projects_path`
+> - "Preflight failed" → Resolve the reported workspace issue, then run `/onboard` again
+> - "Next-step guidance does not match your role" → Check `.lens/personal/profile.yaml` and update `primary_role`
 
 ---
 

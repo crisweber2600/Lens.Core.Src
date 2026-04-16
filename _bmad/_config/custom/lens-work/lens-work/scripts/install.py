@@ -118,7 +118,7 @@ IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL @lens.core/_bmad/lens
 # ---------------------------------------------------------------------------
 
 COMMANDS = [
-    ("bmad-lens-onboard.md", "onboard", "Create profile + run bootstrap + auto-clone TargetProjects", "skills/bmad-lens-onboard/SKILL.md"),
+    ("bmad-lens-onboard.md", "onboard", "Run shared preflight and show role-aware next steps", "skills/bmad-lens-onboard/SKILL.md"),
     ("bmad-lens-preflight.md", "preflight", "Run shared workspace preflight sync and validation", "prompts/lens-preflight.prompt.md"),
     ("bmad-lens-init-feature.md", "init-feature", "Create new feature with 2-branch topology", "skills/bmad-lens-init-feature/SKILL.md"),
     ("bmad-lens-target-repo.md", "target-repo", "Provision or register a feature target repo and persist governance metadata", "skills/bmad-lens-target-repo/SKILL.md"),
@@ -211,7 +211,7 @@ You must fully embody this agent's persona and follow all activation instruction
 
     # Stub prompts
     prompts = [
-        ("lens-onboard.prompt.md", "lens-onboard", "Bootstrap control repo — detect provider, validate auth, create profile, auto-clone TargetProjects", "lens-onboard.prompt.md"),
+        ("lens-onboard.prompt.md", "lens-onboard", "Run shared preflight and show role-aware next steps", "lens-onboard.prompt.md"),
         ("lens-preflight.prompt.md", "lens-preflight", "Run shared workspace preflight sync and validation", "lens-preflight.prompt.md"),
         ("lens-init-feature.prompt.md", "lens-init-feature", "Create a new feature with 2-branch topology", "lens-init-feature.prompt.md"),
         ("lens-new-domain.prompt.md", "lens-new-domain", "Create new domain-level constitution scaffolding", "lens-new-domain.prompt.md"),

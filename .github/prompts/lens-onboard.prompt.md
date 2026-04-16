@@ -1,5 +1,5 @@
 ---
-description: 'First-run governance repo setup for Lens'
+description: 'Deprecated onboard wrapper for shared preflight and role-aware next-step guidance'
 ---
 
 # lens-onboard (Stub)

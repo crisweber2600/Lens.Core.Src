@@ -1,15 +1,13 @@
 ---
-description: '[DEPRECATED] Bootstrap control repo, validate auth, and create onboarding profile.'
+description: '[DEPRECATED] Run shared preflight and show role-aware next-step guidance.'
 ---
 
 # lens-onboard (Deprecated)
 
 > [!WARNING]
-> **DEPRECATED** — The `/onboard` workflow has been superseded.
+> **DEPRECATED** — `/onboard` remains available only as a backward-compatible handoff.
 >
-> Use `/new-domain` and `/new-service` to scaffold governance and TargetProject structure, then `/init-feature` to begin feature work.
->
-> This entrypoint remains available for backward compatibility.
+> It runs the shared workspace preflight and then ends with role-aware guidance for `/switch`, `/dev`, `/new-*`, and `/next`.
 
 ```
 Read and follow all instructions in: lens.core/_bmad/lens-work/skills/bmad-lens-onboard/SKILL.md
