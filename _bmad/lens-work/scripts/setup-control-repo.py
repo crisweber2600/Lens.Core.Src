@@ -91,7 +91,7 @@ def sync_github_from_release(release_path: Path, dest: Path, source_label: str, 
 
 
 def governance_setup_file(project_root: Path) -> Path:
-    return project_root / ".lens" / "personal" / "governance-setup.yaml"
+    return project_root / ".lens" / "governance-setup.yaml"
 
 
 def write_governance_setup_file(
@@ -476,7 +476,7 @@ def main() -> int:
         gov_setup = write_governance_setup_file(project_root, governance_path, gov_url, ts)
         print(f"[OK]   {gov_setup.relative_to(project_root)} written")
     else:
-        print("[INFO] [DRY-RUN] Would write .lens/personal/governance-setup.yaml")
+        print("[INFO] [DRY-RUN] Would write .lens/governance-setup.yaml")
 
     # 5. LENS_VERSION
     if not dry_run:
