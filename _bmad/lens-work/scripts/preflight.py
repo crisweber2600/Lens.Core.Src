@@ -89,6 +89,56 @@ def legacy_personal_dir(project_root: Path) -> Path:
     return project_root / ".github" / "lens" / "personal"
 
 
+PERSONAL_ARTIFACT_NAMES = ("context.yaml", "profile.yaml")
+
+
+def relocate_root_personal_files(project_root: Path, active_dir: Path) -> None:
+    active_root = lens_dir(project_root)
+    active_root.mkdir(parents=True, exist_ok=True)
+    active_dir.mkdir(parents=True, exist_ok=True)
+
+    relocated: list[str] = []
+    removed_duplicates: list[str] = []
+    conflicts: list[str] = []
+
+    for name in PERSONAL_ARTIFACT_NAMES:
+        source = active_root / name
+        destination = active_dir / name
+
+        if not source.is_file():
+            continue
+
+        try:
+            if destination.is_file():
+                if source.read_bytes() == destination.read_bytes():
+                    source.unlink()
+                    removed_duplicates.append(name)
+                else:
+                    conflicts.append(name)
+                continue
+
+            source.replace(destination)
+            relocated.append(name)
+        except OSError as exc:
+            echo(f"  ⚠ Unable to relocate misplaced personal file {name}: {exc}")
+
+    if relocated:
+        echo(
+            "[preflight] Relocated misplaced personal files from .lens root to .lens/personal: "
+            + ", ".join(relocated)
+        )
+    if removed_duplicates:
+        echo(
+            "[preflight] Removed duplicate personal files from .lens root: "
+            + ", ".join(removed_duplicates)
+        )
+    if conflicts:
+        echo(
+            "[preflight] Found conflicting personal files in .lens root; leaving them for manual cleanup: "
+            + ", ".join(conflicts)
+        )
+
+
 def migrate_legacy_personal_dir(project_root: Path) -> Path:
     active_dir = personal_dir(project_root)
     active_root = lens_dir(project_root)
@@ -97,12 +147,14 @@ def migrate_legacy_personal_dir(project_root: Path) -> Path:
     if active_dir.exists():
         if legacy_dir.exists():
             echo("[preflight] .lens/personal already exists; leaving the legacy personal directory untouched")
+        relocate_root_personal_files(project_root, active_dir)
         return active_dir
 
     active_root.mkdir(parents=True, exist_ok=True)
 
     if not legacy_dir.exists():
         active_dir.mkdir(parents=True, exist_ok=True)
+        relocate_root_personal_files(project_root, active_dir)
         return active_dir
 
     echo("[preflight] Migrating local personal state from the legacy personal directory to .lens/personal...")
@@ -111,6 +163,7 @@ def migrate_legacy_personal_dir(project_root: Path) -> Path:
     shutil.move(str(legacy_dir), str(active_dir))
     remove_empty_parent_dirs(legacy_dir.parent, project_root / ".github")
     echo("[preflight] Personal state migration complete")
+    relocate_root_personal_files(project_root, active_dir)
     return active_dir
 
 
@@ -129,6 +182,71 @@ def ensure_lens_version_file(project_root: Path) -> str:
     active_file.write_text(version, encoding="utf-8")
     echo("[preflight] Seeded .lens/LENS_VERSION from the legacy root LENS_VERSION file")
     return version
+
+
+def governance_setup_file(project_root: Path) -> Path:
+    return lens_dir(project_root) / "governance-setup.yaml"
+
+
+def legacy_governance_setup_file(project_root: Path) -> Path:
+    return project_root / "docs" / "lens-work" / "governance-setup.yaml"
+
+
+def _read_scalar_yaml_value(content: str, key: str) -> str | None:
+    match = re.search(rf"^{re.escape(key)}:\s*(.+)$", content, re.MULTILINE)
+    if not match:
+        return None
+
+    raw_value = match.group(1).strip()
+    if len(raw_value) >= 2 and raw_value[0] == raw_value[-1] and raw_value[0] in ('"', "'"):
+        return raw_value[1:-1]
+    return raw_value
+
+
+def load_governance_setup(path: Path) -> dict[str, str]:
+    if not path.is_file():
+        return {}
+
+    try:
+        content = path.read_text(encoding="utf-8")
+    except OSError:
+        return {}
+
+    values: dict[str, str] = {}
+    for key in ("governance_repo_path", "governance_remote_url"):
+        value = _read_scalar_yaml_value(content, key)
+        if value:
+            values[key] = value
+    return values
+
+
+def ensure_governance_setup_file(project_root: Path) -> dict[str, str]:
+    active_file = governance_setup_file(project_root)
+    legacy_file = legacy_governance_setup_file(project_root)
+
+    if active_file.is_file():
+        return load_governance_setup(active_file)
+
+    if not legacy_file.is_file():
+        return {}
+
+    try:
+        contents = legacy_file.read_text(encoding="utf-8")
+        active_file.parent.mkdir(parents=True, exist_ok=True)
+        active_file.write_text(contents, encoding="utf-8")
+        legacy_file.unlink()
+        remove_empty_parent_dirs(legacy_file.parent, project_root / "docs")
+        echo("[preflight] Migrated governance setup from docs/lens-work/governance-setup.yaml to .lens/governance-setup.yaml")
+    except OSError as exc:
+        echo(f"  ⚠ Unable to migrate governance setup file: {exc}")
+        return load_governance_setup(legacy_file)
+
+    return load_governance_setup(active_file)
+
+
+def resolve_workspace_path(project_root: Path, raw_path: str) -> Path:
+    path = Path(raw_path).expanduser()
+    return path if path.is_absolute() else project_root / path
 
 
 def prune_stale_synced_github_files(
@@ -288,7 +406,13 @@ def main() -> int:
     timestamp_file = active_lens_dir / ".preflight-timestamp"
     hash_file = active_lens_dir / ".github-hashes"
     lifecycle_path = release_dir / "_bmad/lens-work/lifecycle.yaml"
-    governance_path = Path(args.governance_path) if args.governance_path else None
+    governance_setup = ensure_governance_setup_file(project_root)
+    governance_path = None
+    if args.governance_path:
+        governance_path = resolve_workspace_path(project_root, args.governance_path)
+    elif governance_setup.get("governance_repo_path"):
+        governance_path = resolve_workspace_path(project_root, governance_setup["governance_repo_path"])
+        echo("[preflight] Resolved governance repo from .lens/governance-setup.yaml")
 
     # Change to project root
     import os
@@ -462,10 +586,10 @@ def main() -> int:
             echo("")
             echo("⚠️  Missing authority repos — this workspace needs onboarding first.")
             echo("")
-            echo("  Onboarding sets up your profile, governance repo, and target project clones.")
+            echo("  Re-run setup-control-repo.py if the governance clone is missing.")
             echo("  It takes about 2 minutes and only needs to run once.")
             echo("")
-            echo("  Run /onboard to get started, then retry this command.")
+            echo("  Then run /new-project (or /new-domain for step-by-step setup) and retry this command.")
             return 1
 
     # ------------------------------------------------------------------

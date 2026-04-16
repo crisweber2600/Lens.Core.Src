@@ -716,7 +716,7 @@ git_state:
 data_zones:
   governance:
     description: "Universal artifacts shared across all initiatives"
-    setup_file: ".github/lens-work/governance-setup.yaml"
+    setup_file: ".lens/governance-setup.yaml"
     artifacts:
       - constitutions/
       - roster/
@@ -734,11 +734,10 @@ data_zones:
 
   personal:
     description: "Local-only user profile, context, and preferences"
-    local_path: .lens/
+    local_path: .lens/personal/
     artifacts:
       - profile.yaml
       - context.yaml
-      - repo-inventory.yaml
 
 # -----------------------------------------------------------------------------
 # CREDENTIAL POLICY (NFR4)
@@ -957,12 +956,12 @@ migrations:
     changes:
       - type: replace_value
         path: data_zones.personal.local_path
-        old_value: .github/lens-work/
-        new_value: .lens/
+        old_value: .github/lens/personal/
+        new_value: .lens/personal/
       - type: replace_value
         path: config.personal_output_folder
         old_value: "{project-root}/.github/lens/personal"
-        new_value: "{project-root}/.lens"
+        new_value: "{project-root}/.lens/personal"
       - type: replace_value
         path: config.output_folder
         old_value: "{project-root}/_bmad-output"
@@ -973,10 +972,11 @@ migrations:
         new_value: "docs/lens-work/features.yaml"
     optional_migrations:
       - name: migrate-personal-state
-        description: "Move local-only personal files from the legacy personal directory into .lens"
+        description: "Move local-only personal files from the legacy personal directory into .lens/personal"
         steps:
-          - "If .lens does not exist and the legacy personal directory exists, move the full directory to .lens"
-          - "If both paths exist, prefer .lens and leave the legacy directory untouched until manual cleanup"
+          - "If .lens/personal does not exist and the legacy personal directory exists, move the full directory to .lens/personal"
+          - "If .lens root contains profile.yaml or context.yaml, relocate them into .lens/personal"
+          - "If both paths exist, prefer .lens/personal and leave the legacy directory untouched until manual cleanup"
 
   - from_version: 3.4
     to_version: 3.5

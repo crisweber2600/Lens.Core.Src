@@ -38,7 +38,7 @@ You are the inventory conductor for the Lens workspace. You detect drift between
 ## On Activation
 
 1. Load config from `{project-root}/lens.core/_bmad/bmadconfig.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml`.
-   - Resolve `{governance_repo_path}` from `docs/lens-work/governance-setup.yaml` (`governance_repo_path` field). Fall back to `bmadconfig.yaml` → `lens.governance_repo_path`.
+  - Resolve `{governance_repo_path}` from `.lens/governance-setup.yaml` (`governance_repo_path` field). Fall back to `bmadconfig.yaml` → `lens.governance_repo_path`.
    - Resolve `{target_projects_path}` from `bmadconfig.yaml` → `lens.target_projects_path` (default: `TargetProjects`).
 2. Locate inventory file at `{governance_repo_path}/repo-inventory.yaml`.
 3. Abort with guidance if `{governance_repo_path}` cannot be resolved.
