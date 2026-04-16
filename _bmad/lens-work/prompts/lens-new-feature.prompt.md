@@ -3,8 +3,6 @@ description: "Initialize a new feature with 2-branch topology, feature YAML, and
 
 Load and follow the skill at: `lens.core/_bmad/lens-work/skills/bmad-lens-init-feature/SKILL.md`
 
-When appropriate, use `vscode_askQuestions` to get feedback from users if the tool is available.
-
 The user wants to initialize a new **feature**. This means:
 1. Create a 2-branch topology (`{featureId}` and `{featureId}-plan`) in the control repo
 2. Commit `feature.yaml` to governance `main` under `features/{domain}/{service}/{featureId}/feature.yaml`
@@ -16,7 +14,7 @@ The user wants to initialize a new **feature**. This means:
 
 Apply progressive disclosure — ask only for feature name, domain, and service upfront; derive featureId and validate against `feature-index.yaml`; then require the user to choose a track explicitly before writing anything.
 
-Use the `create` subcommand of `scripts/init-feature-ops.py` with `--execute-governance-git`.
+Use the `create` subcommand of `skills/bmad-lens-init-feature/scripts/init-feature-ops.py` with `--execute-governance-git`.
 Report governance git success, include the returned `governance_commit_sha` when present, and only surface any `remaining_git_commands` plus `gh_commands` for manual follow-up.
 Execute the returned branch-creation command exactly as provided; do not replace it with manual `git checkout -b` steps, because it resolves the control repo default branch before creating `{featureId}` and `{featureId}-plan`.
 If governance git preflight or execution fails, stop and surface the error; do not provide a manual governance git recipe.

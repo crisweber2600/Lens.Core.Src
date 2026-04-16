@@ -89,11 +89,10 @@ def build_phase_recommendation(data: dict, phase: str, lifecycle: dict) -> dict:
         if next_command:
             next_action = str(next_command).lstrip("/")
             display_name = phase_meta.get("display_name", completed_phase.replace("-", " ").title())
-            promote_note = " with promotion" if phase_meta.get("auto_advance_promote") else ""
             return {
                 "action": next_action,
                 "command": str(next_command),
-                "rationale": f"{display_name} is complete — continue with {next_command}{promote_note}",
+                "rationale": f"{display_name} is complete — continue with {next_command}",
                 "gate_phase": next_action,
             }
 

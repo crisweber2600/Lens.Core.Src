@@ -57,10 +57,10 @@ def main() -> int:
         hard_gate = True
         gate_message = "Review feedback is blocking progress. Resolve the requested changes, then run /next again."
     elif action == "Ready to promote":
-        next_command = "/promote"
+        gate_message = "Milestone promotion is no longer a direct Lens command. Run /status for the current state and continue from the recommended lifecycle step."
     elif re.search(r"promotion in review", action, re.IGNORECASE):
         hard_gate = True
-        gate_message = "Promotion PR is open. Merge it, then run /next again."
+        gate_message = "A promotion PR is still open. Merge it, then run /status or /next again."
     elif phase and re.search(r"complete phase|start next phase", action, re.IGNORECASE):
         next_command = f"/{phase}"
     elif re.search(r"ready for execution", action, re.IGNORECASE):

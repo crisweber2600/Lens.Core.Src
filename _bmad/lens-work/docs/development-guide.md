@@ -103,29 +103,21 @@ governance_repo_path: "../TargetProjects/lens/lens-governance" # Canonical gover
 | File | Purpose | When to Modify |
 |------|---------|----------------|
 | `lifecycle.yaml` | All lifecycle behavior definition | Adding phases, milestones, tracks, validation rules |
-| `module.yaml` | Module metadata and registry | Changing version, adding skills/workflows |
+| `module.yaml` | Module metadata and registry | Changing version, adding skills/prompts/adapters |
 | `module-help.csv` | Command index | Adding or modifying user commands |
-| `agents/lens.agent.md` | Agent persona and menu | Changing agent behavior, adding menu items |
-| `workflows/includes/preflight.md` | Shared preflight checks | Modifying common validation logic |
+| `agents/lens.agent.md` | Thin-shell agent persona and compact menu | Changing shell behavior or shell entry points |
+| `_module-installer/installer.js` | Canonical adapter generator | Updating published agent, prompt, or command stubs |
 
-### Adding a New Workflow
+### Adding or Updating a Skill Surface
 
-1. Create folder under appropriate category: `workflows/{core|router|utility|governance}/{name}/`
-2. Add `SKILL.md` — Skill definition with purpose, triggers, integration description
-3. Add `workflow.md` — Entry point with YAML frontmatter
-4. Add `steps/step-01-{purpose}.md`, `step-02-{purpose}.md`, etc.
-5. Add `resources/` if needed (templates, schemas)
-6. Register in `module.yaml` under `workflows`
-7. Add entry to `module-help.csv` if user-facing
-8. Add menu item to `agents/lens.agent.md` if user-facing
-9. Create prompt file `prompts/lens-work.{name}.prompt.md`
-
-### Adding a New Skill
-
-1. Create folder: `skills/{name}/`
-2. Add `SKILL.md` with operations, inputs/outputs, preconditions
-3. Register in `module.yaml` under `skills`
-4. Reference from workflows that need the skill
+1. Create or update the skill folder under `skills/bmad-lens-{name}/`
+2. Add or update `SKILL.md` with operations, inputs/outputs, and preconditions
+3. Register the skill in `module.yaml` under `skills`
+4. Add or update the prompt entry point in `prompts/lens-{name}.prompt.md` when the skill should be directly invocable
+5. Add an entry to `module-help.csv` when the surface should appear in command discovery
+6. Update `agents/lens.agent.md` only when the thin shell itself needs a new compact entry point
+7. Keep `_module-installer/installer.js` and `scripts/install.py` aligned whenever published prompts or agent stubs change
+8. Add focused tests and documentation updates for the new surface
 
 ### Modifying the Lifecycle Contract
 
@@ -219,12 +211,6 @@ See [pipeline-source-to-release.md](./pipeline-source-to-release.md) for details
 
 ```
 @lens → /status
-```
-
-### Promote to Next Milestone
-
-```
-@lens → /promote
 ```
 
 ### Run Compliance Check

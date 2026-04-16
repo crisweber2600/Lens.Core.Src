@@ -15,24 +15,13 @@
 | Understand the project | [Project Overview](./project-overview.md) |
 | Understand the source repo behind this release | [Source Project Guide](./source-project/index.md) |
 | See the architecture | [Architecture](./architecture.md) |
-| Browse the file tree | [Source Tree Analysis](./source-tree-analysis.md) |
-| Find a skill/workflow/script | [Component Inventory](./component-inventory.md) |
+| Browse the active command surface | [Component Inventory](./component-inventory.md) |
+| Browse the legacy tree snapshot | [Source Tree Analysis](./source-tree-analysis.md) |
+| Find a skill/prompt/script | [Component Inventory](./component-inventory.md) |
 | Set up for development | [Development Guide](./development-guide.md) |
 | Understand the lifecycle | [Lifecycle Reference](./lifecycle-reference.md) |
 | See the lifecycle visually | [Lifecycle Visual Guide](./lifecycle-visual-guide.md) |
 | Understand CI/CD pipeline | [Pipeline: Source to Release](./pipeline-source-to-release.md) |
-| Run express planning (no PRs) | `/expressplan` — [Workflow](../workflows/router/expressplan/workflow.md) |
-| Run a retrospective | `/retrospective` — [Workflow](../workflows/router/retrospective/workflow.md) |
-| Log a problem | `/log-problem` — [Workflow](../workflows/utility/log-problem/workflow.md) |
-| Move a feature across domains | `/move-feature` — [Workflow](../workflows/utility/move-feature/workflow.md) |
-| Split a feature into children | `/split-feature` — [Workflow](../workflows/utility/split-feature/workflow.md) |
-| Check PR approval state | `/approval-status` — [Workflow](../workflows/utility/approval-status/workflow.md) |
-| Pause an active epic | `/pause-epic` — [Workflow](../workflows/utility/pause-epic/workflow.md) |
-| Resume a paused epic | `/resume-epic` — [Workflow](../workflows/utility/resume-epic/workflow.md) |
-| Revert to previous phase | `/rollback-phase` — [Workflow](../workflows/utility/rollback-phase/workflow.md) |
-| Manage user profile | `/profile` — [Workflow](../workflows/utility/profile/workflow.md) |
-| View multi-initiative dashboard | `/dashboard` — [Workflow](../workflows/utility/dashboard/workflow.md) |
-| Audit all active initiatives | `/audit-all` — [Workflow](../workflows/governance/audit-all/workflow.md) |
 
 ---
 
@@ -44,9 +33,9 @@
 | [Onboarding Checklist](./onboarding-checklist.md) | Linear step-by-step checklist from zero to running initiative | ✅ Generated |
 | [Configuration Examples](./configuration-examples.md) | Sample bmadconfig.yaml for solo, team, enterprise, multi-IDE, GitLab, Azure DevOps | ✅ Generated |
 | [Project Overview](./project-overview.md) | High-level project summary, tech stack, architecture classification | ✅ Generated |
-| [Architecture](./architecture.md) | Design axioms, patterns, workflow/skills architecture, deployment | ✅ Generated |
-| [Source Tree Analysis](./source-tree-analysis.md) | Full annotated directory tree with critical folder descriptions | ✅ Generated |
-| [Component Inventory](./component-inventory.md) | Complete inventory: 34 skills, 35 workflows, 76 prompts, 15 script pairs, 1 agent | ✅ Generated |
+| [Architecture](./architecture.md) | Design axioms, skill routing, state model, governance, and publication architecture | ✅ Generated |
+| [Source Tree Analysis](./source-tree-analysis.md) | Historical v3 workflow tree snapshot retained for migration reference | ✅ Generated |
+| [Component Inventory](./component-inventory.md) | Active inventory of skills, prompts, scripts, adapters, and the Lens agent | ✅ Generated |
 | [Development Guide](./development-guide.md) | Prerequisites, installation, environment setup, scripts reference, testing | ✅ Generated |
 
 ---
@@ -93,10 +82,10 @@
 | File | Purpose |
 |------|---------|
 | `lifecycle.yaml` | **THE CONTRACT** — phases, audiences, tracks, validation rules |
-| `module.yaml` | Module registry — version, skills, workflows |
+| `module.yaml` | Module registry — version, skills, prompts, installers, and adapters |
 | `bmadconfig.yaml` | Runtime configuration template |
 | `module-help.csv` | Command index (89 entries, 13 columns) |
 | `README.md` | Module overview with design axioms |
 | `TODO.md` | Development checklist |
-| `agents/lens.agent.md` | Agent persona and 28-item menu |
+| `agents/lens.agent.md` | Thin-shell entry agent definition |
 | `agents/lens.agent.yaml` | Agent YAML companion for validation |

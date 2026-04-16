@@ -118,7 +118,6 @@ phases:
       - brainstorm
     milestone: techplan
     auto_advance_to: /businessplan
-    auto_advance_promote: false
     completion_review:
       gate: adversarial-review
       mode: party
@@ -138,7 +137,6 @@ phases:
       - ux-design
     milestone: techplan
     auto_advance_to: /techplan
-    auto_advance_promote: false
     completion_review:
       gate: adversarial-review
       mode: party
@@ -157,7 +155,6 @@ phases:
       - architecture
     milestone: techplan
     auto_advance_to: /finalizeplan
-    auto_advance_promote: true
     completion_review:
       gate: adversarial-review
       mode: party
@@ -182,7 +179,6 @@ phases:
     milestone: finalizeplan
     branching_milestone: finalizeplan
     auto_advance_to: /dev
-    auto_advance_promote: false
     completion_review:
       gate: adversarial-review
       mode: party
@@ -215,7 +211,6 @@ phases:
       - expressplan-adversarial-review
     milestone: finalizeplan
     auto_advance_to: /finalizeplan
-    auto_advance_promote: false
     completion_review:
       gate: adversarial-review
       mode: party
@@ -320,25 +315,6 @@ tracks:
     topology: 2-branch
     feature_yaml: true
 
-# -----------------------------------------------------------------------------
-# PROMOTE SEMANTICS (v3.1 — approval-only model)
-# -----------------------------------------------------------------------------
-# In the happy path, all promotion PRs are auto-created by auto_advance_promote.
-# /promote is an approval + verification action, not a creation action.
-# The PR already exists when the user runs /promote.
-promote:
-  behavior: approval-only
-  description: >
-    /promote verifies that the auto-created promotion PR has been approved
-    and merged, then transitions the initiative to the next milestone.
-    If the PR does not yet exist (edge case), /promote creates it.
-  actions:
-    - verify_pr_merged
-    - run_sensing_check
-    - transition_milestone
-  auto_create_fallback: true  # Create PR if somehow missing
-
-# -----------------------------------------------------------------------------
 # ARTIFACT VALIDATION HOOKS (v3.1)
 # -----------------------------------------------------------------------------
 # Per-artifact structural validation that runs before commit acceptance.

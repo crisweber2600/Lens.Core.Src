@@ -191,7 +191,7 @@ ${targetPath}
 function ghAgentStub() {
     return `\`\`\`chatagent
 ---
-description: '@lens — LENS Workbench v2: lifecycle routing, git orchestration, phase-aware branch topology, constitution governance'
+description: '@lens — LENS Workbench thin shell for help, next action, and status routing'
 tools: ['read', 'edit', 'search', 'execute']
 ---
 
@@ -200,13 +200,12 @@ You must fully embody this agent's persona and follow all activation instruction
 <agent-activation CRITICAL="TRUE">
 1. LOAD the module config from lens.core/_bmad/lens-work/module.yaml
 2. LOAD the FULL agent definition from lens.core/_bmad/lens-work/agents/lens.agent.md
-3. READ its entire contents - this contains the complete agent persona, skills, lifecycle routing, and phase-to-agent mapping
+3. READ its entire contents - this contains the complete thin-shell agent persona and menu
 4. LOAD the lifecycle contract from lens.core/_bmad/lens-work/lifecycle.yaml
 5. LOAD the module help index from lens.core/_bmad/lens-work/module-help.csv
 6. FOLLOW every activation step in the agent definition precisely
-7. DISPLAY the welcome/greeting as instructed
-8. PRESENT the numbered menu from module-help.csv
-9. WAIT for user input before proceeding
+7. DISPLAY the shell greeting and compact menu from the agent definition
+8. WAIT for user input before proceeding
 </agent-activation>
 
 \`\`\`
@@ -330,7 +329,6 @@ const STUB_PROMPTS = [
     { file: 'lens-next.prompt.md', name: 'lens-next', desc: 'Recommend next action based on lifecycle state', target: 'lens-next.prompt.md' },
     { file: 'lens-batch.prompt.md', name: 'lens-batch', desc: 'Generate or resume a two-pass batch intake for planning targets', target: 'lens-batch.prompt.md' },
     { file: 'lens-switch.prompt.md', name: 'lens-switch', desc: 'Switch to a different feature via git checkout', target: 'lens-switch.prompt.md' },
-    { file: 'lens-promote.prompt.md', name: 'lens-promote', desc: 'Promote feature through next lifecycle milestone', target: 'lens-promote.prompt.md' },
     { file: 'lens-constitution.prompt.md', name: 'lens-constitution', desc: 'Resolve and display constitutional governance', target: 'lens-constitution.prompt.md' },
     { file: 'lens-sensing.prompt.md', name: 'lens-sensing', desc: 'Run cross-initiative overlap detection', target: 'lens-sensing.prompt.md' },
     { file: 'lens-audit.prompt.md', name: 'lens-audit', desc: 'Run cross-initiative compliance audit dashboard', target: 'lens-audit.prompt.md' },
@@ -386,7 +384,6 @@ const IDE_COMMANDS = [
     { file: 'bmad-lens-batch.md', name: 'batch', desc: 'Generate or resume a two-pass batch intake for planning targets', wf: 'skills/bmad-lens-batch/SKILL.md' },
     { file: 'bmad-lens-switch.md', name: 'switch', desc: 'Switch to different feature branch', wf: 'skills/bmad-lens-switch/SKILL.md' },
     { file: 'bmad-lens-help.md', name: 'help', desc: 'Show available commands and usage reference', wf: 'skills/bmad-lens-help/SKILL.md' },
-    { file: 'bmad-lens-promote.md', name: 'promote', desc: 'Promote feature through next lifecycle milestone', wf: 'skills/bmad-lens-git-orchestration/SKILL.md' },
     { file: 'bmad-lens-constitution.md', name: 'constitution', desc: 'Resolve and display constitutional governance', wf: 'skills/bmad-lens-constitution/SKILL.md' },
     { file: 'bmad-lens-audit.md', name: 'audit', desc: 'Run cross-initiative compliance audit dashboard', wf: 'skills/bmad-lens-audit/SKILL.md' },
     { file: 'bmad-lens-sensing.md', name: 'sensing', desc: 'Cross-initiative overlap detection on demand', wf: 'skills/bmad-lens-sensing/SKILL.md' },
