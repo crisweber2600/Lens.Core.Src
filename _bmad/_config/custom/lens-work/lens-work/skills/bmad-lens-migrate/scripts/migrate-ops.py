@@ -1361,14 +1361,23 @@ def build_migrated_feature_data(
         warnings.append(f"Unsupported legacy track '{raw_track}' defaulted to 'full'")
 
     name = raw_name or feature_id.replace("-", " ").title()
-    feature_data = init_feature_ops.make_feature_yaml(feature_id, domain, service, name, track, username, timestamp)
+    initial_phase, initial_phase_warnings = normalize_phase(fallback_phase)
+    warnings.extend(initial_phase_warnings)
+    feature_data = init_feature_ops.make_feature_yaml(
+        feature_id,
+        domain,
+        service,
+        name,
+        track,
+        initial_phase,
+        username,
+        timestamp,
+    )
     feature_data["description"] = raw_description or f"Migrated from legacy branch: {old_id}"
     feature_data["migrated_from"] = old_id
 
     if not legacy_state:
-        phase, phase_warnings = normalize_phase(fallback_phase)
-        warnings.extend(phase_warnings)
-        feature_data["phase"] = phase
+        feature_data["phase"] = initial_phase
         return feature_data, legacy_state_path, warnings
 
     feature_data["created"] = legacy_state.get("created") or feature_data.get("created") or timestamp

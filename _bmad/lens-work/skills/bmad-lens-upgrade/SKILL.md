@@ -9,6 +9,8 @@ description: Migrate control repo schema between versions with safety gates, dry
 
 This skill migrates a control repo from an older schema version to the current version. It detects the installed version, computes a migration plan (branch renames, YAML field transformations, initiative-state creation), confirms with the user, and applies changes with a `[LENS:UPGRADE]` commit marker. Supports `--dry-run` for safe preview.
 
+The current implementation foundation adds an executable `4 -> 5` rename path for the Lens terminology shift. That path rewrites local `.lens` state, converts `feature-index.yaml` into `milestone-index.yaml`, migrates the governance tree from `features/.../feature.yaml` to `milestones/.../milestone.yaml`, renames `domain/service` to `workstream/project`, and rewrites lifecycle gate `milestones` to `checkpoints`.
+
 **Args:**
 - `--dry-run` (optional): Display complete plan without applying changes.
 - `--from <version>` (optional): Override detected source version.
@@ -77,3 +79,22 @@ You are the upgrade conductor for the Lens agent. You detect version gaps, compu
 | `bmad-lens-git-orchestration` | Branch operations and commits |
 | `bmad-lens-git-state` | Branch scanning and initiative detection |
 | `bmad-lens-theme` | Applies active persona overlay |
+
+## Script Reference
+
+`./scripts/upgrade-ops.py` — Python script (uv-runnable) for the implemented upgrade path.
+
+```bash
+# Preview the v4 -> v5 terminology migration without writing changes
+uv run ./skills/bmad-lens-upgrade/scripts/upgrade-ops.py \
+	--project-root /path/to/control-repo \
+	--from 4 \
+	--to 5 \
+	--dry-run
+
+# Apply the v4 -> v5 terminology migration
+uv run ./skills/bmad-lens-upgrade/scripts/upgrade-ops.py \
+	--project-root /path/to/control-repo \
+	--from 4 \
+	--to 5
+```
