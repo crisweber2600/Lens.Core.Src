@@ -107,5 +107,4 @@ python3 ./scripts/split-feature-ops.py move-stories ... --dry-run
 |-------|------------------------------|
 | `bmad-lens-feature-yaml` | Reads source feature.yaml; new feature.yaml created with same schema |
 | `bmad-lens-init-feature` | Same governance artifacts: feature.yaml + index entry + summary stub |
-| `bmad-lens-status` | New feature is immediately visible in feature-index.yaml on main |
 | `bmad-lens-git-state` | Git state context loaded at activation for branch-awareness |

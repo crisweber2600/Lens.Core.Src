@@ -207,10 +207,10 @@ See [pipeline-source-to-release.md](./pipeline-source-to-release.md) for details
 @lens → /new-feature   (or /new-domain, /new-service)
 ```
 
-### Check Current Status
+### Review Portfolio State
 
 ```
-@lens → /status
+@lens → /dashboard
 ```
 
 ### Run Compliance Check

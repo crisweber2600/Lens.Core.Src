@@ -80,6 +80,5 @@ uv run scripts/help-ops.py all \
 
 | Skill | How help is used |
 |-------|-----------------|
-| `bmad-lens-status` | Surfaces contextual help suggestions at bottom of status output |
 | `bmad-lens-init-feature` | References help topics for onboarding |
 | All user-facing skills | `/help` command routes to this skill for contextual display |

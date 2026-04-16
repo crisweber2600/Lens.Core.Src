@@ -19,9 +19,6 @@ agent:
     - trigger: NX or fuzzy match on next
       exec: "{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-next/SKILL.md"
       description: "[NX] Next: Route to the single best next lifecycle action"
-    - trigger: ST or fuzzy match on status
-      exec: "{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-status/SKILL.md"
-      description: "[ST] Status: Show current feature or portfolio state"
     - trigger: LS or fuzzy match on setup or lens-setup
       exec: "{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-setup/SKILL.md"
       description: "[LS] Setup: Configure Lens for this workspace"

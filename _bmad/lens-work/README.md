@@ -6,7 +6,7 @@
 
 ## Overview
 
-LENS Workbench v4 is a skills-first control-repo module for feature-first planning and delivery. The `@lens` agent is now a thin entry shell that routes users into real Lens skills for setup, help, status, next-step routing, planning conductors, governance, and execution handoff.
+LENS Workbench v4 is a skills-first control-repo module for feature-first planning and delivery. The `@lens` agent is now a thin entry shell that routes users into real Lens skills for setup, help, next-step routing, planning conductors, governance, and execution handoff.
 
 ## Design Principles
 
@@ -14,7 +14,7 @@ LENS Workbench v4 is a skills-first control-repo module for feature-first planni
 - **Reviewed artifacts and PRs gate progression** — phase handoff and lifecycle advancement happen through explicit review boundaries
 - **Authority domains are explicit** — every file belongs to exactly one domain
 - **Sensing is automatic** — cross-initiative awareness is checked at initialization and lifecycle review gates
-- **Declarative contracts plus focused tooling** — lifecycle behavior stays in YAML, with scripts limited to install/bootstrap/status/PR helpers
+- **Declarative contracts plus focused tooling** — lifecycle behavior stays in YAML, with scripts limited to focused install/bootstrap/PR helpers
 
 ## Module Structure
 
@@ -27,7 +27,7 @@ lens-work/
 ├── agents/                # Thin-shell Lens agent definitions
 ├── skills/                # Active bmad-lens-* skill surface
 ├── prompts/               # Published lens-*.prompt.md entry points
-├── scripts/               # Install/bootstrap/status/next-action/PR tooling
+├── scripts/               # Install/bootstrap and PR helper tooling
 ├── docs/                  # Human-readable reference documentation
 ├── bmad-lens-work-setup/  # Legacy setup assets retained for compatibility
 ├── _module-installer/     # CI/CD adapter generator
@@ -38,7 +38,7 @@ lens-work/
 ## Active Skill Surface
 
 - **Planning conductors** — `preplan`, `businessplan`, `techplan`, `adversarial-review`, `finalizeplan`, `expressplan`, `dev`, `complete`
-- **Lifecycle utilities** — `init-feature`, `target-repo`, `status`, `next`, `batch`, `switch`, `help`, `pause-resume`, `retrospective`
+- **Lifecycle utilities** — `init-feature`, `target-repo`, `next`, `batch`, `switch`, `help`, `pause-resume`, `retrospective`
 - **Governance and reporting** — `constitution`, `sensing`, `audit`, `dashboard`, `approval-status`, `rollback`, `profile`
 - **Setup and migration** — `setup`, `migrate`, `upgrade`, `document-project`, with `onboard` retained only as a deprecated bridge
 
@@ -162,7 +162,7 @@ See `module.yaml` `install_questions` for configuration options (target projects
 2. **Initialize scope** — use `/new-project` or the `/new-domain` + `/new-service` + `/new-feature` sequence
 3. **Begin planning** — use `/preplan` or `/expressplan`
 4. **Use `/next` for routing** — let Lens recommend the single best next step
-5. **Use `/status` for visibility** — inspect feature or portfolio state from governance metadata
+5. **Use `/dashboard` and `/switch` for visibility** — review portfolio state and load a different feature context when needed
 
 ## Components
 
@@ -186,7 +186,7 @@ See `module.yaml` `install_questions` for configuration options (target projects
 `@lens` exposes only a compact shell menu. Use `/help` for command discovery and `/next` for the recommended next step.
 
 Representative command surface:
-`/lens-setup`, `/new-project`, `/new-domain`, `/new-service`, `/new-feature`, `/preplan`, `/businessplan`, `/techplan`, `/adversarial-review`, `/finalizeplan`, `/expressplan`, `/dev`, `/complete`, `/status`, `/next`, `/batch`, `/switch`, `/discover`, `/constitution`, `/sensing`, `/audit`, `/approval-status`, `/rollback`, `/profile`, `/dashboard`, `/log-problem`, `/move-feature`, `/split-feature`, `/lens-upgrade`, `/document-project`
+`/lens-setup`, `/new-project`, `/new-domain`, `/new-service`, `/new-feature`, `/preplan`, `/businessplan`, `/techplan`, `/adversarial-review`, `/finalizeplan`, `/expressplan`, `/dev`, `/complete`, `/next`, `/batch`, `/switch`, `/discover`, `/constitution`, `/sensing`, `/audit`, `/approval-status`, `/rollback`, `/profile`, `/dashboard`, `/log-problem`, `/move-feature`, `/split-feature`, `/lens-upgrade`, `/document-project`
 
 ## Configuration
 

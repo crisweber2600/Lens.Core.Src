@@ -45,7 +45,7 @@ def main() -> int:
     hard_gate = False
 
     if not milestone and not phase and not action:
-        gate_message = "Not currently on an initiative branch. Run /status or /switch."
+        gate_message = "Not currently on an initiative branch. Run /switch to load a feature or /dashboard to review the portfolio."
     elif not milestone and scope == "domain":
         next_command = "/new-service"
     elif not milestone and scope == "service":
@@ -57,16 +57,16 @@ def main() -> int:
         hard_gate = True
         gate_message = "Review feedback is blocking progress. Resolve the requested changes, then run /next again."
     elif action == "Ready to promote":
-        gate_message = "Milestone promotion is no longer a direct Lens command. Run /status for the current state and continue from the recommended lifecycle step."
+        gate_message = "Milestone promotion is no longer a direct Lens command. Run /next for the current lifecycle recommendation and continue from the suggested step."
     elif re.search(r"promotion in review", action, re.IGNORECASE):
         hard_gate = True
-        gate_message = "A promotion PR is still open. Merge it, then run /status or /next again."
+        gate_message = "A promotion PR is still open. Merge it, then run /next again."
     elif phase and re.search(r"complete phase|start next phase", action, re.IGNORECASE):
         next_command = f"/{phase}"
     elif re.search(r"ready for execution", action, re.IGNORECASE):
         gate_message = "All caught up. The initiative is ready for execution."
     else:
-        gate_message = "No deterministic next action was found. Run /status for the full picture."
+        gate_message = "No deterministic next action was found. Run /dashboard for the broader picture or /help for available commands."
 
     if args.json:
         print(json.dumps({

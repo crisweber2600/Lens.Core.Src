@@ -35,7 +35,7 @@ Lens.Core.Src is composed of source assets rather than runtime services. The exh
 - Includes lifecycle skills, utility skills, governance skills, and BMAD wrapper skills
 - Representative examples:
   - `bmad-lens-next`
-  - `bmad-lens-status`
+  - `bmad-lens-dashboard`
   - `bmad-lens-switch`
   - `bmad-lens-complete`
   - `bmad-lens-document-project`

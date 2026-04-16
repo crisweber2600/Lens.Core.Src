@@ -108,7 +108,6 @@ uv run scripts/next-ops.py suggest --governance-repo /path/to/repo --feature-id 
 
 | Skill | How next is used |
 |-------|-----------------|
-| `bmad-lens-status` | Appends next-action recommendation to feature status output |
 | `bmad-lens-init-feature` | Called on activation to determine if feature is initialized |
 | All lifecycle phase skills | `/next` delegates into the lifecycle owner when unblocked |
 | `bmad-lens-pause-resume` | Resumes paused work from the stored `paused_from` phase |

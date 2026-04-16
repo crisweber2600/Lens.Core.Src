@@ -136,7 +136,7 @@ The LENS Workbench agent is the single entry point for all user interaction. In 
 | `bmad-lens-git-orchestration` | Write | Branch creation, commits, pushes, PR management | create branches, commit docs, open/update PRs |
 | `bmad-lens-constitution` | Read-only | Governance resolution and compliance | resolve constitutions, explain rules, validate gates |
 | `bmad-lens-sensing` | Read-only | Cross-feature overlap detection | feature overlap checks, governance-sensitive drift detection |
-| `bmad-lens-help` / `bmad-lens-next` / `bmad-lens-status` | User-facing | Discovery and lifecycle routing | contextual help, next-action recommendation, status reporting |
+| `bmad-lens-help` / `bmad-lens-next` / `bmad-lens-dashboard` | User-facing | Discovery, lifecycle routing, and portfolio reporting | contextual help, next-action recommendation, dashboard reporting |
 
 ---
 
@@ -338,7 +338,7 @@ Commands and skills that resolve constitutions or read shared feature state requ
 | Command | Governance Access | What It Reads or Writes |
 |---------|-------------------|-------------------------|
 | `/new-domain`, `/new-service`, `/new-feature`, `/new-project` | Required | Constitution hierarchy, feature-index updates, and feature scaffolding |
-| `/status` | Read-only | `feature.yaml` and `feature-index.yaml` on governance `main` |
+| `/dashboard` | Read-only | `feature-index.yaml` and dashboard data sources on governance `main` |
 | `/next` | Read-only | `feature.yaml` plus `lifecycle.yaml` gate rules |
 | `/sensing`, `/audit` | Required | Constitution hierarchy, feature registry, and overlap policies |
 | `/move-feature`, `/split-feature` | Required | Existing and target feature paths plus registry updates |

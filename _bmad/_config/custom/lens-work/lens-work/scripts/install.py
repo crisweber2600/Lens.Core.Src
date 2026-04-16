@@ -128,7 +128,6 @@ COMMANDS = [
     ("bmad-lens-adversarial-review.md", "adversarial-review", "Run lifecycle adversarial review with a party-mode blind-spot challenge", "skills/bmad-lens-adversarial-review/SKILL.md"),
     ("bmad-lens-finalizeplan.md", "finalizeplan", "Launch FinalizePlan phase (review, planning bundle, PR handoff)", "skills/bmad-lens-finalizeplan/SKILL.md"),
     ("bmad-lens-dev.md", "dev", "Launch Dev phase — epic-level implementation loop", "skills/bmad-lens-dev/SKILL.md"),
-    ("bmad-lens-status.md", "status", "Show consolidated status report across all active features", "skills/bmad-lens-status/SKILL.md"),
     ("bmad-lens-next.md", "next", "Recommend next action based on lifecycle state", "skills/bmad-lens-next/SKILL.md"),
     ("bmad-lens-batch.md", "batch", "Generate or resume a two-pass batch intake for planning targets", "skills/bmad-lens-batch/SKILL.md"),
     ("bmad-lens-switch.md", "switch", "Switch to different feature branch", "skills/bmad-lens-switch/SKILL.md"),
@@ -189,7 +188,7 @@ def install_github_copilot() -> None:
     agent_content = """\
 ```chatagent
 ---
-description: '@lens — LENS Workbench thin shell for help, next action, and status routing'
+description: '@lens — LENS Workbench thin shell for help and next-action routing'
 tools: ['read', 'edit', 'search', 'execute']
 ---
 
@@ -229,7 +228,6 @@ You must fully embody this agent's persona and follow all activation instruction
         ("lens-dev.prompt.md", "lens-dev", "Launch Dev phase — epic-level implementation loop with story management", "lens-dev.prompt.md"),
         ("lens-complete.prompt.md", "lens-complete", "Complete feature lifecycle — retrospective, archive, close", "lens-complete.prompt.md"),
         ("lens-retrospective.prompt.md", "lens-retrospective", "Post-feature retrospective and lessons learned", "lens-retrospective.prompt.md"),
-        ("lens-status.prompt.md", "lens-status", "Show consolidated status report across all active features", "lens-status.prompt.md"),
         ("lens-next.prompt.md", "lens-next", "Recommend next action based on lifecycle state", "lens-next.prompt.md"),
         ("lens-batch.prompt.md", "lens-batch", "Generate or resume a two-pass batch intake for planning targets", "lens-batch.prompt.md"),
         ("lens-switch.prompt.md", "lens-switch", "Switch to a different feature via git checkout", "lens-switch.prompt.md"),

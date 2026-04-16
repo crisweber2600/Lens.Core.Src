@@ -103,7 +103,6 @@ uv run scripts/theme-ops.py easter-egg --themes-dir /path/to/themes/ --theme wh4
 |-------|------------------|
 | `bmad-lens-init-feature` | Loads theme on activation for persona overlay |
 | `bmad-lens-quickplan` | Applies theme to BMM agent orchestration |
-| `bmad-lens-status` | Applies theme to display formatting flavor text |
 | `bmad-lens-onboard` | ~~Writes initial theme preference to user-profile.md during onboarding~~ — **deprecated** |
 | All user-facing skills | Load theme on activation; use `set` for runtime preference changes |
 

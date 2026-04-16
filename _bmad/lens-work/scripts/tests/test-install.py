@@ -78,9 +78,11 @@ class TestGeneratedAdapters:
 
         discover_prompt = tmp_path / ".github/prompts/lens-discover.prompt.md"
         quickplan_prompt = tmp_path / ".github/prompts/lens-quickplan.prompt.md"
+        status_prompt = tmp_path / ".github/prompts/lens-status.prompt.md"
 
         assert discover_prompt.is_file()
         assert quickplan_prompt.is_file()
+        assert not status_prompt.exists()
         assert "lens.core/_bmad/lens-work/prompts/lens-discover.prompt.md" in discover_prompt.read_text(encoding="utf-8")
         assert "lens.core/_bmad/lens-work/prompts/lens-quickplan.prompt.md" in quickplan_prompt.read_text(encoding="utf-8")
 
@@ -93,8 +95,10 @@ class TestGeneratedAdapters:
         module.install_cursor()
 
         discover_command = tmp_path / ".cursor/commands/bmad-lens-discover.md"
+        status_command = tmp_path / ".cursor/commands/bmad-lens-status.md"
 
         assert discover_command.is_file()
+        assert not status_command.exists()
         assert "skills/bmad-lens-discover/SKILL.md" in discover_command.read_text(encoding="utf-8")
 
 

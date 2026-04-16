@@ -62,7 +62,7 @@ The control repo is the workspace you open first. It gives LENS a stable home fo
 - the installed `lens.core/` payload
 - the `TargetProjects/` folder where actual repos live
 
-This is the place where you run commands like `/onboard`, `/status`, `/next`, `/preplan`, and `/finalizeplan`.
+This is the place where you run commands like `/onboard`, `/dashboard`, `/next`, `/preplan`, and `/finalizeplan`.
 
 ### 2. `lens.core/` supplies the LENS behavior
 

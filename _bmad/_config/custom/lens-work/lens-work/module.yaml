@@ -10,7 +10,7 @@ subheader: "Phase-aware orchestration for BMAD workflows with automated branch t
 default_selected: false
 module_greeting: |
   Welcome to **LENS Workbench** — your guided lifecycle router.
-  Type `/help` to see available commands, or `/status` to check your current initiative state.
+  Type `/help` to see available commands, or `/next` to load the best next step for your current initiative.
 
 # Module Type
 type: standalone
@@ -58,9 +58,6 @@ skills:
   - id: bmad-lens-log-problem
     file: skills/bmad-lens-log-problem/SKILL.md
     description: "Problem capture and logging for Lens features"
-  - id: bmad-lens-status
-    file: skills/bmad-lens-status/SKILL.md
-    description: "Feature status and portfolio visibility"
   - id: bmad-lens-next
     file: skills/bmad-lens-next/SKILL.md
     description: "Next-action recommendation based on feature state"
@@ -236,7 +233,6 @@ prompts:
   - lens-log-problem.prompt.md
   - lens-move-feature.prompt.md
   - lens-split-feature.prompt.md
-  - lens-status.prompt.md
   - lens-next.prompt.md
   - lens-batch.prompt.md
   - lens-switch.prompt.md
@@ -303,7 +299,6 @@ adapters:
       - .github/prompts/lens-log-problem.prompt.md
       - .github/prompts/lens-move-feature.prompt.md
       - .github/prompts/lens-split-feature.prompt.md
-      - .github/prompts/lens-status.prompt.md
       - .github/prompts/lens-next.prompt.md
       - .github/prompts/lens-batch.prompt.md
       - .github/prompts/lens-switch.prompt.md
@@ -354,7 +349,6 @@ adapters:
       - .cursor/commands/bmad-lens-adversarial-review.md
       - .cursor/commands/bmad-lens-finalizeplan.md
       - .cursor/commands/bmad-lens-dev.md
-      - .cursor/commands/bmad-lens-status.md
       - .cursor/commands/bmad-lens-next.md
       - .cursor/commands/bmad-lens-batch.md
       - .cursor/commands/bmad-lens-switch.md
@@ -377,7 +371,6 @@ adapters:
       - .claude/commands/bmad-lens-adversarial-review.md
       - .claude/commands/bmad-lens-finalizeplan.md
       - .claude/commands/bmad-lens-dev.md
-      - .claude/commands/bmad-lens-status.md
       - .claude/commands/bmad-lens-next.md
       - .claude/commands/bmad-lens-batch.md
       - .claude/commands/bmad-lens-switch.md
@@ -401,7 +394,6 @@ adapters:
       - .codex/commands/bmad-lens-adversarial-review.md
       - .codex/commands/bmad-lens-finalizeplan.md
       - .codex/commands/bmad-lens-dev.md
-      - .codex/commands/bmad-lens-status.md
       - .codex/commands/bmad-lens-next.md
       - .codex/commands/bmad-lens-batch.md
       - .codex/commands/bmad-lens-switch.md
@@ -424,7 +416,6 @@ adapters:
       - .opencode/commands/bmad-lens-adversarial-review.md
       - .opencode/commands/bmad-lens-finalizeplan.md
       - .opencode/commands/bmad-lens-dev.md
-      - .opencode/commands/bmad-lens-status.md
       - .opencode/commands/bmad-lens-next.md
       - .opencode/commands/bmad-lens-batch.md
       - .opencode/commands/bmad-lens-switch.md

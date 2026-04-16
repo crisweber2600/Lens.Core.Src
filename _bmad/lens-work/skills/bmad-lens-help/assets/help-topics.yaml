@@ -20,13 +20,6 @@ topics:
     tracks: [all]
     category: tracking
 
-  - id: status
-    command: /status
-    description: Show current feature status and portfolio overview
-    phases: [all]
-    tracks: [all]
-    category: navigation
-
   - id: next
     command: /next
     description: Get contextual suggestion for what to do next

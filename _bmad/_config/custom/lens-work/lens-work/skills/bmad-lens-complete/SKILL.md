@@ -109,4 +109,3 @@ python3 ./scripts/complete-ops.py archive-status \
 | `bmad-lens-feature-yaml` | Feature.yaml phase updated to `complete` |
 | `bmad-lens-document-project` | Project documentation captured before archive |
 | `bmad-lens-git-orchestration` | Final summary committed to main branch |
-| `bmad-lens-status` | Feature appears as `archived` in status views |

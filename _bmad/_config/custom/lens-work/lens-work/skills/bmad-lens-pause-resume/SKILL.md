@@ -104,5 +104,4 @@ python3 ./scripts/pause-resume-ops.py pause \
 | Skill | How pause/resume is used |
 |-------|--------------------------|
 | `bmad-lens-feature-yaml` | Reads/writes feature.yaml; pause-resume-ops.py delegates file I/O patterns from it |
-| `bmad-lens-status` | Shows paused features in the status view with reason and paused_from |
 | All phase-advancing skills | Should check feature phase before advancing; reject if paused |

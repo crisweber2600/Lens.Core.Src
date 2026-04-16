@@ -114,6 +114,5 @@ The `switch` result always includes `plan_branch` (`{featureId}-plan`). It also 
 | Skill | How switch is used |
 |-------|-------------------|
 | `bmad-lens-init-feature` | Sets the initial active feature after feature creation |
-| `bmad-lens-status` | Reads active feature from session context for status display |
 | `bmad-lens-quickplan` | Uses active feature as the planning target |
 | All feature-context skills | Read active featureId from session context set by this skill |

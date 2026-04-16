@@ -120,7 +120,7 @@ powershell uv run setup-control-repo.py
 ```
 
 - [ ] The workflow will guide you through producing planning artifacts (product brief, PRD, architecture, etc.)
-- [ ] Check your progress anytime with `/status`
+- [ ] Check your progress anytime with `/next` or `/dashboard`
 
 ---
 
@@ -131,7 +131,7 @@ Once onboarded, your daily flow is:
 ```mermaid
 flowchart TD
     A[Open VS Code + Copilot Chat] --> B{Have active initiative?}
-    B -->|Yes| C[/status — check current state]
+  B -->|Yes| C[/dashboard — review current state]
     B -->|No| D[/new-feature — start something new]
     C --> E[/next — get recommended action]
     E --> F[Run the recommended phase command]
@@ -149,7 +149,7 @@ flowchart TD
 
 | Situation | Command |
 |-----------|---------|
-| Start of day | `/status` or `/dashboard` |
+| Start of day | `/dashboard` |
 | Don't know what's next | `/next` |
 | Switch to different work | `/switch` |
 | Something broke | `/log-problem` |

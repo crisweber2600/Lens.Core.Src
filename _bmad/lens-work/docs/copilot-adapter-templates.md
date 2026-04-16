@@ -102,7 +102,7 @@ Template for `.github/lens-work-instructions.md` — lens-work-specific Copilot 
 ## Commands
 
 All lens-work commands are available via prompt stubs in `.github/prompts/`.
-Type the command (e.g. `/onboard`, `/status`, `/preplan`) to activate.
+Type the command (e.g. `/onboard`, `/next`, `/preplan`) to activate.
 
 Full command reference: `lens.core/_bmad/lens-work/module-help.csv`
 

@@ -27,7 +27,7 @@ Renders a phase-filtered, track-filtered view of the help topic registry. Called
     {"id": "complete", "command": "/complete", "description": "Finalize a feature — retrospective, documentation, archive", "category": "lifecycle"},
     {"id": "retrospective", "command": "/retrospective", "description": "Run root cause analysis on feature problems", "category": "lifecycle"},
     {"id": "log-problem", "command": "/log-problem", "description": "Log a problem with phase and category tags", "category": "tracking"},
-    {"id": "status", "command": "/status", "description": "Show current feature status and portfolio overview", "category": "navigation"},
+    {"id": "dashboard", "command": "/dashboard", "description": "Review portfolio health and cross-feature blockers", "category": "reporting"},
     {"id": "next", "command": "/next", "description": "Get contextual suggestion for what to do next", "category": "navigation"}
   ],
   "total_available": 10
@@ -48,7 +48,7 @@ Present as a compact markdown table:
 | `/complete` | Finalize a feature — retrospective, documentation, archive |
 | `/retrospective` | Run root cause analysis on feature problems |
 | `/log-problem` | Log a problem with phase and category tags |
-| `/status` | Show current feature status and portfolio overview |
+| `/dashboard` | Review portfolio health and cross-feature blockers |
 | `/next` | Get contextual suggestion for what to do next |
 
 _Showing 5 of 10 available. Search with `/help <query>` or ask to show all._

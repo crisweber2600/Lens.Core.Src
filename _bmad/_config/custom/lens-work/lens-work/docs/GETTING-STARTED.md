@@ -66,7 +66,6 @@ Use `/new-feature`, `/new-domain`, `/new-service`, or `/target-repo` directly wh
 
 | Command | What It Does |
 |---------|-------------|
-| `/status` | Show current initiative state (derived from git) |
 | `/next` | Resolve the one unblocked next step and load it immediately |
 | `/batch` | Generate or resume a two-pass batch intake for the current planning target |
 | `/help` | List all available commands |

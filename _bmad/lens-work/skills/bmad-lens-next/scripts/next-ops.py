@@ -133,10 +133,10 @@ def build_phase_recommendation(data: dict, phase: str, lifecycle: dict) -> dict:
         }
 
     return {
-        "action": "check-status",
-        "command": "/status",
-        "rationale": f"Feature is in {phase} phase — check current status",
-        "gate_phase": "status",
+        "action": "help",
+        "command": "/help",
+        "rationale": f"Feature is in {phase} phase — review the available commands for the current lifecycle state",
+        "gate_phase": "help",
     }
 
 

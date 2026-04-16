@@ -83,7 +83,6 @@ Load `{governance_repo}/users/{username}/user-profile.md` for user defaults. Loa
 | `bmad-lens-next` | Lifecycle router — resolves the correct post-init follow-up command for the selected track |
 | `bmad-lens-quickplan` | Optional planning wrapper — available for supported tracks, but not the universal first step after init-feature |
 | `bmad-lens-theme` | Loaded on activation for persona overlay |
-| `bmad-lens-status` | Reads feature-index.yaml entries written by init-feature |
 
 ## Script Reference
 
