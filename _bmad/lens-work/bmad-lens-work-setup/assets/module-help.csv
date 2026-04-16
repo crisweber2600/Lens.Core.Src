@@ -1,7 +1,7 @@
 module,skill,display-name,menu-code,description,action,args,phase,after,before,required,output-location,outputs
 Lens,bmad-lens-onboard,Onboard,OB,"[DEPRECATED] Bootstrap control repo — use new-domain and new-service instead",,,,,,,,anytime,,,,.lens/personal,profile.yaml
-Lens,bmad-lens-init-feature,Create Feature,IF,"Initialize a new feature with 2-branch topology and governance entries",create,<featureId> [--domain] [--service] --track <track> [--dry-run],anytime,,bmad-lens-next:suggest,false,,"feature.yaml feature-index.yaml entry"
-Lens,bmad-lens-target-repo,Target Repo,TR,"Provision or register a feature target repo and persist governance metadata",provision,<featureId> --repo-name <name> [--owner <owner>|--remote-url <url>] [--create-remote] [--local-path <path>] [--dry-run],anytime,bmad-lens-init-feature:create,bmad-lens-dev:implement,false,,"repo-inventory.yaml entry target_repos metadata cloned repo"
+Lens,bmad-lens-init-milestone,Create Milestone,IF,"Initialize a new milestone with 2-branch topology and governance entries",create,<milestoneId> [--workstream] [--project] --track <track> [--dry-run],anytime,,bmad-lens-next:suggest,false,,"milestone.yaml milestone-index.yaml entry"
+Lens,bmad-lens-target-repo,Target Repo,TR,"Provision or register a milestone target repo and persist governance metadata",provision,<milestoneId> --repo-name <name> [--owner <owner>|--remote-url <url>] [--create-remote] [--local-path <path>] [--dry-run],anytime,bmad-lens-init-milestone:create,bmad-lens-dev:implement,false,,"repo-inventory.yaml entry target_repos metadata cloned repo"
 Lens,bmad-lens-switch,Switch,SW,"Switch to a different feature via git checkout",,,anytime,,,,,
 Lens,bmad-lens-next,Next,NX,"Recommend next action based on lifecycle state",,,anytime,,,,,
 Lens,bmad-lens-help,Help,HP,"Show available commands and usage",,,anytime,,,,,

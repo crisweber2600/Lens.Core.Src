@@ -38,7 +38,7 @@ lens-work/
 ## Active Skill Surface
 
 - **Planning conductors** — `preplan`, `businessplan`, `techplan`, `adversarial-review`, `finalizeplan`, `expressplan`, `dev`, `complete`
-- **Lifecycle utilities** — `init-feature`, `target-repo`, `next`, `batch`, `switch`, `help`, `pause-resume`, `retrospective`
+- **Lifecycle utilities** — `init-milestone`, `target-repo`, `next`, `batch`, `switch`, `help`, `pause-resume`, `retrospective`
 - **Governance and reporting** — `constitution`, `sensing`, `audit`, `dashboard`, `approval-status`, `rollback`, `profile`
 - **Setup and migration** — `setup`, `migrate`, `upgrade`, `document-project`, with `onboard` retained only as a deprecated bridge
 
@@ -119,6 +119,8 @@ Open VS Code with GitHub Copilot Chat and type:
 
 Use `/new-project` for the combined bootstrap flow, or run `/new-domain`, `/new-service`, and `/new-feature` individually when you want explicit control over each scaffold step.
 
+Use `/new-workstream`, `/new-project`, and `/new-milestone` for the explicit three-step scaffold flow.
+
 ### Step 6 (Optional): Install additional IDE adapters
 
 GitHub Copilot is ready after setup. For other IDEs, run the module installer:
@@ -159,7 +161,7 @@ See `module.yaml` `install_questions` for configuration options (target projects
 ## Quick Start
 
 1. **Bootstrap the control repo** — run `setup-control-repo.py`
-2. **Initialize scope** — use `/new-project` or the `/new-domain` + `/new-service` + `/new-feature` sequence
+2. **Initialize scope** — use `/new-workstream`, `/new-project`, and `/new-milestone`
 3. **Begin planning** — use `/preplan` or `/expressplan`
 4. **Use `/next` for routing** — let Lens recommend the single best next step
 5. **Use `/dashboard` and `/switch` for visibility** — review portfolio state and load a different feature context when needed
@@ -186,7 +188,7 @@ See `module.yaml` `install_questions` for configuration options (target projects
 `@lens` exposes only a compact shell menu. Use `/help` for command discovery and `/next` for the recommended next step.
 
 Representative command surface:
-`/lens-setup`, `/new-project`, `/new-domain`, `/new-service`, `/new-feature`, `/preplan`, `/businessplan`, `/techplan`, `/adversarial-review`, `/finalizeplan`, `/expressplan`, `/dev`, `/complete`, `/next`, `/batch`, `/switch`, `/discover`, `/constitution`, `/sensing`, `/audit`, `/approval-status`, `/rollback`, `/profile`, `/dashboard`, `/log-problem`, `/move-feature`, `/split-feature`, `/lens-upgrade`, `/document-project`
+`/lens-setup`, `/new-workstream`, `/new-project`, `/new-milestone`, `/preplan`, `/businessplan`, `/techplan`, `/adversarial-review`, `/finalizeplan`, `/expressplan`, `/dev`, `/complete`, `/next`, `/batch`, `/switch`, `/discover`, `/constitution`, `/sensing`, `/audit`, `/approval-status`, `/rollback`, `/profile`, `/dashboard`, `/log-problem`, `/split-feature`, `/lens-upgrade`, `/document-project`
 
 ## Configuration
 

@@ -116,7 +116,6 @@ Milestones are logical checkpoints in `feature.yaml`, not separate control-repo 
 | `/discover` | Sync repo inventory with `TargetProjects/` |
 | `/retrospective` | Generate a retrospective |
 | `/log-problem` | Capture a problem report |
-| `/move-feature` | Relocate a feature |
 | `/split-feature` | Split a feature |
 | `/approval-status` | Show promotion PR approval state |
 | `/rollback` | Roll back a phase safely |

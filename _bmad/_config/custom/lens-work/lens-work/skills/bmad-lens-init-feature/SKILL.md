@@ -1,9 +1,9 @@
 ---
-name: bmad-lens-init-feature
-description: Feature initialization orchestrator — creates 2-branch topology, feature.yaml, PR, and feature-index entry. Use when starting a new feature from scratch.
+name: bmad-lens-init-milestone
+description: Milestone initialization orchestrator — creates 2-branch topology, milestone.yaml, PR, and milestone-index entry. Use when starting a new milestone from scratch.
 ---
 
-# Feature Initializer
+# Milestone Initializer
 
 ## Overview
 

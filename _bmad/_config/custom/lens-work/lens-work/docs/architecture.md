@@ -341,7 +341,7 @@ Commands and skills that resolve constitutions or read shared feature state requ
 | `/dashboard` | Read-only | `feature-index.yaml` and dashboard data sources on governance `main` |
 | `/next` | Read-only | `feature.yaml` plus `lifecycle.yaml` gate rules |
 | `/sensing`, `/audit` | Required | Constitution hierarchy, feature registry, and overlap policies |
-| `/move-feature`, `/split-feature` | Required | Existing and target feature paths plus registry updates |
+| `/split-feature` | Required | Existing feature paths plus registry updates for child milestones |
 | `/pause-resume`, `/rollback`, `/complete` | Required | `feature.yaml` updates and closeout metadata |
 | `/finalizeplan`, `/approval-status` | Read-only | Lifecycle contract, PR linkage, and governance metadata |
 | `/profile`, `/help`, `/lens-setup` | None | Local config and module metadata only |

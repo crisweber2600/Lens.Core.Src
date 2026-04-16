@@ -74,7 +74,6 @@ Use `/new-feature`, `/new-domain`, `/new-service`, or `/target-repo` directly wh
 | `/expressplan` | Run the express planning workflow (single-phase, no PRs) |
 | `/retrospective` | Run a retrospective on a completed initiative |
 | `/log-problem` | Record an issue or friction point for the active initiative |
-| `/move-feature` | Reclassify a feature to a different domain/service |
 | `/split-feature` | Split a feature initiative into multiple child initiatives |
 | `/complete` | Finalize and archive a completed feature |
 

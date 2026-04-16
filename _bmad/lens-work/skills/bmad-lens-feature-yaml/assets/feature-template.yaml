@@ -1,15 +1,15 @@
-# Feature YAML Template
-# Single source of truth for feature identity and lifecycle state
-# Location: {governance-repo}/features/{domain}/{service}/{featureId}/feature.yaml
+# Milestone YAML Template
+# Single source of truth for milestone identity and lifecycle state
+# Location: {governance-repo}/milestones/{workstream}/{project}/{milestoneId}/milestone.yaml
 
-# --- Feature Identity ---
+# --- Milestone Identity ---
 name: ""
 description: ""
-featureId: ""
+milestoneId: ""
 
 # --- Organization ---
-domain: ""
-service: ""
+workstream: ""
+project: ""
 
 # --- Lifecycle ---
 phase: "preplan"
@@ -17,13 +17,13 @@ phase: "preplan"
 track: "quickplan"
 # Valid tracks: quickplan, full, feature, hotfix, hotfix-express, express, spike, tech-change
 
-milestones:
+checkpoints:
   businessplan: null
   techplan: null
   finalizeplan: null
   dev-ready: null
   dev-complete: null
-# Each milestone is null (not reached) or an ISO 8601 timestamp (completed)
+# Each checkpoint is null (not reached) or an ISO 8601 timestamp (completed)
 
 # --- Team ---
 team: []
@@ -34,7 +34,7 @@ team: []
 dependencies:
   depends_on: []
   depended_by: []
-# Lists of featureIds
+# Lists of milestoneIds
 
 # --- Target Repos ---
 target_repos: []

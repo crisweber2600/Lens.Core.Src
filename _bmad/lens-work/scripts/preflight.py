@@ -322,11 +322,11 @@ _PROMPT_METADATA: dict[str, tuple[str, str | None]] = {
     "lens-finalizeplan":                  ("both",  "plan"),
     "lens-help":                          ("both",  "any"),
     "lens-log-problem":                   ("full",  None),
-    "lens-move-feature":                  ("full",  "plan"),
-    "lens-new-domain":                    ("any",   "plan"),
-    "lens-new-feature":                   ("both",  "any"),
+    "lens-init-milestone":                ("both",  "any"),
+    "lens-milestone-yaml":                ("both",  "any"),
+    "lens-new-workstream":                ("any",   "plan"),
     "lens-new-project":                   ("both",  "any"),
-    "lens-new-service":                   ("both",  "any"),
+    "lens-new-milestone":                 ("both",  "any"),
     "lens-next":                          ("both",  "any"),
     "lens-preflight":                     ("both",  "any"),
     "lens-preplan":                       ("both",  "plan"),
@@ -390,7 +390,7 @@ def emit_onboard_next_steps(project_root: Path) -> None:
         echo("  2. Then use /dev to continue implementation for that feature.")
     else:
         echo("  Use /switch to continue existing work.")
-        echo("  Use /new-* to create new work.")
+        echo("  Use /new-workstream, /new-project, or /new-milestone to create new work.")
     echo("  Use /next anytime to get the recommended next command for the current context.")
 
 
@@ -626,7 +626,7 @@ def main() -> int:
             echo("  Re-run setup-control-repo.py if the governance clone is missing.")
             echo("  It takes about 2 minutes and only needs to run once.")
             echo("")
-            echo("  Then run /new-project (or /new-domain for step-by-step setup) and retry this command.")
+            echo("  Then run /new-workstream (or /new-project once a workstream exists) and retry this command.")
             return 1
 
     # ------------------------------------------------------------------

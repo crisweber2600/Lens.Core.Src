@@ -88,7 +88,6 @@ lens-work/                              # Module root
 │   │   ├── upgrade/                    #   /lens-upgrade — migrate control repo schema
 │   │   ├── dashboard/                  #   /dashboard — multi-initiative Gantt + blocking PRs
 │   │   ├── log-problem/                #   /log-problem — record issues/blockers
-│   │   ├── move-feature/               #   /move-feature — relocate feature between initiatives
 │   │   ├── split-feature/              #   /split-feature — split feature into sub-initiatives
 │   │   ├── approval-status/            #   /approval-status — check PR approval state
 │   │   ├── pause-epic/                 #   /pause-epic — pause active epic work
@@ -130,7 +129,6 @@ lens-work/                              # Module root
 │   ├── lens-work.compliance-check.prompt.md
 │   ├── lens-work.setup-repo.prompt.md
 │   ├── lens-work.log-problem.prompt.md
-│   ├── lens-work.move-feature.prompt.md
 │   ├── lens-work.split-feature.prompt.md
 │   ├── lens-work.approval-status.prompt.md
 │   ├── lens-work.pause-epic.prompt.md

@@ -133,7 +133,7 @@ flowchart LR
 | `/switch` | Change active feature context |
 | `/discover` | Reconcile repo inventory with `TargetProjects/` |
 | `/retrospective`, `/log-problem` | Capture and analyze execution issues |
-| `/move-feature`, `/split-feature` | Reshape feature scope |
+| `/split-feature` | Reshape feature scope |
 | `/approval-status`, `/rollback`, `/profile`, `/module-management` | Operational support surfaces |
 
 ---

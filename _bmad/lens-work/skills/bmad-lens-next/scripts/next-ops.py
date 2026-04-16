@@ -22,6 +22,9 @@ import yaml
 SAFE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
 COMPLETE_SUFFIX = "-complete"
 LIFECYCLE_PATH = Path(__file__).resolve().parents[3] / "lifecycle.yaml"
+INDEX_CANDIDATES = ["milestone-index.yaml", "feature-index.yaml"]
+ROOT_CANDIDATES = ["milestones", "features"]
+RECORD_CANDIDATES = ["milestone.yaml", "feature.yaml"]
 
 # Legacy track names still appear in existing feature.yaml files.
 LEGACY_TRACK_ALIASES: dict[str, str] = {
@@ -60,6 +63,26 @@ def normalize_track(track: str, lifecycle: dict) -> str:
     if track in tracks:
         return track
     return LEGACY_TRACK_ALIASES.get(track, track)
+
+
+def get_item_id(data: dict) -> str:
+    return str(data.get("milestoneId") or data.get("featureId") or data.get("id") or "")
+
+
+def get_workstream(data: dict) -> str:
+    return str(data.get("workstream") or data.get("domain") or "")
+
+
+def get_project(data: dict) -> str:
+    return str(data.get("project") or data.get("service") or "")
+
+
+def get_checkpoints(data: dict) -> dict:
+    checkpoints = data.get("checkpoints")
+    if isinstance(checkpoints, dict):
+        return checkpoints
+    legacy = data.get("milestones")
+    return legacy if isinstance(legacy, dict) else {}
 
 
 def get_track_definition(track: str, lifecycle: dict) -> dict:
@@ -166,39 +189,45 @@ def validate_identifier(value: str, field_name: str) -> str | None:
 
 
 def find_feature(governance_repo: str, feature_id: str) -> Path | None:
-    """Find a feature.yaml by featureId, scanning all domains/services."""
-    features_dir = Path(governance_repo) / "features"
-    if not features_dir.exists():
-        return None
-    for yaml_file in features_dir.rglob("feature.yaml"):
-        try:
-            with open(yaml_file) as f:
-                data = yaml.safe_load(f)
-            if data and data.get("featureId") == feature_id:
-                return yaml_file
-        except (yaml.YAMLError, OSError):
+    """Find a milestone record by id, scanning v5 first with legacy fallback."""
+    for root_name in ROOT_CANDIDATES:
+        features_dir = Path(governance_repo) / root_name
+        if not features_dir.exists():
             continue
+        for record_name in RECORD_CANDIDATES:
+            for yaml_file in features_dir.rglob(record_name):
+                try:
+                    with open(yaml_file) as f:
+                        data = yaml.safe_load(f)
+                    if data and get_item_id(data) == feature_id:
+                        return yaml_file
+                except (yaml.YAMLError, OSError):
+                    continue
     return None
 
 
 def find_feature_via_index(governance_repo: str, feature_id: str) -> tuple[str, str] | None:
-    """Look up domain/service from feature-index.yaml. Returns (domain, service) or None."""
-    index_path = Path(governance_repo) / "feature-index.yaml"
-    if not index_path.exists():
-        return None
-    try:
-        with open(index_path) as f:
-            index = yaml.safe_load(f)
-        if not index or "features" not in index:
+    """Look up workstream/project from the milestone index. Returns (workstream, project) or None."""
+    for index_name in INDEX_CANDIDATES:
+        index_path = Path(governance_repo) / index_name
+        if not index_path.exists():
+            continue
+        try:
+            with open(index_path) as f:
+                index = yaml.safe_load(f)
+            if not isinstance(index, dict):
+                continue
+            entries = index.get("milestones") or index.get("features") or []
+            for entry in entries:
+                if not isinstance(entry, dict):
+                    continue
+                if get_item_id(entry) == feature_id:
+                    domain = get_workstream(entry)
+                    service = get_project(entry)
+                    if domain and service:
+                        return domain, service
+        except (yaml.YAMLError, OSError):
             return None
-        for entry in index.get("features", []):
-            if (entry.get("featureId") or entry.get("id")) == feature_id:
-                domain = entry.get("domain", "")
-                service = entry.get("service", "")
-                if domain and service:
-                    return domain, service
-    except (yaml.YAMLError, OSError):
-        return None
     return None
 
 
@@ -206,7 +235,7 @@ def build_recommendation(data: dict, lifecycle: dict) -> tuple[str, dict]:
     """Derive the next action recommendation from feature state."""
     phase = get_effective_phase(data, lifecycle)
     track_def = get_track_definition(str(data.get("track") or ""), lifecycle)
-    milestones = data.get("milestones") or {}
+    milestones = get_checkpoints(data)
     context = data.get("context") or {}
     links = data.get("links") or {}
 
@@ -238,21 +267,23 @@ def resolve_feature_path(args: argparse.Namespace) -> Path | None:
     """Resolve the feature.yaml path via direct path, index, or full scan."""
     # Direct lookup when domain + service are provided
     if args.domain and args.service:
-        candidate = (
-            Path(args.governance_repo) / "features" / args.domain / args.service / args.feature_id / "feature.yaml"
-        )
-        if candidate.exists():
-            return candidate
+        for root_name, record_name in (("milestones", "milestone.yaml"), ("features", "feature.yaml")):
+            candidate = (
+                Path(args.governance_repo) / root_name / args.domain / args.service / args.feature_id / record_name
+            )
+            if candidate.exists():
+                return candidate
 
     # Feature index lookup
     loc = find_feature_via_index(args.governance_repo, args.feature_id)
     if loc:
         domain, service = loc
-        candidate = (
-            Path(args.governance_repo) / "features" / domain / service / args.feature_id / "feature.yaml"
-        )
-        if candidate.exists():
-            return candidate
+        for root_name, record_name in (("milestones", "milestone.yaml"), ("features", "feature.yaml")):
+            candidate = (
+                Path(args.governance_repo) / root_name / domain / service / args.feature_id / record_name
+            )
+            if candidate.exists():
+                return candidate
 
     # Full scan fallback
     return find_feature(args.governance_repo, args.feature_id)
@@ -293,7 +324,7 @@ def cmd_suggest(args: argparse.Namespace) -> dict:
 
     return {
         "status": "pass",
-        "featureId": data.get("featureId", args.feature_id),
+        "featureId": get_item_id(data) or args.feature_id,
         "phase": phase,
         "track": data.get("track", "quickplan"),
         "path": str(feature_path),
@@ -317,9 +348,9 @@ Examples:
 
     suggest_p = subparsers.add_parser("suggest", help="Return the next recommended action")
     suggest_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
-    suggest_p.add_argument("--feature-id", required=True, help="Feature identifier")
-    suggest_p.add_argument("--domain", default="", help="Domain name (optional, accelerates lookup)")
-    suggest_p.add_argument("--service", default="", help="Service name (optional, accelerates lookup)")
+    suggest_p.add_argument("--feature-id", "--milestone-id", required=True, dest="feature_id", help="Milestone identifier")
+    suggest_p.add_argument("--domain", "--workstream", dest="domain", default="", help="Workstream name (optional, accelerates lookup)")
+    suggest_p.add_argument("--service", "--project", dest="service", default="", help="Project name (optional, accelerates lookup)")
 
     return parser
 

@@ -1,9 +1,9 @@
 ---
-name: bmad-lens-feature-yaml
-description: Feature YAML lifecycle operations and validation. Use when a workflow needs to create, read, update, validate, or list feature.yaml files.
+name: bmad-lens-milestone-yaml
+description: Milestone YAML lifecycle operations and validation. Use when a workflow needs to create, read, update, validate, or list milestone.yaml files.
 ---
 
-# Feature YAML Manager
+# Milestone YAML Manager
 
 ## Overview
 

@@ -85,7 +85,7 @@ def assert_true(name: str, actual):
 
 
 def test_create_feature():
-    """Valid feature creation creates feature.yaml, updates feature-index.yaml, creates summary.md."""
+    """Valid feature creation creates milestone.yaml, updates milestone-index.yaml, creates summary.md."""
     print("test_create_feature", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
         result, code = run([
@@ -102,7 +102,7 @@ def test_create_feature():
         assert_eq("create exit code", code, 0)
         assert_eq("featureId in result", result.get("featureId"), "auth-refresh")
         assert_eq("index_updated", result.get("index_updated"), True)
-        assert_true("feature_yaml_path in result", result.get("feature_yaml_path"))
+        assert_true("milestone_yaml_path in result", result.get("milestone_yaml_path"))
         assert_true("summary_path in result", result.get("summary_path"))
         assert_true("container markers returned", len(result.get("container_markers", [])) == 2)
         assert_true("git_commands non-empty", len(result.get("git_commands", [])) > 0)
@@ -115,42 +115,42 @@ def test_create_feature():
         assert_eq("recommended_command", result.get("recommended_command"), "/businessplan")
         assert_eq("router_command", result.get("router_command"), "/next")
 
-        domain_marker = Path(tmp) / "features" / "platform" / "domain.yaml"
-        service_marker = Path(tmp) / "features" / "platform" / "identity" / "service.yaml"
+        domain_marker = Path(tmp) / "milestones" / "platform" / "workstream.yaml"
+        service_marker = Path(tmp) / "milestones" / "platform" / "identity" / "project.yaml"
         assert_eq("domain marker exists", domain_marker.exists(), True)
         assert_eq("service marker exists", service_marker.exists(), True)
 
-        feature_yaml = Path(tmp) / "features" / "platform" / "identity" / "auth-refresh" / "feature.yaml"
-        assert_eq("feature.yaml exists", feature_yaml.exists(), True)
+        feature_yaml = Path(tmp) / "milestones" / "platform" / "identity" / "auth-refresh" / "milestone.yaml"
+        assert_eq("milestone.yaml exists", feature_yaml.exists(), True)
 
         with open(feature_yaml) as f:
             data = yaml.safe_load(f)
-        assert_eq("featureId in yaml", data.get("featureId"), "auth-refresh")
-        assert_eq("domain in yaml", data.get("domain"), "platform")
-        assert_eq("service in yaml", data.get("service"), "identity")
+        assert_eq("milestoneId in yaml", data.get("milestoneId"), "auth-refresh")
+        assert_eq("workstream in yaml", data.get("workstream"), "platform")
+        assert_eq("project in yaml", data.get("project"), "identity")
         assert_eq("phase in yaml", data.get("phase"), "businessplan")
         assert_eq("track in yaml", data.get("track"), "quickplan")
         assert_eq("team lead", data.get("team", [{}])[0].get("role"), "lead")
         assert_eq("team username", data.get("team", [{}])[0].get("username"), "cweber")
         assert_eq("docs.path", data.get("docs", {}).get("path"), "docs/platform/identity/auth-refresh")
-        assert_eq("docs.governance_docs_path", data.get("docs", {}).get("governance_docs_path"), "features/platform/identity/auth-refresh/docs")
+        assert_eq("docs.governance_docs_path", data.get("docs", {}).get("governance_docs_path"), "milestones/platform/identity/auth-refresh/docs")
 
-        index_path = Path(tmp) / "feature-index.yaml"
-        assert_eq("feature-index.yaml exists", index_path.exists(), True)
+        index_path = Path(tmp) / "milestone-index.yaml"
+        assert_eq("milestone-index.yaml exists", index_path.exists(), True)
 
         with open(index_path) as f:
             idx = yaml.safe_load(f)
-        ids = [e.get("id") for e in idx.get("features", [])]
+        ids = [e.get("milestoneId") or e.get("id") for e in idx.get("milestones", [])]
         assert_true("auth-refresh in index", "auth-refresh" in ids)
 
-        entry = next(e for e in idx["features"] if e["id"] == "auth-refresh")
-        assert_eq("index entry domain", entry.get("domain"), "platform")
-        assert_eq("index entry service", entry.get("service"), "identity")
+        entry = next(e for e in idx["milestones"] if (e.get("milestoneId") or e.get("id")) == "auth-refresh")
+        assert_eq("index entry workstream", entry.get("workstream"), "platform")
+        assert_eq("index entry project", entry.get("project"), "identity")
         assert_eq("index entry status", entry.get("status"), "businessplan")
         assert_eq("index entry owner", entry.get("owner"), "cweber")
         assert_eq("index entry plan_branch", entry.get("plan_branch"), "auth-refresh-plan")
 
-        summary_path = Path(tmp) / "features" / "platform" / "identity" / "auth-refresh" / "summary.md"
+        summary_path = Path(tmp) / "milestones" / "platform" / "identity" / "auth-refresh" / "summary.md"
         assert_eq("summary.md exists", summary_path.exists(), True)
         summary_text = summary_path.read_text()
         assert_true("summary contains starting phase", "Status: businessplan" in summary_text)
@@ -179,15 +179,15 @@ def test_full_track_starts_in_preplan():
         assert_eq("full recommended_command", result.get("recommended_command"), "/preplan")
         assert_eq("full router_command", result.get("router_command"), "/next")
 
-        feature_yaml = Path(tmp) / "features" / "platform" / "identity" / "full-feature" / "feature.yaml"
+        feature_yaml = Path(tmp) / "milestones" / "platform" / "identity" / "full-feature" / "milestone.yaml"
         with open(feature_yaml) as f:
             data = yaml.safe_load(f)
         assert_eq("full phase in yaml", data.get("phase"), "preplan")
 
-        index_path = Path(tmp) / "feature-index.yaml"
+        index_path = Path(tmp) / "milestone-index.yaml"
         with open(index_path) as f:
             idx = yaml.safe_load(f)
-        entry = next(e for e in idx["features"] if e["id"] == "full-feature")
+        entry = next(e for e in idx["milestones"] if (e.get("milestoneId") or e.get("id")) == "full-feature")
         assert_eq("full index status", entry.get("status"), "preplan")
 
 
@@ -208,12 +208,12 @@ def test_create_domain_marker():
         assert_eq("domain scope", result.get("scope"), "domain")
         assert_true("domain git commands non-empty", len(result.get("git_commands", [])) > 0)
 
-        marker_path = Path(tmp) / "features" / "platform" / "domain.yaml"
+        marker_path = Path(tmp) / "milestones" / "platform" / "workstream.yaml"
         assert_eq("domain marker exists", marker_path.exists(), True)
 
         with open(marker_path) as f:
             data = yaml.safe_load(f)
-        assert_eq("domain marker kind", data.get("kind"), "domain")
+        assert_eq("domain marker kind", data.get("kind"), "workstream")
         assert_eq("domain marker id", data.get("id"), "platform")
         assert_eq("domain marker owner", data.get("owner"), "cweber")
 
@@ -237,14 +237,14 @@ def test_create_service_marker_creates_parent_domain():
         assert_eq("parent domain created", result.get("created_domain_marker"), True)
         assert_eq("two markers created", len(result.get("created_marker_paths", [])), 2)
 
-        domain_marker = Path(tmp) / "features" / "platform" / "domain.yaml"
-        service_marker = Path(tmp) / "features" / "platform" / "identity" / "service.yaml"
+        domain_marker = Path(tmp) / "milestones" / "platform" / "workstream.yaml"
+        service_marker = Path(tmp) / "milestones" / "platform" / "identity" / "project.yaml"
         assert_eq("implicit domain marker exists", domain_marker.exists(), True)
         assert_eq("service marker exists", service_marker.exists(), True)
 
         with open(service_marker) as f:
             data = yaml.safe_load(f)
-        assert_eq("service marker kind", data.get("kind"), "service")
+        assert_eq("service marker kind", data.get("kind"), "project")
         assert_eq("service marker name", data.get("name"), "Identity")
 
 
@@ -292,10 +292,10 @@ def test_duplicate_domain_service_rejected():
 
 
 def test_index_created_when_missing():
-    """feature-index.yaml is created when it does not exist."""
+    """milestone-index.yaml is created when it does not exist."""
     print("test_index_created_when_missing", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
-        index_path = Path(tmp) / "feature-index.yaml"
+        index_path = Path(tmp) / "milestone-index.yaml"
         assert_eq("index absent before create", index_path.exists(), False)
 
         result, code = run([
@@ -313,7 +313,7 @@ def test_index_created_when_missing():
 
         with open(index_path) as f:
             idx = yaml.safe_load(f)
-        assert_eq("index has one entry", len(idx.get("features", [])), 1)
+        assert_eq("index has one entry", len(idx.get("milestones", [])), 1)
 
 
 def test_dry_run():
@@ -344,8 +344,8 @@ def test_dry_run():
         assert_eq("dry run recommended_command", result.get("recommended_command"), "/businessplan")
         assert_eq("dry run router_command", result.get("router_command"), "/next")
 
-        feature_yaml = Path(tmp) / "features" / "platform" / "identity" / "dry-feature" / "feature.yaml"
-        assert_eq("feature.yaml not created", feature_yaml.exists(), False)
+        feature_yaml = Path(tmp) / "milestones" / "platform" / "identity" / "dry-feature" / "milestone.yaml"
+        assert_eq("milestone.yaml not created", feature_yaml.exists(), False)
 
 
 def test_express_track_defers_planning_pr():
@@ -371,16 +371,16 @@ def test_express_track_defers_planning_pr():
         assert_eq("express recommended_command", result.get("recommended_command"), "/expressplan")
         assert_eq("express router_command", result.get("router_command"), "/next")
 
-        feature_yaml = Path(tmp) / "features" / "platform" / "identity" / "express-feature" / "feature.yaml"
+        feature_yaml = Path(tmp) / "milestones" / "platform" / "identity" / "express-feature" / "milestone.yaml"
         with open(feature_yaml) as f:
             data = yaml.safe_load(f)
         assert_eq("express phase in yaml", data.get("phase"), "expressplan")
 
-        index_path = Path(tmp) / "feature-index.yaml"
+        index_path = Path(tmp) / "milestone-index.yaml"
         assert_eq("index created", index_path.exists(), True)
         with open(index_path) as f:
             idx = yaml.safe_load(f)
-        entry = next(e for e in idx["features"] if e["id"] == "express-feature")
+        entry = next(e for e in idx["milestones"] if (e.get("milestoneId") or e.get("id")) == "express-feature")
         assert_eq("express index status", entry.get("status"), "expressplan")
 
 
@@ -553,7 +553,7 @@ def test_fetch_context_with_existing_index():
 
 
 def test_fetch_context_full_depth():
-    """fetch-context --depth full returns feature.yaml paths for related features."""
+    """fetch-context --depth full returns milestone.yaml paths for related features."""
     print("test_fetch_context_full_depth", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
         for fid in ["feat-a", "feat-b"]:
@@ -576,7 +576,7 @@ def test_fetch_context_full_depth():
         ])
         assert_eq("full depth status", result.get("status"), "pass")
         context_paths = result.get("context_paths", [])
-        assert_true("full depth returns feature.yaml paths", all("feature.yaml" in p for p in context_paths))
+        assert_true("full depth returns milestone.yaml paths", all("milestone.yaml" in p for p in context_paths))
 
 
 def test_fetch_context_feature_not_found():
@@ -632,12 +632,12 @@ def test_fetch_context_uses_feature_yaml_dependencies():
                 "--username", "cweber",
             ])
 
-        feature_path = Path(tmp) / "features" / "core" / "svc" / "feat-a" / "feature.yaml"
+        feature_path = Path(tmp) / "milestones" / "core" / "svc" / "feat-a" / "milestone.yaml"
         feature_data = yaml.safe_load(feature_path.read_text(encoding="utf-8"))
         feature_data.setdefault("dependencies", {})["depends_on"] = ["feat-b"]
         feature_path.write_text(yaml.dump(feature_data, sort_keys=False), encoding="utf-8")
 
-        dep_docs = Path(tmp) / "features" / "core" / "svc" / "feat-b" / "docs"
+        dep_docs = Path(tmp) / "milestones" / "core" / "svc" / "feat-b" / "docs"
         dep_docs.mkdir(parents=True, exist_ok=True)
         (dep_docs / "prd.md").write_text("# Dep PRD\n", encoding="utf-8")
 
@@ -651,7 +651,7 @@ def test_fetch_context_uses_feature_yaml_dependencies():
         assert_eq("feature yaml dep exit code", code, 0)
         assert_true("depends_on contains feat-b", "feat-b" in result.get("depends_on", []))
         paths = result.get("context_paths", [])
-        assert_true("dependency feature yaml included", any("feat-b/feature.yaml" in p for p in paths))
+        assert_true("dependency milestone yaml included", any("feat-b/milestone.yaml" in p for p in paths))
         assert_true("dependency docs included", any("feat-b/docs/prd.md" in p for p in paths))
 
 
@@ -670,9 +670,9 @@ def test_fetch_context_service_refs_include_service_context():
             "--username", "cweber",
         ])
 
-        service_dir = Path(tmp) / "features" / "platform" / "payments"
+        service_dir = Path(tmp) / "milestones" / "platform" / "payments"
         service_dir.mkdir(parents=True, exist_ok=True)
-        (service_dir / "service.yaml").write_text("kind: service\nid: platform-payments\n", encoding="utf-8")
+        (service_dir / "project.yaml").write_text("kind: project\nid: platform-payments\n", encoding="utf-8")
         docs_dir = service_dir / "docs"
         docs_dir.mkdir(parents=True, exist_ok=True)
         (docs_dir / "overview.md").write_text("# Payments\n", encoding="utf-8")
@@ -690,9 +690,9 @@ def test_fetch_context_service_refs_include_service_context():
         assert_eq("service ref exit code", code, 0)
         assert_eq("service ref echoed", result.get("service_refs"), ["payments"])
         service_paths = result.get("service_context_paths", [])
-        assert_true("service yaml included", any("features/platform/payments/service.yaml" in p for p in service_paths))
-        assert_true("service docs included", any("features/platform/payments/docs/overview.md" in p for p in service_paths))
-        assert_true("service summary included", any("features/platform/payments/invoice-sync/summary.md" in p for p in service_paths))
+        assert_true("project yaml included", any("milestones/platform/payments/project.yaml" in p for p in service_paths))
+        assert_true("service docs included", any("milestones/platform/payments/docs/overview.md" in p for p in service_paths))
+        assert_true("service summary included", any("milestones/platform/payments/invoice-sync/summary.md" in p for p in service_paths))
 
 
 def test_fetch_context_service_ref_text_detects_service_context():
@@ -710,9 +710,9 @@ def test_fetch_context_service_ref_text_detects_service_context():
             "--username", "cweber",
         ])
 
-        service_dir = Path(tmp) / "features" / "platform" / "payments"
+        service_dir = Path(tmp) / "milestones" / "platform" / "payments"
         service_dir.mkdir(parents=True, exist_ok=True)
-        (service_dir / "service.yaml").write_text("kind: service\nid: platform-payments\n", encoding="utf-8")
+        (service_dir / "project.yaml").write_text("kind: project\nid: platform-payments\n", encoding="utf-8")
         docs_dir = service_dir / "docs"
         docs_dir.mkdir(parents=True, exist_ok=True)
         (docs_dir / "handoff.md").write_text("# Payments Handoff\n", encoding="utf-8")
@@ -728,7 +728,7 @@ def test_fetch_context_service_ref_text_detects_service_context():
         assert_eq("detected service ref", result.get("detected_service_refs"), ["payments"])
         assert_eq("service refs include detected service", result.get("service_refs"), ["payments"])
         service_paths = result.get("service_context_paths", [])
-        assert_true("detected service docs included", any("features/platform/payments/docs/handoff.md" in p for p in service_paths))
+        assert_true("detected service docs included", any("milestones/platform/payments/docs/handoff.md" in p for p in service_paths))
         assert_eq("no missing service refs", result.get("missing_service_refs"), [])
 
 
@@ -737,32 +737,32 @@ def test_fetch_context_reports_missing_detected_service_context():
     print("test_fetch_context_reports_missing_detected_service_context", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
         feature_index = {
-            "features": [
+            "milestones": [
                 {
-                    "id": "auth-login",
-                    "domain": "platform",
-                    "service": "identity",
+                    "milestoneId": "auth-login",
+                    "workstream": "platform",
+                    "project": "identity",
                     "status": "preplan",
                     "owner": "cweber",
                 },
                 {
-                    "id": "payments-shell",
-                    "domain": "platform",
-                    "service": "payments",
+                    "milestoneId": "payments-shell",
+                    "workstream": "platform",
+                    "project": "payments",
                     "status": "preplan",
                     "owner": "cweber",
                 },
             ]
         }
-        Path(tmp, "feature-index.yaml").write_text(
+        Path(tmp, "milestone-index.yaml").write_text(
             yaml.dump(feature_index, sort_keys=False),
             encoding="utf-8",
         )
 
-        target_feature_dir = Path(tmp) / "features" / "platform" / "identity" / "auth-login"
+        target_feature_dir = Path(tmp) / "milestones" / "platform" / "identity" / "auth-login"
         target_feature_dir.mkdir(parents=True, exist_ok=True)
         target_feature = make_feature_yaml_fixture("auth-login", "platform", "identity")
-        (target_feature_dir / "feature.yaml").write_text(
+        (target_feature_dir / "milestone.yaml").write_text(
             yaml.dump(target_feature, sort_keys=False),
             encoding="utf-8",
         )
@@ -796,10 +796,10 @@ def test_fetch_context_service_ref_text_scopes_to_target_domain():
         ])
 
         for domain in ["platform", "core"]:
-            service_dir = Path(tmp) / "features" / domain / "payments"
+            service_dir = Path(tmp) / "milestones" / domain / "payments"
             service_dir.mkdir(parents=True, exist_ok=True)
-            (service_dir / "service.yaml").write_text(
-                f"kind: service\nid: {domain}-payments\n",
+            (service_dir / "project.yaml").write_text(
+                f"kind: project\nid: {domain}-payments\n",
                 encoding="utf-8",
             )
             docs_dir = service_dir / "docs"
@@ -815,8 +815,8 @@ def test_fetch_context_service_ref_text_scopes_to_target_domain():
         assert_eq("domain-scoped service status", result.get("status"), "pass")
         assert_eq("domain-scoped service exit code", code, 0)
         service_paths = result.get("service_context_paths", [])
-        assert_true("platform service docs included", any("features/platform/payments/docs/platform.md" in p for p in service_paths))
-        assert_true("core service docs excluded", all("features/core/payments/" not in p for p in service_paths))
+        assert_true("platform service docs included", any("milestones/platform/payments/docs/platform.md" in p for p in service_paths))
+        assert_true("core service docs excluded", all("milestones/core/payments/" not in p for p in service_paths))
 
 
 def test_fetch_context_service_context_without_service_marker():
@@ -834,7 +834,7 @@ def test_fetch_context_service_context_without_service_marker():
             "--username", "cweber",
         ])
 
-        payments_feature_dir = Path(tmp) / "features" / "platform" / "payments" / "invoice-sync"
+        payments_feature_dir = Path(tmp) / "milestones" / "platform" / "payments" / "invoice-sync"
         payments_feature_dir.mkdir(parents=True, exist_ok=True)
         (payments_feature_dir / "summary.md").write_text("# Invoice Sync\n", encoding="utf-8")
 
@@ -848,7 +848,7 @@ def test_fetch_context_service_context_without_service_marker():
         assert_eq("summary-only service exit code", code, 0)
         assert_true(
             "summary-only service included",
-            any("features/platform/payments/invoice-sync/summary.md" in p for p in result.get("service_context_paths", [])),
+            any("milestones/platform/payments/invoice-sync/summary.md" in p for p in result.get("service_context_paths", [])),
         )
         assert_eq("summary-only service not marked missing", result.get("missing_service_refs"), [])
 
@@ -945,8 +945,8 @@ def test_create_feature_execute_governance_git():
         )
         assert_true("feature gh commands still present", result.get("gh_commands"))
 
-        feature_yaml = governance_repo / "features" / "platform" / "identity" / "auth-refresh" / "feature.yaml"
-        summary_path = governance_repo / "features" / "platform" / "identity" / "auth-refresh" / "summary.md"
+        feature_yaml = governance_repo / "milestones" / "platform" / "identity" / "auth-refresh" / "milestone.yaml"
+        summary_path = governance_repo / "milestones" / "platform" / "identity" / "auth-refresh" / "summary.md"
         assert_eq("feature yaml exists after publish", feature_yaml.exists(), True)
         assert_eq("summary exists after publish", summary_path.exists(), True)
         assert_eq(
@@ -993,7 +993,7 @@ def test_create_feature_execute_governance_git_dry_run_skips_git():
             assert_true("feature execute dry-run control repo commands present", result.get("control_repo_git_commands"))
             assert_eq(
                 "dry-run feature yaml absent",
-                (Path(gov_tmp) / "features" / "platform" / "identity" / "auth-refresh" / "feature.yaml").exists(),
+                (Path(gov_tmp) / "milestones" / "platform" / "identity" / "auth-refresh" / "milestone.yaml").exists(),
                 False,
             )
 
@@ -1025,22 +1025,22 @@ def test_create_feature_execute_governance_git_requires_clean_repo():
         assert_true("feature dirty repo surfaced preflight error", "Governance git preflight failed" in (result.get("error") or ""))
         assert_eq(
             "feature yaml not created after dirty preflight failure",
-            (governance_repo / "features" / "platform" / "identity" / "auth-refresh" / "feature.yaml").exists(),
+            (governance_repo / "milestones" / "platform" / "identity" / "auth-refresh" / "milestone.yaml").exists(),
             False,
         )
 
 
 def make_feature_yaml_fixture(feature_id: str, domain: str, service: str) -> dict:
-    """Return a minimal feature.yaml payload for fetch-context tests."""
+    """Return a minimal milestone.yaml payload for fetch-context tests."""
     return {
         "name": feature_id.replace("-", " ").title(),
         "description": "",
-        "featureId": feature_id,
-        "domain": domain,
-        "service": service,
+        "milestoneId": feature_id,
+        "workstream": domain,
+        "project": service,
         "phase": "preplan",
         "track": "quickplan",
-        "milestones": {},
+        "checkpoints": {},
         "team": [{"username": "cweber", "role": "lead"}],
         "dependencies": {"depends_on": [], "depended_by": []},
         "target_repos": [],
@@ -1051,7 +1051,7 @@ def make_feature_yaml_fixture(feature_id: str, domain: str, service: str) -> dic
         "phase_transitions": [],
         "docs": {
             "path": f"docs/{domain}/{service}/{feature_id}",
-            "governance_docs_path": f"features/{domain}/{service}/{feature_id}/docs",
+            "governance_docs_path": f"milestones/{domain}/{service}/{feature_id}/docs",
         },
     }
 
@@ -1273,7 +1273,7 @@ def test_create_domain_execute_governance_git():
             result.get("workspace_git_commands"),
         )
 
-        marker_path = governance_repo / "features" / "platform" / "domain.yaml"
+        marker_path = governance_repo / "milestones" / "platform" / "workstream.yaml"
         constitution_path = governance_repo / "constitutions" / "platform" / "constitution.md"
         assert_eq("domain marker pushed locally", marker_path.exists(), True)
         assert_eq("domain constitution pushed locally", constitution_path.exists(), True)
@@ -1315,8 +1315,8 @@ def test_create_service_execute_governance_git():
         assert_eq("service created domain marker flag", result.get("created_domain_marker"), True)
         assert_eq("service created domain constitution flag", result.get("created_domain_constitution"), True)
 
-        domain_marker = governance_repo / "features" / "platform" / "domain.yaml"
-        service_marker = governance_repo / "features" / "platform" / "identity" / "service.yaml"
+        domain_marker = governance_repo / "milestones" / "platform" / "workstream.yaml"
+        service_marker = governance_repo / "milestones" / "platform" / "identity" / "project.yaml"
         service_constitution = governance_repo / "constitutions" / "platform" / "identity" / "constitution.md"
         assert_eq("service domain marker exists", domain_marker.exists(), True)
         assert_eq("service marker exists", service_marker.exists(), True)
@@ -1355,7 +1355,7 @@ def test_create_domain_execute_governance_git_dry_run_skips_git():
             result.get("remaining_git_commands"),
             result.get("git_commands"),
         )
-        assert_eq("dry-run domain marker absent", (Path(gov_tmp) / "features" / "platform" / "domain.yaml").exists(), False)
+        assert_eq("dry-run domain marker absent", (Path(gov_tmp) / "milestones" / "platform" / "workstream.yaml").exists(), False)
 
 
 def test_create_domain_execute_governance_git_syncs_before_duplicate_check():
@@ -1393,7 +1393,7 @@ def test_create_domain_execute_governance_git_syncs_before_duplicate_check():
         assert_true("stale clone duplicate surfaced marker error", "already exists" in (stale_result.get("error") or ""))
         assert_eq(
             "stale clone pulled duplicate marker before failing",
-            (governance_repo / "features" / "platform" / "domain.yaml").exists(),
+            (governance_repo / "milestones" / "platform" / "workstream.yaml").exists(),
             True,
         )
 
@@ -1419,9 +1419,9 @@ def test_create_domain_writes_context_yaml():
 
             with open(context_path) as f:
                 ctx = yaml.safe_load(f)
-            assert_eq("context domain", ctx.get("domain"), "platform")
-            assert_eq("context service is null", ctx.get("service"), None)
-            assert_eq("context updated_by", ctx.get("updated_by"), "new-domain")
+            assert_eq("context workstream", ctx.get("workstream"), "platform")
+            assert_eq("context project is null", ctx.get("project"), None)
+            assert_eq("context updated_by", ctx.get("updated_by"), "new-workstream")
             assert_true("context updated_at set", ctx.get("updated_at"))
 
 
@@ -1447,9 +1447,9 @@ def test_create_service_writes_context_yaml():
 
             with open(context_path) as f:
                 ctx = yaml.safe_load(f)
-            assert_eq("context domain", ctx.get("domain"), "platform")
-            assert_eq("context service", ctx.get("service"), "identity")
-            assert_eq("context updated_by", ctx.get("updated_by"), "new-service")
+            assert_eq("context workstream", ctx.get("workstream"), "platform")
+            assert_eq("context project", ctx.get("project"), "identity")
+            assert_eq("context updated_by", ctx.get("updated_by"), "new-project")
             assert_true("context updated_at set", ctx.get("updated_at"))
 
 
@@ -1468,7 +1468,7 @@ def test_create_domain_no_personal_folder_skips_context():
 
 
 def test_read_context_returns_domain_service():
-    """read-context returns domain and service from a previously written context.yaml."""
+    """read-context returns workstream and project from a previously written context.yaml."""
     print("test_read_context_returns_domain_service", file=sys.stderr)
     with tempfile.TemporaryDirectory() as personal_tmp:
         # First write a context.yaml via create-service
@@ -1489,9 +1489,9 @@ def test_read_context_returns_domain_service():
         ])
         assert_eq("read-context status", result.get("status"), "pass")
         assert_eq("exit code", code, 0)
-        assert_eq("read-context domain", result.get("domain"), "commerce")
-        assert_eq("read-context service", result.get("service"), "payments")
-        assert_eq("read-context updated_by", result.get("updated_by"), "new-service")
+        assert_eq("read-context workstream", result.get("workstream"), "commerce")
+        assert_eq("read-context project", result.get("project"), "payments")
+        assert_eq("read-context updated_by", result.get("updated_by"), "new-project")
         assert_true("read-context updated_at set", result.get("updated_at"))
 
 

@@ -87,7 +87,6 @@ All scripts extracted to `scripts/` as cross-platform Python (`.py`) files:
 **Diagnostics — ✅ COMPLETED:**
 - Config load failure diagnosis (required fields list + /onboard link)
 - LENS_VERSION mismatch upgrade guidance (version display + /lens-upgrade link)
-- Move-feature in-flight work safeguards (branch/PR orphan detection)
 
 **Safety — ✅ COMPLETED:**
 - Branch-state validation before constitution load in preflight

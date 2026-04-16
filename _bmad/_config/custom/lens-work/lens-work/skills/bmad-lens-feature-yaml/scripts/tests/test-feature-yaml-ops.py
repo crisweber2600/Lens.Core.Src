@@ -61,9 +61,9 @@ def test_create_and_read():
         ])
         assert_eq("create status", result["status"], "pass")
         assert_eq("create exit code", code, 0)
-        assert_eq("featureId", result["data"]["featureId"], "auth-login")
-        assert_eq("domain", result["data"]["domain"], "platform")
-        assert_eq("service", result["data"]["service"], "identity")
+        assert_eq("milestoneId", result["data"]["milestoneId"], "auth-login")
+        assert_eq("workstream", result["data"]["workstream"], "platform")
+        assert_eq("project", result["data"]["project"], "identity")
         assert_eq("track", result["data"]["track"], "quickplan")
         assert_eq("team lead", result["data"]["team"][0]["role"], "lead")
         assert_eq(
@@ -74,11 +74,11 @@ def test_create_and_read():
         assert_eq(
             "docs.governance_docs_path",
             result["data"].get("docs", {}).get("governance_docs_path"),
-            "features/platform/identity/auth-login/docs",
+            "milestones/platform/identity/auth-login/docs",
         )
 
         # Verify file exists
-        feature_path = Path(tmp) / "features" / "platform" / "identity" / "auth-login" / "feature.yaml"
+        feature_path = Path(tmp) / "milestones" / "platform" / "identity" / "auth-login" / "milestone.yaml"
         assert_eq("file exists", feature_path.exists(), True)
 
         # Read
@@ -352,11 +352,11 @@ def test_validate_valid():
 def test_validate_missing_fields():
     print("test_validate_missing_fields", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
-        # Create a malformed feature.yaml manually
-        feature_dir = Path(tmp) / "features" / "core" / "api" / "bad-test"
+        # Create a malformed milestone.yaml manually
+        feature_dir = Path(tmp) / "milestones" / "core" / "api" / "bad-test"
         feature_dir.mkdir(parents=True)
-        with open(feature_dir / "feature.yaml", "w") as f:
-            yaml.dump({"featureId": "bad-test", "domain": "core", "service": "api"}, f)
+        with open(feature_dir / "milestone.yaml", "w") as f:
+            yaml.dump({"milestoneId": "bad-test", "workstream": "core", "project": "api"}, f)
 
         result, code = run([
             "validate",
@@ -690,7 +690,7 @@ def test_validate_exit_code_warning():
         ])
 
         # Manually add dep without bidirectional sync
-        feat_a_path = Path(tmp) / "features" / "core" / "api" / "dep-a" / "feature.yaml"
+        feat_a_path = Path(tmp) / "milestones" / "core" / "api" / "dep-a" / "milestone.yaml"
         with open(feat_a_path) as f:
             data = yaml.safe_load(f)
         data["dependencies"]["depends_on"] = ["dep-b"]
