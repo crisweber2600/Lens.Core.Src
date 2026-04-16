@@ -2,6 +2,8 @@
 
 A step-by-step guide from zero to your first running initiative. Each section builds on the previous one.
 
+If you need a quick mental model for the control repo, `TargetProjects/`, governance, and `lens.core/`, start with [Understanding Your LENS Workspace](./understanding-your-workspace.md).
+
 ---
 
 ## Prerequisites
@@ -134,7 +136,7 @@ flowchart TD
     C --> E[/next — get recommended action]
     E --> F[Run the recommended phase command]
     F --> G{Phase complete?}
-    G -->|Yes| H[/promote — advance milestone]
+    G -->|Yes| H[/next — continue lifecycle]
     G -->|No| F
     H --> I{All phases done?}
     I -->|Yes| J[/dev — delegate to implementation]
@@ -161,8 +163,12 @@ flowchart TD
 
 | Term | Meaning |
 |------|---------|
-| **Control repo** | The repo where LENS lives — contains planning artifacts, not code |
+| **Control repo** | Your operational LENS workspace where you run commands and keep planning artifacts |
+| **`TargetProjects/`** | The folder that contains the repos LENS works across, including target repos and governance |
 | **Target repo** | A code repo under `TargetProjects/` where implementation happens |
+| **Governance repo** | The shared repo that holds constitutions, repo inventory, and feature metadata |
+| **`lens.core/`** | The read-only LENS release payload inside the control repo |
+| **LENS** | The workbench that coordinates planning, governance, and target-repo implementation |
 | **Initiative** | A unit of work tracked by LENS (feature, tech change, spike, etc.) |
 | **Track** | A lifecycle profile that determines which phases to run |
 | **Phase** | A planning stage (preplan, businessplan, techplan, finalizeplan, or expressplan) |

@@ -49,7 +49,7 @@ lens-work/
 ├── workflows/       # 35 workflows across 4 categories (core/router/utility/governance)
 ├── prompts/         # 32 user-facing prompt trigger files
 ├── scripts/         # Cross-platform Python scripts (.py)
-├── docs/            # Reference documentation (22 files)
+├── docs/            # Reference documentation (23 files)
 ├── tests/           # Contract test specifications (4 markdown files)
 ├── assets/          # Template assets
 ├── _module-installer/  # CI/CD installer (Node.js)
@@ -75,6 +75,7 @@ lens-work/
 ## Links to Detailed Documentation
 
 - [Architecture](./architecture.md)
+- [Understanding Your LENS Workspace](./understanding-your-workspace.md)
 - [Source Tree Analysis](./source-tree-analysis.md)
 - [Development Guide](./development-guide.md)
 - [Lifecycle Reference](./lifecycle-reference.md) (existing)

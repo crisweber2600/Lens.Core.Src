@@ -9,6 +9,7 @@
 | Need to... | Go to |
 |------------|-------|
 | **Get started fast** | [**Getting Started**](./GETTING-STARTED.md) |
+| Understand your workspace | [Understanding Your LENS Workspace](./understanding-your-workspace.md) |
 | Follow the setup checklist | [Onboarding Checklist](./onboarding-checklist.md) |
 | See example configurations | [Configuration Examples](./configuration-examples.md) |
 | Understand the project | [Project Overview](./project-overview.md) |
@@ -66,6 +67,7 @@
 |----------|-------------|-------|
 | [Lifecycle Reference](./lifecycle-reference.md) | Complete lifecycle.yaml contract reference | ~400 |
 | [Lifecycle Visual Guide](./lifecycle-visual-guide.md) | Mermaid diagrams for lifecycle flow | ~200 |
+| [Understanding Your LENS Workspace](./understanding-your-workspace.md) | End-user guide to the control repo, `TargetProjects/`, governance, and `lens.core/` | — |
 | [Pipeline: Source to Release](./pipeline-source-to-release.md) | CI/CD pipeline documentation | 171 |
 | [Copilot Adapter Reference](./copilot-adapter-reference.md) | GitHub Copilot IDE adapter details | — |
 | [Copilot Adapter Templates](./copilot-adapter-templates.md) | Template definitions for adapter generation | — |

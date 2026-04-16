@@ -22,6 +22,8 @@ powershell uv run setup-control-repo.py
 
 This clones the governance repo and sets up the `TargetProjects/` folder where your code repos will live.
 
+If terms like control repo, governance repo, `TargetProjects/`, or `lens.core/` are new to you, read [Understanding Your LENS Workspace](./understanding-your-workspace.md) before moving on.
+
 ### Step 2: Onboard
 
 Open your AI chat and run:
@@ -132,6 +134,7 @@ See [Configuration Examples](./configuration-examples.md) for sample configs for
 
 ## Next Steps
 
+- [Understanding Your LENS Workspace](./understanding-your-workspace.md) — what lives where and how the main folders work together
 - [Onboarding Checklist](./onboarding-checklist.md) — detailed step-by-step with troubleshooting
 - [Lifecycle Reference](./lifecycle-reference.md) — deep dive into phases, milestones, and tracks
 - [Lifecycle Visual Guide](./lifecycle-visual-guide.md) — Mermaid diagrams of the full lifecycle
