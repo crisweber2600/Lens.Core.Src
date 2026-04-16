@@ -82,7 +82,7 @@ When `feature.yaml.target_repos` is empty:
 
 - Validate `initiative.phase_status[finalizeplan]`.
 - Check large-to-base promotion status.
-- If promotion not in `["complete", "passed", "passed_with_warnings"]`: auto-trigger `@lens promote` and exit (user re-runs after promotion).
+- If promotion not in `["complete", "passed", "passed_with_warnings"]`: halt and direct the user to inspect lifecycle state with `/status` before continuing.
 
 ## Constitutional Context
 
@@ -134,8 +134,8 @@ These modes apply only to the target repo. They do not change the control repo 2
    - `[2]` `feature-id` (default)
    - `[3]` `feature-id-username`
 4. Default to option 2 when the user confirms without overriding.
-5. Persist the chosen mode with `./scripts/target-repo-ops.py set-dev-branch-mode` so both governance `repo-inventory.yaml` and `feature.yaml.target_repos[]` store the same repo-scoped preference.
-6. Prepare the working branch with `./scripts/git-orchestration-ops.py prepare-dev-branch` and store:
+5. Persist the chosen mode with `skills/bmad-lens-target-repo/scripts/target-repo-ops.py set-dev-branch-mode` so both governance `repo-inventory.yaml` and `feature.yaml.target_repos[]` store the same repo-scoped preference.
+6. Prepare the working branch with `skills/bmad-lens-git-orchestration/scripts/git-orchestration-ops.py prepare-dev-branch` and store:
    - `dev_branch_mode`
    - `working_branch`
    - `base_branch`

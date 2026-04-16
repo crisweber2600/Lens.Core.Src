@@ -1,6 +1,6 @@
 # Source Tree Analysis — LENS Workbench Module (lens-work)
 
-> ⚠️ **Partial Update Notice (v4.0):** File tree snapshot is from v3.2. New skills, prompts, and workflows added in v4.0 are not reflected here. See `module.yaml` for the current manifest.
+> ⚠️ **Historical Snapshot Notice (v4.0):** This document is a retained v3 workflow-tree snapshot for migration reference. The current Lens.Core.Src module is skills-first, does not ship the old `workflows/` execution tree, and no longer exposes `/promote`. Use `module.yaml` and `component-inventory.md` for the live manifest.
 
 **Generated:** 2026-04-01 | **Scan Level:** Deep | **Module Version:** 4.0.0
 

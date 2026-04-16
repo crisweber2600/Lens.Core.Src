@@ -6,7 +6,6 @@ Lens,bmad-lens-switch,Switch,SW,"Switch to a different feature via git checkout"
 Lens,bmad-lens-status,Status,ST,"Show current feature state derived from git",,,anytime,,,,,
 Lens,bmad-lens-next,Next,NX,"Recommend next action based on lifecycle state",,,anytime,,,,,
 Lens,bmad-lens-help,Help,HP,"Show available commands and usage",,,anytime,,,,,
-Lens,bmad-lens-git-orchestration,Promote,PR,"Promote feature through next lifecycle milestone",,,anytime,,,,,
 Lens,bmad-lens-sensing,Sensing,SN,"Run cross-initiative overlap detection on demand",,,anytime,,,,,
 Lens,bmad-lens-constitution,Constitution,CN,"Resolve and display constitutional governance",,,anytime,,,,,
 Lens,bmad-lens-module-management,Module Management,MM,"Check module version and guide self-service updates",,,anytime,,,,,

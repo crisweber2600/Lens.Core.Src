@@ -240,7 +240,6 @@ prompts:
   - lens-next.prompt.md
   - lens-batch.prompt.md
   - lens-switch.prompt.md
-  - lens-promote.prompt.md
   - lens-constitution.prompt.md
   - lens-sensing.prompt.md
   - lens-audit.prompt.md
@@ -308,7 +307,6 @@ adapters:
       - .github/prompts/lens-next.prompt.md
       - .github/prompts/lens-batch.prompt.md
       - .github/prompts/lens-switch.prompt.md
-      - .github/prompts/lens-promote.prompt.md
       - .github/prompts/lens-constitution.prompt.md
       - .github/prompts/lens-sensing.prompt.md
       - .github/prompts/lens-audit.prompt.md
@@ -361,7 +359,6 @@ adapters:
       - .cursor/commands/bmad-lens-batch.md
       - .cursor/commands/bmad-lens-switch.md
       - .cursor/commands/bmad-lens-help.md
-      - .cursor/commands/bmad-lens-promote.md
       - .cursor/commands/bmad-lens-constitution.md
       - .cursor/commands/bmad-lens-audit.md
       - .cursor/commands/bmad-lens-sensing.md
@@ -385,7 +382,6 @@ adapters:
       - .claude/commands/bmad-lens-batch.md
       - .claude/commands/bmad-lens-switch.md
       - .claude/commands/bmad-lens-help.md
-      - .claude/commands/bmad-lens-promote.md
       - .claude/commands/bmad-lens-constitution.md
       - .claude/commands/bmad-lens-audit.md
       - .claude/commands/bmad-lens-sensing.md
@@ -410,7 +406,6 @@ adapters:
       - .codex/commands/bmad-lens-batch.md
       - .codex/commands/bmad-lens-switch.md
       - .codex/commands/bmad-lens-help.md
-      - .codex/commands/bmad-lens-promote.md
       - .codex/commands/bmad-lens-constitution.md
       - .codex/commands/bmad-lens-audit.md
       - .codex/commands/bmad-lens-sensing.md
@@ -434,7 +429,6 @@ adapters:
       - .opencode/commands/bmad-lens-batch.md
       - .opencode/commands/bmad-lens-switch.md
       - .opencode/commands/bmad-lens-help.md
-      - .opencode/commands/bmad-lens-promote.md
       - .opencode/commands/bmad-lens-constitution.md
       - .opencode/commands/bmad-lens-audit.md
       - .opencode/commands/bmad-lens-sensing.md

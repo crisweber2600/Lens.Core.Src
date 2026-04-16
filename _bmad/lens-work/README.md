@@ -2,65 +2,45 @@
 
 **Module Code:** `lens-work`
 **Type:** Standalone BMAD Module
-**Schema Version:** 3.4
+**Schema Version:** 4
 
 ## Overview
 
-LENS Workbench v3 provides guided lifecycle routing with git-orchestrated discipline for BMAD workflows. It manages the full planning lifecycle from pre-planning through sprint execution using automated branch topology, PR-based review gates, and constitutional governance.
+LENS Workbench v4 is a skills-first control-repo module for feature-first planning and delivery. The `@lens` agent is now a thin entry shell that routes users into real Lens skills for setup, help, status, next-step routing, planning conductors, governance, and execution handoff.
 
 ## Design Principles
 
 - **Git is the only source of truth** — no secondary state stores, no git-ignored runtime state
-- **PRs are the only gating mechanism** — automatic PR creation at phase/milestone promotion boundaries
+- **Reviewed artifacts and PRs gate progression** — phase handoff and lifecycle advancement happen through explicit review boundaries
 - **Authority domains are explicit** — every file belongs to exactly one domain
-- **Sensing is automatic** — cross-initiative awareness at lifecycle gates
-- **Declarative only** — no runtime code (JS, Python, etc.)
+- **Sensing is automatic** — cross-initiative awareness is checked at initialization and lifecycle review gates
+- **Declarative contracts plus focused tooling** — lifecycle behavior stays in YAML, with scripts limited to install/bootstrap/status/PR helpers
 
 ## Module Structure
 
 ```
 lens-work/
-├── bmadconfig.yaml        # BMAD agent activation config + source defaults
-├── lifecycle.yaml         # THE contract — phases, milestones, tracks, branches
-├── module.yaml            # Module identity, skills, workflow manifest
-├── module-help.csv        # Help entries (13-column format)
-├── agents/                # Runtime BMAD agent definitions
-├── skills/                # Folder-based skills (each has SKILL.md with frontmatter)
-│   ├── checklist/SKILL.md
-│   ├── constitution/SKILL.md
-│   ├── git-orchestration/SKILL.md
-│   ├── git-state/SKILL.md
-│   └── sensing/SKILL.md
-├── workflows/             # core, router, utility, governance (each has SKILL.md + workflow.md + steps/)
-├── prompts/               # User-facing prompt entry points
-├── scripts/               # Cross-platform PR creation & PAT management (no gh CLI needed)
+├── bmadconfig.yaml        # Source defaults for installed Lens configuration
+├── lifecycle.yaml         # Lifecycle contract and gate semantics
+├── module.yaml            # Module identity, skills, prompts, installers, adapters
+├── module-help.csv        # Help and discovery registry
+├── agents/                # Thin-shell Lens agent definitions
+├── skills/                # Active bmad-lens-* skill surface
+├── prompts/               # Published lens-*.prompt.md entry points
+├── scripts/               # Install/bootstrap/status/next-action/PR tooling
 ├── docs/                  # Human-readable reference documentation
-├── bmad-lens-work-setup/  # Legacy setup skill (use _module-installer for CI/CD)
-│   ├── SKILL.md
-│   ├── scripts/           # merge-config.py, merge-help-csv.py, cleanup-legacy.py
-│   └── assets/            # module.yaml, module-help.csv copies
-├── _module-installer/     # CI/CD installer — generates IDE adapters for release builds
-│   └── installer.js       # Node.js installer (called by promote-to-release.yml)
-├── .claude-plugin/        # marketplace.json distribution manifest
-└── tests/contracts/       # Slim contract tests
+├── bmad-lens-work-setup/  # Legacy setup assets retained for compatibility
+├── _module-installer/     # CI/CD adapter generator
+├── .claude-plugin/        # Distribution manifest
+└── tests/                 # Focused contract and script tests
 ```
 
+## Active Skill Surface
 
-## Skills (34)
-
-Skills fall into two archetypes:
-
-- **Lens Next skills** (28 `bmad-lens-*` skills) — registered in `module.yaml` and exposed as Copilot skills for direct invocation across the lifecycle.
-- **Legacy internal delegation skills** (6: `git-state`, `git-orchestration`, `constitution`, `sensing`, `checklist`, `dashboard`) — invoked by workflows for specific operations or thin SKILL.md wrappers that redirect to a workflow.
-
-| Skill | Purpose |
-|-------|---------|
-| `git-state` | Derive initiative state from git primitives (read-only) |
-| `git-orchestration` | Branch creation, commits, pushes, PR management, provider adapter (write) |
-| `constitution` | Constitutional governance resolution and compliance |
-| `sensing` | Cross-initiative overlap detection at lifecycle gates |
-| `checklist` | Phase gate checklists with progressive validation |
-| `dashboard` | Cross-feature dashboard generator with dependency graphs |
+- **Planning conductors** — `preplan`, `businessplan`, `techplan`, `adversarial-review`, `finalizeplan`, `expressplan`, `dev`, `complete`
+- **Lifecycle utilities** — `init-feature`, `target-repo`, `status`, `next`, `batch`, `switch`, `help`, `pause-resume`, `retrospective`
+- **Governance and reporting** — `constitution`, `sensing`, `audit`, `dashboard`, `approval-status`, `rollback`, `profile`
+- **Setup and migration** — `setup`, `migrate`, `upgrade`, `document-project`, with `onboard` retained only as a deprecated bridge
 
 ## Scripts
 
@@ -75,7 +55,7 @@ PAT resolution: `GITHUB_PAT` env var → `GH_TOKEN` env var → `profile.yaml` �
 
 ## Getting Started — New Control Repo
 
-A **control repo** is your local workspace for running LENS Workbench. The setup script bootstraps everything: it clones this release module, copies the IDE adapter, sets up your governance repo, and writes the configuration files that `/onboard` needs.
+A **control repo** is your local workspace for running LENS Workbench. The setup script bootstraps everything: it clones this release module, copies the IDE adapter, sets up your governance repo, and writes the configuration files that Lens setup and initialization prompts use.
 
 ### Step 1: Create and clone your control repo
 
@@ -100,17 +80,15 @@ git clone --branch beta https://github.com/your-username/lens.core.git
 Run with **no arguments** to enter the interactive wizard:
 
 ```bash
-```bash
 uv run lens.core/_bmad/lens-work/scripts/setup-control-repo.py
 ```
 
 The wizard auto-detects your GitHub username, walks you through each setting with smart defaults, and asks for confirmation before making changes.
 
-> **For CI / scripted use**, pass `--org` (bash) or `-Org` (PowerShell) to skip the wizard:
 > **For CI / scripted use**, pass `--org` to skip the wizard:
 >
 > ```bash
-> ./lens.core/_bmad/lens-work/scripts/setup-control-repo.sh --org your-username
+> uv run lens.core/_bmad/lens-work/scripts/setup-control-repo.py --org your-username
 > ```
 
 The setup script will:
@@ -119,7 +97,7 @@ The setup script will:
 2. **Copy `.github/`** from the release module — installs the GitHub Copilot adapter
 3. **Clone your governance repo** (auto-creates it as a private repo if `gh` CLI is available)
 4. **Create output directories** — `docs/lens-work/initiatives/`, `.lens/`, and `.lens/personal/`
-5. **Write `governance-setup.yaml`** — stores governance repo coordinates for preflight and `/onboard`
+5. **Write `governance-setup.yaml`** — stores governance repo coordinates for setup and initialization prompts
 6. **Write `.lens/LENS_VERSION`** — version compatibility file read by preflight
 7. **Update `.gitignore`** — excludes cloned repos and personal data
 
@@ -131,24 +109,23 @@ The setup script will:
 uv run lens.core/_bmad/lens-work/scripts/store-github-pat.py
 ```
 
-### Step 5: Run `/onboard`
+### Step 5: Initialize your first scope
 
 Open VS Code with GitHub Copilot Chat and type:
 
-```
-/onboard
+```text
+/new-project
 ```
 
-This validates authentication, creates your profile, and clones target project repos from the governance `repo-inventory.yaml`.
+Use `/new-project` for the combined bootstrap flow, or run `/new-domain`, `/new-service`, and `/new-feature` individually when you want explicit control over each scaffold step.
 
 ### Step 6 (Optional): Install additional IDE adapters
 
 GitHub Copilot is ready after setup. For other IDEs, run the module installer:
 
 ```bash
-```bash
 uv run lens.core/_bmad/lens-work/scripts/install.py --ide cursor   # single IDE
-uv run lens.core/_bmad/lens-work/scripts/install.py --all-ides      # all supported IDEs
+uv run lens.core/_bmad/lens-work/scripts/install.py --all-ides  # all supported IDEs
 ```
 
 > **Full setup details:** See [`scripts/README.md`](scripts/README.md) for parameter reference, generated file documentation, re-run behavior, and troubleshooting.
@@ -162,59 +139,54 @@ The setup script above handles the initial GitHub Copilot adapter automatically.
 ### Quick Install (default — GitHub Copilot adapter only)
 
 ```bash
-```bash
-# From the control repo root:
 uv run lens.core/_bmad/lens-work/scripts/install.py
 ```
 
 ### Multi-IDE Install
 
 ```bash
-./lens.core/_bmad/lens-work/scripts/install.sh --all-ides
+uv run lens.core/_bmad/lens-work/scripts/install.py --all-ides
 ```
 
 ### Update Existing Adapters
 
 ```bash
-./lens.core/_bmad/lens-work/scripts/install.sh --update
+uv run lens.core/_bmad/lens-work/scripts/install.py --update
 ```
 
 See `module.yaml` `install_questions` for configuration options (target projects path, default git provider, IDE selection).
 
 ## Quick Start
 
-1. **Install** — run the installer script above
-2. **Onboard** — use `/onboard` to bootstrap the control repo (detect provider, validate auth, create profile, auto-clone missing TargetProjects from inventory)
-3. **Create initiative** — use `/new-domain`, `/new-service`, or `/new-feature`
-4. **Begin planning** — use `/preplan` to start the lifecycle
-5. **Check status** — use `/status` at any time to see git-derived state
+1. **Bootstrap the control repo** — run `setup-control-repo.py`
+2. **Initialize scope** — use `/new-project` or the `/new-domain` + `/new-service` + `/new-feature` sequence
+3. **Begin planning** — use `/preplan` or `/expressplan`
+4. **Use `/next` for routing** — let Lens recommend the single best next step
+5. **Use `/status` for visibility** — inspect feature or portfolio state from governance metadata
 
 ## Components
 
 ### Agent
 
-- `LENS` — lifecycle router and control-plane orchestrator
+- `LENS` — thin-shell entry agent for Lens Workbench
 - Runtime source: `agents/lens.agent.md`
 - Structured companion for validation and tooling: `agents/lens.agent.yaml`
 
-### Workflow Sets
+### Published Surface
 
-- **Core:** `phase-lifecycle`, `milestone-promotion`
-- **Router:** `init-initiative`, `preplan`, `businessplan`, `techplan`, `devproposal`, `sprintplan`, `dev`, `discover`
-- **Utility:** `onboard`, `status`, `next`, `switch`, `help`, `module-management`
-- **Governance:** `compliance-check`, `resolve-constitution`, `cross-initiative`
+- Prompt entry points: `prompts/lens-*.prompt.md`
+- Skill registry: `module.yaml` `skills:` entries
+- Generated adapters: `_module-installer/installer.js` and `scripts/install.py`
 
-> See `module.yaml` for the complete manifest of 34 skills, 35 workflows, and 76 prompts.
+> See `module.yaml` for the complete manifest of active skills, prompts, scripts, and adapter surfaces.
 
 
 ## Commands
 
-All commands are available via the LENS agent menu. Initiative creation is now consolidated under a single `[NI] Create Initiative` entry (domain, service, or feature). New commands:
-- `[CL] Close Initiative` — formally complete, abandon, or supersede the current initiative
-- `[UG] Lens Upgrade` — migrate control repo to latest schema version
+`@lens` exposes only a compact shell menu. Use `/help` for command discovery and `/next` for the recommended next step.
 
-Menu/command triggers:
-`/onboard`, `/create-initiative` (`/new-domain`, `/new-service`, `/new-feature`), `/preplan`, `/businessplan`, `/techplan`, `/devproposal`, `/sprintplan`, `/dev`, `/status`, `/next`, `/switch`, `/promote`, `/sense`, `/constitution`, `/discover`, `/module-management`, `/help`, `/close`, `/lens-upgrade`, `/expressplan`, `/retrospective`, `/log-problem`, `/move-feature`, `/split-feature`, `/approval-status`, `/pause-epic`, `/resume-epic`, `/rollback-phase`, `/profile`, `/dashboard`, `/audit-all`
+Representative command surface:
+`/lens-setup`, `/new-project`, `/new-domain`, `/new-service`, `/new-feature`, `/preplan`, `/businessplan`, `/techplan`, `/adversarial-review`, `/finalizeplan`, `/expressplan`, `/dev`, `/complete`, `/status`, `/next`, `/batch`, `/switch`, `/discover`, `/constitution`, `/sensing`, `/audit`, `/approval-status`, `/rollback`, `/profile`, `/dashboard`, `/log-problem`, `/move-feature`, `/split-feature`, `/lens-upgrade`, `/document-project`
 
 ## Configuration
 
@@ -250,7 +222,7 @@ See the [docs/](docs/) folder for detailed reference:
 ## Dependencies
 
 - **Required:** `core` — BMAD core infrastructure (party-mode workflow, shared tasks, base agent definitions)
-- **Optional:** `cis` — Creative Innovation Suite (brainstorming, design thinking, storytelling skills used during preplan/expressplan), `tea` — Test Engineering Academy (test framework setup, test design, test automation skills used during devproposal/sprintplan)
+- **Optional:** `cis` — Creative Innovation Suite (brainstorming, design thinking, storytelling skills used during planning), `tea` — Test Engineering Academy (test design and automation skills used during implementation readiness and downstream delivery)
 
 ## Author
 
@@ -260,7 +232,7 @@ LENS Workbench is part of the BMad Method ecosystem. See the [BMad Method](https
 
 ## Known Issues & Next Steps
 
-- Token efficiency: Some workflow prompts and instructions could be compressed for lower token usage.
+- Token efficiency: Some prompts and instructions could be compressed for lower token usage.
 - Menu categorization: Opportunity to group menu items by lifecycle phase for clarity.
 - First-run detection: Logic could be refined for more robust onboarding.
 - Sensing workflow: Prompt and step consolidation for efficiency.

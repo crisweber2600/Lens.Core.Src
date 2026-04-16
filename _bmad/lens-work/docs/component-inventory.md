@@ -52,7 +52,6 @@ This inventory summarizes the active lens-work surfaces in the editable source m
 
 | Command | Backing Surface | Purpose |
 |---------|-----------------|---------|
-| `/promote` | git orchestration | Milestone progression |
 | `/constitution` | constitution skill | Governance resolution |
 | `/sensing` | sensing skill | Cross-initiative overlap detection |
 | `/audit` | audit skill | Compliance scanning |

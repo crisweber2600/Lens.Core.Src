@@ -18,10 +18,10 @@ The module operates as a **stateless orchestrator**: it reads state exclusively 
 
 | Axiom | Statement | Implementation |
 |-------|-----------|----------------|
-| A1 | Git is the only source of truth | Initiative state stored in committed `initiative-state.yaml`; no event logs, no shadow databases |
-| A2 | PRs are the only gating mechanism | Phase completion = merged PR; audience promotion = merged PR; no side-channel approval |
+| A1 | Git is the only source of truth | Shared feature state lives in committed `feature.yaml` and `feature-index.yaml`, with git branches and PR state providing runtime context |
+| A2 | PRs are the only gating mechanism | Plan handoff and lifecycle advancement happen through explicit PR and review boundaries; no side-channel approval |
 | A3 | Authority domains must be explicit | 4 authority domains; cross-authority writes are hard errors |
-| A4 | Sensing must be automatic at lifecycle gates | Runs at `/new-initiative` and `/promote`; can upgrade to hard gate via constitution |
+| A4 | Sensing must be automatic at lifecycle gates | Runs during initialization, review gates, and governance-sensitive lifecycle checks; constitutions can harden it into a blocking gate |
 | A5 | The control repo is an operational workspace | NO executable code outside `scripts/` and `_module-installer/`; all behavior declarative |
 
 ---
@@ -109,78 +109,57 @@ Implementation complete
 
 ### 4.1 Primary Agent: `@lens`
 
-The LENS Workbench agent is the single entry point for all user interaction. It operates as a **phase router** and **lifecycle orchestrator**.
+The LENS Workbench agent is the single entry point for all user interaction. In v4 it operates as a **thin entry shell** that routes users into real Lens skills instead of acting as a giant workflow router.
 
 **Dual Representation Pattern:**
 - `lens.agent.md` — Runtime source (markdown, human-readable, menu-driven)
 - `lens.agent.yaml` — Validator-compatible structured companion (IDE validation)
 
-**Activation Sequence (9 steps):**
-1. Load persona from agent file
-2. Load `bmadconfig.yaml` immediately (blockers if missing)
-3. Remember user's name from config
-4. Load `lifecycle.yaml` for phase/audience validity
-5. Show greeting with menu items
-6. Notify user of `/bmad-help` command availability
-7. **STOP and WAIT** for user input (critical: no auto-execution)
-8. Parse user input: number → menu item[n], text → case-insensitive match
-9. Extract handler attributes and process
+**Activation Sequence (10 steps):**
+1. Load persona from the agent file
+2. Attempt to load `bmadconfig.yaml`; if missing, continue in limited mode and direct the user to `/lens-setup`
+3. Load `lifecycle.yaml` so lifecycle terms and gates stay grounded
+4. Load `module-help.csv` for discovery context without expanding it into the shell menu
+5. Explain that `@lens` is a thin shell and that real work is delegated to Lens skills
+6. Show the compact shell menu only: Help, Next, Status, Setup, Init Feature, Chat, Dismiss
+7. Direct users to `/lens-help` for command discovery and `/lens-next` for the best next step
+8. **STOP and WAIT** for user input
+9. Execute only real skill files when a menu item is selected
+10. If no shell entry matches, answer directly when possible or redirect to `/lens-help`
 
 ### 4.2 Skill Delegation Model
 
 | Skill | Type | Purpose | Operations |
 |-------|------|---------|------------|
-| `git-state` | Read-only | Derive initiative state from git primitives | current-initiative, current-phase, phase-status, promotion-status |
-| `git-orchestration` | Write | Branch creation, commits, pushes, PR management | create-branch, create-milestone-branch, commit-artifacts, update-initiative-state |
-| `constitution` | Read-only | Governance resolution and compliance | resolve-constitution, check-compliance, resolve-context (cached) |
-| `sensing` | Read-only | Cross-initiative overlap detection | Two-pass (live branches + historical), classify: high/medium/low |
-| `checklist` | Read-only | Phase gate validation | evaluate-phase-gate, evaluate-promotion-gate |
+| `bmad-lens-feature-yaml` | Read/Write | Canonical feature-state operations | create, read, validate, update `feature.yaml` |
+| `bmad-lens-git-state` | Read-only | Branch and PR state queries for the 2-branch model | active feature, branch state, merge readiness |
+| `bmad-lens-git-orchestration` | Write | Branch creation, commits, pushes, PR management | create branches, commit docs, open/update PRs |
+| `bmad-lens-constitution` | Read-only | Governance resolution and compliance | resolve constitutions, explain rules, validate gates |
+| `bmad-lens-sensing` | Read-only | Cross-feature overlap detection | feature overlap checks, governance-sensitive drift detection |
+| `bmad-lens-help` / `bmad-lens-next` / `bmad-lens-status` | User-facing | Discovery and lifecycle routing | contextual help, next-action recommendation, status reporting |
 
 ---
 
-## 5. Workflow Architecture
+## 5. Command Surface Architecture
 
-### 5.1 Organization: 4 Categories, 35 Workflows
+### 5.1 Active Command Path
 
-| Category | Count | Purpose |
-|----------|-------|---------|
-| **Core** | 3 | Infrastructure — phase lifecycle, audience promotion, milestone promotion |
-| **Router** | 11 | User-facing phase flows — init, preplan, businessplan, techplan, adversarial-review, finalizeplan, dev, discover, complete, expressplan, retrospective |
+The live v4 execution surface is:
 
-#### Core Workflow Details
+- published `lens-*.prompt.md` entry points
+- generated IDE prompt and agent stubs
+- registered `bmad-lens-*` skills in `module.yaml`
+- supporting scripts and references used by those skills
 
-Core workflows are **internal infrastructure** — never invoked directly by users.
+This keeps `@lens` intentionally small while the real behavior lives in skills that are versioned, tested, and directly invocable.
 
-| Workflow | Trigger | Purpose |
-|----------|---------|--------|
-| `phase-lifecycle` | Called by router workflows after phase artifacts are committed | Detect phase completion, create/report phase PR, surface promotion readiness, clean up merged phase branches |
-| `audience-promotion` | Called by `/promote` when the next promotion step is an audience tier change | Validate gates (artifact, constitution, sensing), create next-audience branch, open promotion PR |
-| `milestone-promotion` | Called by `/promote` when the next promotion step is a milestone boundary | Validate gates (phase, artifact, constitution, sensing), create next-milestone branch, open promotion PR |
-| **Utility** | 17 | Operational — onboard, status, next, switch, help, promote, module-management, upgrade, dashboard, log-problem, move-feature, split-feature, approval-status, pause-epic, resume-epic, rollback-phase, profile |
-| **Governance** | 4 | Compliance — audit-all, compliance-check, cross-initiative, resolve-constitution |
+### 5.2 Publication and Installation
 
-#### Express Track
+`module.yaml` declares the authoritative prompt, skill, and adapter surfaces. `_module-installer/installer.js` and `scripts/install.py` must publish matching `.github/agents`, `.github/prompts`, and other IDE command stubs. If those files drift, stale router behavior can be regenerated even when the source skills are correct.
 
-The **express** track runs `expressplan` on the code branch, then hands off into `finalizeplan` for the same review, packaging, and PR readiness steps used by the other tracks. It reduces early ceremony, but it does not reintroduce the old `devproposal` or `sprintplan` phases.
+### 5.3 Historical Workflow References
 
-### 5.2 Step-File Pattern
-
-Each workflow follows a consistent decomposed structure:
-
-```
-workflow-name/
-├── SKILL.md          # Skill definition (purpose, triggers, integration)
-├── workflow.md       # Entry point (YAML frontmatter + goal)
-├── steps/
-│   ├── step-01-{purpose}.md
-│   ├── step-02-{purpose}.md
-│   └── ...
-└── resources/        # Templates, examples, validation schemas
-```
-
-### 5.3 Shared Includes
-
-`workflows/includes/preflight.md` — Common preflight checks reused across workflows (context validation, config loading, lifecycle contract resolution).
+Some retained documentation still references the older workflow tree for migration context. In Lens.Core.Src those workflow paths are not the active runtime surface and should not be treated as executable routes.
 
 ---
 
@@ -262,30 +241,33 @@ Release beta branch
 
 ## 9. State Management
 
-### 9.1 Initiative State (`initiative-state.yaml`)
+### 9.1 Feature State (`feature.yaml`)
 
-The committed YAML state file is the single source of truth for runtime initiative state:
+The committed governance feature file is the canonical shared state for active Lens features. `feature-index.yaml` provides portfolio visibility, while git branches and PRs provide supporting runtime context.
 
 ```yaml
-initiative_root: foo-bar-auth
-scope: feature
-phase: techplan
-phase_status: in-progress
-milestone: techplan
+featureId: hermes-lens-plugin
+domain: plugins
+service: hermes
+phase: businessplan-complete
 track: full
-artifacts:
-  preplan: { status: complete, committed_at: ... }
-  businessplan: { status: complete, committed_at: ... }
+milestones:
+  businessplan: '2026-04-14T03:00:00Z'
+  techplan: null
+links:
+  pull_request: null
+updated: '2026-04-14T03:00:00Z'
 ```
 
 ### 9.2 State Derivation Rules
 
 | Query | Source | Derivation |
 |-------|--------|------------|
-| Active initiative | `git symbolic-ref HEAD` + state file | Branch name → lookup key → `initiative-state.yaml` |
-| Current phase | `initiative-state.yaml` → `phase` | Direct read |
-| Phase completion | `initiative-state.yaml` → `artifacts.{phase}` | Artifact existence + phase_status |
-| Promotion status | Provider adapter PR query | PR merged = promoted |
+| Active feature | Current branch plus governance lookup | Branch or explicit feature id resolves to `feature.yaml` |
+| Current phase | `feature.yaml` → `phase` | Direct read |
+| Phase gate readiness | `feature.yaml` milestones plus `lifecycle.yaml` | Milestone presence and lifecycle gate rules drive routing |
+| Portfolio status | `feature-index.yaml` on governance `main` | Domain and portfolio views without branch switching |
+| Pause and resume state | `feature.yaml` pause fields | `paused_from`, `pause_reason`, and `paused_at` restore context |
 
 ---
 
@@ -349,25 +331,20 @@ Template with `{project-root}` variable resolution:
 
 ## 12. Governance Repository Requirements
 
-Workflows that resolve constitutions or read lifecycle contracts require access to the governance repository. The governance repo is cloned into a configured path during `setup-control-repo` (default: `TargetProjects/lens/lens-governance`).
+Commands and skills that resolve constitutions or read shared feature state require access to the governance repository. The governance repo is cloned into a configured path during `setup-control-repo` (default: `TargetProjects/lens/lens-governance`).
 
-### 12.1 Governance Access by Workflow
+### 12.1 Governance Access by Command
 
-| Workflow | Governance Access | What It Reads |
-|----------|-------------------|---------------|
-| `/new-initiative` (init-initiative) | Required | Constitution hierarchy for track filtering; sensing overlap data |
-| `/promote` (promote-phase) | Required | Constitution for gate validation; artifact validators |
-| `/cross-check` (cross-initiative) | Required | Constitution for sensing thresholds; overlap policies |
-| `/move-feature` | Optional | Constitution for target domain/service validation |
-| `/audit-all` | Required | Full constitution hierarchy for compliance scanning |
-| `/finalizeplan` | Read-only | Lifecycle contract for phase/track validation |
-| `/status` | None | Uses only local git state and initiative-state.yaml |
-| `/next` | None | Derives actions from local initiative state |
-| `/onboard` | None | Creates local config only |
-| `/profile` | None | Reads/writes local bmadconfig.yaml |
-| `/approval-status` | Read-only | Lifecycle contract for approval gate definitions |
-| `/rollback-phase` | Required | Constitution for rollback permissions |
-| `/pause-epic` / `/resume-epic` | None | Updates local initiative-state.yaml only |
+| Command | Governance Access | What It Reads or Writes |
+|---------|-------------------|-------------------------|
+| `/new-domain`, `/new-service`, `/new-feature`, `/new-project` | Required | Constitution hierarchy, feature-index updates, and feature scaffolding |
+| `/status` | Read-only | `feature.yaml` and `feature-index.yaml` on governance `main` |
+| `/next` | Read-only | `feature.yaml` plus `lifecycle.yaml` gate rules |
+| `/sensing`, `/audit` | Required | Constitution hierarchy, feature registry, and overlap policies |
+| `/move-feature`, `/split-feature` | Required | Existing and target feature paths plus registry updates |
+| `/pause-resume`, `/rollback`, `/complete` | Required | `feature.yaml` updates and closeout metadata |
+| `/finalizeplan`, `/approval-status` | Read-only | Lifecycle contract, PR linkage, and governance metadata |
+| `/profile`, `/help`, `/lens-setup` | None | Local config and module metadata only |
 
 ### 12.2 Failure Modes
 

@@ -131,7 +131,6 @@ Milestones are logical checkpoints in `feature.yaml`, not separate control-repo 
 | `/constitution` | Resolve constitutional governance |
 | `/sensing` | Run cross-initiative overlap detection |
 | `/audit` | Run the compliance audit surface |
-| `/promote` | Advance the feature through its next lifecycle gate |
 
 ## Promotion and Gate Semantics
 
