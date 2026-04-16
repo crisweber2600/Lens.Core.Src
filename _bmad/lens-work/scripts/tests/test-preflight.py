@@ -159,10 +159,31 @@ class TestGitHubSync:
         result = _run(cwd=workspace)
 
         assert result.returncode == 0, result.stdout + result.stderr
-        active_setup = workspace / ".lens/personal/governance-setup.yaml"
+        active_setup = workspace / ".lens/governance-setup.yaml"
         assert active_setup.is_file()
         assert "TargetProjects/lens/lens-governance" in active_setup.read_text(encoding="utf-8")
         assert not (workspace / "docs/lens-work/governance-setup.yaml").exists()
+
+    def test_migrates_legacy_personal_governance_setup_to_lens_root(self, workspace: Path):
+        _write_file(workspace / "lens.core/.github/workflows/keep.yml", "name: keep\n")
+        governance_dir = workspace / "TargetProjects/lens/lens-governance"
+        governance_dir.mkdir(parents=True, exist_ok=True)
+        _write_file(
+            workspace / ".lens/personal/governance-setup.yaml",
+            (
+                'governance_repo_path: "TargetProjects/lens/lens-governance"\n'
+                'governance_remote_url: "https://github.com/example/lens-governance.git"\n'
+            ),
+        )
+        _write_hash_manifest(workspace, {})
+
+        result = _run(cwd=workspace)
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        active_setup = workspace / ".lens/governance-setup.yaml"
+        assert active_setup.is_file()
+        assert "TargetProjects/lens/lens-governance" in active_setup.read_text(encoding="utf-8")
+        assert not (workspace / ".lens/personal/governance-setup.yaml").exists()
 
     def test_resolves_governance_repo_from_lens_setup_file(self, workspace: Path):
         _write_file(workspace / "lens.core/.github/workflows/keep.yml", "name: keep\n")

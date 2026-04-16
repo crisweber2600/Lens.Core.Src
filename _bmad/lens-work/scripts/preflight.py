@@ -89,7 +89,7 @@ def legacy_personal_dir(project_root: Path) -> Path:
     return project_root / ".github" / "lens" / "personal"
 
 
-PERSONAL_ARTIFACT_NAMES = (".github-hashes", ".preflight-timestamp", "context.yaml", "governance-setup.yaml", "profile.yaml")
+PERSONAL_ARTIFACT_NAMES = (".github-hashes", ".preflight-timestamp", "context.yaml", "profile.yaml")
 
 
 def relocate_root_personal_files(project_root: Path, active_dir: Path) -> None:
@@ -185,6 +185,10 @@ def ensure_lens_version_file(project_root: Path) -> str:
 
 
 def governance_setup_file(project_root: Path) -> Path:
+    return lens_dir(project_root) / "governance-setup.yaml"
+
+
+def legacy_personal_governance_setup_file(project_root: Path) -> Path:
     return personal_dir(project_root) / "governance-setup.yaml"
 
 
@@ -222,26 +226,43 @@ def load_governance_setup(path: Path) -> dict[str, str]:
 
 def ensure_governance_setup_file(project_root: Path) -> dict[str, str]:
     active_file = governance_setup_file(project_root)
+    legacy_personal_file = legacy_personal_governance_setup_file(project_root)
     legacy_file = legacy_governance_setup_file(project_root)
 
     if active_file.is_file():
+        if legacy_personal_file.is_file():
+            try:
+                if active_file.read_bytes() == legacy_personal_file.read_bytes():
+                    legacy_personal_file.unlink()
+                    echo("[preflight] Removed duplicate legacy governance setup from .lens/personal/governance-setup.yaml")
+                else:
+                    echo("[preflight] Found conflicting legacy governance setup at .lens/personal/governance-setup.yaml; using .lens/governance-setup.yaml")
+            except OSError as exc:
+                echo(f"  ⚠ Unable to reconcile legacy governance setup file: {exc}")
         return load_governance_setup(active_file)
 
-    if not legacy_file.is_file():
-        return {}
+    for source_file, source_label, prune_parent in (
+        (legacy_personal_file, ".lens/personal/governance-setup.yaml", False),
+        (legacy_file, "docs/lens-work/governance-setup.yaml", True),
+    ):
+        if not source_file.is_file():
+            continue
 
-    try:
-        contents = legacy_file.read_text(encoding="utf-8")
-        active_file.parent.mkdir(parents=True, exist_ok=True)
-        active_file.write_text(contents, encoding="utf-8")
-        legacy_file.unlink()
-        remove_empty_parent_dirs(legacy_file.parent, project_root / "docs")
-        echo("[preflight] Migrated governance setup from docs/lens-work/governance-setup.yaml to .lens/governance-setup.yaml")
-    except OSError as exc:
-        echo(f"  ⚠ Unable to migrate governance setup file: {exc}")
-        return load_governance_setup(legacy_file)
+        try:
+            contents = source_file.read_text(encoding="utf-8")
+            active_file.parent.mkdir(parents=True, exist_ok=True)
+            active_file.write_text(contents, encoding="utf-8")
+            source_file.unlink()
+            if prune_parent:
+                remove_empty_parent_dirs(source_file.parent, project_root / "docs")
+            echo(f"[preflight] Migrated governance setup from {source_label} to .lens/governance-setup.yaml")
+        except OSError as exc:
+            echo(f"  ⚠ Unable to migrate governance setup file: {exc}")
+            return load_governance_setup(source_file)
 
-    return load_governance_setup(active_file)
+        return load_governance_setup(active_file)
+
+    return {}
 
 
 def resolve_workspace_path(project_root: Path, raw_path: str) -> Path:
