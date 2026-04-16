@@ -53,6 +53,7 @@ class TestGitignoreEntries:
 
         lines = (tmp_path / ".gitignore").read_text(encoding="utf-8").splitlines()
         assert ".lens/" in lines
+        assert ".lens/personal/" in lines
         assert ".github/" in lines
         assert "lens.core/" in lines
         assert "TargetProjects/" in lines
@@ -67,6 +68,23 @@ class TestGitignoreEntries:
         second = (tmp_path / ".gitignore").read_text(encoding="utf-8")
 
         assert second == first
+
+
+class TestGovernanceSetupFile:
+    def test_governance_setup_file_is_written_under_lens(self, tmp_path):
+        module = _load_script_module()
+        written_path = module.write_governance_setup_file(
+            tmp_path,
+            tmp_path / "TargetProjects" / "lens" / "lens-governance",
+            "https://github.com/example/lens-governance.git",
+            "2026-04-16T00:00:00Z",
+        )
+
+        assert written_path == tmp_path / ".lens" / "governance-setup.yaml"
+        contents = written_path.read_text(encoding="utf-8")
+        assert 'governance_repo_path: "' in contents
+        assert "lens-governance" in contents
+        assert "governance_remote_url" in contents
 
 
 # TODO: Test clone_or_pull: clones on first run, pulls on subsequent run
