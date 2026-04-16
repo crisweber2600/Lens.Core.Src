@@ -80,7 +80,7 @@ class TestGovernanceSetupFile:
             "2026-04-16T00:00:00Z",
         )
 
-        assert written_path == tmp_path / ".lens" / "governance-setup.yaml"
+        assert written_path == tmp_path / ".lens" / "personal" / "governance-setup.yaml"
         contents = written_path.read_text(encoding="utf-8")
         assert 'governance_repo_path: "' in contents
         assert "lens-governance" in contents

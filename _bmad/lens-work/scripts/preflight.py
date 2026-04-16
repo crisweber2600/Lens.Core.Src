@@ -89,7 +89,7 @@ def legacy_personal_dir(project_root: Path) -> Path:
     return project_root / ".github" / "lens" / "personal"
 
 
-PERSONAL_ARTIFACT_NAMES = ("context.yaml", "profile.yaml")
+PERSONAL_ARTIFACT_NAMES = (".github-hashes", ".preflight-timestamp", "context.yaml", "governance-setup.yaml", "profile.yaml")
 
 
 def relocate_root_personal_files(project_root: Path, active_dir: Path) -> None:
@@ -185,7 +185,7 @@ def ensure_lens_version_file(project_root: Path) -> str:
 
 
 def governance_setup_file(project_root: Path) -> Path:
-    return lens_dir(project_root) / "governance-setup.yaml"
+    return personal_dir(project_root) / "governance-setup.yaml"
 
 
 def legacy_governance_setup_file(project_root: Path) -> Path:
@@ -403,8 +403,8 @@ def main() -> int:
     active_personal_dir = migrate_legacy_personal_dir(project_root)
     active_lens_dir = lens_dir(project_root)
     release_dir = project_root / "lens.core"
-    timestamp_file = active_lens_dir / ".preflight-timestamp"
-    hash_file = active_lens_dir / ".github-hashes"
+    timestamp_file = active_personal_dir / ".preflight-timestamp"
+    hash_file = active_personal_dir / ".github-hashes"
     lifecycle_path = release_dir / "_bmad/lens-work/lifecycle.yaml"
     governance_setup = ensure_governance_setup_file(project_root)
     governance_path = None

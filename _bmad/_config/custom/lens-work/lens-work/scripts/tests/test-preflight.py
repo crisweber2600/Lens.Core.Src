@@ -24,7 +24,7 @@ def _write_file(path: Path, content: str) -> None:
 
 
 def _write_hash_manifest(workspace: Path, entries: dict[str, str]) -> None:
-    manifest = workspace / ".lens/.github-hashes"
+    manifest = workspace / ".lens/personal/.github-hashes"
     lines = []
 
     for rel_path, content in sorted(entries.items()):
@@ -40,7 +40,7 @@ def workspace(tmp_path: Path) -> Path:
     _write_file(root / ".lens/LENS_VERSION", "4\n")
     _write_file(root / "lens.core/_bmad/lens-work/lifecycle.yaml", "schema_version: 4\n")
     _write_file(
-        root / ".lens/.preflight-timestamp",
+        root / ".lens/personal/.preflight-timestamp",
         datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     )
     return root
@@ -97,7 +97,7 @@ class TestGitHubSync:
         assert not (workspace / ".github/workflows/legacy").exists()
         assert not (workspace / ".github/prompts/lens-stale.prompt.md").exists()
 
-        manifest_text = (workspace / ".lens/.github-hashes").read_text(encoding="utf-8")
+        manifest_text = (workspace / ".lens/personal/.github-hashes").read_text(encoding="utf-8")
         assert ".github/workflows/legacy/obsolete.yml" not in manifest_text
         assert ".github/prompts/lens-stale.prompt.md" not in manifest_text
         assert ".github/workflows/keep.yml" in manifest_text
@@ -125,6 +125,8 @@ class TestGitHubSync:
         _write_file(workspace / "lens.core/.github/workflows/keep.yml", "name: keep\n")
         _write_file(workspace / ".lens/profile.yaml", "experience_mode: lite\n")
         _write_file(workspace / ".lens/context.yaml", "domain: plugins\nservice: hermes\n")
+        _write_file(workspace / ".lens/.github-hashes", "abc123  .github/workflows/keep.yml\n")
+        _write_file(workspace / ".lens/.preflight-timestamp", datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
         (workspace / ".lens/personal").mkdir(parents=True, exist_ok=True)
 
         result = _run(cwd=workspace)
@@ -132,8 +134,12 @@ class TestGitHubSync:
         assert result.returncode == 0, result.stdout + result.stderr
         assert (workspace / ".lens/personal/profile.yaml").read_text(encoding="utf-8") == "experience_mode: lite\n"
         assert (workspace / ".lens/personal/context.yaml").read_text(encoding="utf-8") == "domain: plugins\nservice: hermes\n"
+        assert (workspace / ".lens/personal/.github-hashes").is_file()
+        assert (workspace / ".lens/personal/.preflight-timestamp").is_file()
         assert not (workspace / ".lens/profile.yaml").exists()
         assert not (workspace / ".lens/context.yaml").exists()
+        assert not (workspace / ".lens/.github-hashes").exists()
+        assert not (workspace / ".lens/.preflight-timestamp").exists()
         assert (workspace / ".lens/LENS_VERSION").read_text(encoding="utf-8") == "4\n"
 
     def test_migrates_legacy_governance_setup_when_lens_copy_missing(self, workspace: Path):
@@ -153,7 +159,7 @@ class TestGitHubSync:
         result = _run(cwd=workspace)
 
         assert result.returncode == 0, result.stdout + result.stderr
-        active_setup = workspace / ".lens/governance-setup.yaml"
+        active_setup = workspace / ".lens/personal/governance-setup.yaml"
         assert active_setup.is_file()
         assert "TargetProjects/lens/lens-governance" in active_setup.read_text(encoding="utf-8")
         assert not (workspace / "docs/lens-work/governance-setup.yaml").exists()
