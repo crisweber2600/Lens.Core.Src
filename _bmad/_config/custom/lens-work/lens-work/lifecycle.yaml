@@ -20,7 +20,7 @@
 #       checkpoints via a first-party upgrade path.
 # =============================================================================
 
-schema_version: 5
+schema_version: 4
 close_states: [completed, abandoned, superseded]
 initiative_state_schema: initiative-state.yaml
 artifact_publication:
