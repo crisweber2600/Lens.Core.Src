@@ -1129,3 +1129,52 @@ migrations:
           - "Move approved artifacts to {featureId}/artifacts/"
           - "Update feature-index.yaml on main"
           - "Archive old milestone branches with -archived suffix"
+
+  - from_version: 5
+    to_version: 4
+    breaking: true
+    direction: downgrade
+    migration_command: "/lens-downgrade --from 5 --to 4"
+    branch_rename_required: false
+    changes:
+      - type: replace_value
+        path: lens_hierarchy.levels
+        old_value: [org, workstream, project, repo]
+        new_value: [org, domain, service, repo]
+      - type: rename_field
+        path: milestone-index.yaml
+        new_path: feature-index.yaml
+      - type: rename_field
+        path: milestones
+        new_path: features
+      - type: rename_field
+        path: workstream.yaml
+        new_path: domain.yaml
+      - type: rename_field
+        path: project.yaml
+        new_path: service.yaml
+      - type: rename_field
+        path: milestone.yaml
+        new_path: feature.yaml
+      - type: rename_field
+        path: milestoneId
+        new_path: featureId
+      - type: rename_field
+        path: workstream
+        new_path: domain
+      - type: rename_field
+        path: project
+        new_path: service
+      - type: rename_field
+        path: checkpoints
+        new_path: milestones
+      - type: replace_value
+        path: docs.governance_docs_path
+        description: "Rewrite milestones/ prefix back to features/ in governance doc paths"
+    optional_migrations:
+      - name: rewrite-authored-doc-terminology
+        description: "Rewrite authored markdown copy from workstream/project/milestone language back to domain/service/feature after the machine-readable schema downgrade is complete"
+        steps:
+          - "Scan governance summaries and control-repo docs for v5 lifecycle terminology"
+          - "Rewrite only deterministic labels and headings that directly mirror downgraded schema fields"
+          - "Leave free-form authored prose untouched unless the user explicitly requests a documentation rewrite"

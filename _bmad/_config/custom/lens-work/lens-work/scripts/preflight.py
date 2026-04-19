@@ -483,6 +483,32 @@ def main() -> int:
 
     control_version = ensure_lens_version_file(project_root)
 
+    # Auto-downgrade: workspace upgraded to v5 but this module is v4
+    if control_version and module_schema == "4" and (
+        control_version == "5" or control_version.startswith("5.")
+    ):
+        echo("[preflight] Workspace is at schema v5; this module requires v4 — running auto-downgrade...")
+        downgrade_script = (
+            Path(__file__).resolve().parent.parent
+            / "skills/bmad-lens-upgrade/scripts/downgrade-ops.py"
+        )
+        if not downgrade_script.is_file():
+            echo(f"ERROR: downgrade-ops.py not found at {downgrade_script}")
+            echo("  Manually run: /lens-downgrade --from 5 --to 4")
+            return 1
+        downgrade_result = subprocess.run(
+            [sys.executable, str(downgrade_script), "--project-root", str(project_root)],
+            capture_output=True, text=True,
+        )
+        if downgrade_result.returncode != 0:
+            echo("ERROR: Auto-downgrade from v5 to v4 failed.")
+            echo(downgrade_result.stdout)
+            if downgrade_result.stderr:
+                echo(downgrade_result.stderr)
+            return 1
+        echo("  ✓ Workspace downgraded to schema v4")
+        control_version = ensure_lens_version_file(project_root)
+
     if not control_version or (control_version != module_schema and control_version != f"{module_schema}.0.0"):
         display_version = control_version or "missing"
         echo(f"VERSION MISMATCH: control repo is v{display_version}, module expects v{module_schema}. Run /lens-upgrade.")
