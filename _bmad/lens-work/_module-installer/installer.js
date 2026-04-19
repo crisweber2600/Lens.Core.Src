@@ -449,7 +449,7 @@ async function installGitHubCopilot(projectRoot, { updateMode, logger }) {
     for (const p of STUB_PROMPTS) {
         await writeAdapterFile(
             path.join(promptsDir, p.file),
-            ghStubPrompt(p.name, p.desc, p.target, p.extra, { noModel: !!p.noModel }),
+            ghStubPrompt(p.name, p.desc, p.target, p.extra, { noModel: p.noModel !== false }),
             { updateMode, logger }
         );
     }
