@@ -497,7 +497,7 @@ def main() -> int:
             echo("  Manually run: /lens-downgrade --from 5 --to 4")
             return 1
         downgrade_result = subprocess.run(
-            [sys.executable, str(downgrade_script), "--project-root", str(project_root)],
+            ["uv", "run", "--script", str(downgrade_script), "--project-root", str(project_root)],
             capture_output=True, text=True,
         )
         if downgrade_result.returncode != 0:
