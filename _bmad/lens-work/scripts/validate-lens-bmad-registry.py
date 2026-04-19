@@ -30,7 +30,7 @@ def load_csv(path: Path) -> list[dict[str, str]]:
 
 def prompt_is_supported_by_preflight(prompt_path: str) -> bool:
     name = Path(prompt_path).name
-    return name.startswith("lens-work") or name.startswith("lens-")
+    return name.startswith("lens-work") or name.startswith("lens-") or name.startswith("len-")
 
 
 def main() -> int:

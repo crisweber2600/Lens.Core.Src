@@ -592,7 +592,7 @@ def main() -> int:
         release_prompts = release_github / "prompts"
         for pf in list(prompts_dir.iterdir()):
             name = pf.name
-            if re.match(r"^lens-.*\.prompt\.md$", name):
+            if re.match(r"^(?:lens|len)-.*\.prompt\.md$", name):
                 if not (release_prompts / name).exists():
                     pf.unlink()
             elif name.endswith(".prompt.md"):
@@ -605,7 +605,7 @@ def main() -> int:
         profile_removed = 0
         for pf in list(prompts_dir.iterdir()):
             name = pf.name
-            if not re.match(r"^lens-.*\.prompt\.md$", name):
+            if not re.match(r"^(?:lens|len)-.*\.prompt\.md$", name):
                 continue
             stem = name[: -len(".prompt.md")]
             if not _should_include_prompt(stem, experience, role):

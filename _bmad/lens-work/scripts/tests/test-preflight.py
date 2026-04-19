@@ -224,6 +224,31 @@ class TestGitHubSync:
         assert not (workspace / ".github/prompts/lens-stale.prompt.md").exists()
         assert not (workspace / ".github/prompts/custom.prompt.md").exists()
 
+    def test_prompt_hygiene_removes_stale_len_prompt_files(self, workspace: Path):
+        keep_prompt = "---\ndescription: keep\n---\n"
+
+        _write_file(workspace / "lens.core/.github/prompts/len-keep.prompt.md", keep_prompt)
+        _write_file(workspace / ".github/prompts/len-stale.prompt.md", "---\ndescription: stale\n---\n")
+        _write_hash_manifest(workspace, {})
+
+        result = _run(cwd=workspace)
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert (workspace / ".github/prompts/len-keep.prompt.md").read_text(encoding="utf-8") == keep_prompt
+        assert not (workspace / ".github/prompts/len-stale.prompt.md").exists()
+
+    def test_prompt_hygiene_keeps_release_tracked_len_prompt_files(self, workspace: Path):
+        keep_prompt = "---\ndescription: keep\n---\n"
+
+        _write_file(workspace / "lens.core/.github/prompts/len-keep.prompt.md", keep_prompt)
+        _write_file(workspace / ".github/prompts/len-keep.prompt.md", "---\ndescription: old\n---\n")
+        _write_hash_manifest(workspace, {})
+
+        result = _run(cwd=workspace)
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert (workspace / ".github/prompts/len-keep.prompt.md").read_text(encoding="utf-8") == keep_prompt
+
     def test_onboard_caller_prints_dev_next_steps(self, workspace: Path):
         _write_file(workspace / "lens.core/.github/workflows/keep.yml", "name: keep\n")
         _write_file(workspace / ".lens/personal/profile.yaml", "primary_role: dev\n")
