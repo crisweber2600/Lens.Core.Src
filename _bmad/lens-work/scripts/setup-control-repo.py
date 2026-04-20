@@ -261,10 +261,7 @@ def detect_github_username() -> str:
 
 
 def derive_governance_repo(control_dir: Path) -> str:
-    name = control_dir.name
-    if name.endswith(".src"):
-        name = name[:-4] + ".bmad"
-    return f"{name}.governance"
+    return f"{control_dir.name}.governance"
 
 
 def run_wizard(defaults: dict) -> dict:  # returns filled-in config

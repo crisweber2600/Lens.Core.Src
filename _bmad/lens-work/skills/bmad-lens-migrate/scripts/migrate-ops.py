@@ -2161,6 +2161,288 @@ def cmd_cleanup(args: argparse.Namespace) -> dict:
     return result
 
 
+def _scan_governance_features(governance_repo: Path) -> list[dict]:
+    """Walk features/{domain}/{service}/{slug}/feature.yaml and return parsed metadata."""
+    results = []
+    features_root = governance_repo / "features"
+    if not features_root.is_dir():
+        return results
+    for domain_dir in sorted(features_root.iterdir()):
+        if not domain_dir.is_dir():
+            continue
+        domain = domain_dir.name
+        for service_dir in sorted(domain_dir.iterdir()):
+            if not service_dir.is_dir():
+                continue
+            service = service_dir.name
+            for slug_dir in sorted(service_dir.iterdir()):
+                if not slug_dir.is_dir():
+                    continue
+                feature_yaml_path = slug_dir / "feature.yaml"
+                if not feature_yaml_path.is_file():
+                    continue
+                data = read_yaml_if_exists(feature_yaml_path)
+                if data is None:
+                    continue
+                results.append({
+                    "path": feature_yaml_path,
+                    "dir_slug": slug_dir.name,
+                    "domain": domain,
+                    "service": service,
+                    "data": data,
+                })
+    return results
+
+
+def _is_short_feature_id(feature_id: str, domain: str, service: str) -> bool:
+    """Return True when featureId does NOT already have the canonical {domain}-{service}- prefix."""
+    init_feature_ops = load_init_feature_ops()
+    prefix = init_feature_ops.canonical_feature_prefix(domain, service)
+    return not feature_id.startswith(f"{prefix}-")
+
+
+def _normalize_feature_index(
+    governance_repo: Path,
+    old_feature_id: str,
+    canonical_feature_id: str,
+    feature_slug: str,
+    dry_run: bool,
+) -> dict:
+    """Update feature-index.yaml entry from short featureId to canonical form.
+
+    Returns a dict with keys: ``status`` ('updated', 'not-found', 'skipped', 'error'), and
+    optionally ``error`` or ``old``.
+    """
+    index_path = governance_repo / "feature-index.yaml"
+    if not index_path.is_file():
+        return {"status": "not-found"}
+    index_data = read_yaml_if_exists(index_path)
+    if index_data is None:
+        return {"status": "not-found"}
+
+    features = index_data.get("features", [])
+    updated = False
+    old_entry = None
+    for entry in features:
+        entry_id = entry.get("id") or entry.get("featureId")
+        if entry_id == old_feature_id:
+            old_entry = dict(entry)
+            entry["id"] = canonical_feature_id
+            entry["featureId"] = canonical_feature_id
+            entry["featureSlug"] = feature_slug
+            # Update plan_branch if it references the old id
+            old_plan = entry.get("plan_branch", "")
+            if old_plan == f"{old_feature_id}-plan":
+                entry["plan_branch"] = f"{canonical_feature_id}-plan"
+            updated = True
+            break
+
+    if not updated:
+        return {"status": "not-found"}
+
+    if not dry_run:
+        try:
+            atomic_write_yaml(index_path, index_data)
+        except OSError as e:
+            return {"status": "error", "error": str(e)}
+
+    return {"status": "updated", "old": old_entry}
+
+
+def _rename_control_repo_branches(
+    control_repo: Path,
+    old_feature_id: str,
+    canonical_feature_id: str,
+    dry_run: bool,
+) -> list[dict]:
+    """Rename {old_feature_id} and {old_feature_id}-plan branches in *control_repo*.
+
+    Returns a list of rename records: {from, to, status}.
+    """
+    pairs = [
+        (old_feature_id, canonical_feature_id),
+        (f"{old_feature_id}-plan", f"{canonical_feature_id}-plan"),
+    ]
+    renames = []
+    for old_branch, new_branch in pairs:
+        # Check if old branch exists locally
+        result = subprocess.run(
+            ["git", "-C", str(control_repo), "branch", "--list", old_branch],
+            capture_output=True, text=True,
+        )
+        exists = bool(result.stdout.strip())
+        if not exists:
+            renames.append({"from": old_branch, "to": new_branch, "status": "not-found"})
+            continue
+
+        # Check for conflict: new branch already exists
+        result_new = subprocess.run(
+            ["git", "-C", str(control_repo), "branch", "--list", new_branch],
+            capture_output=True, text=True,
+        )
+        if result_new.stdout.strip():
+            renames.append({"from": old_branch, "to": new_branch, "status": "conflict"})
+            continue
+
+        if dry_run:
+            renames.append({"from": old_branch, "to": new_branch, "status": "would-rename"})
+            continue
+
+        mv = subprocess.run(
+            ["git", "-C", str(control_repo), "branch", "-m", old_branch, new_branch],
+            capture_output=True, text=True,
+        )
+        if mv.returncode == 0:
+            renames.append({"from": old_branch, "to": new_branch, "status": "renamed"})
+        else:
+            renames.append({"from": old_branch, "to": new_branch, "status": "error", "error": mv.stderr.strip()})
+    return renames
+
+
+def cmd_normalize_feature_ids(args: argparse.Namespace) -> dict:
+    """Scan governance features and normalize short featureIds to canonical {domain}-{service}-{slug} format.
+
+    The governance directory name and docs paths use the featureSlug (short form).
+    Only the featureId field and feature-index.yaml ids are upgraded to canonical form.
+    Control-repo branches are renamed when --control-repo is supplied.
+    """
+    try:
+        governance_repo, governance_warning = resolve_governance_repo(args.governance_repo)
+    except RuntimeError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    dry_run: bool = getattr(args, "dry_run", False)
+    control_repo_arg: str | None = getattr(args, "control_repo", None)
+
+    control_repo: Path | None = None
+    control_warning: str | None = None
+    if control_repo_arg:
+        cr_path = Path(control_repo_arg)
+        if not cr_path.exists():
+            return {"status": "fail", "error": f"Control repo not found: {cr_path}"}
+        control_repo = cr_path
+
+    scanned = _scan_governance_features(governance_repo)
+
+    needs_norm = [
+        entry for entry in scanned
+        if _is_short_feature_id(
+            entry["data"].get("featureId", entry["dir_slug"]),
+            entry["data"].get("domain", entry["domain"]),
+            entry["data"].get("service", entry["service"]),
+        )
+    ]
+
+    if not needs_norm:
+        result: dict = {
+            "status": "pass",
+            "normalized": [],
+            "total_scanned": len(scanned),
+            "total_normalized": 0,
+            "dry_run": dry_run,
+        }
+        if governance_warning:
+            result.setdefault("warnings", []).append(governance_warning)
+        return result
+
+    init_feature_ops = load_init_feature_ops()
+
+    normalized = []
+    errors = []
+
+    for entry in needs_norm:
+        feature_yaml_path: Path = entry["path"]
+        data: dict = entry["data"]
+        domain: str = data.get("domain") or entry["domain"]
+        service: str = data.get("service") or entry["service"]
+        old_feature_id: str = data.get("featureId") or entry["dir_slug"]
+
+        try:
+            canonical_feature_id, feature_slug = init_feature_ops.resolve_feature_identity(
+                old_feature_id, domain, service
+            )
+        except ValueError as exc:
+            errors.append({"feature_yaml": str(feature_yaml_path), "error": str(exc)})
+            continue
+
+        # Determine correct docs paths (always use featureSlug / dir_slug, not featureId)
+        slug_dir = entry["dir_slug"]
+        expected_docs_path = f"docs/{domain}/{service}/{slug_dir}"
+        expected_gov_docs_path = f"features/{domain}/{service}/{slug_dir}/docs"
+
+        # Build updated feature.yaml data
+        updated_data = dict(data)
+        updated_data["featureId"] = canonical_feature_id
+        updated_data["featureSlug"] = feature_slug
+
+        # Fix docs block if present and pointing at old featureId
+        if "docs" in updated_data and isinstance(updated_data["docs"], dict):
+            docs_block = dict(updated_data["docs"])
+            if docs_block.get("path", "").endswith(f"/{old_feature_id}"):
+                docs_block["path"] = expected_docs_path
+            if docs_block.get("governance_docs_path", "").endswith(f"/{old_feature_id}/docs"):
+                docs_block["governance_docs_path"] = expected_gov_docs_path
+            updated_data["docs"] = docs_block
+
+        # Update feature-index.yaml
+        index_result = _normalize_feature_index(
+            governance_repo, old_feature_id, canonical_feature_id, feature_slug, dry_run
+        )
+
+        # Rename branches in control repo
+        branch_renames: list[dict] = []
+        if control_repo is not None:
+            branch_renames = _rename_control_repo_branches(
+                control_repo, old_feature_id, canonical_feature_id, dry_run
+            )
+
+        record: dict = {
+            "feature_yaml": str(feature_yaml_path),
+            "domain": domain,
+            "service": service,
+            "old_feature_id": old_feature_id,
+            "canonical_feature_id": canonical_feature_id,
+            "feature_slug": feature_slug,
+            "index_update": index_result,
+            "branch_renames": branch_renames,
+        }
+
+        if not dry_run:
+            try:
+                atomic_write_yaml(feature_yaml_path, updated_data)
+                record["feature_yaml_status"] = "updated"
+            except OSError as e:
+                record["feature_yaml_status"] = "error"
+                record["feature_yaml_error"] = str(e)
+                errors.append(record)
+                continue
+        else:
+            record["feature_yaml_status"] = "would-update"
+            record["proposed_feature_yaml"] = {
+                "featureId": canonical_feature_id,
+                "featureSlug": feature_slug,
+                "docs": updated_data.get("docs"),
+            }
+
+        normalized.append(record)
+
+    result = {
+        "status": "pass" if not errors else "partial",
+        "normalized": normalized,
+        "total_scanned": len(scanned),
+        "total_normalized": len(normalized),
+        "dry_run": dry_run,
+    }
+    if errors:
+        result["errors"] = errors
+    if governance_warning:
+        result.setdefault("warnings", []).append(governance_warning)
+    if control_warning:
+        result.setdefault("warnings", []).append(control_warning)
+    return result
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Migration operations — scan legacy LENS v3 branches and migrate to Lens Next model.",
@@ -2194,6 +2476,11 @@ Examples:
   %(prog)s cleanup --governance-repo /path/to/repo \\
     --old-id platform-identity-auth-login --feature-id auth-login \\
     --domain platform --service identity --source-repo /path/to/source
+
+  %(prog)s normalize-feature-ids --governance-repo /path/to/repo --dry-run
+
+  %(prog)s normalize-feature-ids --governance-repo /path/to/repo \\
+    --control-repo /path/to/control-repo
 """,
     )
 
@@ -2243,6 +2530,14 @@ Examples:
                        help="Also delete legacy remote branches (governance + source repo)")
     cl_p.add_argument("--dry-run", action="store_true", help="Preview deletions without executing")
 
+    norm_p = subparsers.add_parser(
+        "normalize-feature-ids",
+        help="Normalize short featureIds to canonical {domain}-{service}-{slug} format in all governance feature.yaml files",
+    )
+    norm_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
+    norm_p.add_argument("--control-repo", help="Optional path to control repo for branch renaming")
+    norm_p.add_argument("--dry-run", action="store_true", help="Preview changes without writing")
+
     return parser
 
 
@@ -2256,6 +2551,7 @@ def main() -> None:
         "check-conflicts": cmd_check_conflicts,
         "verify": cmd_verify,
         "cleanup": cmd_cleanup,
+        "normalize-feature-ids": cmd_normalize_feature_ids,
     }
 
     result = commands[args.command](args)
