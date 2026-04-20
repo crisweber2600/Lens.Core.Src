@@ -274,17 +274,23 @@ def validate_slug(value: str, field_name: str = "value") -> str | None:
     return None
 
 
-def build_dev_branch_name(feature_id: str, mode: str, username: str | None = None) -> str:
+def build_dev_branch_name(
+    feature_id: str,
+    mode: str,
+    username: str | None = None,
+    feature_slug: str | None = None,
+) -> str:
     """Return the target-repo working branch for a repo-scoped dev mode."""
     normalized_mode = (mode or "").strip().lower()
+    branch_slug = feature_slug or feature_id
     if normalized_mode == "direct-default":
         return ""
     if normalized_mode == "feature-id":
-        return f"feature/{feature_id}"
+        return f"feature/{branch_slug}"
     if normalized_mode == "feature-id-username":
         if not username:
             raise ValueError("username is required for mode 'feature-id-username'")
-        return f"feature/{feature_id}-{username}"
+        return f"feature/{branch_slug}-{username}"
     expected = ", ".join(DEV_BRANCH_MODES)
     raise ValueError(f"invalid mode '{mode}' — expected one of: {expected}")
 
@@ -487,12 +493,17 @@ def cmd_create_dev_branch(args: argparse.Namespace) -> tuple[dict[str, Any], int
 def cmd_prepare_dev_branch(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     repo = args.repo
     feature_id = args.feature_id
+    feature_slug = getattr(args, "feature_slug", None)
     mode = (args.mode or "").strip().lower()
     username = getattr(args, "username", None)
 
     err = validate_slug(feature_id, "feature_id")
     if err:
         return {"error": "invalid_feature_id", "detail": err}, 1
+    if feature_slug:
+        slug_err = validate_slug(feature_slug, "feature_slug")
+        if slug_err:
+            return {"error": "invalid_feature_slug", "detail": slug_err}, 1
     if mode == "feature-id-username":
         username_err = validate_slug(username or "", "username")
         if username_err:
@@ -521,6 +532,7 @@ def cmd_prepare_dev_branch(args: argparse.Namespace) -> tuple[dict[str, Any], in
 
         return {
             "feature_id": feature_id,
+            "feature_slug": feature_slug or feature_id,
             "mode": mode,
             "base_branch": default_branch,
             "working_branch": default_branch,
@@ -531,7 +543,7 @@ def cmd_prepare_dev_branch(args: argparse.Namespace) -> tuple[dict[str, Any], in
             "dry_run": args.dry_run,
         }, 0
 
-    working_branch = build_dev_branch_name(feature_id, mode, username)
+    working_branch = build_dev_branch_name(feature_id, mode, username, feature_slug=feature_slug)
     local_exists = branch_exists(repo, working_branch)
     remote_exists = branch_exists(repo, working_branch, include_remote=True)
     created = False
@@ -565,6 +577,7 @@ def cmd_prepare_dev_branch(args: argparse.Namespace) -> tuple[dict[str, Any], in
 
     return {
         "feature_id": feature_id,
+        "feature_slug": feature_slug or feature_id,
         "mode": mode,
         "base_branch": default_branch,
         "working_branch": working_branch,
@@ -968,6 +981,7 @@ def build_parser() -> argparse.ArgumentParser:
     pdb = sub.add_parser("prepare-dev-branch", help="Prepare the target repo working branch for a dev cycle")
     pdb.add_argument("--repo", required=True)
     pdb.add_argument("--feature-id", required=True)
+    pdb.add_argument("--feature-slug", default=None, help="Optional short slug used for target-repo feature/* branch names")
     pdb.add_argument("--mode", required=True, help="Repo-scoped dev mode: direct-default, feature-id, or feature-id-username")
     pdb.add_argument("--username", default=None, help="Required when mode=feature-id-username")
     pdb.add_argument("--base-branch", default=None, help="Override the repo default branch")

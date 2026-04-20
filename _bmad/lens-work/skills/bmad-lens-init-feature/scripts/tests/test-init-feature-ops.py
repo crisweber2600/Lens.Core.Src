@@ -6,6 +6,7 @@
 """Tests for init-feature-ops.py."""
 
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -84,10 +85,20 @@ def assert_true(name: str, actual):
     assert_eq(name, bool(actual), True)
 
 
+def canonical_feature_id(domain: str, service: str, feature_slug: str) -> str:
+    """Mirror init-feature canonicalization for test expectations."""
+    def normalize(value: str) -> str:
+        normalized = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+        return re.sub(r"-+", "-", normalized)
+
+    return f"{normalize(domain)}-{normalize(service)}-{feature_slug}"
+
+
 def test_create_feature():
     """Valid feature creation creates feature.yaml, updates feature-index.yaml, creates summary.md."""
     print("test_create_feature", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
+        expected_feature_id = "platform-identity-auth-refresh"
         result, code = run([
             "create",
             "--governance-repo", tmp,
@@ -100,7 +111,8 @@ def test_create_feature():
         ])
         assert_eq("create status", result.get("status"), "pass")
         assert_eq("create exit code", code, 0)
-        assert_eq("featureId in result", result.get("featureId"), "auth-refresh")
+        assert_eq("featureId in result", result.get("featureId"), expected_feature_id)
+        assert_eq("featureSlug in result", result.get("featureSlug"), "auth-refresh")
         assert_eq("index_updated", result.get("index_updated"), True)
         assert_true("feature_yaml_path in result", result.get("feature_yaml_path"))
         assert_true("summary_path in result", result.get("summary_path"))
@@ -120,20 +132,21 @@ def test_create_feature():
         assert_eq("domain marker exists", domain_marker.exists(), True)
         assert_eq("service marker exists", service_marker.exists(), True)
 
-        feature_yaml = Path(tmp) / "features" / "platform" / "identity" / "auth-refresh" / "feature.yaml"
+        feature_yaml = Path(tmp) / "features" / "platform" / "identity" / expected_feature_id / "feature.yaml"
         assert_eq("feature.yaml exists", feature_yaml.exists(), True)
 
         with open(feature_yaml) as f:
             data = yaml.safe_load(f)
-        assert_eq("featureId in yaml", data.get("featureId"), "auth-refresh")
+        assert_eq("featureId in yaml", data.get("featureId"), expected_feature_id)
+        assert_eq("featureSlug in yaml", data.get("featureSlug"), "auth-refresh")
         assert_eq("domain in yaml", data.get("domain"), "platform")
         assert_eq("service in yaml", data.get("service"), "identity")
         assert_eq("phase in yaml", data.get("phase"), "businessplan")
         assert_eq("track in yaml", data.get("track"), "quickplan")
         assert_eq("team lead", data.get("team", [{}])[0].get("role"), "lead")
         assert_eq("team username", data.get("team", [{}])[0].get("username"), "cweber")
-        assert_eq("docs.path", data.get("docs", {}).get("path"), "docs/platform/identity/auth-refresh")
-        assert_eq("docs.governance_docs_path", data.get("docs", {}).get("governance_docs_path"), "features/platform/identity/auth-refresh/docs")
+        assert_eq("docs.path", data.get("docs", {}).get("path"), f"docs/platform/identity/{expected_feature_id}")
+        assert_eq("docs.governance_docs_path", data.get("docs", {}).get("governance_docs_path"), f"features/platform/identity/{expected_feature_id}/docs")
 
         index_path = Path(tmp) / "feature-index.yaml"
         assert_eq("feature-index.yaml exists", index_path.exists(), True)
@@ -141,27 +154,29 @@ def test_create_feature():
         with open(index_path) as f:
             idx = yaml.safe_load(f)
         ids = [e.get("id") for e in idx.get("features", [])]
-        assert_true("auth-refresh in index", "auth-refresh" in ids)
+        assert_true("canonical feature id in index", expected_feature_id in ids)
 
-        entry = next(e for e in idx["features"] if e["id"] == "auth-refresh")
+        entry = next(e for e in idx["features"] if e["id"] == expected_feature_id)
         assert_eq("index entry domain", entry.get("domain"), "platform")
         assert_eq("index entry service", entry.get("service"), "identity")
+        assert_eq("index entry featureSlug", entry.get("featureSlug"), "auth-refresh")
         assert_eq("index entry status", entry.get("status"), "businessplan")
         assert_eq("index entry owner", entry.get("owner"), "cweber")
-        assert_eq("index entry plan_branch", entry.get("plan_branch"), "auth-refresh-plan")
+        assert_eq("index entry plan_branch", entry.get("plan_branch"), f"{expected_feature_id}-plan")
 
-        summary_path = Path(tmp) / "features" / "platform" / "identity" / "auth-refresh" / "summary.md"
+        summary_path = Path(tmp) / "features" / "platform" / "identity" / expected_feature_id / "summary.md"
         assert_eq("summary.md exists", summary_path.exists(), True)
         summary_text = summary_path.read_text()
         assert_true("summary contains starting phase", "Status: businessplan" in summary_text)
         assert_true("summary contains feature name", "Auth Token Refresh" in summary_text)
-        assert_true("summary contains featureId", "auth-refresh" in summary_text)
+        assert_true("summary contains featureId", expected_feature_id in summary_text)
 
 
 def test_full_track_starts_in_preplan():
     """Full track starts at preplan and recommends the preplan phase command."""
     print("test_full_track_starts_in_preplan", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
+        expected_feature_id = "platform-identity-full-feature"
         result, code = run([
             "create",
             "--governance-repo", tmp,
@@ -175,11 +190,13 @@ def test_full_track_starts_in_preplan():
 
         assert_eq("full create status", result.get("status"), "pass")
         assert_eq("full create exit code", code, 0)
+        assert_eq("full featureId", result.get("featureId"), expected_feature_id)
+        assert_eq("full featureSlug", result.get("featureSlug"), "full-feature")
         assert_eq("full starting_phase", result.get("starting_phase"), "preplan")
         assert_eq("full recommended_command", result.get("recommended_command"), "/preplan")
         assert_eq("full router_command", result.get("router_command"), "/next")
 
-        feature_yaml = Path(tmp) / "features" / "platform" / "identity" / "full-feature" / "feature.yaml"
+        feature_yaml = Path(tmp) / "features" / "platform" / "identity" / expected_feature_id / "feature.yaml"
         with open(feature_yaml) as f:
             data = yaml.safe_load(f)
         assert_eq("full phase in yaml", data.get("phase"), "preplan")
@@ -187,7 +204,7 @@ def test_full_track_starts_in_preplan():
         index_path = Path(tmp) / "feature-index.yaml"
         with open(index_path) as f:
             idx = yaml.safe_load(f)
-        entry = next(e for e in idx["features"] if e["id"] == "full-feature")
+        entry = next(e for e in idx["features"] if e["id"] == expected_feature_id)
         assert_eq("full index status", entry.get("status"), "preplan")
 
 
@@ -352,6 +369,7 @@ def test_express_track_defers_planning_pr():
     """Express track creates branches but defers the empty planning PR until artifacts exist."""
     print("test_express_track_defers_planning_pr", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
+        expected_feature_id = "platform-identity-express-feature"
         result, code = run([
             "create",
             "--governance-repo", tmp,
@@ -365,13 +383,15 @@ def test_express_track_defers_planning_pr():
 
         assert_eq("express create status", result.get("status"), "pass")
         assert_eq("express create exit code", code, 0)
+        assert_eq("express featureId", result.get("featureId"), expected_feature_id)
+        assert_eq("express featureSlug", result.get("featureSlug"), "express-feature")
         assert_eq("express planning_pr_created", result.get("planning_pr_created"), False)
         assert_eq("express gh_commands empty", result.get("gh_commands", []), [])
         assert_eq("express starting_phase", result.get("starting_phase"), "expressplan")
         assert_eq("express recommended_command", result.get("recommended_command"), "/expressplan")
         assert_eq("express router_command", result.get("router_command"), "/next")
 
-        feature_yaml = Path(tmp) / "features" / "platform" / "identity" / "express-feature" / "feature.yaml"
+        feature_yaml = Path(tmp) / "features" / "platform" / "identity" / expected_feature_id / "feature.yaml"
         with open(feature_yaml) as f:
             data = yaml.safe_load(f)
         assert_eq("express phase in yaml", data.get("phase"), "expressplan")
@@ -380,7 +400,7 @@ def test_express_track_defers_planning_pr():
         assert_eq("index created", index_path.exists(), True)
         with open(index_path) as f:
             idx = yaml.safe_load(f)
-        entry = next(e for e in idx["features"] if e["id"] == "express-feature")
+        entry = next(e for e in idx["features"] if e["id"] == expected_feature_id)
         assert_eq("express index status", entry.get("status"), "expressplan")
 
 
@@ -413,6 +433,13 @@ def test_invalid_feature_id():
 
         result, code = run(["create", "--feature-id", "valid-id-123"] + base)
         assert_eq("valid kebab accepted", result.get("status"), "pass")
+    assert_eq("valid kebab canonicalized", result.get("featureId"), "core-api-valid-id-123")
+    assert_eq("valid kebab featureSlug", result.get("featureSlug"), "valid-id-123")
+
+    result, code = run(["create", "--feature-id", "core-api-canonical-feature"] + base)
+    assert_eq("canonical featureId accepted", result.get("status"), "pass")
+    assert_eq("canonical featureId preserved", result.get("featureId"), "core-api-canonical-feature")
+    assert_eq("canonical featureId slug extracted", result.get("featureSlug"), "canonical-feature")
 
 
 def test_invalid_domain_service():
@@ -469,6 +496,45 @@ def test_duplicate_feature():
         assert_true("error mentions already exists", "already exists" in second.get("error", ""))
 
 
+def test_same_local_feature_slug_allowed_in_different_services():
+    """The same local feature slug can coexist because the canonical featureId includes domain and service."""
+    print("test_same_local_feature_slug_allowed_in_different_services", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        first, code1 = run([
+            "create",
+            "--governance-repo", tmp,
+            "--feature-id", "shared-name",
+            "--domain", "platform",
+            "--service", "identity",
+            "--name", "Shared Name",
+            "--track", "quickplan",
+            "--username", "cweber",
+        ])
+        second, code2 = run([
+            "create",
+            "--governance-repo", tmp,
+            "--feature-id", "shared-name",
+            "--domain", "platform",
+            "--service", "payments",
+            "--name", "Shared Name",
+            "--track", "quickplan",
+            "--username", "cweber",
+        ])
+
+        assert_eq("first shared-name status", first.get("status"), "pass")
+        assert_eq("first shared-name exit code", code1, 0)
+        assert_eq("second shared-name status", second.get("status"), "pass")
+        assert_eq("second shared-name exit code", code2, 0)
+        assert_eq("first shared-name featureId", first.get("featureId"), "platform-identity-shared-name")
+        assert_eq("second shared-name featureId", second.get("featureId"), "platform-payments-shared-name")
+
+        with open(Path(tmp) / "feature-index.yaml") as f:
+            index = yaml.safe_load(f)
+        ids = [entry.get("id") for entry in index.get("features", [])]
+        assert_true("identity feature recorded", "platform-identity-shared-name" in ids)
+        assert_true("payments feature recorded", "platform-payments-shared-name" in ids)
+
+
 def test_missing_required_args():
     """Missing required args cause non-zero exit without valid JSON."""
     print("test_missing_required_args", file=sys.stderr)
@@ -516,6 +582,9 @@ def test_fetch_context_with_existing_index():
     """fetch-context returns related features and depends_on paths."""
     print("test_fetch_context_with_existing_index", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
+        auth_login_id = canonical_feature_id("platform", "identity", "auth-login")
+        auth_refresh_id = canonical_feature_id("platform", "identity", "auth-refresh")
+        payment_api_id = canonical_feature_id("commerce", "payments", "payment-api")
         for fid, domain, service in [
             ("auth-login", "platform", "identity"),
             ("auth-refresh", "platform", "identity"),
@@ -535,7 +604,7 @@ def test_fetch_context_with_existing_index():
         result, code = run([
             "fetch-context",
             "--governance-repo", tmp,
-            "--feature-id", "auth-login",
+            "--feature-id", auth_login_id,
         ])
         assert_eq("fetch-context status", result.get("status"), "pass")
         assert_eq("fetch-context exit code", code, 0)
@@ -544,9 +613,9 @@ def test_fetch_context_with_existing_index():
         assert_true("context_paths present", "context_paths" in result)
 
         related = result.get("related", [])
-        assert_true("auth-refresh in related (same domain)", "auth-refresh" in related)
-        assert_true("payment-api not in related (diff domain)", "payment-api" not in related)
-        assert_true("auth-login not in own related list", "auth-login" not in related)
+        assert_true("auth-refresh in related (same domain)", auth_refresh_id in related)
+        assert_true("payment-api not in related (diff domain)", payment_api_id not in related)
+        assert_true("auth-login not in own related list", auth_login_id not in related)
 
         context_paths = result.get("context_paths", [])
         assert_true("context paths are summary.md (summaries depth)", all("summary.md" in p for p in context_paths))
@@ -556,6 +625,7 @@ def test_fetch_context_full_depth():
     """fetch-context --depth full returns feature.yaml paths for related features."""
     print("test_fetch_context_full_depth", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
+        feature_a_id = canonical_feature_id("core", "svc", "feat-a")
         for fid in ["feat-a", "feat-b"]:
             run([
                 "create",
@@ -571,7 +641,7 @@ def test_fetch_context_full_depth():
         result, code = run([
             "fetch-context",
             "--governance-repo", tmp,
-            "--feature-id", "feat-a",
+            "--feature-id", feature_a_id,
             "--depth", "full",
         ])
         assert_eq("full depth status", result.get("status"), "pass")
@@ -620,6 +690,8 @@ def test_fetch_context_uses_feature_yaml_dependencies():
     """fetch-context reads depends_on from feature.yaml instead of stale index metadata."""
     print("test_fetch_context_uses_feature_yaml_dependencies", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
+        feature_a_id = canonical_feature_id("core", "svc", "feat-a")
+        feature_b_id = canonical_feature_id("core", "svc", "feat-b")
         for fid in ["feat-a", "feat-b"]:
             run([
                 "create",
@@ -632,33 +704,34 @@ def test_fetch_context_uses_feature_yaml_dependencies():
                 "--username", "cweber",
             ])
 
-        feature_path = Path(tmp) / "features" / "core" / "svc" / "feat-a" / "feature.yaml"
+        feature_path = Path(tmp) / "features" / "core" / "svc" / feature_a_id / "feature.yaml"
         feature_data = yaml.safe_load(feature_path.read_text(encoding="utf-8"))
-        feature_data.setdefault("dependencies", {})["depends_on"] = ["feat-b"]
+        feature_data.setdefault("dependencies", {})["depends_on"] = [feature_b_id]
         feature_path.write_text(yaml.dump(feature_data, sort_keys=False), encoding="utf-8")
 
-        dep_docs = Path(tmp) / "features" / "core" / "svc" / "feat-b" / "docs"
+        dep_docs = Path(tmp) / "features" / "core" / "svc" / feature_b_id / "docs"
         dep_docs.mkdir(parents=True, exist_ok=True)
         (dep_docs / "prd.md").write_text("# Dep PRD\n", encoding="utf-8")
 
         result, code = run([
             "fetch-context",
             "--governance-repo", tmp,
-            "--feature-id", "feat-a",
+            "--feature-id", feature_a_id,
             "--depth", "full",
         ])
         assert_eq("feature yaml dep status", result.get("status"), "pass")
         assert_eq("feature yaml dep exit code", code, 0)
-        assert_true("depends_on contains feat-b", "feat-b" in result.get("depends_on", []))
+        assert_true("depends_on contains canonical feat-b", feature_b_id in result.get("depends_on", []))
         paths = result.get("context_paths", [])
-        assert_true("dependency feature yaml included", any("feat-b/feature.yaml" in p for p in paths))
-        assert_true("dependency docs included", any("feat-b/docs/prd.md" in p for p in paths))
+        assert_true("dependency feature yaml included", any(f"{feature_b_id}/feature.yaml" in p for p in paths))
+        assert_true("dependency docs included", any(f"{feature_b_id}/docs/prd.md" in p for p in paths))
 
 
 def test_fetch_context_service_refs_include_service_context():
     """fetch-context returns governance files for explicitly named services."""
     print("test_fetch_context_service_refs_include_service_context", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
+        auth_login_id = canonical_feature_id("platform", "identity", "auth-login")
         run([
             "create",
             "--governance-repo", tmp,
@@ -683,7 +756,7 @@ def test_fetch_context_service_refs_include_service_context():
         result, code = run([
             "fetch-context",
             "--governance-repo", tmp,
-            "--feature-id", "auth-login",
+            "--feature-id", auth_login_id,
             "--service-ref", "payments",
         ])
         assert_eq("service ref status", result.get("status"), "pass")
@@ -699,6 +772,7 @@ def test_fetch_context_service_ref_text_detects_service_context():
     """fetch-context can infer service refs from recent conversation text."""
     print("test_fetch_context_service_ref_text_detects_service_context", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
+        auth_login_id = canonical_feature_id("platform", "identity", "auth-login")
         run([
             "create",
             "--governance-repo", tmp,
@@ -720,7 +794,7 @@ def test_fetch_context_service_ref_text_detects_service_context():
         result, code = run([
             "fetch-context",
             "--governance-repo", tmp,
-            "--feature-id", "auth-login",
+            "--feature-id", auth_login_id,
             "--service-ref-text", "We need to coordinate the payments service before drafting the processor plan.",
         ])
         assert_eq("service text status", result.get("status"), "pass")
@@ -784,6 +858,7 @@ def test_fetch_context_service_ref_text_scopes_to_target_domain():
     """fetch-context only loads service context from the target feature's domain."""
     print("test_fetch_context_service_ref_text_scopes_to_target_domain", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
+        platform_auth_id = canonical_feature_id("platform", "identity", "platform-auth")
         run([
             "create",
             "--governance-repo", tmp,
@@ -809,7 +884,7 @@ def test_fetch_context_service_ref_text_scopes_to_target_domain():
         result, code = run([
             "fetch-context",
             "--governance-repo", tmp,
-            "--feature-id", "platform-auth",
+            "--feature-id", platform_auth_id,
             "--service-ref-text", "We also need the payments service in scope.",
         ])
         assert_eq("domain-scoped service status", result.get("status"), "pass")
@@ -823,6 +898,7 @@ def test_fetch_context_service_context_without_service_marker():
     """fetch-context can still load child summaries when a service marker is missing."""
     print("test_fetch_context_service_context_without_service_marker", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
+        auth_login_id = canonical_feature_id("platform", "identity", "auth-login")
         run([
             "create",
             "--governance-repo", tmp,
@@ -841,7 +917,7 @@ def test_fetch_context_service_context_without_service_marker():
         result, code = run([
             "fetch-context",
             "--governance-repo", tmp,
-            "--feature-id", "auth-login",
+            "--feature-id", auth_login_id,
             "--service-ref", "payments",
         ])
         assert_eq("summary-only service status", result.get("status"), "pass")
@@ -858,6 +934,7 @@ def test_control_repo_git_commands():
     print("test_control_repo_git_commands", file=sys.stderr)
     with tempfile.TemporaryDirectory() as gov_tmp:
         with tempfile.TemporaryDirectory() as ctrl_tmp:
+            expected_feature_id = canonical_feature_id("platform", "svc", "ctrl-test")
             result, code = run([
                 "create",
                 "--governance-repo", gov_tmp,
@@ -898,15 +975,15 @@ def test_control_repo_git_commands():
             )
             assert_true(
                 "control repo command includes feature id",
-                any("--feature-id ctrl-test" in c for c in git_cmds),
+                any(f"--feature-id {expected_feature_id}" in c for c in git_cmds),
             )
             assert_true(
                 "raw checkout feature command removed",
-                not any(f"git -C {ctrl_tmp} checkout -b ctrl-test" == c for c in git_cmds),
+                not any(f"git -C {ctrl_tmp} checkout -b {expected_feature_id}" == c for c in git_cmds),
             )
             assert_true(
                 "raw checkout plan command removed",
-                not any(f"git -C {ctrl_tmp} checkout -b ctrl-test-plan" == c for c in git_cmds),
+                not any(f"git -C {ctrl_tmp} checkout -b {expected_feature_id}-plan" == c for c in git_cmds),
             )
 
 
@@ -918,6 +995,7 @@ def test_create_feature_execute_governance_git():
         governance_repo, remote = init_governance_git_repo(root)
         control_repo = root / "control"
         control_repo.mkdir(parents=True, exist_ok=True)
+        expected_feature_id = "platform-identity-auth-refresh"
 
         result, code = run([
             "create",
@@ -945,8 +1023,8 @@ def test_create_feature_execute_governance_git():
         )
         assert_true("feature gh commands still present", result.get("gh_commands"))
 
-        feature_yaml = governance_repo / "features" / "platform" / "identity" / "auth-refresh" / "feature.yaml"
-        summary_path = governance_repo / "features" / "platform" / "identity" / "auth-refresh" / "summary.md"
+        feature_yaml = governance_repo / "features" / "platform" / "identity" / expected_feature_id / "feature.yaml"
+        summary_path = governance_repo / "features" / "platform" / "identity" / expected_feature_id / "summary.md"
         assert_eq("feature yaml exists after publish", feature_yaml.exists(), True)
         assert_eq("summary exists after publish", summary_path.exists(), True)
         assert_eq(
@@ -966,6 +1044,7 @@ def test_create_feature_execute_governance_git_dry_run_skips_git():
     print("test_create_feature_execute_governance_git_dry_run_skips_git", file=sys.stderr)
     with tempfile.TemporaryDirectory() as gov_tmp:
         with tempfile.TemporaryDirectory() as ctrl_tmp:
+            expected_feature_id = "platform-identity-auth-refresh"
             result, code = run([
                 "create",
                 "--governance-repo", gov_tmp,
@@ -993,7 +1072,7 @@ def test_create_feature_execute_governance_git_dry_run_skips_git():
             assert_true("feature execute dry-run control repo commands present", result.get("control_repo_git_commands"))
             assert_eq(
                 "dry-run feature yaml absent",
-                (Path(gov_tmp) / "features" / "platform" / "identity" / "auth-refresh" / "feature.yaml").exists(),
+                (Path(gov_tmp) / "features" / "platform" / "identity" / expected_feature_id / "feature.yaml").exists(),
                 False,
             )
 
@@ -1004,6 +1083,7 @@ def test_create_feature_execute_governance_git_requires_clean_repo():
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         governance_repo, _remote = init_governance_git_repo(root)
+        expected_feature_id = "platform-identity-auth-refresh"
 
         dirty_file = governance_repo / "DIRTY.md"
         dirty_file.write_text("dirty\n", encoding="utf-8")
@@ -1025,7 +1105,7 @@ def test_create_feature_execute_governance_git_requires_clean_repo():
         assert_true("feature dirty repo surfaced preflight error", "Governance git preflight failed" in (result.get("error") or ""))
         assert_eq(
             "feature yaml not created after dirty preflight failure",
-            (governance_repo / "features" / "platform" / "identity" / "auth-refresh" / "feature.yaml").exists(),
+            (governance_repo / "features" / "platform" / "identity" / expected_feature_id / "feature.yaml").exists(),
             False,
         )
 

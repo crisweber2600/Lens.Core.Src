@@ -386,6 +386,13 @@ class TestBuildDevBranchName:
     def test_feature_id_mode(self):
         assert ops.build_dev_branch_name("payments-auth", "feature-id") == "feature/payments-auth"
 
+    def test_feature_id_mode_uses_feature_slug_override(self):
+        assert ops.build_dev_branch_name(
+            "platform-identity-payments-auth",
+            "feature-id",
+            feature_slug="payments-auth",
+        ) == "feature/payments-auth"
+
     def test_feature_id_username_mode(self):
         assert ops.build_dev_branch_name("payments-auth", "feature-id-username", "alice") == "feature/payments-auth-alice"
 
@@ -394,12 +401,13 @@ class TestBuildDevBranchName:
 
 
 class TestPrepareDevBranch:
-    def _args(self, repo, feature_id, mode, username=None, base_branch=None, dry_run=False):
+    def _args(self, repo, feature_id, mode, username=None, feature_slug=None, base_branch=None, dry_run=False):
         return _no_args(
             repo=str(repo),
             feature_id=feature_id,
             mode=mode,
             username=username,
+            feature_slug=feature_slug,
             base_branch=base_branch,
             dry_run=dry_run,
         )
@@ -430,6 +438,23 @@ class TestPrepareDevBranch:
         assert result["working_branch"] == "feature/payments-auth"
         assert result["created"] is True
         assert result["requires_pr"] is True
+        assert ops.branch_exists(str(local), "feature/payments-auth") is True
+        assert ops.current_branch(str(local)) == "feature/payments-auth"
+
+    def test_feature_id_mode_uses_short_feature_slug(self, repo_pair):
+        local, remote = repo_pair
+
+        result, code = ops.cmd_prepare_dev_branch(self._args(
+            local,
+            "platform-identity-payments-auth",
+            "feature-id",
+            feature_slug="payments-auth",
+            dry_run=False,
+        ))
+
+        assert code == 0
+        assert result["feature_slug"] == "payments-auth"
+        assert result["working_branch"] == "feature/payments-auth"
         assert ops.branch_exists(str(local), "feature/payments-auth") is True
         assert ops.current_branch(str(local)) == "feature/payments-auth"
 
@@ -834,6 +859,22 @@ class TestCLIIntegration:
         )
         assert proc.returncode == 0
         data = json.loads(proc.stdout)
+        assert data["working_branch"] == "feature/cli-feature"
+
+    def test_prepare_dev_branch_dry_run_with_feature_slug(self, repo):
+        proc = subprocess.run(
+            ["uv", "run", "--script", self._script(),
+             "prepare-dev-branch",
+             "--repo", str(repo),
+             "--feature-id", "platform-identity-cli-feature",
+             "--feature-slug", "cli-feature",
+             "--mode", "feature-id",
+             "--dry-run"],
+            capture_output=True, text=True
+        )
+        assert proc.returncode == 0
+        data = json.loads(proc.stdout)
+        assert data["feature_slug"] == "cli-feature"
         assert data["working_branch"] == "feature/cli-feature"
 
 

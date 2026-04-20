@@ -21,17 +21,18 @@ After this flow completes:
 
 Prompt for (if not already provided):
 
-1. **Feature name** — human-readable, used to derive featureId (e.g., "Auth Token Refresh" → `auth-refresh`)
+1. **Feature name** — human-readable, used to derive the short `featureSlug` (e.g., "Auth Token Refresh" → `auth-refresh`)
 2. **Domain** — organizational domain (e.g., `platform`, `commerce`)
 3. **Service** — service within the domain (e.g., `identity`, `payments`)
 4. **Track** — present the lifecycle track choices explicitly and require the user to choose one before creation. If `{default_track}` exists, label it as the preferred track only; do not apply it without explicit confirmation.
 
 Derive:
 
-- **featureId** — slugify the feature name: lowercase, replace spaces with `-`, strip non-alphanumeric
+- **featureSlug** — slugify the feature name: lowercase, replace spaces with `-`, strip non-alphanumeric
+- **featureId** — compose the canonical identifier as `{normalized-domain}-{normalized-service}-{featureSlug}`
 - **username** — from `{username}` resolved on activation
 
-Confirm the derived featureId and the explicitly chosen track with the user before proceeding.
+Confirm the derived featureId, featureSlug, and the explicitly chosen track with the user before proceeding.
 
 ### Step 2: Validate with Dry Run
 
@@ -73,7 +74,7 @@ The script:
 3. Adds an entry to `{governance-repo}/feature-index.yaml` (creates if absent)
 4. Creates `{governance-repo}/features/{domain}/{service}/{featureId}/summary.md` stub
 5. Executes governance checkout/pull/add/commit/push directly on `main`
-6. Returns `governance_git_commands`, `control_repo_git_commands`, `remaining_git_commands`, `governance_git_executed`, and `governance_commit_sha`, plus `gh_commands`, plus `planning_pr_created`, `starting_phase`, `recommended_command`, and `router_command` so the handoff matches `lifecycle.yaml`
+6. Returns `featureSlug`, `governance_git_commands`, `control_repo_git_commands`, `remaining_git_commands`, `governance_git_executed`, and `governance_commit_sha`, plus `gh_commands`, plus `planning_pr_created`, `starting_phase`, `recommended_command`, and `router_command` so the handoff matches `lifecycle.yaml`
 
 ### Step 4: Execute Git and GitHub Commands
 
@@ -106,6 +107,7 @@ Present the initialization summary to the user:
 | Field | Value |
 |-------|-------|
 | Feature ID | `{featureId}` |
+| Feature Slug | `{featureSlug}` |
 | Start Phase | `{starting_phase}` |
 | Next Step | `/next` or `{recommended_command}` |
 | Feature Branch | `{featureId}` (control repo) |

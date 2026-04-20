@@ -7,11 +7,12 @@
 
 The init-feature workflow creates the 2-branch topology ({featureId} and {featureId}-plan),
 writes feature.yaml to the governance repo, registers the feature in feature-index.yaml on main,
-and creates a summary.md stub. Domain and service container markers and constitutions are also
-created in the governance repo. When --target-projects-root is provided, a .gitkeep scaffold
-file is created inside the corresponding TargetProjects/{domain}/{service}/ folder. When
---docs-root is provided, a .gitkeep scaffold file is created inside docs/{domain}/{service}/ in
-the control repo.
+and creates a summary.md stub. New features persist a canonical composite featureId and a short
+featureSlug so control-repo branches stay globally unique while target-repo working branches can
+remain concise. Domain and service container markers and constitutions are also created in the
+governance repo. When --target-projects-root is provided, a .gitkeep scaffold file is created
+inside the corresponding TargetProjects/{domain}/{service}/ folder. When --docs-root is provided,
+a .gitkeep scaffold file is created inside docs/{domain}/{service}/ in the control repo.
 
 Feature, domain, and service init can optionally execute the governance
 checkout/pull/add/commit/push sequence directly when --execute-governance-git is provided.
@@ -34,7 +35,8 @@ from pathlib import Path
 import yaml
 
 
-FEATURE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+FEATURE_SLUG_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+FEATURE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 SAFE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
 VALID_TRACKS = [
     "quickplan",
@@ -56,12 +58,22 @@ LEGACY_TRACK_ALIASES: dict[str, str] = {
 }
 
 
-def validate_feature_id(value: str) -> str | None:
-    """Validate featureId is strict kebab-case. Returns error message or None."""
-    if not FEATURE_ID_PATTERN.match(value):
+def validate_feature_slug(value: str) -> str | None:
+    """Validate a local feature slug. Returns error message or None."""
+    if not FEATURE_SLUG_PATTERN.match(value):
         return (
             f"Invalid featureId: '{value}'. "
             f"Must match ^[a-z0-9][a-z0-9-]{{0,63}}$ (lowercase alphanumeric and hyphens only)."
+        )
+    return None
+
+
+def validate_feature_id(value: str) -> str | None:
+    """Validate a canonical featureId. Returns error message or None."""
+    if not FEATURE_ID_PATTERN.match(value):
+        return (
+            f"Invalid featureId: '{value}'. "
+            "Must contain only lowercase alphanumeric characters and hyphens."
         )
     return None
 
@@ -74,6 +86,40 @@ def validate_safe_id(value: str, field_name: str) -> str | None:
             f"Must match [a-z0-9][a-z0-9._-]{{0,63}} (lowercase alphanumeric, dots, hyphens, underscores)."
         )
     return None
+
+
+def normalize_branch_component(value: str) -> str:
+    """Normalize a governance-safe identifier into a branch-safe slug component."""
+    normalized = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    normalized = re.sub(r"-+", "-", normalized)
+    return normalized
+
+
+def canonical_feature_prefix(domain: str, service: str) -> str:
+    """Return the normalized domain/service prefix used in canonical featureIds."""
+    return f"{normalize_branch_component(domain)}-{normalize_branch_component(service)}"
+
+
+def resolve_feature_identity(requested_feature_id: str, domain: str, service: str) -> tuple[str, str]:
+    """Resolve a caller-supplied feature slug or canonical featureId to canonical fields."""
+    prefix = canonical_feature_prefix(domain, service)
+    canonical_prefix = f"{prefix}-"
+
+    if requested_feature_id.startswith(canonical_prefix):
+        feature_slug = requested_feature_id[len(canonical_prefix):]
+        err = validate_feature_slug(feature_slug)
+        if err is None:
+            return requested_feature_id, feature_slug
+
+    err = validate_feature_slug(requested_feature_id)
+    if err is None:
+        return f"{canonical_prefix}{requested_feature_id}", requested_feature_id
+
+    raise ValueError(
+        f"Invalid featureId: '{requested_feature_id}'. Pass either a local feature slug matching "
+        "^[a-z0-9][a-z0-9-]{0,63}$ or the canonical featureId "
+        f"'{canonical_prefix}<feature-slug>'."
+    )
 
 
 def now_iso() -> str:
@@ -252,6 +298,7 @@ def write_context_yaml(personal_folder: str, domain: str, service: str | None, s
 
 def make_feature_yaml(
     feature_id: str,
+    feature_slug: str,
     domain: str,
     service: str,
     name: str,
@@ -265,6 +312,7 @@ def make_feature_yaml(
         "name": name,
         "description": "",
         "featureId": feature_id,
+        "featureSlug": feature_slug,
         "domain": domain,
         "service": service,
         "phase": phase,
@@ -820,18 +868,18 @@ def build_gh_commands(control_repo: str, feature_id: str, name: str, track: str)
 
 def cmd_create(args: argparse.Namespace) -> dict:
     """Create feature branches, feature.yaml, PR, feature-index entry, and summary stub."""
-    err = validate_feature_id(args.feature_id)
-    if err:
-        return {"status": "fail", "error": err}
-
     for field_name, value in [("domain", args.domain), ("service", args.service)]:
         err = validate_safe_id(value, field_name)
         if err:
             return {"status": "fail", "error": err}
 
+    try:
+        feature_id, feature_slug = resolve_feature_identity(args.feature_id, args.domain, args.service)
+    except ValueError as exc:
+        return {"status": "fail", "error": str(exc)}
+
     governance_repo = args.governance_repo
     control_repo = args.control_repo
-    feature_id = args.feature_id
     domain = args.domain
     service = args.service
     name = args.name
@@ -859,6 +907,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
             return {
                 "status": "fail",
                 "featureId": feature_id,
+                "featureSlug": feature_slug,
                 "starting_phase": starting_phase,
                 "recommended_command": recommended_command,
                 "router_command": "/next",
@@ -874,6 +923,8 @@ def cmd_create(args: argparse.Namespace) -> dict:
     if feature_id in existing_ids:
         return {
             "status": "fail",
+            "featureId": feature_id,
+            "featureSlug": feature_slug,
             "error": f"Feature '{feature_id}' already exists in feature-index.yaml",
         }
 
@@ -913,6 +964,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
             "status": "pass",
             "dry_run": True,
             "featureId": feature_id,
+            "featureSlug": feature_slug,
             "starting_phase": starting_phase,
             "recommended_command": recommended_command,
             "router_command": "/next",
@@ -927,6 +979,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
 
     feature_data = make_feature_yaml(
         feature_id,
+        feature_slug,
         domain,
         service,
         name,
@@ -943,6 +996,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
     new_entry = {
         "id": feature_id,
         "featureId": feature_id,
+        "featureSlug": feature_slug,
         "domain": domain,
         "service": service,
         "status": starting_phase,
@@ -979,6 +1033,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
             return {
                 "status": "fail",
                 "featureId": feature_id,
+                "featureSlug": feature_slug,
                 "starting_phase": starting_phase,
                 "recommended_command": recommended_command,
                 "router_command": "/next",
@@ -999,6 +1054,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
     return {
         "status": "pass",
         "featureId": feature_id,
+        "featureSlug": feature_slug,
         "starting_phase": starting_phase,
         "recommended_command": recommended_command,
         "router_command": "/next",
@@ -1645,7 +1701,10 @@ Examples:
     create_p.add_argument(
         "--feature-id",
         required=True,
-        help="Unique feature identifier (kebab-case: ^[a-z0-9][a-z0-9-]{0,63}$)",
+        help=(
+            "Local feature slug or canonical featureId. New features are stored as "
+            "{normalized-domain}-{normalized-service}-{feature-slug}."
+        ),
     )
     create_p.add_argument("--domain", required=True, help="Domain name")
     create_p.add_argument("--service", required=True, help="Service name")

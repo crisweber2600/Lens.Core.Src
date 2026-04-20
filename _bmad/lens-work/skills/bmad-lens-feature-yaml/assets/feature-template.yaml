@@ -6,6 +6,7 @@
 name: ""
 description: ""
 featureId: ""
+featureSlug: ""
 
 # --- Organization ---
 domain: ""

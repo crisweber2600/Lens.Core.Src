@@ -7,7 +7,7 @@ description: Feature initialization orchestrator — creates 2-branch topology, 
 
 ## Overview
 
-This skill orchestrates the full initialization of a new feature in the Lens governance framework. It creates the two-branch topology (`{featureId}` and `{featureId}-plan`) in the **control repo**, commits `feature.yaml` to governance `main`, registers the feature in `feature-index.yaml` on `main`, creates a `summary.md` stub on `main`, and opens a PR from the plan branch to the feature branch in the control repo when the selected track uses an immediate planning PR. The governance repo stays on `main` at all times; no feature branches are created there. For the `express` track, the planning PR is deferred until planning artifacts exist on the plan branch.
+This skill orchestrates the full initialization of a new feature in the Lens governance framework. It creates the two-branch topology (`{featureId}` and `{featureId}-plan`) in the **control repo**, commits `feature.yaml` to governance `main`, registers the feature in `feature-index.yaml` on `main`, creates a `summary.md` stub on `main`, and opens a PR from the plan branch to the feature branch in the control repo when the selected track uses an immediate planning PR. New features persist a canonical composite `featureId` plus a short `featureSlug` so control-repo branches stay unique across domains/services while target-repo working branches can stay concise. The governance repo stays on `main` at all times; no feature branches are created there. For the `express` track, the planning PR is deferred until planning artifacts exist on the plan branch.
 
 **Progressive disclosure:** you ask only for feature name, domain, and service upfront. Then you present track choices and require an explicit selection before creation. Username and repo paths are resolved from `user-profile.md`, config, and git config.
 
@@ -20,13 +20,13 @@ You are the entry point for all feature work in the Lens system. You orchestrate
 ## Communication Style
 
 - Ask for the minimum: name, domain, service, then present track choices once scope is resolved
-- Confirm the derived featureId before creating anything
+- Confirm the derived featureId and featureSlug before creating anything
 - Treat profile or config track values as suggestions only; never apply them silently
 - After creation, report the lifecycle start phase and the next recommended command returned by the script; do not hardcode `/quickplan`
 - Present the initialization summary as a compact table: featureId, branches, PR link, index status
 - If the feature is expected to introduce a new implementation repo, recommend `target-repo provision` as the next repo-orchestration step instead of letting later phases improvise clone placement
 - Surface validation errors with the exact field, rule violated, and corrective action
-- Lead with action: "Created `auth-refresh`" not "I have created a feature called auth-refresh"
+- Lead with action: "Created `platform-identity-auth-refresh` (slug: `auth-refresh`)" not "I have created a feature called auth-refresh"
 
 ## Principles
 
@@ -42,7 +42,8 @@ You are the entry point for all feature work in the Lens system. You orchestrate
 
 | Term | Definition |
 |------|-----------|
-| **featureId** | Kebab-case unique identifier derived from feature name (e.g., `auth-refresh`); used as branch name and directory key |
+| **featureId** | Canonical identifier composed from normalized `{domain}-{service}-{featureSlug}` (e.g., `platform-identity-auth-refresh`); used as the globally unique branch name and directory key |
+| **featureSlug** | Short feature-local slug derived from feature name (e.g., `auth-refresh`); preserved for concise target-repo working branches |
 | **plan branch** | `{featureId}-plan` — control repo planning branch for code work and draft artifacts |
 | **feature branch** | `{featureId}` — the base branch in the control repo for all development work on this feature |
 | **feature-index.yaml** | Registry file at `{governance-repo}/feature-index.yaml` on `main`; always reflects the current set of features |
@@ -197,7 +198,7 @@ uv run scripts/init-feature-ops.py read-context \
 - stages, commits, and pushes governance artifacts automatically on `main`
 - returns `governance_git_commands`, `remaining_git_commands`, `governance_git_executed`, and `governance_commit_sha`
 
-Feature init also returns `control_repo_git_commands` so callers can surface any still-manual branch creation steps separately from the governance publish that already ran. These commands route through `bmad-lens-git-orchestration create-feature-branches` so `{featureId}` is created from the control repo default branch before `{featureId}-plan` is created.
+Feature init also returns `featureSlug` and `control_repo_git_commands` so callers can preserve short target-repo branch names while the governance and control-repo topology uses the canonical `{featureId}`. These commands route through `bmad-lens-git-orchestration create-feature-branches` so `{featureId}` is created from the control repo default branch before `{featureId}-plan` is created.
 
 `git_commands` remains the full planned command list for compatibility. When governance git already ran, callers should surface only `remaining_git_commands` plus any returned `gh_commands` to the user.
 
