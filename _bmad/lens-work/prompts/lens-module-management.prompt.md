@@ -1,5 +1,5 @@
 ---
-description: 'Check module version and guide self-service updates.'
+description: 'Check module version and clarify legacy branch migration status.'
 ---
 
 # lens-module-management (Stub)

@@ -70,7 +70,7 @@ Lens,bmad-lens-bmad-skill,bmad-code-review,BCR,Run BMAD code review with Lens go
 Lens,bmad-lens-sensing,sensing,SN,Run cross-initiative overlap detection,detect,[--governance-dir],anytime,,,false,,sensing report
 Lens,bmad-lens-audit,audit,AA,Run cross-initiative compliance audit dashboard,audit,[--governance-dir],anytime,,,false,docs/reports/lens-work/quality-scan,audit report
 Lens,bmad-lens-approval-status,approval-status,AS,Show pending promotion PR approval state and review status,check,[--governance-dir],anytime,,,false,,approval status JSON
-Lens,bmad-lens-module-management,module-management,MM,Check module version and guide self-service updates,check,,anytime,,,false,,version check results
+Lens,bmad-lens-module-management,module-management,MM,Check module version and clarify legacy branch migration status,check,,anytime,,,false,,version check results
 Lens,bmad-lens-rollback,rollback,RB,Safely roll back to a previous lifecycle phase,rollback,<featureId> [--target-phase] [--dry-run],anytime,,,false,,rollback results
-Lens,bmad-lens-upgrade,upgrade,UG,Migrate control repo schema to current version,upgrade,[--dry-run],anytime,,,false,,migration results
+Lens,bmad-lens-upgrade,upgrade,UG,Migrate control repo schema to current version or route legacy branches to lens-migrate,upgrade,[--dry-run],anytime,,,false,,migration results
 Lens,bmad-lens-profile,profile,PF,View and edit onboarding profile,view,[--edit],anytime,,,false,.lens/personal,profile.yaml

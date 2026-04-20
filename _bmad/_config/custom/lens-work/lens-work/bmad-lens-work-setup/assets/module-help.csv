@@ -7,10 +7,10 @@ Lens,bmad-lens-next,Next,NX,"Recommend next action based on lifecycle state",,,a
 Lens,bmad-lens-help,Help,HP,"Show available commands and usage",,,anytime,,,,,
 Lens,bmad-lens-sensing,Sensing,SN,"Run cross-initiative overlap detection on demand",,,anytime,,,,,
 Lens,bmad-lens-constitution,Constitution,CN,"Resolve and display constitutional governance",,,anytime,,,,,
-Lens,bmad-lens-module-management,Module Management,MM,"Check module version and guide self-service updates",,,anytime,,,,,
+Lens,bmad-lens-module-management,Module Management,MM,"Check module version and clarify legacy branch migration status",,,anytime,,,,,
 Lens,bmad-lens-complete,Complete Feature,CL,"Formally complete a feature — retrospective archive and close",,,anytime,,,,,
 Lens,bmad-lens-document-project,BMad Document Project,DC,"Run BMAD document-project with Lens feature docs scope and governance mirroring",,,anytime,,,,feature.yaml.docs.path,"project-overview.md index.md"
-Lens,bmad-lens-upgrade,Lens Upgrade,UG,"Migrate control repo schema to current version",,,anytime,,,,,
+Lens,bmad-lens-upgrade,Lens Upgrade,UG,"Migrate control repo schema to current version or route legacy branches to lens-migrate",,,anytime,,,,,
 Lens,bmad-lens-preplan,PrePlan,PP,"Run PrePlan phase — brainstorm research product brief",,,phase-1,,,false,docs/lens-work/initiatives,"product-brief research brainstorm"
 Lens,bmad-lens-businessplan,BusinessPlan,BP,"Run BusinessPlan phase — PRD creation UX design",,,phase-2,PP,,false,docs/lens-work/initiatives,"prd ux-design"
 Lens,bmad-lens-techplan,TechPlan,TP,"Run TechPlan phase — architecture document technical decisions",,,phase-3,BP,,false,docs/lens-work/initiatives,architecture

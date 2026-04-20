@@ -135,7 +135,7 @@ COMMANDS = [
     ("bmad-lens-constitution.md", "constitution", "Resolve and display constitutional governance", "skills/bmad-lens-constitution/SKILL.md"),
     ("bmad-lens-audit.md", "audit", "Run cross-initiative compliance audit dashboard", "skills/bmad-lens-audit/SKILL.md"),
     ("bmad-lens-sensing.md", "sensing", "Cross-initiative overlap detection on demand", "skills/bmad-lens-sensing/SKILL.md"),
-    ("bmad-lens-module-management.md", "module-management", "Check module version and guide self-service updates", "skills/bmad-lens-module-management/SKILL.md"),
+    ("bmad-lens-module-management.md", "module-management", "Check module version and clarify legacy branch migration status", "skills/bmad-lens-module-management/SKILL.md"),
     ("bmad-lens-discover.md", "discover", "Sync TargetProjects with governance repo inventory", "skills/bmad-lens-discover/SKILL.md"),
 ]
 
@@ -257,8 +257,8 @@ You must fully embody this agent's persona and follow all activation instruction
         ("lens-bmad-quick-dev.prompt.md", "lens-bmad-quick-dev", "Run BMAD quick dev with Lens context", "lens-bmad-quick-dev.prompt.md"),
         ("lens-bmad-code-review.prompt.md", "lens-bmad-code-review", "Run BMAD code review with Lens context", "lens-bmad-code-review.prompt.md"),
         ("lens-bmad-document-project.prompt.md", "lens-bmad-document-project", "Run BMAD document-project with Lens-aware feature docs scope", "lens-bmad-document-project.prompt.md"),
-        ("lens-module-management.prompt.md", "lens-module-management", "Check module version and guide self-service updates", "lens-module-management.prompt.md"),
-        ("lens-upgrade.prompt.md", "lens-upgrade", "Migrate control repo schema to current version", "lens-upgrade.prompt.md"),
+        ("lens-module-management.prompt.md", "lens-module-management", "Check module version and clarify legacy branch migration status", "lens-module-management.prompt.md"),
+        ("lens-upgrade.prompt.md", "lens-upgrade", "Migrate control repo schema to current version or route legacy branches to lens-migrate", "lens-upgrade.prompt.md"),
         ("lens-dashboard.prompt.md", "lens-dashboard", "Cross-feature dashboard with dependency graphs", "lens-dashboard.prompt.md"),
         ("lens-discover.prompt.md", "lens-discover", "Sync TargetProjects with governance repo inventory", "lens-discover.prompt.md"),
         ("lens-feature-yaml.prompt.md", "lens-feature-yaml", "Feature YAML lifecycle operations", "lens-feature-yaml.prompt.md"),

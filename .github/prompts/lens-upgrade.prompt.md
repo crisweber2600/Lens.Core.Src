@@ -1,5 +1,5 @@
 ---
-description: 'Migrate control repo schema to current version'
+description: 'Migrate control repo schema to current version or route legacy branches to lens-migrate'
 ---
 
 # lens-upgrade (Stub)

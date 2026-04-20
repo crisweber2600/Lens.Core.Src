@@ -87,5 +87,58 @@ class TestGovernanceSetupFile:
         assert "governance_remote_url" in contents
 
 
+class TestGovernanceRepoDerivation:
+    def test_derive_governance_repo_uses_folder_name_verbatim(self):
+        module = _load_script_module()
+        assert module.derive_governance_repo(Path("/tmp/printingmagic.lens")) == "printingmagic.lens.governance"
+
+    def test_derive_governance_repo_preserves_src_suffix(self):
+        module = _load_script_module()
+        assert module.derive_governance_repo(Path("/tmp/myproject.src")) == "myproject.src.governance"
+
+
+class TestEnsureGithubRepoExists:
+    def test_creates_missing_repo_with_gh(self, monkeypatch):
+        module = _load_script_module()
+        calls: list[list[str]] = []
+
+        def fake_run(cmd, capture_output=False, text=False, cwd=None, check=False, env=None):
+            calls.append(list(cmd))
+
+            if cmd[:3] == ["git", "ls-remote", "https://github.com/crisweber2600/printingmagic.lens.governance.git"]:
+                attempt = sum(1 for existing in calls if existing[:3] == cmd[:3])
+                return subprocess.CompletedProcess(cmd, 0 if attempt > 1 else 2, stdout="" if attempt == 1 else "ok\n", stderr="missing" if attempt == 1 else "")
+
+            if cmd == ["which", "gh"]:
+                return subprocess.CompletedProcess(cmd, 0, stdout="/usr/bin/gh\n", stderr="")
+
+            if cmd[:3] == ["gh", "repo", "create"]:
+                return subprocess.CompletedProcess(cmd, 0, stdout="created\n", stderr="")
+
+            raise AssertionError(f"Unexpected subprocess.run call: {cmd}")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+        module.ensure_github_repo_exists(
+            "https://github.com",
+            "crisweber2600",
+            "printingmagic.lens.governance",
+            "https://github.com/crisweber2600/printingmagic.lens.governance.git",
+            dry_run=False,
+        )
+
+        assert ["which", "gh"] in calls
+        assert [
+            "gh",
+            "repo",
+            "create",
+            "crisweber2600/printingmagic.lens.governance",
+            "--private",
+            "--add-readme",
+            "--description",
+            "LENS governance repository",
+            "--disable-issues",
+        ] in calls
+
+
 # TODO: Test clone_or_pull: clones on first run, pulls on subsequent run
-# TODO: Test governance repo name derivation (myproject.src → myproject.bmad.governance)

@@ -354,8 +354,8 @@ const STUB_PROMPTS = [
     { file: 'lens-bmad-quick-dev.prompt.md', name: 'lens-bmad-quick-dev', desc: 'Run BMAD quick dev with Lens context', target: 'lens-bmad-quick-dev.prompt.md' },
     { file: 'lens-bmad-code-review.prompt.md', name: 'lens-bmad-code-review', desc: 'Run BMAD code review with Lens context', target: 'lens-bmad-code-review.prompt.md' },
     { file: 'lens-bmad-document-project.prompt.md', name: 'lens-bmad-document-project', desc: 'Run BMAD document-project with Lens-aware feature docs scope', target: 'lens-bmad-document-project.prompt.md' },
-    { file: 'lens-module-management.prompt.md', name: 'lens-module-management', desc: 'Check module version and guide self-service updates', target: 'lens-module-management.prompt.md' },
-    { file: 'lens-upgrade.prompt.md', name: 'lens-upgrade', desc: 'Migrate control repo schema to current version', target: 'lens-upgrade.prompt.md' },
+    { file: 'lens-module-management.prompt.md', name: 'lens-module-management', desc: 'Check module version and clarify legacy branch migration status', target: 'lens-module-management.prompt.md' },
+    { file: 'lens-upgrade.prompt.md', name: 'lens-upgrade', desc: 'Migrate control repo schema to current version or route legacy branches to lens-migrate', target: 'lens-upgrade.prompt.md' },
     { file: 'lens-dashboard.prompt.md', name: 'lens-dashboard', desc: 'Cross-feature dashboard with dependency graphs', target: 'lens-dashboard.prompt.md' },
     { file: 'lens-discover.prompt.md', name: 'lens-discover', desc: 'Sync TargetProjects with governance repo inventory', target: 'lens-discover.prompt.md' },
     { file: 'lens-feature-yaml.prompt.md', name: 'lens-feature-yaml', desc: 'Feature YAML lifecycle operations', target: 'lens-feature-yaml.prompt.md' },
@@ -384,7 +384,7 @@ const IDE_COMMANDS = [
     { file: 'bmad-lens-constitution.md', name: 'constitution', desc: 'Resolve and display constitutional governance', wf: 'skills/bmad-lens-constitution/SKILL.md' },
     { file: 'bmad-lens-audit.md', name: 'audit', desc: 'Run cross-initiative compliance audit dashboard', wf: 'skills/bmad-lens-audit/SKILL.md' },
     { file: 'bmad-lens-sensing.md', name: 'sensing', desc: 'Cross-initiative overlap detection on demand', wf: 'skills/bmad-lens-sensing/SKILL.md' },
-    { file: 'bmad-lens-module-management.md', name: 'module-management', desc: 'Check module version and guide self-service updates', wf: 'skills/bmad-lens-module-management/SKILL.md' },
+    { file: 'bmad-lens-module-management.md', name: 'module-management', desc: 'Check module version and clarify legacy branch migration status', wf: 'skills/bmad-lens-module-management/SKILL.md' },
     { file: 'bmad-lens-discover.md', name: 'discover', desc: 'Sync TargetProjects with governance repo inventory', wf: 'skills/bmad-lens-discover/SKILL.md' },
 ];
 
