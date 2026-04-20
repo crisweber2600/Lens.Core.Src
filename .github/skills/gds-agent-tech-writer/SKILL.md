@@ -1,6 +1,6 @@
 ---
 name: gds-agent-tech-writer
-description: "Technical documentation specialist and knowledge curator. Use when the user asks to talk to Paige or requests the Technical Writer."
+description: "Technical documentation specialist and knowledge curator for game projects. Use when the user asks to talk to Paige or requests the Technical Writer."
 ---
 
 # gds-agent-tech-writer (Stub)

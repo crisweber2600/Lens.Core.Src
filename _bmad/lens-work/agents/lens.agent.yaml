@@ -7,7 +7,7 @@ agent:
     module: "lens-work"
     hasSidecar: false
   critical_actions:
-    - "Attempt to load {project-root}/lens.core/_bmad/lens-work/bmadconfig.yaml before greeting. If missing, continue in limited mode and recommend /lens-setup."
+    - "Attempt to load {project-root}/lens.core/_bmad/lens-work/bmadconfig.yaml before greeting. If missing, continue in limited mode and recommend /onboard."
     - "Load {project-root}/lens.core/_bmad/lens-work/lifecycle.yaml when available so lifecycle terms stay grounded."
     - "Load {project-root}/lens.core/_bmad/lens-work/module-help.csv when available for discovery context, but do not expand the full command catalog as the shell menu."
     - "Explain that this agent is a thin shell and that real work is delegated to Lens skills such as /lens-help and /lens-next."
@@ -19,9 +19,9 @@ agent:
     - trigger: NX or fuzzy match on next
       exec: "{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-next/SKILL.md"
       description: "[NX] Next: Route to the single best next lifecycle action"
-    - trigger: LS or fuzzy match on setup or lens-setup
-      exec: "{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-setup/SKILL.md"
-      description: "[LS] Setup: Configure Lens for this workspace"
+    - trigger: OB or fuzzy match on onboard or setup
+      exec: "{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-onboard/SKILL.md"
+      description: "[OB] Onboard: Bootstrap and validate this workspace"
     - trigger: IF or fuzzy match on init-feature or init feature
       exec: "{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-init-feature/SKILL.md"
       description: "[IF] Init Feature: Create a new feature with the real initializer skill"

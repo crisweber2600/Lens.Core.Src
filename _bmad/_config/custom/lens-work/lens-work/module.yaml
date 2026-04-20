@@ -93,14 +93,10 @@ skills:
     description: "Sync TargetProjects with governance repo inventory"
   - id: bmad-lens-onboard
     file: skills/bmad-lens-onboard/SKILL.md
-    deprecated: true
-    description: "[DEPRECATED] First-run governance repo setup. Superseded by lens-new-domain, lens-new-service, and lens-init-feature."
+    description: "Primary onboarding flow for shared preflight and role-aware next-step guidance"
   - id: bmad-lens-migrate
     file: skills/bmad-lens-migrate/SKILL.md
     description: "Migration bridge between LENS v3 and Lens Next"
-  - id: bmad-lens-setup
-    file: skills/bmad-lens-setup/SKILL.md
-    description: "Module configuration installer and help registry"
   - id: bmad-lens-document-project
     file: skills/bmad-lens-document-project/SKILL.md
     description: "Document active feature/project with domain/service/feature scoped output in control and governance repos"
@@ -256,7 +252,6 @@ prompts:
   - lens-bmad-quick-dev.prompt.md
   - lens-bmad-code-review.prompt.md
   - lens-bmad-document-project.prompt.md
-  - lens-setup.prompt.md
   - lens-module-management.prompt.md
   - lens-upgrade.prompt.md
   - lens-rollback.prompt.md
@@ -322,7 +317,6 @@ adapters:
       - .github/prompts/lens-bmad-quick-dev.prompt.md
       - .github/prompts/lens-bmad-code-review.prompt.md
       - .github/prompts/lens-bmad-document-project.prompt.md
-      - .github/prompts/lens-setup.prompt.md
       - .github/prompts/lens-module-management.prompt.md
       - .github/prompts/lens-upgrade.prompt.md
       - .github/prompts/lens-rollback.prompt.md

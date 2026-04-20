@@ -117,11 +117,11 @@ The LENS Workbench agent is the single entry point for all user interaction. In 
 
 **Activation Sequence (10 steps):**
 1. Load persona from the agent file
-2. Attempt to load `bmadconfig.yaml`; if missing, continue in limited mode and direct the user to `/lens-setup`
+2. Attempt to load `bmadconfig.yaml`; if missing, continue in limited mode and direct the user to `/onboard`
 3. Load `lifecycle.yaml` so lifecycle terms and gates stay grounded
 4. Load `module-help.csv` for discovery context without expanding it into the shell menu
 5. Explain that `@lens` is a thin shell and that real work is delegated to Lens skills
-6. Show the compact shell menu only: Help, Next, Status, Setup, Init Feature, Chat, Dismiss
+6. Show the compact shell menu only: Help, Next, Status, Onboard, Init Feature, Chat, Dismiss
 7. Direct users to `/lens-help` for command discovery and `/lens-next` for the best next step
 8. **STOP and WAIT** for user input
 9. Execute only real skill files when a menu item is selected
@@ -344,7 +344,7 @@ Commands and skills that resolve constitutions or read shared feature state requ
 | `/move-feature`, `/split-feature` | Required | Existing and target feature paths plus registry updates |
 | `/pause-resume`, `/rollback`, `/complete` | Required | `feature.yaml` updates and closeout metadata |
 | `/finalizeplan`, `/approval-status` | Read-only | Lifecycle contract, PR linkage, and governance metadata |
-| `/profile`, `/help`, `/lens-setup` | None | Local config and module metadata only |
+| `/profile`, `/help`, `/onboard` | None | Local config and module metadata only |
 
 ### 12.2 Failure Modes
 
