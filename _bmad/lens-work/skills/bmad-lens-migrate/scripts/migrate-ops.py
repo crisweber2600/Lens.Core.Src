@@ -2443,6 +2443,164 @@ def cmd_normalize_feature_ids(args: argparse.Namespace) -> dict:
     return result
 
 
+def _fix_governance_feature_dir(
+    governance_repo: Path,
+    domain: str,
+    service: str,
+    old_dir_name: str,
+    feature_slug: str,
+    feature_yaml_data: dict,
+    project_root: "Path | None",
+    dry_run: bool,
+) -> dict:
+    """Rename a governance feature directory from featureId to featureSlug and fix docs paths.
+
+    Returns a record dict with ``governance_dir``, ``docs_dir``, ``feature_yaml_status``,
+    and optionally ``proposed_docs``.
+    """
+    old_dir = governance_repo / "features" / domain / service / old_dir_name
+    new_dir = governance_repo / "features" / domain / service / feature_slug
+
+    correct_docs_path = f"docs/{domain}/{service}/{feature_slug}"
+    correct_gov_docs_path = f"features/{domain}/{service}/{feature_slug}/docs"
+
+    updated_data = dict(feature_yaml_data)
+    if "docs" in updated_data and isinstance(updated_data["docs"], dict):
+        docs_block = dict(updated_data["docs"])
+        docs_block["path"] = correct_docs_path
+        docs_block["governance_docs_path"] = correct_gov_docs_path
+        updated_data["docs"] = docs_block
+
+    docs_dir_result: "dict | None" = None
+    if project_root is not None:
+        old_docs_dir = project_root / "docs" / domain / service / old_dir_name
+        new_docs_dir = project_root / "docs" / domain / service / feature_slug
+        if old_docs_dir.exists():
+            if dry_run:
+                docs_dir_result = {"from": str(old_docs_dir), "to": str(new_docs_dir), "status": "would-rename"}
+            else:
+                old_docs_dir.rename(new_docs_dir)
+                docs_dir_result = {"from": str(old_docs_dir), "to": str(new_docs_dir), "status": "renamed"}
+        else:
+            docs_dir_result = {"from": str(old_docs_dir), "to": str(new_docs_dir), "status": "not-found"}
+
+    if dry_run:
+        return {
+            "governance_dir": {"from": str(old_dir), "to": str(new_dir), "status": "would-rename"},
+            "docs_dir": docs_dir_result,
+            "feature_yaml_status": "would-update",
+            "proposed_docs": updated_data.get("docs"),
+        }
+
+    old_dir.rename(new_dir)
+    feature_yaml_path = new_dir / "feature.yaml"
+    atomic_write_yaml(feature_yaml_path, updated_data)
+
+    return {
+        "governance_dir": {"from": str(old_dir), "to": str(new_dir), "status": "renamed"},
+        "docs_dir": docs_dir_result,
+        "feature_yaml_status": "updated",
+    }
+
+
+def cmd_fix_feature_dirs(args: argparse.Namespace) -> dict:
+    """Rename governance feature directories that use featureId instead of featureSlug.
+
+    Governance feature directories must always use the featureSlug (short form), never the
+    canonical featureId (``{domain}-{service}-{slug}``).  This command scans all
+    ``features/{domain}/{service}/{dir}/feature.yaml`` files, detects misnamed directories
+    (where the directory name equals featureId rather than featureSlug), renames them, and
+    updates the ``docs.path`` / ``docs.governance_docs_path`` fields in each affected
+    feature.yaml.
+
+    When ``--project-root`` is provided the corresponding
+    ``docs/{domain}/{service}/{old_dir}`` directory is also renamed.
+    """
+    try:
+        governance_repo, governance_warning = resolve_governance_repo(args.governance_repo)
+    except RuntimeError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    dry_run: bool = getattr(args, "dry_run", False)
+    project_root_arg: "str | None" = getattr(args, "project_root", None)
+
+    project_root: "Path | None" = None
+    if project_root_arg:
+        pr_path = Path(project_root_arg)
+        if not pr_path.exists():
+            return {"status": "fail", "error": f"Project root not found: {pr_path}"}
+        project_root = pr_path
+
+    scanned = _scan_governance_features(governance_repo)
+
+    needs_fix = [
+        entry for entry in scanned
+        if entry["data"].get("featureSlug") and entry["dir_slug"] != entry["data"]["featureSlug"]
+    ]
+
+    if not needs_fix:
+        result: dict = {
+            "status": "pass",
+            "fixed": [],
+            "total_scanned": len(scanned),
+            "total_fixed": 0,
+            "dry_run": dry_run,
+        }
+        if governance_warning:
+            result.setdefault("warnings", []).append(governance_warning)
+        return result
+
+    fixed: list[dict] = []
+    errors: list[dict] = []
+
+    for entry in needs_fix:
+        data = entry["data"]
+        domain: str = data.get("domain") or entry["domain"]
+        service: str = data.get("service") or entry["service"]
+        feature_slug: str = data["featureSlug"]
+        dir_name: str = entry["dir_slug"]
+        canonical_feature_id: str = data.get("featureId", dir_name)
+
+        record: dict = {
+            "domain": domain,
+            "service": service,
+            "old_dir_name": dir_name,
+            "feature_slug": feature_slug,
+            "canonical_feature_id": canonical_feature_id,
+        }
+
+        try:
+            fix_result = _fix_governance_feature_dir(
+                governance_repo=governance_repo,
+                domain=domain,
+                service=service,
+                old_dir_name=dir_name,
+                feature_slug=feature_slug,
+                feature_yaml_data=data,
+                project_root=project_root,
+                dry_run=dry_run,
+            )
+            record.update(fix_result)
+            fixed.append(record)
+        except OSError as e:
+            record["status_error"] = str(e)
+            errors.append(record)
+
+    result = {
+        "status": "pass" if not errors else "partial",
+        "fixed": fixed,
+        "total_scanned": len(scanned),
+        "total_fixed": len(fixed),
+        "dry_run": dry_run,
+    }
+    if errors:
+        result["errors"] = errors
+    if governance_warning:
+        result.setdefault("warnings", []).append(governance_warning)
+    return result
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Migration operations — scan legacy LENS v3 branches and migrate to Lens Next model.",
@@ -2481,6 +2639,11 @@ Examples:
 
   %(prog)s normalize-feature-ids --governance-repo /path/to/repo \\
     --control-repo /path/to/control-repo
+
+  %(prog)s fix-feature-dirs --governance-repo /path/to/repo --dry-run
+
+  %(prog)s fix-feature-dirs --governance-repo /path/to/repo \\
+    --project-root /path/to/project-root
 """,
     )
 
@@ -2538,6 +2701,17 @@ Examples:
     norm_p.add_argument("--control-repo", help="Optional path to control repo for branch renaming")
     norm_p.add_argument("--dry-run", action="store_true", help="Preview changes without writing")
 
+    fix_p = subparsers.add_parser(
+        "fix-feature-dirs",
+        help="Rename governance feature directories that use featureId instead of featureSlug",
+    )
+    fix_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
+    fix_p.add_argument(
+        "--project-root",
+        help="Optional path to project root for renaming docs/{domain}/{service}/{dir} directories",
+    )
+    fix_p.add_argument("--dry-run", action="store_true", help="Preview changes without writing")
+
     return parser
 
 
@@ -2552,6 +2726,7 @@ def main() -> None:
         "verify": cmd_verify,
         "cleanup": cmd_cleanup,
         "normalize-feature-ids": cmd_normalize_feature_ids,
+        "fix-feature-dirs": cmd_fix_feature_dirs,
     }
 
     result = commands[args.command](args)
