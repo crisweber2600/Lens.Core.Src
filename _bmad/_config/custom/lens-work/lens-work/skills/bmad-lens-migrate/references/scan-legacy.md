@@ -31,7 +31,7 @@ python3 ./scripts/migrate-ops.py scan \
   --source-repo /path/to/source/repo
 ```
 
-The script scans `{governance_repo}/branches/` for directories matching the legacy pattern `^([a-z0-9-]+)-([a-z0-9-]+)-([a-z0-9-]+)(?:-([a-z0-9-]+))?$`. When `branches/` does not exist on the filesystem, it falls back to listing remote branches via `git branch -r` and filtering by the same pattern. It groups milestone branches under their base branch, derives domain/service/featureId, and detects conflicts.
+The script scans `{governance_repo}/branches/` for directories matching the legacy pattern `^([a-z0-9-]+)-([a-z0-9-]+)-([a-z0-9-]+)(?:-([a-z0-9-]+))?$`. When `branches/` does not exist on the filesystem, it falls back to listing remote branches via `git branch -r` and filtering by the same pattern. It groups only known legacy milestone suffixes under their base branch, derives domain/service/featureId, and detects conflicts. Branches that merely share a prefix with another feature remain standalone features, so names like `auth` and `auth-login` do not collapse into one migration target.
 
 When `--source-repo` is provided, the scan also discovers documents from up to four sources per feature:
 1. **governance-legacy** — `{governance_repo}/branches/{old_id}[-milestone]/_bmad-output/lens-work/planning-artifacts/` (filesystem) or `origin/{old_id}[-milestone]` branch in governance repo (git fallback)

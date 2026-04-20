@@ -90,6 +90,8 @@ DEFAULT_BRANCH_PATTERN = r"^([a-z0-9-]+)-([a-z0-9-]+)-([a-z0-9-]+)(?:-([a-z0-9-]
 # Phase ordering for state derivation (earliest to latest)
 PHASE_ORDER = ["planning", "businessplan", "techplan", "finalizeplan", "dev", "complete"]
 
+KNOWN_LEGACY_MILESTONES = set(PHASE_ORDER) | set(LEGACY_PHASE_MAP) | set(LEGACY_MILESTONE_MAP)
+
 
 def validate_identifier(value: str, field_name: str) -> str | None:
     """Validate that a path-constructing identifier is safe. Returns error message or None."""
@@ -107,6 +109,11 @@ def parse_legacy_identity(old_id: str) -> tuple[str, str, str] | None:
     if len(parts) < 3:
         return None
     return parts[0], parts[1], "-".join(parts[2:])
+
+
+def is_legacy_milestone_suffix(value: str) -> bool:
+    """Return True when *value* is a known legacy milestone suffix."""
+    return value in KNOWN_LEGACY_MILESTONES
 
 
 def derive_legacy_feature(old_id: str, domain: str, service: str) -> str:
@@ -594,6 +601,8 @@ def group_legacy_branches(names: list[str]) -> dict[str, dict]:
             prefix = base + "-"
             if name.startswith(prefix):
                 milestone = name[len(prefix):]
+                if not is_legacy_milestone_suffix(milestone):
+                    continue
                 if base not in milestone_map:
                     milestone_map[base] = []
                 milestone_map[base].append(milestone)
@@ -692,7 +701,9 @@ def detect_legacy_milestones(governance_repo: Path, old_id: str) -> list[str]:
         milestones: list[str] = []
         for entry in sorted(branches_dir.iterdir()):
             if entry.is_dir() and entry.name.startswith(prefix):
-                milestones.append(entry.name[len(prefix):])
+                milestone = entry.name[len(prefix):]
+                if is_legacy_milestone_suffix(milestone):
+                    milestones.append(milestone)
         return milestones
 
     # Fall back: detect from remote branches
@@ -704,7 +715,9 @@ def detect_legacy_milestones(governance_repo: Path, old_id: str) -> list[str]:
     milestones = []
     for branch in remote_branches:
         if branch.startswith(prefix):
-            milestones.append(branch[len(prefix):])
+            milestone = branch[len(prefix):]
+            if is_legacy_milestone_suffix(milestone):
+                milestones.append(milestone)
     return sorted(milestones)
 
 
@@ -1361,7 +1374,17 @@ def build_migrated_feature_data(
         warnings.append(f"Unsupported legacy track '{raw_track}' defaulted to 'full'")
 
     name = raw_name or feature_id.replace("-", " ").title()
-    feature_data = init_feature_ops.make_feature_yaml(feature_id, domain, service, name, track, username, timestamp)
+    feature_data = init_feature_ops.make_feature_yaml(
+        feature_id,
+        feature_id,
+        domain,
+        service,
+        name,
+        track,
+        fallback_phase,
+        username,
+        timestamp,
+    )
     feature_data["description"] = raw_description or f"Migrated from legacy branch: {old_id}"
     feature_data["migrated_from"] = old_id
 
