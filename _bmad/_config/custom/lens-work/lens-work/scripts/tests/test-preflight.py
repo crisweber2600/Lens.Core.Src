@@ -34,6 +34,52 @@ def _write_hash_manifest(workspace: Path, entries: dict[str, str]) -> None:
     _write_file(manifest, "\n".join(lines) + ("\n" if lines else ""))
 
 
+def _git(args: list[str], cwd: Path | None = None) -> str:
+    result = subprocess.run(
+        ["git", *args],
+        cwd=str(cwd) if cwd is not None else None,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise AssertionError(
+            f"git {' '.join(args)} failed (cwd={cwd}): {(result.stderr or result.stdout).strip()}"
+        )
+    return result.stdout.strip()
+
+
+def _init_governance_git_repo(workspace: Path, name: str = "lens-governance") -> tuple[Path, Path]:
+    remote = workspace / f"{name}-remote.git"
+    worktree = workspace / "TargetProjects" / "lens" / name
+
+    _git(["init", "--bare", "--initial-branch=main", str(remote)])
+    _git(["clone", str(remote), str(worktree)])
+    _git(["config", "user.name", "Test User"], cwd=worktree)
+    _git(["config", "user.email", "test@example.com"], cwd=worktree)
+
+    (worktree / "README.md").write_text("seed\n", encoding="utf-8")
+    _git(["add", "README.md"], cwd=worktree)
+    _git(["commit", "-m", "seed"], cwd=worktree)
+    _git(["push", "-u", "origin", "main"], cwd=worktree)
+
+    return worktree, remote
+
+
+def _write_governance_setup(workspace: Path, governance_repo: Path, remote: Path) -> None:
+    _write_file(
+        workspace / ".lens/governance-setup.yaml",
+        (
+            f'governance_repo_path: "{governance_repo.relative_to(workspace).as_posix()}"\n'
+            f'governance_remote_url: "{remote}"\n'
+        ),
+    )
+
+
+def _remote_main_sha(remote: Path) -> str:
+    output = _git(["ls-remote", str(remote), "refs/heads/main"])
+    return output.split()[0]
+
+
 @pytest.fixture()
 def workspace(tmp_path: Path) -> Path:
     root = tmp_path / "workspace"
@@ -198,6 +244,57 @@ class TestGitHubSync:
         assert result.returncode == 1
         assert "Resolved governance repo from .lens/governance-setup.yaml" in result.stdout
         assert "Then run /new-project" in result.stdout
+
+    def test_governance_sync_pulls_remote_main_even_with_fresh_timestamp(self, workspace: Path):
+        _write_file(workspace / "lens.core/.github/workflows/keep.yml", "name: keep\n")
+        governance_repo, remote = _init_governance_git_repo(workspace)
+        _write_governance_setup(workspace, governance_repo, remote)
+        _write_hash_manifest(workspace, {})
+
+        secondary = workspace / "governance-secondary"
+        _git(["clone", str(remote), str(secondary)])
+        _git(["config", "user.name", "Test User"], cwd=secondary)
+        _git(["config", "user.email", "test@example.com"], cwd=secondary)
+        (secondary / "REMOTE.md").write_text("remote\n", encoding="utf-8")
+        _git(["add", "REMOTE.md"], cwd=secondary)
+        _git(["commit", "-m", "remote update"], cwd=secondary)
+        _git(["push", "origin", "main"], cwd=secondary)
+
+        result = _run(cwd=workspace)
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert (governance_repo / "REMOTE.md").read_text(encoding="utf-8") == "remote\n"
+
+    def test_governance_sync_pushes_local_main_even_with_fresh_timestamp(self, workspace: Path):
+        _write_file(workspace / "lens.core/.github/workflows/keep.yml", "name: keep\n")
+        governance_repo, remote = _init_governance_git_repo(workspace)
+        _write_governance_setup(workspace, governance_repo, remote)
+        _write_hash_manifest(workspace, {})
+
+        (governance_repo / "LOCAL.md").write_text("local\n", encoding="utf-8")
+        _git(["add", "LOCAL.md"], cwd=governance_repo)
+        _git(["commit", "-m", "local governance change"], cwd=governance_repo)
+
+        result = _run(cwd=workspace)
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert _remote_main_sha(remote) == _git(["rev-parse", "HEAD"], cwd=governance_repo)
+
+    def test_governance_sync_warns_and_skips_dirty_worktree(self, workspace: Path):
+        _write_file(workspace / "lens.core/.github/workflows/keep.yml", "name: keep\n")
+        governance_repo, remote = _init_governance_git_repo(workspace)
+        _write_governance_setup(workspace, governance_repo, remote)
+        _write_hash_manifest(workspace, {})
+        remote_before = _remote_main_sha(remote)
+
+        (governance_repo / "DIRTY.md").write_text("dirty\n", encoding="utf-8")
+
+        result = _run(cwd=workspace)
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert "Governance repo sync skipped" in result.stdout
+        assert "local changes present" in result.stdout
+        assert _remote_main_sha(remote) == remote_before
 
     def test_preserves_untracked_non_prompt_github_files(self, workspace: Path):
         _write_file(workspace / "lens.core/.github/workflows/keep.yml", "name: keep\n")

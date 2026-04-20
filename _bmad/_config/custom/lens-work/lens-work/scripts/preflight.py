@@ -24,12 +24,114 @@ def echo(msg: str) -> None:
     print(msg)
 
 
-def git_pull(repo: Path) -> bool:
-    result = subprocess.run(
-        ["git", "-C", str(repo), "pull", "origin"],
-        capture_output=True, text=True,
+def git_repo(repo: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", "-C", str(repo), *args],
+        capture_output=True,
+        text=True,
     )
+
+
+def git_error(result: subprocess.CompletedProcess[str]) -> str:
+    return (result.stderr or result.stdout).strip() or f"exit code {result.returncode}"
+
+
+def git_pull(repo: Path) -> bool:
+    result = git_repo(repo, ["pull", "origin"])
     return result.returncode == 0
+
+
+def git_current_branch(repo: Path) -> str:
+    result = git_repo(repo, ["rev-parse", "--abbrev-ref", "HEAD"])
+    return result.stdout.strip()
+
+
+def git_branch_exists(repo: Path, branch: str, *, remote: bool = False) -> bool:
+    ref = f"refs/remotes/origin/{branch}" if remote else f"refs/heads/{branch}"
+    return git_repo(repo, ["show-ref", "--verify", "--quiet", ref]).returncode == 0
+
+
+def git_has_clean_worktree(repo: Path) -> tuple[bool, str | None]:
+    result = git_repo(repo, ["status", "--short"])
+    if result.returncode != 0:
+        return False, git_error(result)
+    if result.stdout.strip():
+        return False, "local changes present"
+    return True, None
+
+
+def resolve_governance_branch(repo: Path) -> str:
+    if git_branch_exists(repo, "main") or git_branch_exists(repo, "main", remote=True):
+        return "main"
+
+    result = git_repo(repo, ["symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"])
+    if result.returncode == 0:
+        ref = result.stdout.strip()
+        if ref.startswith("origin/"):
+            return ref.removeprefix("origin/")
+
+    branch = git_current_branch(repo)
+    return branch if branch and branch != "HEAD" else "main"
+
+
+def ensure_local_branch(repo: Path, branch: str) -> tuple[bool, str | None]:
+    if git_current_branch(repo) == branch:
+        return True, None
+
+    result = git_repo(repo, ["checkout", branch])
+    if result.returncode == 0:
+        return True, None
+
+    if git_branch_exists(repo, branch, remote=True):
+        result = git_repo(repo, ["checkout", "-B", branch, f"origin/{branch}"])
+        if result.returncode == 0:
+            return True, None
+
+    return False, git_error(result)
+
+
+def commits_ahead_of_origin(repo: Path, branch: str) -> tuple[int, str | None]:
+    result = git_repo(repo, ["rev-list", "--count", f"origin/{branch}..HEAD"])
+    if result.returncode != 0:
+        return 0, git_error(result)
+
+    try:
+        return int(result.stdout.strip() or "0"), None
+    except ValueError:
+        return 0, f"unable to parse ahead count: {result.stdout.strip()}"
+
+
+def sync_governance_repo(governance_repo: Path) -> tuple[bool, str]:
+    worktree_check = git_repo(governance_repo, ["rev-parse", "--is-inside-work-tree"])
+    if worktree_check.returncode != 0 or worktree_check.stdout.strip() != "true":
+        return False, f"not a git worktree ({git_error(worktree_check)})"
+
+    clean, clean_detail = git_has_clean_worktree(governance_repo)
+    if not clean:
+        if clean_detail == "local changes present":
+            return False, "local changes present; commit or stash them before automatic governance sync"
+        return False, clean_detail or "unable to inspect worktree"
+
+    branch = resolve_governance_branch(governance_repo)
+    checked_out, checkout_detail = ensure_local_branch(governance_repo, branch)
+    if not checked_out:
+        return False, f"failed to checkout {branch}: {checkout_detail}"
+
+    pull_result = git_repo(governance_repo, ["pull", "--rebase", "--autostash", "origin", branch])
+    if pull_result.returncode != 0:
+        return False, f"pull failed on {branch}: {git_error(pull_result)}"
+
+    ahead, ahead_detail = commits_ahead_of_origin(governance_repo, branch)
+    if ahead_detail:
+        return False, ahead_detail
+
+    if ahead > 0:
+        push_result = git_repo(governance_repo, ["push", "origin", f"HEAD:{branch}"])
+        if push_result.returncode != 0:
+            return False, f"push failed on {branch}: {git_error(push_result)}"
+        return True, f"synced {branch} and pushed {ahead} local commit(s)"
+
+    return True, f"synced {branch}"
 
 
 def current_branch() -> str:
@@ -495,6 +597,8 @@ def main() -> int:
     # ------------------------------------------------------------------
     needs_pull = True
     last_time: datetime | None = None
+    release_sync_ok = True
+    governance_sync_ok = True
 
     if timestamp_file.is_file():
         raw = timestamp_file.read_text(encoding="utf-8").strip()
@@ -510,10 +614,15 @@ def main() -> int:
     if needs_pull:
         echo("[preflight] Pulling authority repos...")
         if not git_pull(release_dir):
+            release_sync_ok = False
             echo("  ⚠ Release repo pull failed (offline?)")
-        if governance_path and governance_path.is_dir():
-            if not git_pull(governance_path):
-                echo("  ⚠ Governance repo pull failed (offline?)")
+
+    if governance_path and governance_path.is_dir():
+        governance_sync_ok, governance_detail = sync_governance_repo(governance_path)
+        if governance_sync_ok:
+            echo(f"  ✓ Governance repo {governance_detail}")
+        else:
+            echo(f"  ⚠ Governance repo sync skipped: {governance_detail}")
 
     # ------------------------------------------------------------------
     # Step 3: Sync .github/ from release repo (hash-based)
@@ -651,12 +760,15 @@ def main() -> int:
     # Step 6: Update timestamp
     # ------------------------------------------------------------------
     if needs_pull:
-        timestamp_file.parent.mkdir(parents=True, exist_ok=True)
-        timestamp_file.write_text(
-            datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            encoding="utf-8",
-        )
-        echo("[preflight] Timestamp updated")
+        if release_sync_ok and governance_sync_ok:
+            timestamp_file.parent.mkdir(parents=True, exist_ok=True)
+            timestamp_file.write_text(
+                datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                encoding="utf-8",
+            )
+            echo("[preflight] Timestamp updated")
+        else:
+            echo("[preflight] Timestamp not updated because authority repo sync did not complete cleanly")
 
     echo("[preflight] Preflight complete ✓")
     if args.caller == "onboard":
