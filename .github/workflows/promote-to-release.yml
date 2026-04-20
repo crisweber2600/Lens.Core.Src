@@ -23,6 +23,7 @@ on:
     paths:
       - "_bmad/lens-work/**"
       - ".github/agents/**"
+      - ".github/instructions/**"
       - ".github/prompts/**"
       - ".github/skills/**"
       - ".github/workflows/promote-to-release.yml"
@@ -285,6 +286,20 @@ jobs:
 
           echo "✅ Overlaid $SRC_COUNT source prompt stub(s) into release payload (installer stubs preserved)"
 
+      # ── 10.7 Overlay source .github instructions into release payload ─
+      - name: Overlay source .github instructions
+        run: |
+          mkdir -p build-output/.github/instructions
+
+          SRC_COUNT=0
+          for src in .github/instructions/*.instructions.md; do
+            [ -f "$src" ] || continue
+            cp "$src" "build-output/.github/instructions/$(basename "$src")"
+            SRC_COUNT=$((SRC_COUNT + 1))
+          done
+
+          echo "✅ Overlaid $SRC_COUNT source instruction file(s) into release payload"
+
       # ── 11. Post-process: .xml→.yaml + config.yaml→bmadconfig.yaml ──
       - name: Post-process XML and config file names
         run: |
@@ -363,6 +378,7 @@ jobs:
         run: |
           REQUIRED=(
             "build-output/.github/agents/bmad-agent-lens-work-lens.agent.md"
+            "build-output/.github/instructions/lens-control-repo.instructions.md"
             "build-output/.github/lens-work-instructions.md"
           )
 
@@ -392,6 +408,20 @@ jobs:
             target="build-output/.github/prompts/$(basename "$src")"
             if [ ! -f "$target" ]; then
               echo "::error::Missing published prompt file: $target"
+              MISSING=1
+            else
+              echo "✅ $target"
+            fi
+          done
+
+          for src in .github/instructions/*.instructions.md; do
+            [ -f "$src" ] || continue
+            target="build-output/.github/instructions/$(basename "$src")"
+            if [ ! -f "$target" ]; then
+              echo "::error::Missing published instruction file: $target"
+              MISSING=1
+            elif ! cmp -s "$src" "$target"; then
+              echo "::error::Published instruction file differs from source: $target"
               MISSING=1
             else
               echo "✅ $target"

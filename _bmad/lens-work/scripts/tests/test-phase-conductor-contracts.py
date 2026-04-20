@@ -6,7 +6,12 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).parent.parent.parent
-CONTROL_REPO_ROOT = ROOT.parents[5]
+PAYLOAD_ROOT = ROOT.parents[1]
+CONTROL_REPO_ROOT = next(
+    parent
+    for parent in ROOT.parents
+    if (parent / "lens.core").is_dir() and (parent / "setup.py").is_file()
+)
 
 PUBLISHING_CONDUCTORS = {
     "skills/bmad-lens-businessplan/SKILL.md": "preplan",
@@ -153,6 +158,22 @@ def test_control_repo_instructions_require_control_first_artifact_authority():
     assert "TargetProjects/lens.core/src/Lens.Core.Src/" in text
     assert "stage feature artifacts under the feature's control-repo docs path" in text
     assert "Governance mirrors are populated only by explicit handoff tooling" in text
+
+
+def test_payload_embeds_control_repo_instruction():
+    text = (PAYLOAD_ROOT / ".github/instructions/lens-control-repo.instructions.md").read_text(encoding="utf-8")
+
+    assert "TargetProjects/lens.core/src/Lens.Core.Src/" in text
+    assert "stage feature artifacts under the feature's control-repo docs path" in text
+    assert "Governance mirrors are populated only by explicit handoff tooling" in text
+
+
+def test_promote_to_release_carries_instruction_payloads():
+    workflow = (PAYLOAD_ROOT / ".github/workflows/promote-to-release.yml").read_text(encoding="utf-8")
+
+    assert '      - ".github/instructions/**"' in workflow
+    assert 'for src in .github/instructions/*.instructions.md; do' in workflow
+    assert 'build-output/.github/instructions/lens-control-repo.instructions.md' in workflow
 
 
 def test_next_docs_describe_auto_delegate_behavior():
