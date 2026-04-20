@@ -171,6 +171,46 @@ def test_scan_multiple_features():
         assert_true("user-mgmt has dev milestone", "dev" in user_mgmt["milestones"])
 
 
+def test_scan_keeps_prefixed_feature_names_separate():
+    """scan does not misclassify a sibling feature as a milestone when names share a prefix."""
+    print("test_scan_keeps_prefixed_feature_names_separate", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        make_branch_dir(tmp, "platform-identity-auth")
+        make_branch_dir(tmp, "platform-identity-auth-login")
+        make_branch_dir(tmp, "platform-identity-auth-login-dev")
+
+        result, code = run(["scan", "--governance-repo", tmp])
+        assert_eq("scan status", result["status"], "pass")
+        assert_eq("scan exit code", code, 0)
+        assert_eq("total features", result["total"], 2)
+
+        features = {feature["feature_id"]: feature for feature in result["legacy_features"]}
+        assert_true("has auth feature", "auth" in features)
+        assert_true("has auth-login feature", "auth-login" in features)
+        assert_eq("auth has no milestones", features["auth"]["milestones"], [])
+        assert_eq("auth-login has only dev milestone", features["auth-login"]["milestones"], ["dev"])
+
+
+def test_scan_preserves_multi_hyphen_feature_id():
+    """scan preserves a multi-hyphen feature id and its milestone branch."""
+    print("test_scan_preserves_multi_hyphen_feature_id", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        make_branch_dir(tmp, "plugins-hermes-hermes-lens-plugin")
+        make_branch_dir(tmp, "plugins-hermes-hermes-lens-plugin-dev")
+
+        result, code = run(["scan", "--governance-repo", tmp])
+        assert_eq("scan status", result["status"], "pass")
+        assert_eq("scan exit code", code, 0)
+        assert_eq("total features", result["total"], 1)
+
+        feature = result["legacy_features"][0]
+        assert_eq("derived_domain", feature["derived_domain"], "plugins")
+        assert_eq("derived_service", feature["derived_service"], "hermes")
+        assert_eq("feature_id", feature["feature_id"], "hermes-lens-plugin")
+        assert_eq("old_id", feature["old_id"], "plugins-hermes-hermes-lens-plugin")
+        assert_eq("milestones", feature["milestones"], ["dev"])
+
+
 def test_migrate_feature_creates_yaml():
     """migrate-feature creates feature.yaml."""
     print("test_migrate_feature_creates_yaml", file=sys.stderr)
@@ -460,6 +500,31 @@ def test_migrate_feature_preserves_legacy_state():
         assert_eq("transition count preserved", len(data["phase_transitions"]), 2)
         assert_eq("context stale preserved", data["context"]["stale"], True)
         assert_eq("techplan milestone preserved", data["milestones"]["techplan"], "2026-04-02T00:00:00Z")
+
+
+def test_migrate_feature_ignores_prefixed_sibling_branch_when_deriving_phase():
+    """migrate-feature ignores sibling feature branches that merely share the same prefix."""
+    print("test_migrate_feature_ignores_prefixed_sibling_branch_when_deriving_phase", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        make_branch_dir(tmp, "platform-identity-auth")
+        make_branch_dir(tmp, "platform-identity-auth-login")
+
+        result, code = run([
+            "migrate-feature",
+            "--governance-repo", tmp,
+            "--old-id", "platform-identity-auth",
+            "--feature-id", "auth",
+            "--domain", "platform",
+            "--service", "identity",
+            "--username", "testuser",
+        ])
+        assert_eq("migrate status", result["status"], "pass")
+        assert_eq("migrate exit code", code, 0)
+
+        feature_path = Path(tmp) / "features" / "platform" / "identity" / "auth" / "feature.yaml"
+        with open(feature_path) as f:
+            data = yaml.safe_load(f)
+        assert_eq("phase remains preplan", data["phase"], "preplan")
 
 
 def test_migrate_feature_creates_summary_and_problems_in_feature_dir():
