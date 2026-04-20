@@ -186,7 +186,7 @@ See `module.yaml` `install_questions` for configuration options (target projects
 `@lens` exposes only a compact shell menu. Use `/help` for command discovery and `/next` for the recommended next step.
 
 Representative command surface:
-`/lens-setup`, `/new-project`, `/new-domain`, `/new-service`, `/new-feature`, `/preplan`, `/businessplan`, `/techplan`, `/adversarial-review`, `/finalizeplan`, `/expressplan`, `/dev`, `/complete`, `/next`, `/batch`, `/switch`, `/discover`, `/constitution`, `/sensing`, `/audit`, `/approval-status`, `/rollback`, `/profile`, `/dashboard`, `/log-problem`, `/move-feature`, `/split-feature`, `/lens-upgrade`, `/document-project`
+`/onboard`, `/new-project`, `/new-domain`, `/new-service`, `/new-feature`, `/preplan`, `/businessplan`, `/techplan`, `/adversarial-review`, `/finalizeplan`, `/expressplan`, `/dev`, `/complete`, `/next`, `/batch`, `/switch`, `/discover`, `/constitution`, `/sensing`, `/audit`, `/approval-status`, `/rollback`, `/profile`, `/dashboard`, `/log-problem`, `/move-feature`, `/split-feature`, `/lens-upgrade`, `/document-project`
 
 ## Configuration
 

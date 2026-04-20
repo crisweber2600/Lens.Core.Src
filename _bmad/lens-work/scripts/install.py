@@ -257,7 +257,6 @@ You must fully embody this agent's persona and follow all activation instruction
         ("lens-bmad-quick-dev.prompt.md", "lens-bmad-quick-dev", "Run BMAD quick dev with Lens context", "lens-bmad-quick-dev.prompt.md"),
         ("lens-bmad-code-review.prompt.md", "lens-bmad-code-review", "Run BMAD code review with Lens context", "lens-bmad-code-review.prompt.md"),
         ("lens-bmad-document-project.prompt.md", "lens-bmad-document-project", "Run BMAD document-project with Lens-aware feature docs scope", "lens-bmad-document-project.prompt.md"),
-        ("lens-setup.prompt.md", "lens-setup", "Module configuration and help registry setup", "lens-setup.prompt.md"),
         ("lens-module-management.prompt.md", "lens-module-management", "Check module version and guide self-service updates", "lens-module-management.prompt.md"),
         ("lens-upgrade.prompt.md", "lens-upgrade", "Migrate control repo schema to current version", "lens-upgrade.prompt.md"),
         ("lens-dashboard.prompt.md", "lens-dashboard", "Cross-feature dashboard with dependency graphs", "lens-dashboard.prompt.md"),

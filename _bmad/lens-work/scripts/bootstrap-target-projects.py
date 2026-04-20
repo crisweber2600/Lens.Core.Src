@@ -3,7 +3,7 @@
 # requires-python = ">=3.11"
 # dependencies = ["pyyaml>=6.0"]
 # ///
-"""Bootstrap TargetProjects by cloning or verifying repos from repo-inventory.yaml."""
+"""Bootstrap TargetProjects by cloning, verifying, or syncing repos from repo-inventory.yaml."""
 
 from __future__ import annotations
 
@@ -67,12 +67,37 @@ def git_verify(dest: Path) -> dict:
     }
 
 
+def git_sync(dest: Path, dry_run: bool) -> dict:
+    verify = git_verify(dest)
+    if not verify.get("success"):
+        return {
+            "action": "sync",
+            "dest": str(dest),
+            "success": False,
+            "error": "not a git repository",
+        }
+    if dry_run:
+        return {"action": "sync", "dest": str(dest), "dry_run": True, "success": True}
+    result = subprocess.run(
+        ["git", "-C", str(dest), "pull", "--ff-only"],
+        capture_output=True,
+        text=True,
+    )
+    return {
+        "action": "sync",
+        "dest": str(dest),
+        "success": result.returncode == 0,
+        "error": result.stderr.strip() if result.returncode != 0 else None,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Clone or verify repos listed in repo-inventory.yaml."
     )
     parser.add_argument("--inventory-path", required=True, help="Path to repo-inventory.yaml")
     parser.add_argument("--target-root", default="TargetProjects", help="Root dir for clones")
+    parser.add_argument("--sync-existing", action="store_true", help="Pull updates for existing repos")
     parser.add_argument("--dry-run", action="store_true", help="Print actions without executing")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
     args = parser.parse_args()
@@ -105,7 +130,12 @@ def main() -> int:
 
         dest = resolve_dest(target_root, local, name)
         if dest.is_dir():
-            result = git_verify(dest)
+            if args.sync_existing:
+                result = git_sync(dest, args.dry_run)
+            else:
+                result = git_verify(dest)
+            if not result.get("success"):
+                errors += 1
         else:
             result = git_clone(url, dest, args.dry_run)
             if not args.dry_run and not result.get("success"):
