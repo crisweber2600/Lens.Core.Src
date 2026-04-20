@@ -132,26 +132,7 @@ def ahead_count(repo: str, base: str, head: str) -> int | None:
 # Feature YAML resolution
 # ---------------------------------------------------------------------------
 
-FEATURE_YAML_SEARCH_ROOTS = ["milestones", "features"]
-RECORD_CANDIDATES = ["milestone.yaml", "feature.yaml"]
-
-
-def get_item_id(data: dict) -> str:
-    return str(
-        data.get("milestoneId")
-        or data.get("featureId")
-        or data.get("feature_id")
-        or data.get("id")
-        or ""
-    )
-
-
-def get_workstream(data: dict) -> str:
-    return str(data.get("workstream") or data.get("domain") or data.get("work_stream") or "")
-
-
-def get_project(data: dict) -> str:
-    return str(data.get("project") or data.get("service") or data.get("project_name") or "")
+FEATURE_YAML_SEARCH_ROOTS = ["features"]
 
 
 def find_feature_yaml(repo: str, feature_id: str) -> Path | None:
@@ -165,12 +146,11 @@ def find_feature_yaml(repo: str, feature_id: str) -> Path | None:
         base = repo_path / root
         if not base.exists():
             continue
-        for record_name in RECORD_CANDIDATES:
-            candidate = base / feature_id / record_name
-            if candidate.exists():
-                return candidate
-            for found in base.rglob(f"{feature_id}/{record_name}"):
-                return found
+        candidate = base / feature_id / "feature.yaml"
+        if candidate.exists():
+            return candidate
+        for found in base.rglob(f"{feature_id}/feature.yaml"):
+            return found
     return None
 
 
@@ -232,11 +212,9 @@ def cmd_feature_state(args: argparse.Namespace) -> dict:
             result["phase"] = data.get("phase")
             result["track"] = data.get("track")
             result["status"] = data.get("status")
-            result["workstream"] = get_workstream(data)
-            result["project"] = get_project(data)
     else:
         result["errors"].append(
-            f"milestone.yaml not found for '{fid}' — run bmad-lens-milestone-yaml to create one"
+            f"feature.yaml not found for '{fid}' — run bmad-lens-feature-yaml to create one"
         )
 
     # --- discrepancy detection ---
@@ -321,14 +299,13 @@ def cmd_active_features(args: argparse.Namespace) -> dict:
     features = []
     ghost_yamls = []
 
-    # Collect all milestone.yaml and feature.yaml files.
+    # Collect all feature.yaml files
     yaml_files = []
     for root in FEATURE_YAML_SEARCH_ROOTS:
         base = repo_path / root
         if not base.exists():
             continue
-        for record_name in RECORD_CANDIDATES:
-            yaml_files.extend(base.rglob(record_name))
+        yaml_files.extend(base.rglob("feature.yaml"))
 
     total_scanned = len(yaml_files)
     for i, yaml_file in enumerate(yaml_files):
@@ -343,13 +320,13 @@ def cmd_active_features(args: argparse.Namespace) -> dict:
             ghost_yamls.append(str(yaml_file.relative_to(repo_path)))
             continue
 
-        fid = get_item_id(data)
+        fid = data.get("feature_id") or data.get("id")
         if not fid:
             ghost_yamls.append(str(yaml_file.relative_to(repo_path)))
             continue
 
         # Apply filters
-        if domain_filter and get_workstream(data) != domain_filter:
+        if domain_filter and data.get("domain") != domain_filter:
             continue
         if phase_filter and data.get("phase") != phase_filter:
             continue
@@ -364,8 +341,8 @@ def cmd_active_features(args: argparse.Namespace) -> dict:
 
         features.append({
             "feature_id": fid,
-            "domain": get_workstream(data),
-            "service": get_project(data),
+            "domain": data.get("domain"),
+            "service": data.get("service"),
             "phase": data.get("phase"),
             "track": data.get("track"),
             "status": data.get("status"),

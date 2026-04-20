@@ -1,7 +1,7 @@
 topics:
-  - id: init-milestone
-    command: /init-milestone
-    description: Initialize a new milestone with branches, YAML, and PR
+  - id: init-feature
+    command: /init-feature
+    description: Initialize a new feature with branches, YAML, and PR
     phases: [preplan]
     tracks: [all]
     category: lifecycle
@@ -36,7 +36,7 @@ topics:
 
   - id: switch
     command: /switch
-    description: Switch active milestone context
+    description: Switch active feature context
     phases: [all]
     tracks: [all]
     category: navigation
@@ -50,35 +50,42 @@ topics:
 
   - id: pause
     command: /pause
-    description: Pause a milestone and preserve state
+    description: Pause a feature and preserve state
     phases: [all]
     tracks: [all]
     category: lifecycle
 
   - id: resume
     command: /resume
-    description: Resume a paused milestone
+    description: Resume a paused feature
     phases: [all]
     tracks: [all]
     category: lifecycle
 
   - id: retrospective
     command: /retrospective
-    description: Run root cause analysis on milestone problems
+    description: Run root cause analysis on feature problems
     phases: [dev, complete]
     tracks: [all]
     category: lifecycle
 
   - id: complete
     command: /complete
-    description: Finalize a milestone — retrospective, documentation, archive
+    description: Finalize a feature — retrospective, documentation, archive
     phases: [dev]
     tracks: [all]
     category: lifecycle
 
+  - id: move-feature
+    command: /move-feature
+    description: Move feature to different domain/service
+    phases: [all]
+    tracks: [all]
+    category: reorganization
+
   - id: split-feature
     command: /split-feature
-    description: Split milestone scope or stories into two milestones
+    description: Split feature scope or stories into two features
     phases: [businessplan, techplan, finalizeplan]
     tracks: [all]
     category: reorganization
@@ -92,56 +99,56 @@ topics:
 
   - id: bmad-brainstorming
     command: /bmad-brainstorming
-    description: Run BMAD brainstorming with active Lens milestone and repo context
+    description: Run BMAD brainstorming with active Lens feature and repo context
     phases: [preplan]
     tracks: [all]
     category: planning
 
   - id: bmad-product-brief
     command: /bmad-product-brief
-    description: Create a product brief using the active Lens milestone, governance, and output-path context
+    description: Create a product brief using the active Lens feature, governance, and output-path context
     phases: [preplan]
     tracks: [all]
     category: planning
 
   - id: bmad-domain-research
     command: /bmad-domain-research
-    description: Run domain research with the active Lens milestone and governance context
+    description: Run domain research with the active Lens feature and governance context
     phases: [preplan]
     tracks: [all]
     category: planning
 
   - id: bmad-market-research
     command: /bmad-market-research
-    description: Run market research with the active Lens milestone and governance context
+    description: Run market research with the active Lens feature and governance context
     phases: [preplan]
     tracks: [all]
     category: planning
 
   - id: bmad-technical-research
     command: /bmad-technical-research
-    description: Run technical research with the active Lens milestone and governance context
+    description: Run technical research with the active Lens feature and governance context
     phases: [preplan]
     tracks: [all]
     category: planning
 
   - id: bmad-create-prd
     command: /bmad-create-prd
-    description: Create a PRD using the active Lens milestone, governance, and output-path context
+    description: Create a PRD using the active Lens feature, governance, and output-path context
     phases: [businessplan]
     tracks: [all]
     category: planning
 
   - id: bmad-create-ux-design
     command: /bmad-create-ux-design
-    description: Create UX design artifacts using the active Lens milestone and governance context
+    description: Create UX design artifacts using the active Lens feature and governance context
     phases: [businessplan]
     tracks: [all]
     category: planning
 
   - id: bmad-create-architecture
     command: /bmad-create-architecture
-    description: Create architecture artifacts using the active Lens milestone and governance context
+    description: Create architecture artifacts using the active Lens feature and governance context
     phases: [techplan]
     tracks: [all]
     category: planning
@@ -155,49 +162,49 @@ topics:
 
   - id: bmad-create-epics-and-stories
     command: /bmad-create-epics-and-stories
-    description: Generate epics and stories using the active Lens milestone and artifact paths
+    description: Generate epics and stories using the active Lens feature and artifact paths
     phases: [finalizeplan]
     tracks: [all]
     category: planning
 
   - id: bmad-check-implementation-readiness
     command: /bmad-check-implementation-readiness
-    description: Run implementation readiness checks using the active Lens milestone and artifact paths
+    description: Run implementation readiness checks using the active Lens feature and artifact paths
     phases: [finalizeplan]
     tracks: [all]
     category: planning
 
   - id: bmad-sprint-planning
     command: /bmad-sprint-planning
-    description: Generate sprint tracking using the active Lens milestone and artifact paths
+    description: Generate sprint tracking using the active Lens feature and artifact paths
     phases: [finalizeplan]
     tracks: [all]
     category: planning
 
   - id: bmad-create-story
     command: /bmad-create-story
-    description: Create story files using the active Lens milestone and artifact paths
+    description: Create story files using the active Lens feature and artifact paths
     phases: [finalizeplan]
     tracks: [all]
     category: planning
 
   - id: bmad-document-project
     command: /bmad-document-project
-    description: Capture project structure docs using the active Lens milestone context and governance mirror paths
+    description: Capture project structure docs using the active Lens feature context and governance mirror paths
     phases: [all]
     tracks: [all]
     category: implementation
 
   - id: bmad-quick-dev
     command: /bmad-quick-dev
-    description: Run quick dev against the active Lens milestone and resolved target repo
+    description: Run quick dev against the active Lens feature and resolved target repo
     phases: [dev]
     tracks: [all]
     category: implementation
 
   - id: bmad-code-review
     command: /bmad-code-review
-    description: Run BMAD code review against the active Lens milestone and resolved target repo
+    description: Run BMAD code review against the active Lens feature and resolved target repo
     phases: [dev]
     tracks: [all]
     category: implementation

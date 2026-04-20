@@ -322,11 +322,11 @@ _PROMPT_METADATA: dict[str, tuple[str, str | None]] = {
     "lens-finalizeplan":                  ("both",  "plan"),
     "lens-help":                          ("both",  "any"),
     "lens-log-problem":                   ("full",  None),
-    "lens-init-milestone":                ("both",  "any"),
-    "lens-milestone-yaml":                ("both",  "any"),
-    "lens-new-workstream":                ("any",   "plan"),
+    "lens-move-feature":                  ("full",  "plan"),
+    "lens-new-domain":                    ("any",   "plan"),
+    "lens-new-feature":                   ("both",  "any"),
     "lens-new-project":                   ("both",  "any"),
-    "lens-new-milestone":                 ("both",  "any"),
+    "lens-new-service":                   ("both",  "any"),
     "lens-next":                          ("both",  "any"),
     "lens-preflight":                     ("both",  "any"),
     "lens-preplan":                       ("both",  "plan"),
@@ -390,7 +390,7 @@ def emit_onboard_next_steps(project_root: Path) -> None:
         echo("  2. Then use /dev to continue implementation for that feature.")
     else:
         echo("  Use /switch to continue existing work.")
-        echo("  Use /new-workstream, /new-project, or /new-milestone to create new work.")
+        echo("  Use /new-* to create new work.")
     echo("  Use /next anytime to get the recommended next command for the current context.")
 
 
@@ -483,32 +483,6 @@ def main() -> int:
 
     control_version = ensure_lens_version_file(project_root)
 
-    # Auto-downgrade: workspace upgraded to v5 but this module is v4
-    if control_version and module_schema == "4" and (
-        control_version == "5" or control_version.startswith("5.")
-    ):
-        echo("[preflight] Workspace is at schema v5; this module requires v4 — running auto-downgrade...")
-        downgrade_script = (
-            Path(__file__).resolve().parent.parent
-            / "skills/bmad-lens-upgrade/scripts/downgrade-ops.py"
-        )
-        if not downgrade_script.is_file():
-            echo(f"ERROR: downgrade-ops.py not found at {downgrade_script}")
-            echo("  Manually run: /lens-downgrade --from 5 --to 4")
-            return 1
-        downgrade_result = subprocess.run(
-            ["uv", "run", "--script", str(downgrade_script), "--project-root", str(project_root)],
-            capture_output=True, text=True,
-        )
-        if downgrade_result.returncode != 0:
-            echo("ERROR: Auto-downgrade from v5 to v4 failed.")
-            echo(downgrade_result.stdout)
-            if downgrade_result.stderr:
-                echo(downgrade_result.stderr)
-            return 1
-        echo("  ✓ Workspace downgraded to schema v4")
-        control_version = ensure_lens_version_file(project_root)
-
     if not control_version or (control_version != module_schema and control_version != f"{module_schema}.0.0"):
         display_version = control_version or "missing"
         echo(f"VERSION MISMATCH: control repo is v{display_version}, module expects v{module_schema}. Run /lens-upgrade.")
@@ -592,7 +566,7 @@ def main() -> int:
         release_prompts = release_github / "prompts"
         for pf in list(prompts_dir.iterdir()):
             name = pf.name
-            if re.match(r"^(?:lens|len)-.*\.prompt\.md$", name):
+            if re.match(r"^lens-.*\.prompt\.md$", name):
                 if not (release_prompts / name).exists():
                     pf.unlink()
             elif name.endswith(".prompt.md"):
@@ -605,7 +579,7 @@ def main() -> int:
         profile_removed = 0
         for pf in list(prompts_dir.iterdir()):
             name = pf.name
-            if not re.match(r"^(?:lens|len)-.*\.prompt\.md$", name):
+            if not re.match(r"^lens-.*\.prompt\.md$", name):
                 continue
             stem = name[: -len(".prompt.md")]
             if not _should_include_prompt(stem, experience, role):
@@ -613,24 +587,6 @@ def main() -> int:
                 profile_removed += 1
         if profile_removed:
             echo(f"  ✓ Removed {profile_removed} prompt(s) excluded by profile (experience={experience}, role={role})")
-
-    # Managed stale file hygiene (.github/**/lens-* and .github/**/len-*)
-    managed_stale_removed = 0
-    for local_file in sorted(local_github.rglob("*")):
-        if not local_file.is_file():
-            continue
-
-        rel_path = local_file.relative_to(local_github)
-        if (release_github / rel_path).is_file():
-            continue
-
-        if re.match(r"^(?:lens|len)-", local_file.name):
-            local_file.unlink()
-            managed_stale_removed += 1
-            remove_empty_parent_dirs(local_file.parent, local_github)
-
-    if managed_stale_removed:
-        echo(f"  ✓ Removed {managed_stale_removed} stale managed .github file(s)")
 
     # ------------------------------------------------------------------
     # Step 3b: Sync agent entry points
@@ -670,7 +626,7 @@ def main() -> int:
             echo("  Re-run setup-control-repo.py if the governance clone is missing.")
             echo("  It takes about 2 minutes and only needs to run once.")
             echo("")
-            echo("  Then run /new-workstream (or /new-project once a workstream exists) and retry this command.")
+            echo("  Then run /new-project (or /new-domain for step-by-step setup) and retry this command.")
             return 1
 
     # ------------------------------------------------------------------

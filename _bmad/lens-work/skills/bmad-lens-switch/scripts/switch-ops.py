@@ -3,10 +3,10 @@
 # requires-python = ">=3.10"
 # dependencies = ["pyyaml>=6.0"]
 # ///
-"""Switch operations — manage active milestone context for Lens agent sessions.
+"""Switch operations — manage active feature context for Lens agent sessions.
 
-Reads milestone-index.yaml (with legacy fallback) and milestone.yaml files to
-validate targets, load cross-milestone context paths, and confirm switches.
+Reads feature-index.yaml (always from main) and feature.yaml files to validate
+targets, load cross-feature context paths, and confirm feature switches.
 """
 
 import argparse
@@ -23,57 +23,8 @@ import yaml
 
 
 SAFE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
-MAX_INDEX_BYTES = 1_000_000  # 1 MB sanity cap on milestone-index.yaml
+MAX_INDEX_BYTES = 1_000_000  # 1 MB sanity cap on feature-index.yaml
 STALE_DAYS = 30
-INDEX_CANDIDATES = [
-    ("milestone-index.yaml", "milestones"),
-    ("feature-index.yaml", "features"),
-]
-ROOT_CANDIDATES = ["milestones", "features"]
-RECORD_CANDIDATES = ["milestone.yaml", "feature.yaml"]
-SERVICE_RECORD_CANDIDATES = ["project.yaml", "service.yaml"]
-DOMAIN_RECORD_CANDIDATES = ["workstream.yaml", "domain.yaml"]
-
-
-def entry_id(entry: dict) -> str:
-    """Return the milestone identifier from a milestone or feature index entry."""
-    return str(entry.get("milestoneId") or entry.get("featureId") or entry.get("id") or "").strip()
-
-
-def entry_workstream(entry: dict) -> str:
-    """Return the workstream slug from a milestone or feature index entry."""
-    return str(entry.get("workstream") or entry.get("domain") or "").strip()
-
-
-def entry_project(entry: dict) -> str:
-    """Return the project slug from a milestone or feature index entry."""
-    return str(entry.get("project") or entry.get("service") or "").strip()
-
-
-def feature_id_from_data(feature_data: dict) -> str:
-    """Return the milestone identifier from a milestone or feature record."""
-    return str(
-        feature_data.get("milestoneId") or feature_data.get("featureId") or feature_data.get("id") or ""
-    ).strip()
-
-
-def feature_workstream(feature_data: dict) -> str:
-    """Return the workstream slug from a milestone or feature record."""
-    return str(feature_data.get("workstream") or feature_data.get("domain") or "").strip()
-
-
-def feature_project(feature_data: dict) -> str:
-    """Return the project slug from a milestone or feature record."""
-    return str(feature_data.get("project") or feature_data.get("service") or "").strip()
-
-
-def get_index_entries(index_data: dict) -> list[dict]:
-    """Return the first recognized list of milestone or feature index entries."""
-    for _, key in INDEX_CANDIDATES:
-        entries = index_data.get(key)
-        if isinstance(entries, list):
-            return [entry for entry in entries if isinstance(entry, dict)]
-    return []
 
 
 def normalize_target_repo_state(feature_data: dict) -> dict | None:
@@ -119,26 +70,23 @@ def normalize_target_repo_state(feature_data: dict) -> dict | None:
 
 
 def load_feature_yaml_for_index_entry(governance_repo: str, entry: dict) -> dict | None:
-    """Load milestone.yaml or feature.yaml for an index entry when available."""
-    feature_id = entry_id(entry)
-    workstream = entry_workstream(entry)
-    project = entry_project(entry)
-    if not feature_id or not workstream or not project:
+    """Load feature.yaml for an index entry when available."""
+    feature_id = str(entry.get("id") or entry.get("featureId") or "").strip()
+    domain = str(entry.get("domain") or "").strip()
+    service = str(entry.get("service") or "").strip()
+    if not feature_id or not domain or not service:
         return None
 
-    governance_root = Path(governance_repo)
-    for root_name in ROOT_CANDIDATES:
-        for record_name in RECORD_CANDIDATES:
-            feature_path = governance_root / root_name / workstream / project / feature_id / record_name
-            if not feature_path.exists():
-                continue
-            try:
-                with open(feature_path) as f:
-                    data = yaml.safe_load(f)
-            except (yaml.YAMLError, OSError):
-                return None
-            return data if isinstance(data, dict) else None
-    return None
+    feature_path = Path(governance_repo) / "features" / domain / service / feature_id / "feature.yaml"
+    if not feature_path.exists():
+        return None
+
+    try:
+        with open(feature_path) as f:
+            data = yaml.safe_load(f)
+    except (yaml.YAMLError, OSError):
+        return None
+    return data if isinstance(data, dict) else None
 
 
 def validate_identifier(value: str, field_name: str) -> str | None:
@@ -153,63 +101,54 @@ def validate_identifier(value: str, field_name: str) -> str | None:
 
 
 def load_feature_index(governance_repo: str) -> tuple[dict | None, str | None]:
-    """Load milestone-index.yaml from the governance repo root.
+    """Load feature-index.yaml from the governance repo root.
 
     Returns (data, error). On success error is None; on failure data is None.
     """
-    governance_root = Path(governance_repo)
-    for index_name, _ in INDEX_CANDIDATES:
-        index_path = governance_root / index_name
-        if not index_path.exists():
-            continue
+    index_path = Path(governance_repo) / "feature-index.yaml"
+    if not index_path.exists():
+        return None, f"feature-index.yaml not found at {index_path}"
 
-        if index_path.stat().st_size > MAX_INDEX_BYTES:
-            return None, f"{index_name} exceeds size limit ({MAX_INDEX_BYTES} bytes)"
+    if index_path.stat().st_size > MAX_INDEX_BYTES:
+        return None, f"feature-index.yaml exceeds size limit ({MAX_INDEX_BYTES} bytes)"
 
-        try:
-            with open(index_path) as f:
-                data = yaml.safe_load(f)
-        except yaml.YAMLError as e:
-            return None, f"Failed to parse {index_name}: {e}"
-        except OSError as e:
-            return None, f"Failed to read {index_name}: {e}"
+    try:
+        with open(index_path) as f:
+            data = yaml.safe_load(f)
+    except yaml.YAMLError as e:
+        return None, f"Failed to parse feature-index.yaml: {e}"
+    except OSError as e:
+        return None, f"Failed to read feature-index.yaml: {e}"
 
-        if not isinstance(data, dict):
-            return None, f"{index_name} must be a YAML mapping"
+    if not isinstance(data, dict):
+        return None, "feature-index.yaml must be a YAML mapping"
 
-        return data, None
-
-    return None, f"milestone-index.yaml not found at {governance_root / 'milestone-index.yaml'}"
+    return data, None
 
 
 def find_feature_yaml(governance_repo: str, feature_id: str) -> Path | None:
-    """Find milestone.yaml or feature.yaml by scanning governance trees."""
-    governance_root = Path(governance_repo)
-    for root_name in ROOT_CANDIDATES:
-        root_dir = governance_root / root_name
-        if not root_dir.exists():
+    """Find feature.yaml by scanning all domains/services under features/."""
+    features_dir = Path(governance_repo) / "features"
+    if not features_dir.exists():
+        return None
+    for yaml_file in sorted(features_dir.rglob("feature.yaml")):
+        try:
+            with open(yaml_file) as f:
+                data = yaml.safe_load(f)
+            if data and data.get("featureId") == feature_id:
+                return yaml_file
+        except (yaml.YAMLError, OSError):
             continue
-        for record_name in RECORD_CANDIDATES:
-            for yaml_file in sorted(root_dir.rglob(record_name)):
-                try:
-                    with open(yaml_file) as f:
-                        data = yaml.safe_load(f)
-                    if isinstance(data, dict) and feature_id_from_data(data) == feature_id:
-                        return yaml_file
-                except (yaml.YAMLError, OSError):
-                    continue
     return None
 
 
-def write_context_yaml(personal_folder: str, workstream: str, project: str, source: str) -> Path:
-    """Write context.yaml to the personal folder with current workstream/project context."""
+def write_context_yaml(personal_folder: str, domain: str, service: str, source: str) -> Path:
+    """Write context.yaml to the personal folder with current domain/service context."""
     context_path = Path(personal_folder) / "context.yaml"
     context_path.parent.mkdir(parents=True, exist_ok=True)
     context_data = {
-        "workstream": workstream,
-        "project": project,
-        "domain": workstream,
-        "service": project,
+        "domain": domain,
+        "service": service,
         "updated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "updated_by": source,
     }
@@ -230,66 +169,51 @@ def write_context_yaml(personal_folder: str, workstream: str, project: str, sour
 
 
 def find_service_by_id(governance_repo: str, service_id: str) -> dict | None:
-    """Find project metadata by project id from project.yaml files in governance trees."""
-    governance_root = Path(governance_repo)
-    for root_name in ROOT_CANDIDATES:
-        root_dir = governance_root / root_name
-        if not root_dir.exists():
+    """Find service metadata by service id from service.yaml files under features/."""
+    features_dir = Path(governance_repo) / "features"
+    if not features_dir.exists():
+        return None
+
+    for yaml_file in sorted(features_dir.rglob("service.yaml")):
+        try:
+            with open(yaml_file) as f:
+                data = yaml.safe_load(f)
+        except (yaml.YAMLError, OSError):
             continue
-        for record_name in SERVICE_RECORD_CANDIDATES:
-            for yaml_file in sorted(root_dir.rglob(record_name)):
-                try:
-                    with open(yaml_file) as f:
-                        data = yaml.safe_load(f)
-                except (yaml.YAMLError, OSError):
-                    continue
-                if not isinstance(data, dict):
-                    continue
-                record_id = str(data.get("id") or "").strip()
-                workstream = str(data.get("workstream") or data.get("domain") or "").strip()
-                project = str(data.get("project") or data.get("service") or yaml_file.parent.name).strip()
-                if record_id == service_id:
-                    return {
-                        "id": record_id,
-                        "name": data.get("name", ""),
-                        "workstream": workstream,
-                        "project": project,
-                        "domain": workstream,
-                        "service": project,
-                        "status": data.get("status", "active"),
-                        "owner": data.get("owner", ""),
-                    }
-    return None
-
-
-def load_service_by_path(governance_repo: str, domain: str, service: str) -> dict | None:
-    """Load project metadata using an explicit workstream/project path."""
-    governance_root = Path(governance_repo)
-    for root_name in ROOT_CANDIDATES:
-        for record_name in SERVICE_RECORD_CANDIDATES:
-            service_yaml = governance_root / root_name / domain / service / record_name
-            if not service_yaml.exists():
-                continue
-            try:
-                with open(service_yaml) as f:
-                    data = yaml.safe_load(f)
-            except (yaml.YAMLError, OSError):
-                return None
-            if not isinstance(data, dict):
-                return None
-            workstream = str(data.get("workstream") or data.get("domain") or domain).strip()
-            project = str(data.get("project") or data.get("service") or service).strip()
+        if not isinstance(data, dict):
+            continue
+        if data.get("id") == service_id:
             return {
-                "id": data.get("id", f"{workstream}-{project}"),
+                "id": data.get("id", ""),
                 "name": data.get("name", ""),
-                "workstream": workstream,
-                "project": project,
-                "domain": workstream,
-                "service": project,
+                "domain": data.get("domain", ""),
+                "service": data.get("service", ""),
                 "status": data.get("status", "active"),
                 "owner": data.get("owner", ""),
             }
     return None
+
+
+def load_service_by_path(governance_repo: str, domain: str, service: str) -> dict | None:
+    """Load service metadata using an explicit domain/service path."""
+    service_yaml = Path(governance_repo) / "features" / domain / service / "service.yaml"
+    if not service_yaml.exists():
+        return None
+    try:
+        with open(service_yaml) as f:
+            data = yaml.safe_load(f)
+    except (yaml.YAMLError, OSError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    return {
+        "id": data.get("id", f"{domain}-{service}"),
+        "name": data.get("name", ""),
+        "domain": data.get("domain", domain),
+        "service": data.get("service", service),
+        "status": data.get("status", "active"),
+        "owner": data.get("owner", ""),
+    }
 
 
 def resolve_service_context(
@@ -298,11 +222,11 @@ def resolve_service_context(
     domain: str | None,
     service: str | None,
 ) -> tuple[dict | None, str | None]:
-    """Resolve a project context from explicit workstream/project or project id."""
+    """Resolve a service context from explicit domain/service or service id."""
     if domain and service:
         service_meta = load_service_by_path(governance_repo, domain, service)
         if not service_meta:
-            return None, f"Project '{domain}/{service}' not found in governance repo"
+            return None, f"Service '{domain}/{service}' not found in governance repo"
         return service_meta, None
 
     service_meta = find_service_by_id(governance_repo, selector_id)
@@ -310,8 +234,8 @@ def resolve_service_context(
         return service_meta, None
 
     return None, (
-        "milestone-index.yaml not found and no matching project context found. "
-        f"Expected project id '{selector_id}' from workstream inventory, or provide --workstream and --project."
+        "feature-index.yaml not found and no matching service context found. "
+        f"Expected service id '{selector_id}' from domain inventory, or provide --domain and --service."
     )
 
 
@@ -328,7 +252,7 @@ def resolve_personal_folder(governance_repo: str, personal_folder: str | None) -
 
 def is_stale(feature_data: dict) -> bool:
     """Return True if the feature has not been updated in STALE_DAYS days."""
-    updated = feature_data.get("updated") or feature_data.get("updated_at") or ""
+    updated = feature_data.get("updated", "")
     if not updated or not isinstance(updated, str):
         return False
     try:
@@ -339,15 +263,14 @@ def is_stale(feature_data: dict) -> bool:
 
 
 def build_context_paths(
-    governance_repo: str,
     feature_data: dict,
     index_by_id: dict[str, dict],
 ) -> tuple[list[str], list[str]]:
-    """Derive cross-milestone context paths from dependencies.
+    """Derive cross-feature context paths from dependencies.
 
     Returns (summaries, full_docs):
-      - summaries: summary.md paths for related milestones
-      - full_docs: tech-plan.md paths for depends_on and blocks milestones
+      - summaries: summary.md paths for 'related' features
+      - full_docs: tech-plan.md paths for 'depends_on' and 'blocks' features
     """
     deps = feature_data.get("dependencies") or {}
     depends_on: list[str] = deps.get("depends_on") or []
@@ -360,93 +283,62 @@ def build_context_paths(
 
     summaries: list[str] = []
     for fid in summary_ids:
-        feature_path = find_feature_yaml(governance_repo, fid)
-        if feature_path:
-            summaries.append(str(feature_path.parent.relative_to(governance_repo) / "summary.md"))
-            continue
         entry = index_by_id.get(fid)
         if entry:
-            summaries.append(
-                str(Path("milestones") / entry_workstream(entry) / entry_project(entry) / fid / "summary.md")
-            )
+            d = entry.get("domain", "")
+            s = entry.get("service", "")
+            summaries.append(f"features/{d}/{s}/{fid}/summary.md")
 
     full_docs: list[str] = []
     for fid in full_doc_ids:
-        feature_path = find_feature_yaml(governance_repo, fid)
-        if feature_path:
-            full_docs.append(str(feature_path.parent.relative_to(governance_repo) / "tech-plan.md"))
-            continue
         entry = index_by_id.get(fid)
         if entry:
-            full_docs.append(
-                str(Path("milestones") / entry_workstream(entry) / entry_project(entry) / fid / "tech-plan.md")
-            )
+            d = entry.get("domain", "")
+            s = entry.get("service", "")
+            full_docs.append(f"features/{d}/{s}/{fid}/tech-plan.md")
 
     return summaries, full_docs
 
 
 def scan_domain_inventory(governance_repo: str) -> dict:
-    """Scan governance trees for workstream.yaml/domain.yaml and project.yaml/service.yaml files.
+    """Scan features/ for domain.yaml and service.yaml files.
 
-    Fallback used when milestone-index.yaml does not yet exist. Returns workstream/project
-    inventory so the agent can orient the user without requiring milestone initialization.
+    Fallback used when feature-index.yaml does not yet exist. Returns domain/service
+    inventory so the agent can orient the user without requiring feature initialization.
     """
+    features_dir = Path(governance_repo) / "features"
     domains: list[dict] = []
 
-    governance_root = Path(governance_repo)
-    seen_workstreams: set[str] = set()
-    for root_name in ROOT_CANDIDATES:
-        root_dir = governance_root / root_name
-        if not root_dir.exists():
-            continue
-        for workstream_dir in sorted(d for d in root_dir.iterdir() if d.is_dir()):
-            workstream_slug = workstream_dir.name
-            if workstream_slug in seen_workstreams:
+    if features_dir.exists():
+        for domain_dir in sorted(d for d in features_dir.iterdir() if d.is_dir()):
+            domain_yaml = domain_dir / "domain.yaml"
+            if not domain_yaml.exists():
                 continue
-
-            domain_data: dict | None = None
-            for record_name in DOMAIN_RECORD_CANDIDATES:
-                domain_yaml = workstream_dir / record_name
-                if not domain_yaml.exists():
-                    continue
-                try:
-                    with open(domain_yaml) as f:
-                        loaded = yaml.safe_load(f)
-                except (yaml.YAMLError, OSError):
-                    loaded = None
-                if isinstance(loaded, dict):
-                    domain_data = loaded
-                    break
+            try:
+                with open(domain_yaml) as f:
+                    domain_data = yaml.safe_load(f)
+            except (yaml.YAMLError, OSError):
+                continue
             if not isinstance(domain_data, dict):
                 continue
 
             services: list[dict] = []
-            for project_dir in sorted(d for d in workstream_dir.iterdir() if d.is_dir()):
-                service_data: dict | None = None
-                for record_name in SERVICE_RECORD_CANDIDATES:
-                    service_yaml = project_dir / record_name
-                    if not service_yaml.exists():
-                        continue
-                    try:
-                        with open(service_yaml) as f:
-                            loaded = yaml.safe_load(f)
-                    except (yaml.YAMLError, OSError):
-                        loaded = None
-                    if isinstance(loaded, dict):
-                        service_data = loaded
-                        break
+            for service_dir in sorted(d for d in domain_dir.iterdir() if d.is_dir()):
+                service_yaml = service_dir / "service.yaml"
+                if not service_yaml.exists():
+                    continue
+                try:
+                    with open(service_yaml) as f:
+                        service_data = yaml.safe_load(f)
+                except (yaml.YAMLError, OSError):
+                    continue
                 if not isinstance(service_data, dict):
                     continue
-
-                project_slug = str(
-                    service_data.get("project") or service_data.get("service") or project_dir.name
-                ).strip()
                 services.append(
                     {
                         "id": service_data.get("id", ""),
                         "name": service_data.get("name", ""),
-                        "project": project_slug,
-                        "service": project_slug,
+                        "service": service_data.get("service", ""),
                         "status": service_data.get("status", "active"),
                         "owner": service_data.get("owner", ""),
                     }
@@ -456,20 +348,18 @@ def scan_domain_inventory(governance_repo: str) -> dict:
                 {
                     "id": domain_data.get("id", ""),
                     "name": domain_data.get("name", ""),
-                    "workstream": str(domain_data.get("workstream") or domain_data.get("domain") or workstream_slug),
-                    "domain": str(domain_data.get("workstream") or domain_data.get("domain") or workstream_slug),
+                    "domain": domain_data.get("domain", ""),
                     "status": domain_data.get("status", "active"),
                     "owner": domain_data.get("owner", ""),
                     "services": services,
                 }
             )
-            seen_workstreams.add(workstream_slug)
 
     total_services = sum(len(d["services"]) for d in domains)
     if domains:
-        message = "No milestones initialized yet. Showing workstream/project inventory from governance repo."
+        message = "No features initialized yet. Showing domain/service inventory from governance repo."
     else:
-        message = "No milestones initialized and no workstreams registered. Run /init-milestone to begin."
+        message = "No features initialized and no domains registered. Run /lens-init-feature to begin."
     return {
         "status": "pass",
         "mode": "domains",
@@ -481,10 +371,10 @@ def scan_domain_inventory(governance_repo: str) -> dict:
 
 
 def cmd_list(args: argparse.Namespace) -> dict:
-    """List milestones from milestone-index.yaml with optional status filter.
+    """List features from feature-index.yaml with optional status filter.
 
-    Falls back to workstream/project inventory (scan_domain_inventory) when
-    milestone-index.yaml does not yet exist in the governance repo.
+    Falls back to domain/service inventory (scan_domain_inventory) when
+    feature-index.yaml does not yet exist in the governance repo.
     """
     index_data, err = load_feature_index(args.governance_repo)
     if err:
@@ -492,7 +382,7 @@ def cmd_list(args: argparse.Namespace) -> dict:
             return scan_domain_inventory(args.governance_repo)
         return {"status": "fail", "error": err}
 
-    raw_features = get_index_entries(index_data)
+    raw_features: list[dict] = index_data.get("features") or []
 
     status_filter: str = args.status_filter
     if status_filter == "archived":
@@ -506,12 +396,9 @@ def cmd_list(args: argparse.Namespace) -> dict:
         features.append(
             {
                 "num": i + 1,
-                "id": entry_id(f),
-                "milestoneId": entry_id(f),
-                "workstream": entry_workstream(f),
-                "project": entry_project(f),
-                "domain": entry_workstream(f),
-                "service": entry_project(f),
+                "id": f.get("id", ""),
+                "domain": f.get("domain", ""),
+                "service": f.get("service", ""),
                 "status": f.get("status", "active"),
                 "owner": f.get("owner", ""),
                 "summary": f.get("summary", ""),
@@ -538,17 +425,17 @@ def try_git_checkout(control_repo: str, branch: str) -> tuple[bool, str | None]:
 
 
 def cmd_switch(args: argparse.Namespace) -> dict:
-    """Validate and prepare context for switching to a milestone."""
-    err = validate_identifier(args.feature_id, "milestone-id")
+    """Validate and prepare context for switching to a feature."""
+    err = validate_identifier(args.feature_id, "feature-id")
     if err:
         return {"status": "fail", "error": err}
 
     if args.domain:
-        err = validate_identifier(args.domain, "workstream")
+        err = validate_identifier(args.domain, "domain")
         if err:
             return {"status": "fail", "error": err}
     if args.service:
-        err = validate_identifier(args.service, "project")
+        err = validate_identifier(args.service, "service")
         if err:
             return {"status": "fail", "error": err}
 
@@ -574,8 +461,8 @@ def cmd_switch(args: argparse.Namespace) -> dict:
             context_path = str(
                 write_context_yaml(
                     personal_folder,
-                    service_meta["workstream"],
-                    service_meta["project"],
+                    service_meta["domain"],
+                    service_meta["service"],
                     "lens-switch",
                 )
             )
@@ -594,8 +481,6 @@ def cmd_switch(args: argparse.Namespace) -> dict:
             "service_context": {
                 "id": service_meta["id"],
                 "name": service_meta["name"],
-                "workstream": service_meta["workstream"],
-                "project": service_meta["project"],
                 "domain": service_meta["domain"],
                 "service": service_meta["service"],
                 "status": service_meta["status"],
@@ -606,7 +491,7 @@ def cmd_switch(args: argparse.Namespace) -> dict:
                 "summaries": [],
                 "full_docs": [],
             },
-            "message": "milestone-index.yaml missing; switched to project context fallback.",
+            "message": "feature-index.yaml missing; switched to service context fallback.",
         }
         if control_repo is not None:
             result["branch_switched"] = branch_switched
@@ -614,40 +499,40 @@ def cmd_switch(args: argparse.Namespace) -> dict:
                 result["branch_error"] = branch_error
         return result
 
-    raw_features = get_index_entries(index_data)
-    index_by_id = {entry_id(f): f for f in raw_features if entry_id(f)}
+    raw_features: list[dict] = index_data.get("features") or []
+    index_by_id = {f.get("id"): f for f in raw_features if f.get("id")}
 
     index_entry = index_by_id.get(args.feature_id)
     if not index_entry:
         return {
             "status": "fail",
-            "error": f"Milestone '{args.feature_id}' not found in milestone-index.yaml",
+            "error": f"Feature '{args.feature_id}' not found in feature-index.yaml",
         }
 
     feature_path = find_feature_yaml(args.governance_repo, args.feature_id)
     if not feature_path:
         return {
             "status": "fail",
-            "error": f"milestone.yaml not found for '{args.feature_id}'",
+            "error": f"feature.yaml not found for '{args.feature_id}'",
         }
 
     try:
         with open(feature_path) as f:
             feature_data = yaml.safe_load(f)
     except (yaml.YAMLError, OSError) as e:
-        return {"status": "fail", "error": f"Failed to read milestone.yaml: {e}"}
+        return {"status": "fail", "error": f"Failed to read feature.yaml: {e}"}
 
     if not isinstance(feature_data, dict):
-        return {"status": "fail", "error": "milestone.yaml is not a valid YAML mapping"}
+        return {"status": "fail", "error": "feature.yaml is not a valid YAML mapping"}
 
-    summaries, full_docs = build_context_paths(args.governance_repo, feature_data, index_by_id)
+    summaries, full_docs = build_context_paths(feature_data, index_by_id)
 
     try:
         context_path = str(
             write_context_yaml(
                 personal_folder,
-                feature_workstream(feature_data),
-                feature_project(feature_data),
+                str(feature_data.get("domain", "")),
+                str(feature_data.get("service", "")),
                 "lens-switch",
             )
         )
@@ -664,19 +549,16 @@ def cmd_switch(args: argparse.Namespace) -> dict:
         "plan_branch": plan_branch,
         "feature": {
             "id": args.feature_id,
-            "milestoneId": feature_id_from_data(feature_data) or args.feature_id,
             "name": feature_data.get("name", ""),
-            "workstream": feature_workstream(feature_data),
-            "project": feature_project(feature_data),
-            "domain": feature_workstream(feature_data),
-            "service": feature_project(feature_data),
+            "domain": feature_data.get("domain", ""),
+            "service": feature_data.get("service", ""),
             "phase": feature_data.get("phase", ""),
             "track": feature_data.get("track", ""),
             "priority": feature_data.get("priority", ""),
             "status": index_entry.get("status", "active"),
             "owner": index_entry.get("owner", ""),
             "stale": is_stale(feature_data),
-            "updated": str(feature_data.get("updated") or feature_data.get("updated_at") or ""),
+            "updated": str(feature_data.get("updated", "")),
             "context_path": context_path,
             "target_repo": normalize_target_repo_state(feature_data),
         },
@@ -693,98 +575,94 @@ def cmd_switch(args: argparse.Namespace) -> dict:
 
 
 def cmd_context_paths(args: argparse.Namespace) -> dict:
-    """Get file paths needed for cross-milestone context for a given milestone."""
-    err = validate_identifier(args.feature_id, "milestone-id")
+    """Get file paths needed for cross-feature context for a given feature."""
+    err = validate_identifier(args.feature_id, "feature-id")
     if err:
         return {"status": "fail", "error": err}
 
-    feature_path: Path | None = None
-    governance_root = Path(args.governance_repo)
-    for root_name in ROOT_CANDIDATES:
-        for record_name in RECORD_CANDIDATES:
-            direct_path = governance_root / root_name / args.domain / args.service / args.feature_id / record_name
-            if direct_path.exists():
-                feature_path = direct_path
-                break
-        if feature_path:
-            break
-    if not feature_path:
+    # Prefer direct path using provided domain/service; fall back to scan
+    direct_path = (
+        Path(args.governance_repo)
+        / "features"
+        / args.domain
+        / args.service
+        / args.feature_id
+        / "feature.yaml"
+    )
+    if direct_path.exists():
+        feature_path: Path | None = direct_path
+    else:
         feature_path = find_feature_yaml(args.governance_repo, args.feature_id)
 
     if not feature_path:
         return {
             "status": "fail",
-            "error": f"Milestone '{args.feature_id}' not found",
+            "error": f"Feature '{args.feature_id}' not found",
         }
 
     try:
         with open(feature_path) as f:
             feature_data = yaml.safe_load(f)
     except (yaml.YAMLError, OSError) as e:
-        return {"status": "fail", "error": f"Failed to read milestone.yaml: {e}"}
+        return {"status": "fail", "error": f"Failed to read feature.yaml: {e}"}
 
     if not isinstance(feature_data, dict):
-        return {"status": "fail", "error": "milestone.yaml is not a valid YAML mapping"}
+        return {"status": "fail", "error": "feature.yaml is not a valid YAML mapping"}
 
-    # Load index for workstream/project lookups of dependency milestones.
+    # Load index for domain/service lookups of dependency features
     index_data, _ = load_feature_index(args.governance_repo)
     index_by_id: dict[str, dict] = {}
     if index_data:
-        for f in get_index_entries(index_data):
-            resolved_id = entry_id(f)
-            if resolved_id:
-                index_by_id[resolved_id] = f
+        for f in (index_data.get("features") or []):
+            if f.get("id"):
+                index_by_id[f["id"]] = f
 
-    summaries, full_docs = build_context_paths(args.governance_repo, feature_data, index_by_id)
+    summaries, full_docs = build_context_paths(feature_data, index_by_id)
 
     return {"status": "pass", "summaries": summaries, "full_docs": full_docs}
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-                description="Switch operations — manage active milestone context.",
+        description="Switch operations — manage active feature context.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   %(prog)s list --governance-repo /path/to/repo/
   %(prog)s list --governance-repo /path/to/repo/ --status-filter all
 
-    %(prog)s switch --governance-repo /path/to/repo/ --milestone-id auth-login
+  %(prog)s switch --governance-repo /path/to/repo/ --feature-id auth-login
 
   %(prog)s context-paths --governance-repo /path/to/repo/ \\
-        --milestone-id auth-login --workstream platform --project identity
+    --feature-id auth-login --domain platform --service identity
 """,
     )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # list
-    list_p = subparsers.add_parser("list", help="List milestones from milestone-index.yaml")
+    list_p = subparsers.add_parser("list", help="List features from feature-index.yaml")
     list_p.add_argument("--governance-repo", required=True, help="Governance repo root path")
     list_p.add_argument(
         "--status-filter",
         default="active",
         choices=["all", "active", "archived"],
-        help="Filter by milestone status (default: non-archived milestones)",
+        help="Filter by feature status (default: non-archived features)",
     )
 
     # switch
-    switch_p = subparsers.add_parser("switch", help="Validate and prepare context for a milestone switch")
+    switch_p = subparsers.add_parser("switch", help="Validate and prepare context for a feature switch")
     switch_p.add_argument("--governance-repo", required=True, help="Governance repo root path")
-    switch_p.add_argument("--feature-id", "--milestone-id", required=True, dest="feature_id", help="Target milestone identifier")
+    switch_p.add_argument("--feature-id", required=True, help="Target feature identifier")
     switch_p.add_argument(
         "--domain",
-        "--workstream",
         required=False,
-        help="Workstream for project-context fallback when milestone-index.yaml is missing",
-        dest="domain",
+        help="Domain for service-context fallback when feature-index.yaml is missing",
     )
     switch_p.add_argument(
         "--service",
-        "--project",
         required=False,
-        help="Project for project-context fallback when milestone-index.yaml is missing",
-        dest="service",
+        help="Service for service-context fallback when feature-index.yaml is missing",
     )
     switch_p.add_argument(
         "--personal-folder",
@@ -801,16 +679,16 @@ Examples:
         dest="control_repo",
         help=(
             "Path to the control repo root. Defaults to '.' (the workspace root) and performs "
-            "'git checkout {milestoneId}-plan' there after resolving the milestone context."
+            "'git checkout {featureId}-plan' there after resolving the feature context."
         ),
     )
 
     # context-paths
-    ctx_p = subparsers.add_parser("context-paths", help="Get cross-milestone context file paths")
+    ctx_p = subparsers.add_parser("context-paths", help="Get cross-feature context file paths")
     ctx_p.add_argument("--governance-repo", required=True, help="Governance repo root path")
-    ctx_p.add_argument("--feature-id", "--milestone-id", required=True, dest="feature_id", help="Milestone identifier")
-    ctx_p.add_argument("--domain", "--workstream", required=True, dest="domain", help="Milestone workstream")
-    ctx_p.add_argument("--service", "--project", required=True, dest="service", help="Milestone project")
+    ctx_p.add_argument("--feature-id", required=True, help="Feature identifier")
+    ctx_p.add_argument("--domain", required=True, help="Feature domain")
+    ctx_p.add_argument("--service", required=True, help="Feature service")
 
     return parser
 

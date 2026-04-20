@@ -1,8 +1,8 @@
 ---
-description: 'Read and update milestone YAML lifecycle metadata.'
+description: 'Read and update feature YAML lifecycle metadata.'
 ---
 
-# lens-milestone-yaml (Stub)
+# lens-feature-yaml (Stub)
 
 > **This is a stub.** Load and execute the full prompt from the release module.
 

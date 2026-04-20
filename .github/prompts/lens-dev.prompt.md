@@ -1,4 +1,5 @@
 ---
+model: Claude Sonnet 4.6 (copilot)
 description: 'Launch Dev phase — epic-level implementation loop with story management'
 ---
 

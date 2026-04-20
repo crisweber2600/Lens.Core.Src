@@ -1,4 +1,5 @@
 ---
+model: Claude Sonnet 4.6 (copilot)
 description: 'View and edit onboarding profile'
 ---
 

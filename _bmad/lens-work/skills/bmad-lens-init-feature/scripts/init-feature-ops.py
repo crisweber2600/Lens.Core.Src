@@ -49,16 +49,6 @@ VALID_TRACKS = [
 CONTEXT_DOC_SUFFIXES = {".md", ".yaml", ".yml"}
 AMBIGUOUS_SERVICE_NAMES = {"api", "auth", "common", "core", "data", "identity"}
 LIFECYCLE_PATH = Path(__file__).resolve().parents[3] / "lifecycle.yaml"
-INDEX_FILENAME = "milestone-index.yaml"
-INDEX_KEY = "milestones"
-GOVERNANCE_ROOT_DIR = "milestones"
-RECORD_FILENAME = "milestone.yaml"
-WORKSTREAM_MARKER_FILENAME = "workstream.yaml"
-PROJECT_MARKER_FILENAME = "project.yaml"
-LEGACY_GOVERNANCE_ROOT_DIR = "features"
-LEGACY_RECORD_FILENAME = "feature.yaml"
-LEGACY_WORKSTREAM_MARKER_FILENAME = "domain.yaml"
-LEGACY_PROJECT_MARKER_FILENAME = "service.yaml"
 
 # Legacy track names still appear in existing feature.yaml files.
 LEGACY_TRACK_ALIASES: dict[str, str] = {
@@ -194,33 +184,6 @@ def normalize_track(track: str, lifecycle: dict) -> str:
     return LEGACY_TRACK_ALIASES.get(track, track)
 
 
-def get_index_entries(index_data: dict) -> list[dict]:
-    """Return the index entries for either v5 or legacy schemas."""
-    entries = index_data.get(INDEX_KEY)
-    if isinstance(entries, list):
-        return entries
-    entries = index_data.get("features")
-    return entries if isinstance(entries, list) else []
-
-
-def set_index_entries(index_data: dict, entries: list[dict]) -> None:
-    """Persist index entries using the v5 top-level key."""
-    index_data.pop("features", None)
-    index_data[INDEX_KEY] = entries
-
-
-def entry_id(entry: dict) -> str:
-    return str(entry.get("milestoneId") or entry.get("featureId") or entry.get("id") or "")
-
-
-def entry_workstream(entry: dict) -> str:
-    return str(entry.get("workstream") or entry.get("domain") or "")
-
-
-def entry_project(entry: dict) -> str:
-    return str(entry.get("project") or entry.get("service") or "")
-
-
 def resolve_start_phase(track: str) -> str:
     """Resolve the lifecycle start phase for a selected track."""
     lifecycle = load_lifecycle()
@@ -239,25 +202,18 @@ def resolve_start_phase(track: str) -> str:
 
 
 def read_feature_index(governance_repo: str) -> tuple[dict, bool]:
-    """Read the v5 milestone index, with legacy fallback for transitional reads."""
-    candidates = [
-        (Path(governance_repo) / INDEX_FILENAME, INDEX_KEY),
-        (Path(governance_repo) / "feature-index.yaml", "features"),
-    ]
-    for index_path, key in candidates:
-        if not index_path.exists():
-            continue
-        try:
-            with open(index_path) as f:
-                data = yaml.safe_load(f) or {}
-        except (yaml.YAMLError, OSError) as e:
-            raise RuntimeError(f"Failed to read {index_path.name}: {e}") from e
-        if key not in data:
-            data[key] = []
-        if key != INDEX_KEY:
-            set_index_entries(data, get_index_entries(data))
-        return data, True
-    return {INDEX_KEY: []}, False
+    """Read feature-index.yaml; return (data, exists). Creates empty structure if missing."""
+    index_path = Path(governance_repo) / "feature-index.yaml"
+    if not index_path.exists():
+        return {"features": []}, False
+    try:
+        with open(index_path) as f:
+            data = yaml.safe_load(f) or {}
+    except (yaml.YAMLError, OSError) as e:
+        raise RuntimeError(f"Failed to read feature-index.yaml: {e}") from e
+    if "features" not in data:
+        data["features"] = []
+    return data, True
 
 
 def atomic_write_yaml(path: Path, data: dict) -> None:
@@ -278,15 +234,15 @@ def atomic_write_yaml(path: Path, data: dict) -> None:
 
 
 def write_context_yaml(personal_folder: str, domain: str, service: str | None, source: str) -> Path:
-    """Write context.yaml to the personal folder with the current workstream/project.
+    """Write context.yaml to the personal folder with the current domain/service.
 
-    This is a local-only file (not git-tracked); it persists the user's active workstream/project
+    This is a local-only file (not git-tracked); it persists the user's active domain/service
     context so that non-feature-branch commands can resolve it without a feature branch.
     """
     context_path = Path(personal_folder) / "context.yaml"
     context_data: dict = {
-        "workstream": domain,
-        "project": service,
+        "domain": domain,
+        "service": service,
         "updated_at": now_iso(),
         "updated_by": source,
     }
@@ -304,16 +260,16 @@ def make_feature_yaml(
     username: str,
     timestamp: str,
 ) -> dict:
-    """Build the initial milestone.yaml data structure."""
+    """Build the initial feature.yaml data structure."""
     return {
         "name": name,
         "description": "",
-        "milestoneId": feature_id,
-        "workstream": domain,
-        "project": service,
+        "featureId": feature_id,
+        "domain": domain,
+        "service": service,
         "phase": phase,
         "track": track,
-        "checkpoints": {
+        "milestones": {
             "businessplan": None,
             "techplan": None,
             "finalizeplan": None,
@@ -330,7 +286,7 @@ def make_feature_yaml(
         "phase_transitions": [{"phase": phase, "timestamp": timestamp, "user": username}],
         "docs": {
             "path": f"docs/{domain}/{service}/{feature_id}",
-            "governance_docs_path": f"{GOVERNANCE_ROOT_DIR}/{domain}/{service}/{feature_id}/docs",
+            "governance_docs_path": f"features/{domain}/{service}/{feature_id}/docs",
         },
     }
 
@@ -347,22 +303,22 @@ def make_summary_md(
     """Build the initial summary.md stub content."""
     return (
         f"# {name}\n\n"
-        f"> Status: {phase} | Milestone ID: `{feature_id}`\n\n"
+        f"> Status: {phase} | Feature ID: `{feature_id}`\n\n"
         f"Auto-generated stub. Update as planning progresses.\n\n"
-        f"**Workstream:** {domain}  \n"
-        f"**Project:** {service}  \n"
+        f"**Domain:** {domain}  \n"
+        f"**Service:** {service}  \n"
         f"**Owner:** {username}  \n"
         f"**Initialized:** {timestamp}\n"
     )
 
 
 def make_domain_yaml(domain: str, name: str, username: str, timestamp: str) -> dict:
-    """Build the governance marker for a workstream container."""
+    """Build the governance marker for a domain container."""
     return {
-        "kind": "workstream",
+        "kind": "domain",
         "id": domain,
         "name": name,
-        "workstream": domain,
+        "domain": domain,
         "status": "active",
         "owner": username,
         "created": timestamp,
@@ -479,13 +435,13 @@ def make_service_yaml(
     username: str,
     timestamp: str,
 ) -> dict:
-    """Build the governance marker for a project container."""
+    """Build the governance marker for a service container."""
     return {
-        "kind": "project",
+        "kind": "service",
         "id": f"{domain}-{service}",
         "name": name,
-        "workstream": domain,
-        "project": service,
+        "domain": domain,
+        "service": service,
         "status": "active",
         "owner": username,
         "created": timestamp,
@@ -494,22 +450,13 @@ def make_service_yaml(
 
 
 def get_domain_marker_path(governance_repo: str, domain: str) -> Path:
-    """Return the canonical governance path for a workstream marker."""
-    return Path(governance_repo) / GOVERNANCE_ROOT_DIR / domain / WORKSTREAM_MARKER_FILENAME
+    """Return the canonical governance path for a domain marker."""
+    return Path(governance_repo) / "features" / domain / "domain.yaml"
 
 
 def get_service_marker_path(governance_repo: str, domain: str, service: str) -> Path:
-    """Return the canonical governance path for a project marker."""
-    return Path(governance_repo) / GOVERNANCE_ROOT_DIR / domain / service / PROJECT_MARKER_FILENAME
-
-
-def created_workstream_marker(created_paths: list[str]) -> bool:
-    """Return True when created paths include either the v5 or legacy workstream marker."""
-    return any(
-        path.endswith(f"/{WORKSTREAM_MARKER_FILENAME}")
-        or path.endswith(f"/{LEGACY_WORKSTREAM_MARKER_FILENAME}")
-        for path in created_paths
-    )
+    """Return the canonical governance path for a service marker."""
+    return Path(governance_repo) / "features" / domain / service / "service.yaml"
 
 
 def get_domain_constitution_path(governance_repo: str, domain: str) -> Path:
@@ -563,25 +510,8 @@ def unique_paths(paths: list[str]) -> list[str]:
 
 
 def feature_dir_from_entry(governance_repo: str, entry: dict) -> Path:
-    """Return the milestone directory for an index entry, preferring existing v5 paths."""
-    candidates = [
-        Path(governance_repo) / GOVERNANCE_ROOT_DIR / entry_workstream(entry) / entry_project(entry) / entry_id(entry),
-        Path(governance_repo) / LEGACY_GOVERNANCE_ROOT_DIR / entry_workstream(entry) / entry_project(entry) / entry_id(entry),
-    ]
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-    return candidates[0]
-
-
-def feature_record_path_from_entry(governance_repo: str, entry: dict) -> Path | None:
-    """Return the first existing milestone record path for an index entry."""
-    feature_dir = feature_dir_from_entry(governance_repo, entry)
-    for record_name in (RECORD_FILENAME, LEGACY_RECORD_FILENAME):
-        record_path = feature_dir / record_name
-        if record_path.exists():
-            return record_path
-    return None
+    """Return the feature directory for an index entry."""
+    return Path(governance_repo) / "features" / entry.get("domain", "") / entry.get("service", "") / entry.get("id", "")
 
 
 def collect_doc_files(root: Path) -> list[str]:
@@ -597,12 +527,12 @@ def collect_doc_files(root: Path) -> list[str]:
 
 
 def collect_feature_context_paths(governance_repo: str, entry: dict) -> list[str]:
-    """Collect milestone.yaml and any mirrored governance docs for a milestone."""
+    """Collect feature.yaml and any mirrored governance docs for a feature."""
     feature_dir = feature_dir_from_entry(governance_repo, entry)
     paths: list[str] = []
 
-    feature_yaml = feature_record_path_from_entry(governance_repo, entry)
-    if feature_yaml is not None:
+    feature_yaml = feature_dir / "feature.yaml"
+    if feature_yaml.exists():
         paths.append(str(feature_yaml))
 
     docs_dir = feature_dir / "docs"
@@ -617,35 +547,31 @@ def collect_service_context_paths(
     domain: str | None = None,
 ) -> list[str]:
     """Collect service-level governance files and child feature summaries for a named service."""
+    features_root = Path(governance_repo) / "features"
+    if not features_root.exists():
+        return []
+
     matches: list[str] = []
-    for root_name in (GOVERNANCE_ROOT_DIR, LEGACY_GOVERNANCE_ROOT_DIR):
-        features_root = Path(governance_repo) / root_name
-        if not features_root.exists():
+    search_domains: list[str]
+    if domain:
+        search_domains = [domain]
+    else:
+        search_domains = [path.name for path in sorted(features_root.iterdir()) if path.is_dir()]
+
+    for domain_name in search_domains:
+        service_dir = features_root / domain_name / service_name
+        if not service_dir.exists() or not service_dir.is_dir():
             continue
 
-        search_domains: list[str]
-        if domain:
-            search_domains = [domain]
-        else:
-            search_domains = [path.name for path in sorted(features_root.iterdir()) if path.is_dir()]
+        service_yaml = service_dir / "service.yaml"
+        if service_yaml.exists():
+            matches.append(str(service_yaml))
+        docs_dir = service_dir / "docs"
+        matches.extend(collect_doc_files(docs_dir))
 
-        for domain_name in search_domains:
-            service_dir = features_root / domain_name / service_name
-            if not service_dir.exists() or not service_dir.is_dir():
-                continue
-
-            for marker_name in (PROJECT_MARKER_FILENAME, LEGACY_PROJECT_MARKER_FILENAME):
-                service_yaml = service_dir / marker_name
-                if service_yaml.exists():
-                    matches.append(str(service_yaml))
-                    break
-
-            docs_dir = service_dir / "docs"
-            matches.extend(collect_doc_files(docs_dir))
-
-            for summary_path in sorted(service_dir.glob("*/summary.md")):
-                if summary_path.parent.name != exclude_feature_id:
-                    matches.append(str(summary_path))
+        for summary_path in sorted(service_dir.glob("*/summary.md")):
+            if summary_path.parent.name != exclude_feature_id:
+                matches.append(str(summary_path))
 
     return unique_paths(matches)
 
@@ -658,24 +584,21 @@ def normalize_lookup_text(value: str) -> str:
 
 
 def available_service_names(governance_repo: str, features: list[dict], domain: str | None = None) -> list[str]:
-    """Return known project names from governance markers and index entries."""
+    """Return known service names from governance markers and feature index entries."""
     names: set[str] = set()
-    for root_name in (GOVERNANCE_ROOT_DIR, LEGACY_GOVERNANCE_ROOT_DIR):
-        features_root = Path(governance_repo) / root_name
-        if not features_root.exists():
-            continue
+    features_root = Path(governance_repo) / "features"
 
-        for marker_name in (PROJECT_MARKER_FILENAME, LEGACY_PROJECT_MARKER_FILENAME):
-            pattern = f"{domain}/*/{marker_name}" if domain else f"*/*/{marker_name}"
-            for service_yaml in sorted(features_root.glob(pattern)):
-                if service_yaml.is_file():
-                    names.add(service_yaml.parent.name.lower())
+    if features_root.exists():
+        pattern = f"{domain}/*/service.yaml" if domain else "*/*/service.yaml"
+        for service_yaml in sorted(features_root.glob(pattern)):
+            if service_yaml.is_file():
+                names.add(service_yaml.parent.name.lower())
 
     for feature in features:
-        feature_domain = entry_workstream(feature).strip().lower()
+        feature_domain = str(feature.get("domain", "")).strip().lower()
         if domain and feature_domain != domain.lower():
             continue
-        service_name = entry_project(feature).strip().lower()
+        service_name = str(feature.get("service", "")).strip().lower()
         if service_name:
             names.add(service_name)
 
@@ -745,10 +668,10 @@ def build_feature_governance_rel_paths(
     service: str,
     container_rel_paths: list[str] | None = None,
 ) -> list[str]:
-    """Return governance-relative paths staged for milestone initialization."""
-    feature_yaml_rel = f"{GOVERNANCE_ROOT_DIR}/{domain}/{service}/{feature_id}/{RECORD_FILENAME}"
-    summary_rel = f"{GOVERNANCE_ROOT_DIR}/{domain}/{service}/{feature_id}/summary.md"
-    return [feature_yaml_rel, INDEX_FILENAME, summary_rel, *(container_rel_paths or [])]
+    """Return governance-relative paths staged for feature initialization."""
+    feature_yaml_rel = f"features/{domain}/{service}/{feature_id}/feature.yaml"
+    summary_rel = f"features/{domain}/{service}/{feature_id}/summary.md"
+    return [feature_yaml_rel, "feature-index.yaml", summary_rel, *(container_rel_paths or [])]
 
 
 def build_feature_governance_git_steps(
@@ -947,21 +870,21 @@ def cmd_create(args: argparse.Namespace) -> dict:
     except RuntimeError as e:
         return {"status": "fail", "error": str(e)}
 
-    existing_ids = [entry_id(entry) for entry in get_index_entries(index_data)]
+    existing_ids = [f.get("id") for f in index_data.get("features", [])]
     if feature_id in existing_ids:
         return {
             "status": "fail",
-            "error": f"Milestone '{feature_id}' already exists in {INDEX_FILENAME}",
+            "error": f"Feature '{feature_id}' already exists in feature-index.yaml",
         }
 
     timestamp = now_iso()
     feature_yaml_path = (
-        Path(governance_repo) / GOVERNANCE_ROOT_DIR / domain / service / feature_id / RECORD_FILENAME
+        Path(governance_repo) / "features" / domain / service / feature_id / "feature.yaml"
     )
     summary_path = (
-        Path(governance_repo) / GOVERNANCE_ROOT_DIR / domain / service / feature_id / "summary.md"
+        Path(governance_repo) / "features" / domain / service / feature_id / "summary.md"
     )
-    index_path = Path(governance_repo) / INDEX_FILENAME
+    index_path = Path(governance_repo) / "feature-index.yaml"
     container_markers = ensure_container_markers(
         governance_repo,
         domain,
@@ -993,7 +916,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
             "starting_phase": starting_phase,
             "recommended_command": recommended_command,
             "router_command": "/next",
-            "milestone_yaml_path": str(feature_yaml_path),
+            "feature_yaml_path": str(feature_yaml_path),
             "index_updated": True,
             "summary_path": str(summary_path),
             "container_markers": container_markers,
@@ -1015,12 +938,13 @@ def cmd_create(args: argparse.Namespace) -> dict:
     try:
         atomic_write_yaml(feature_yaml_path, feature_data)
     except OSError as e:
-        return {"status": "fail", "error": f"Failed to write {RECORD_FILENAME}: {e}"}
+        return {"status": "fail", "error": f"Failed to write feature.yaml: {e}"}
 
     new_entry = {
-        "milestoneId": feature_id,
-        "workstream": domain,
-        "project": service,
+        "id": feature_id,
+        "featureId": feature_id,
+        "domain": domain,
+        "service": service,
         "status": starting_phase,
         "owner": username,
         # plan_branch refers to the control repo branch, not the governance repo.
@@ -1030,13 +954,11 @@ def cmd_create(args: argparse.Namespace) -> dict:
         "updated_at": timestamp,
         "summary": "",
     }
-    entries = get_index_entries(index_data)
-    entries.append(new_entry)
-    set_index_entries(index_data, entries)
+    index_data["features"].append(new_entry)
     try:
         atomic_write_yaml(index_path, index_data)
     except OSError as e:
-        return {"status": "fail", "error": f"Failed to write {INDEX_FILENAME}: {e}"}
+        return {"status": "fail", "error": f"Failed to write feature-index.yaml: {e}"}
 
     summary_content = make_summary_md(feature_id, domain, service, name, starting_phase, username, timestamp)
     try:
@@ -1060,7 +982,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
                 "starting_phase": starting_phase,
                 "recommended_command": recommended_command,
                 "router_command": "/next",
-                "milestone_yaml_path": str(feature_yaml_path),
+                "feature_yaml_path": str(feature_yaml_path),
                 "index_updated": True,
                 "summary_path": str(summary_path),
                 "container_markers": container_markers,
@@ -1080,7 +1002,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
         "starting_phase": starting_phase,
         "recommended_command": recommended_command,
         "router_command": "/next",
-        "milestone_yaml_path": str(feature_yaml_path),
+        "feature_yaml_path": str(feature_yaml_path),
         "index_updated": True,
         "summary_path": str(summary_path),
         "container_markers": container_markers,
@@ -1201,7 +1123,7 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
     context_path: str | None = None
     if personal_folder:
         try:
-            context_path = str(write_context_yaml(personal_folder, domain, None, "new-workstream"))
+            context_path = str(write_context_yaml(personal_folder, domain, None, "new-domain"))
         except OSError as e:
             return {"status": "fail", "error": f"Failed to write context.yaml: {e}"}
 
@@ -1385,7 +1307,7 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
     context_path_svc: str | None = None
     if personal_folder_svc and not args.dry_run:
         try:
-            context_path_svc = str(write_context_yaml(personal_folder_svc, domain, service, "new-project"))
+            context_path_svc = str(write_context_yaml(personal_folder_svc, domain, service, "new-service"))
         except OSError as e:
             return {"status": "fail", "error": f"Failed to write context.yaml: {e}"}
 
@@ -1407,7 +1329,7 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
                 "scope": "service",
                 "path": str(service_path),
                 "constitution_path": str(service_constitution_path),
-                "created_domain_marker": created_workstream_marker(created_marker_paths),
+                "created_domain_marker": any(path.endswith("/domain.yaml") for path in created_marker_paths),
                 "created_domain_constitution": any("constitutions/" in path and path.endswith(f"{domain}/constitution.md") for path in created_constitution_paths),
                 "created_marker_paths": created_marker_paths,
                 "created_constitution_paths": created_constitution_paths,
@@ -1428,7 +1350,7 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
         "scope": "service",
         "path": str(service_path),
         "constitution_path": str(service_constitution_path),
-        "created_domain_marker": created_workstream_marker(created_marker_paths),
+        "created_domain_marker": any(path.endswith("/domain.yaml") for path in created_marker_paths),
         "created_domain_constitution": any("constitutions/" in path and path.endswith(f"{domain}/constitution.md") for path in created_constitution_paths),
         "created_marker_paths": created_marker_paths,
         "created_constitution_paths": created_constitution_paths,
@@ -1462,37 +1384,37 @@ def cmd_fetch_context(args: argparse.Namespace) -> dict:
         return {"status": "fail", "error": str(e)}
 
     if not index_exists:
-        return {"status": "fail", "error": f"{INDEX_FILENAME} not found"}
+        return {"status": "fail", "error": "feature-index.yaml not found"}
 
-    features = get_index_entries(index_data)
-    index_by_id = {entry_id(feature): feature for feature in features if entry_id(feature)}
+    features = index_data.get("features", [])
+    index_by_id = {feature.get("id"): feature for feature in features if feature.get("id")}
 
     target = index_by_id.get(feature_id)
     if target is None:
         return {
             "status": "fail",
-            "error": f"Milestone '{feature_id}' not found in {INDEX_FILENAME}",
+            "error": f"Feature '{feature_id}' not found in feature-index.yaml",
         }
 
-    target_feature_path = feature_record_path_from_entry(governance_repo, target)
-    if target_feature_path is None:
+    target_feature_path = feature_dir_from_entry(governance_repo, target) / "feature.yaml"
+    if not target_feature_path.exists():
         return {
             "status": "fail",
-            "error": f"{RECORD_FILENAME} not found for '{feature_id}'",
+            "error": f"feature.yaml not found for '{feature_id}'",
         }
 
     try:
         feature_data = yaml.safe_load(target_feature_path.read_text(encoding="utf-8")) or {}
     except (yaml.YAMLError, OSError) as e:
-        return {"status": "fail", "error": f"Failed to read {RECORD_FILENAME}: {e}"}
+        return {"status": "fail", "error": f"Failed to read feature.yaml: {e}"}
 
-    target_domain = entry_workstream(target)
-    target_service = str(feature_data.get("project") or feature_data.get("service") or entry_project(target) or "").strip().lower()
+    target_domain = target.get("domain", "")
+    target_service = str(feature_data.get("service") or target.get("service") or "").strip().lower()
     dependencies = feature_data.get("dependencies") or {}
     depends_on_ids = list(dependencies.get("depends_on") or [])
     blocks_ids = list(dependencies.get("blocks") or [])
 
-    related = [f for f in features if entry_workstream(f) == target_domain and entry_id(f) != feature_id]
+    related = [f for f in features if f.get("domain") == target_domain and f.get("id") != feature_id]
     depends_on = [index_by_id[dep_id] for dep_id in depends_on_ids if dep_id in index_by_id]
     blocks = [index_by_id[dep_id] for dep_id in blocks_ids if dep_id in index_by_id]
     candidate_services = [
@@ -1508,13 +1430,13 @@ def cmd_fetch_context(args: argparse.Namespace) -> dict:
     context_paths: list[str] = []
 
     for f in related:
-        fid = entry_id(f)
-        dom = entry_workstream(f)
-        svc = entry_project(f)
+        fid = f.get("id", "")
+        dom = f.get("domain", "")
+        svc = f.get("service", "")
         if depth == "full":
             context_paths.extend(collect_feature_context_paths(governance_repo, f))
         else:
-            context_paths.append(str(feature_dir_from_entry(governance_repo, f) / "summary.md"))
+            context_paths.append(str(Path(governance_repo) / "features" / dom / svc / fid / "summary.md"))
 
     for f in depends_on + blocks:
         context_paths.extend(collect_feature_context_paths(governance_repo, f))
@@ -1537,9 +1459,9 @@ def cmd_fetch_context(args: argparse.Namespace) -> dict:
 
     return {
         "status": "pass",
-        "related": [entry_id(f) for f in related],
-        "depends_on": [entry_id(f) for f in depends_on],
-        "blocks": [entry_id(f) for f in blocks],
+        "related": [f.get("id") for f in related],
+        "depends_on": [f.get("id") for f in depends_on],
+        "blocks": [f.get("id") for f in blocks],
         "service_refs": service_refs,
         "detected_service_refs": detected_service_refs,
         "missing_service_refs": missing_service_refs,
@@ -1561,7 +1483,7 @@ def cmd_read_context(args: argparse.Namespace) -> dict:
             "status": "not-found",
             "error": (
                 f"No context.yaml found at {context_path}. "
-                "Run `lens-new-workstream` or `lens-new-project` first to establish a context."
+                "Run `lens-new-domain` or `lens-new-service` first to establish a context."
             ),
         }
     try:
@@ -1572,10 +1494,8 @@ def cmd_read_context(args: argparse.Namespace) -> dict:
 
     return {
         "status": "pass",
-        "workstream": data.get("workstream") or data.get("domain"),
-        "project": data.get("project") or data.get("service"),
-        "domain": data.get("workstream") or data.get("domain"),
-        "service": data.get("project") or data.get("service"),
+        "domain": data.get("domain"),
+        "service": data.get("service"),
         "updated_at": data.get("updated_at"),
         "updated_by": data.get("updated_by"),
     }
@@ -1632,7 +1552,7 @@ Examples:
         help="Create a governance marker and constitution for a domain container",
     )
     create_domain_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
-    create_domain_p.add_argument("--domain", "--workstream", required=True, dest="domain", help="Workstream name")
+    create_domain_p.add_argument("--domain", required=True, help="Domain name")
     create_domain_p.add_argument("--name", default=None, help="Human-friendly domain name")
     create_domain_p.add_argument("--username", required=True, help="Username of the creator")
     create_domain_p.add_argument(
@@ -1670,8 +1590,8 @@ Examples:
         help="Create a governance marker and constitution for a service container",
     )
     create_service_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
-    create_service_p.add_argument("--domain", "--workstream", required=True, dest="domain", help="Workstream name")
-    create_service_p.add_argument("--service", "--project", required=True, dest="service", help="Project name")
+    create_service_p.add_argument("--domain", required=True, help="Domain name")
+    create_service_p.add_argument("--service", required=True, help="Service name")
     create_service_p.add_argument("--name", default=None, help="Human-friendly service name")
     create_service_p.add_argument("--username", required=True, help="Username of the creator")
     create_service_p.add_argument(
@@ -1724,14 +1644,12 @@ Examples:
     )
     create_p.add_argument(
         "--feature-id",
-        "--milestone-id",
         required=True,
-        dest="feature_id",
-        help="Unique milestone identifier (kebab-case: ^[a-z0-9][a-z0-9-]{0,63}$)",
+        help="Unique feature identifier (kebab-case: ^[a-z0-9][a-z0-9-]{0,63}$)",
     )
-    create_p.add_argument("--domain", "--workstream", required=True, dest="domain", help="Workstream name")
-    create_p.add_argument("--service", "--project", required=True, dest="service", help="Project name")
-    create_p.add_argument("--name", required=True, help="Human-friendly milestone name")
+    create_p.add_argument("--domain", required=True, help="Domain name")
+    create_p.add_argument("--service", required=True, help="Service name")
+    create_p.add_argument("--name", required=True, help="Human-friendly feature name")
     create_p.add_argument(
         "--track",
         default=None,
@@ -1753,7 +1671,7 @@ Examples:
 
     fetch_p = subparsers.add_parser("fetch-context", help="Fetch cross-feature context")
     fetch_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
-    fetch_p.add_argument("--feature-id", "--milestone-id", required=True, dest="feature_id", help="Milestone identifier")
+    fetch_p.add_argument("--feature-id", required=True, help="Feature identifier")
     fetch_p.add_argument(
         "--depth",
         default="summaries",

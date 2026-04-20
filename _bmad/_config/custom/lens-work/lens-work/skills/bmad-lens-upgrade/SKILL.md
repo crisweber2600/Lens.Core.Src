@@ -1,29 +1,18 @@
 ---
 name: bmad-lens-upgrade
-description: Migrate control repo schema between versions with safety gates, dry-run support, and audit trail. Includes downgrade-ops.py for automatic schema 5 → 4 rollback, which runs automatically as part of preflight.
+description: Migrate control repo schema between versions with safety gates, dry-run support, and audit trail.
 ---
 
-# Upgrade / Downgrade — Schema Migration
+# Upgrade — Schema Migration
 
 ## Overview
 
 This skill migrates a control repo from an older schema version to the current version. It detects the installed version, computes a migration plan (branch renames, YAML field transformations, initiative-state creation), confirms with the user, and applies changes with a `[LENS:UPGRADE]` commit marker. Supports `--dry-run` for safe preview.
 
-The current implementation foundation adds an executable `4 -> 5` rename path for the Lens terminology shift. That path rewrites local `.lens` state, converts `feature-index.yaml` into `milestone-index.yaml`, migrates the governance tree from `features/.../feature.yaml` to `milestones/.../milestone.yaml`, renames `domain/service` to `workstream/project`, and rewrites lifecycle gate `milestones` to `checkpoints`.
-
-A **downgrade** path (`downgrade-ops.py`) reverses the schema 5 → 4 terminology migration. **Preflight runs this automatically** whenever it detects a v5 workspace against a v4 module.
-
-**Upgrade args (`upgrade-ops.py` — for forward migrations):**
+**Args:**
 - `--dry-run` (optional): Display complete plan without applying changes.
 - `--from <version>` (optional): Override detected source version.
 - `--to <version>` (optional): Override target version (default: lifecycle.yaml `schema_version`).
-
-**Downgrade args (`downgrade-ops.py`):**
-- `--dry-run` (optional): Preview without writing changes.
-- `--from 5` (default): Source schema version.
-- `--to 4` (default): Target schema version.
-- `--project-root <path>` (optional): Control-repo root (default: cwd).
-- `--governance-repo <path>` (optional): Override governance repo path.
 
 ## Identity
 
@@ -81,49 +70,6 @@ You are the upgrade conductor for the Lens agent. You detect version gaps, compu
 2. Commit with `[LENS:UPGRADE]` marker.
 3. Report completion with next-step guidance.
 
-## Downgrade Flow (schema 5 → 4)
-
-The downgrade reverses the v5 terminology migration (`workstream/project/milestone` → `domain/service/feature`). **Preflight invokes this automatically** when it detects `.lens/LENS_VERSION = 5` against a v4 module.
-
-### What Gets Reverted
-
-| Schema 5 | Schema 4 |
-|----------|----------|
-| `.lens/LENS_VERSION` = `5.0.0` | `.lens/LENS_VERSION` = `4.0.0` |
-| `context.yaml` key `workstream` | `domain` |
-| `context.yaml` key `project` | `service` |
-| `context.yaml` `updated_by: new-project` | `new-service` |
-| `context.yaml` `updated_by: new-workstream` | `new-domain` |
-| `context.yaml` `updated_by: new-milestone` | `new-feature` |
-| `profile.yaml` key `workstream` | `domain` |
-| `milestone-index.yaml` | `feature-index.yaml` |
-| index key `milestones` | `features` |
-| index entry key `milestoneId` | `featureId` |
-| governance dir `milestones/` | `features/` |
-| `workstream.yaml` (`kind: workstream`) | `domain.yaml` (`kind: domain`) |
-| `project.yaml` (`kind: project`) | `service.yaml` (`kind: service`) |
-| `milestone.yaml` key `milestoneId` | `featureId` |
-| `milestone.yaml` key `checkpoints` | `milestones` |
-| `docs.governance_docs_path` prefix `milestones/` | `features/` |
-
-### Manual Downgrade (if needed)
-
-```bash
-# Preview
-uv run _bmad/lens-work/skills/bmad-lens-upgrade/scripts/downgrade-ops.py \
-  --project-root . --dry-run
-
-# Apply
-uv run _bmad/lens-work/skills/bmad-lens-upgrade/scripts/downgrade-ops.py \
-  --project-root .
-```
-
-### Safety Properties
-
-- **Atomic**: governance changes use temp-dir + rename, rolling back on any error.
-- **Non-destructive**: old schema-5 files are backed up as `*.v5-backup` and removed only on success.
-- **Conflict detection**: fails before writing if v4 target files already exist.
-
 ## Integration Points
 
 | Skill / Agent | Role |
@@ -131,23 +77,3 @@ uv run _bmad/lens-work/skills/bmad-lens-upgrade/scripts/downgrade-ops.py \
 | `bmad-lens-git-orchestration` | Branch operations and commits |
 | `bmad-lens-git-state` | Branch scanning and initiative detection |
 | `bmad-lens-theme` | Applies active persona overlay |
-| `preflight.py` | Auto-invokes downgrade-ops.py on v5/v4 mismatch |
-
-## Script Reference
-
-`./scripts/upgrade-ops.py` — Python script (uv-runnable) for the implemented upgrade path.
-
-```bash
-# Preview the v4 -> v5 terminology migration without writing changes
-uv run ./skills/bmad-lens-upgrade/scripts/upgrade-ops.py \
-	--project-root /path/to/control-repo \
-	--from 4 \
-	--to 5 \
-	--dry-run
-
-# Apply the v4 -> v5 terminology migration
-uv run ./skills/bmad-lens-upgrade/scripts/upgrade-ops.py \
-	--project-root /path/to/control-repo \
-	--from 4 \
-	--to 5
-```

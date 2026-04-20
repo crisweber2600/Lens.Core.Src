@@ -237,6 +237,12 @@ See [pipeline-source-to-release.md](./pipeline-source-to-release.md) for details
 @lens → /log-problem
 ```
 
+### Move Feature to Different Domain/Service (v3.2)
+
+```
+@lens → /move-feature
+```
+
 ### Split Feature Into Multiple Initiatives (v3.2)
 
 ```

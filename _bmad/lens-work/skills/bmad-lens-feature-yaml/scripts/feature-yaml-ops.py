@@ -28,8 +28,6 @@ VALID_TRACKS = ["quickplan", "full", "feature", "hotfix", "hotfix-express", "exp
 VALID_PRIORITIES = ["critical", "high", "medium", "low"]
 VALID_ROLES = ["lead", "contributor", "reviewer"]
 VALID_VISIBILITIES = ["public", "private", "internal"]
-SEARCH_ROOTS = ["milestones", "features"]
-RECORD_CANDIDATES = ["milestone.yaml", "feature.yaml"]
 
 # Sanitization pattern for path-constructing identifiers
 SAFE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
@@ -118,75 +116,39 @@ def get_template_path() -> Path:
     return Path(__file__).parent.parent / "assets" / "feature-template.yaml"
 
 
-def get_item_id(data: dict) -> str:
-    return str(
-        data.get("milestoneId")
-        or data.get("featureId")
-        or data.get("feature_id")
-        or data.get("id")
-        or ""
-    )
-
-
-def get_workstream(data: dict) -> str:
-    return str(data.get("workstream") or data.get("domain") or data.get("work_stream") or "")
-
-
-def get_project(data: dict) -> str:
-    return str(data.get("project") or data.get("service") or data.get("project_name") or "")
-
-
-def get_checkpoints(data: dict, ensure: bool = False) -> dict:
-    checkpoints = data.get("checkpoints")
-    if isinstance(checkpoints, dict):
-        return checkpoints
-    legacy = data.get("milestones")
-    if isinstance(legacy, dict):
-        if ensure and "checkpoints" not in data:
-            data["checkpoints"] = legacy
-        return legacy
-    if ensure:
-        data["checkpoints"] = {}
-        return data["checkpoints"]
-    return {}
-
-
 def get_feature_dir(governance_repo: str, domain: str, service: str, feature_id: str) -> Path:
-    """Compute the milestone directory path."""
-    return Path(governance_repo) / "milestones" / domain / service / feature_id
+    """Compute the feature directory path."""
+    return Path(governance_repo) / "features" / domain / service / feature_id
 
 
 def get_feature_path(governance_repo: str, domain: str, service: str, feature_id: str) -> Path:
-    """Compute the milestone.yaml file path."""
-    return get_feature_dir(governance_repo, domain, service, feature_id) / "milestone.yaml"
+    """Compute the feature.yaml file path."""
+    return get_feature_dir(governance_repo, domain, service, feature_id) / "feature.yaml"
 
 
 def find_feature(governance_repo: str, feature_id: str) -> Path | None:
-    """Find a milestone yaml by id, searching v5 first with legacy fallback."""
-    for root_name in SEARCH_ROOTS:
-        features_dir = Path(governance_repo) / root_name
-        if not features_dir.exists():
+    """Find a feature.yaml by featureId, searching all domains/services."""
+    features_dir = Path(governance_repo) / "features"
+    if not features_dir.exists():
+        return None
+    for yaml_file in features_dir.rglob("feature.yaml"):
+        try:
+            with open(yaml_file) as f:
+                data = yaml.safe_load(f)
+            if data and data.get("featureId") == feature_id:
+                return yaml_file
+        except yaml.YAMLError as e:
+            print(f"Warning: Unparseable YAML at {yaml_file}: {e}", file=sys.stderr)
             continue
-        for record_name in RECORD_CANDIDATES:
-            for yaml_file in features_dir.rglob(record_name):
-                try:
-                    with open(yaml_file) as f:
-                        data = yaml.safe_load(f)
-                    if data and get_item_id(data) == feature_id:
-                        return yaml_file
-                except yaml.YAMLError as e:
-                    print(f"Warning: Unparseable YAML at {yaml_file}: {e}", file=sys.stderr)
-                    continue
-                except OSError as e:
-                    print(f"Warning: Cannot read {yaml_file}: {e}", file=sys.stderr)
-                    continue
+        except OSError as e:
+            print(f"Warning: Cannot read {yaml_file}: {e}", file=sys.stderr)
+            continue
     return None
 
 
 def atomic_write_yaml(path: Path, data: dict) -> None:
     """Write YAML atomically via temp file + rename to prevent corruption."""
     dir_path = path.parent
-    dir_path.mkdir(parents=True, exist_ok=True)
     fd, tmp_path = tempfile.mkstemp(dir=str(dir_path), suffix=".yaml.tmp")
     try:
         with os.fdopen(fd, "w") as f:
@@ -293,7 +255,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
         return {"status": "fail", "error": f"Template not found: {template_path}"}
 
     feature_dir = get_feature_dir(args.governance_repo, args.domain, args.service, args.feature_id)
-    feature_path = feature_dir / "milestone.yaml"
+    feature_path = feature_dir / "feature.yaml"
 
     if feature_path.exists():
         return {"status": "fail", "error": f"Feature already exists: {feature_path}"}
@@ -308,28 +270,18 @@ def cmd_create(args: argparse.Namespace) -> dict:
 
     data["name"] = args.name
     data["description"] = args.description or ""
-    data["milestoneId"] = args.feature_id
-    data["workstream"] = args.domain
-    data["project"] = args.service
-    data.pop("featureId", None)
-    data.pop("domain", None)
-    data.pop("service", None)
+    data["featureId"] = args.feature_id
+    data["domain"] = args.domain
+    data["service"] = args.service
     data["track"] = args.track
     data["priority"] = args.priority
     data["created"] = timestamp
     data["updated"] = timestamp
     data["team"] = [{"username": args.username, "role": "lead"}]
     data["phase_transitions"] = [{"phase": "preplan", "timestamp": timestamp, "user": args.username}]
-    data["checkpoints"] = data.pop("milestones", {
-        "businessplan": None,
-        "techplan": None,
-        "finalizeplan": None,
-        "dev-ready": None,
-        "dev-complete": None,
-    })
     data["docs"] = {
         "path": f"docs/{args.domain}/{args.service}/{args.feature_id}",
-        "governance_docs_path": f"milestones/{args.domain}/{args.service}/{args.feature_id}/docs",
+        "governance_docs_path": f"features/{args.domain}/{args.service}/{args.feature_id}/docs",
     }
 
     if args.target_repos:
@@ -344,7 +296,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
     return {
         "status": "pass",
         "path": str(feature_path),
-        "milestoneId": args.feature_id,
+        "featureId": args.feature_id,
         "data": data,
     }
 
@@ -451,13 +403,12 @@ def cmd_update(args: argparse.Namespace) -> dict:
                 "user": args.username or "unknown",
             })
             # Update milestone if applicable
-            checkpoints = get_checkpoints(data, ensure=True)
-            if value in checkpoints:
-                checkpoints[value] = now_iso()
+            if value in data.get("milestones", {}):
+                data["milestones"][value] = now_iso()
             elif is_completion_phase(value):
                 completed_phase = normalize_phase(value)
-                if completed_phase in checkpoints:
-                    checkpoints[completed_phase] = now_iso()
+                if completed_phase in data.get("milestones", {}):
+                    data["milestones"][completed_phase] = now_iso()
             changes.append({"field": "phase", "old": current_phase, "new": value})
 
         # Handle dependency updates with bidirectional sync
@@ -553,16 +504,9 @@ def cmd_validate(args: argparse.Namespace) -> dict:
     findings = []
 
     # Schema compliance
-    required_fields = {
-        "name": data.get("name"),
-        "milestoneId": get_item_id(data),
-        "workstream": get_workstream(data),
-        "project": get_project(data),
-        "phase": data.get("phase"),
-        "track": data.get("track"),
-    }
-    for field, value in required_fields.items():
-        if not value:
+    required_fields = ["name", "featureId", "domain", "service", "phase", "track"]
+    for field in required_fields:
+        if not data.get(field):
             findings.append({
                 "severity": "critical",
                 "category": "schema",
@@ -595,7 +539,8 @@ def cmd_validate(args: argparse.Namespace) -> dict:
         })
 
     # Identifier sanitization check
-    for field_name, val in [("milestoneId", get_item_id(data)), ("workstream", get_workstream(data)), ("project", get_project(data))]:
+    for field_name in ["featureId", "domain", "service"]:
+        val = data.get(field_name, "")
         if val and not SAFE_ID_PATTERN.match(val):
             findings.append({
                 "severity": "high",
@@ -607,9 +552,9 @@ def cmd_validate(args: argparse.Namespace) -> dict:
     # Directory consistency
     expected_dir = get_feature_dir(
         args.governance_repo,
-        get_workstream(data),
-        get_project(data),
-        get_item_id(data),
+        data.get("domain", ""),
+        data.get("service", ""),
+        data.get("featureId", ""),
     )
     actual_dir = feature_path.parent
     if expected_dir.resolve() != actual_dir.resolve():
@@ -621,7 +566,7 @@ def cmd_validate(args: argparse.Namespace) -> dict:
         })
 
     # Phase/milestone coherence
-    milestones = get_checkpoints(data)
+    milestones = data.get("milestones", {})
     phase = data.get("phase", "preplan")
     phase_index = VALID_PHASES.index(phase) if phase in VALID_PHASES else 0
     for milestone_name, milestone_time in milestones.items():
@@ -668,12 +613,12 @@ def cmd_validate(args: argparse.Namespace) -> dict:
                 with open(dep_path) as f:
                     dep_data = yaml.safe_load(f)
                 dep_by = dep_data.get("dependencies", {}).get("depended_by", [])
-                if get_item_id(data) not in dep_by:
+                if data.get("featureId") not in dep_by:
                     findings.append({
                         "severity": "medium",
                         "category": "dependencies",
                         "issue": f"Dependency '{dep_id}' doesn't list this feature in depended_by",
-                        "fix": f"Add '{get_item_id(data)}' to {dep_id}'s depended_by list",
+                        "fix": f"Add '{data.get('featureId')}' to {dep_id}'s depended_by list",
                     })
             except (yaml.YAMLError, OSError) as e:
                 findings.append({
@@ -754,40 +699,22 @@ def cmd_validate(args: argparse.Namespace) -> dict:
 
 def cmd_list(args: argparse.Namespace) -> dict:
     """List all features in the governance repo."""
-    feature_roots = [Path(args.governance_repo) / root_name for root_name in SEARCH_ROOTS if (Path(args.governance_repo) / root_name).exists()]
-    if not feature_roots:
+    features_dir = Path(args.governance_repo) / "features"
+    if not features_dir.exists():
         return {"status": "pass", "features": [], "total": 0}
 
     features = []
     parse_errors = []
-    seen_ids: set[str] = set()
-    seen_paths: set[Path] = set()
-    yaml_files: list[Path] = []
-    for features_dir in feature_roots:
-        for record_name in RECORD_CANDIDATES:
-            yaml_files.extend(sorted(features_dir.rglob(record_name)))
-
-    for yaml_file in yaml_files:
-        if yaml_file in seen_paths:
-            continue
-        seen_paths.add(yaml_file)
+    for yaml_file in sorted(features_dir.rglob("feature.yaml")):
         try:
             with open(yaml_file) as f:
                 data = yaml.safe_load(f)
             if data:
-                item_id = get_item_id(data)
-                if item_id and item_id in seen_ids:
-                    continue
-                if item_id:
-                    seen_ids.add(item_id)
                 entry = {
-                    "featureId": item_id,
-                    "milestoneId": item_id,
+                    "featureId": data.get("featureId", ""),
                     "name": data.get("name", ""),
-                    "domain": get_workstream(data),
-                    "service": get_project(data),
-                    "workstream": get_workstream(data),
-                    "project": get_project(data),
+                    "domain": data.get("domain", ""),
+                    "service": data.get("service", ""),
                     "phase": data.get("phase", ""),
                     "track": data.get("track", ""),
                     "priority": data.get("priority", ""),
@@ -843,11 +770,11 @@ Examples:
     # Create
     create_p = subparsers.add_parser("create", help="Create a new feature.yaml")
     create_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
-    create_p.add_argument("--feature-id", "--milestone-id", required=True, dest="feature_id", help="Unique milestone identifier")
-    create_p.add_argument("--domain", "--workstream", required=True, dest="domain", help="Workstream name")
-    create_p.add_argument("--service", "--project", required=True, dest="service", help="Project name")
-    create_p.add_argument("--name", required=True, help="Human-friendly milestone name")
-    create_p.add_argument("--description", default="", help="Milestone description")
+    create_p.add_argument("--feature-id", required=True, help="Unique feature identifier")
+    create_p.add_argument("--domain", required=True, help="Domain name")
+    create_p.add_argument("--service", required=True, help="Service name")
+    create_p.add_argument("--name", required=True, help="Human-friendly feature name")
+    create_p.add_argument("--description", default="", help="Feature description")
     create_p.add_argument("--track", default="quickplan", choices=VALID_TRACKS, help="Lifecycle track")
     create_p.add_argument("--priority", default="medium", choices=VALID_PRIORITIES, help="Feature priority")
     create_p.add_argument("--username", required=True, help="Username of the creator")
@@ -856,26 +783,26 @@ Examples:
     # Read
     read_p = subparsers.add_parser("read", help="Read feature state")
     read_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
-    read_p.add_argument("--feature-id", "--milestone-id", required=True, dest="feature_id", help="Milestone identifier")
+    read_p.add_argument("--feature-id", required=True, help="Feature identifier")
     read_p.add_argument("--field", help="Dot-notation path to specific field")
 
     # Update
     update_p = subparsers.add_parser("update", help="Update feature fields")
     update_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
-    update_p.add_argument("--feature-id", "--milestone-id", required=True, dest="feature_id", help="Milestone identifier")
+    update_p.add_argument("--feature-id", required=True, help="Feature identifier")
     update_p.add_argument("--set", action="append", required=True, help="Field=value (dot-notation, repeatable)")
     update_p.add_argument("--username", help="Username performing the update")
 
     # Validate
     validate_p = subparsers.add_parser("validate", help="Validate feature.yaml")
     validate_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
-    validate_p.add_argument("--feature-id", "--milestone-id", required=True, dest="feature_id", help="Milestone identifier")
+    validate_p.add_argument("--feature-id", required=True, help="Feature identifier")
 
     # List
     list_p = subparsers.add_parser("list", help="List all features")
     list_p.add_argument("--governance-repo", required=True, help="Path to governance repo root")
     list_p.add_argument("--phase", help="Filter by phase")
-    list_p.add_argument("--domain", "--workstream", dest="domain", help="Filter by workstream")
+    list_p.add_argument("--domain", help="Filter by domain")
     list_p.add_argument("--track", help="Filter by track")
 
     # Global

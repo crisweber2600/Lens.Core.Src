@@ -1,4 +1,5 @@
 ---
+model: Claude Sonnet 4.6 (copilot)
 description: 'Run BMAD domain research with Lens context'
 ---
 

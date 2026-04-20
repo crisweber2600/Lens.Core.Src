@@ -391,6 +391,14 @@ Output: `retrospective.md` committed to the initiative folder.
 
 New utility workflow for recording issues and friction points during active initiatives. Creates structured problem entries with context (current phase, milestone, branch state) for retrospective review.
 
+### /move-feature Command
+
+Reclassify a feature initiative to a different domain/service. Updates:
+- Branch names (if using DSF naming)
+- `initiative-state.yaml` scope references
+- `features.yaml` registry entry
+- Governance inventory references
+
 ### /split-feature Command
 
 Split a feature initiative into multiple child initiatives:
@@ -447,8 +455,8 @@ Four new documentation files for first-time users:
 
 | Category | Files Added |
 |----------|-------------|
-| Workflows | `router/expressplan/` (6 files), `router/retrospective/` (6 files), `utility/log-problem/` (3 files), `utility/split-feature/` (3 files) |
-| Prompts | 4 new: expressplan, retrospective, log-problem, split-feature |
+| Workflows | `router/expressplan/` (6 files), `router/retrospective/` (6 files), `utility/log-problem/` (3 files), `utility/move-feature/` (3 files), `utility/split-feature/` (3 files) |
+| Prompts | 5 new: expressplan, retrospective, log-problem, move-feature, split-feature |
 | Documentation | GETTING-STARTED.md, onboarding-checklist.md, configuration-examples.md |
 | Skills Updated | constitution, git-orchestration, sensing |
 
@@ -485,7 +493,7 @@ A comprehensive quality scan identified 379 issues (4 critical, 62 high, 293 med
 - **Dev prompt consolidation** — 3 redundant write-scope warnings collapsed to single `WRITE-SCOPE INVARIANT` callout
 - **Preflight strategy extraction** — Verbose pull strategy rationale moved to `docs/preflight-strategy.md`
 - **Constitution substeps** — Deep 3-level nesting in preflight Step 5 refactored into linear substeps 5a–5d
-- **Minor prompt improvements** — Enhanced discover, init-initiative, sprintplan, expressplan, help, and lens.agent.md
+- **Minor prompt improvements** — Enhanced discover, init-initiative, move-feature, sprintplan, expressplan, help, and lens.agent.md
 
 ### Documentation
 
@@ -508,6 +516,7 @@ Nine new Python scripts extracted from workflow markdown into standalone executa
 | `derive-initiative-status` | status/step-03-derive-state | Derive milestone/phase/PR state per initiative |
 | `validate-phase-artifacts` | core/phase-lifecycle/step-02 | Check required artifacts per phase from lifecycle.yaml |
 | `plan-lifecycle-renames` | upgrade/step-02 | Scan v2 audience branches, build rename plan to v3 milestones |
+| `validate-feature-move` | move-feature/step-01 | Validate move target, check conflicts, verify scope |
 | `bootstrap-target-projects` | onboard/step-03 | Clone/verify repos from governance repo-inventory.yaml |
 | `derive-next-action` | next/step-02 | Apply lifecycle decision rules, return next command or gate |
 | `run-preflight-cached` | preflight | Timestamp-cached wrapper around preflight.py (TTL-based) |
@@ -543,6 +552,7 @@ Five new workflow directories with full step-driven architecture, SKILL.md, and 
 - Pre-sprintplan readiness summary — epic/story completeness scan warns if >20% stories are missing
 
 **Safety Improvements:**
+- Move-feature in-flight work safeguards — detects active branches, open PRs that would be orphaned
 - Branch-state validation before constitution load — preflight warns of branch mismatch, offers switch
 - Governance repo requirements documented in architecture.md §12
 
@@ -566,7 +576,7 @@ Five new workflow directories with full step-driven architecture, SKILL.md, and 
 | Category | Changes |
 |----------|--------|
 | Prompts | All 26 updated (i18n headers); `prompts/README.md` added; 6 new prompt files for new workflows |
-| Workflows | 20+ updated (preflight, init-initiative, expressplan, sprintplan, discover, help, status, dashboard, next, cross-initiative + step files); 5 router workflows updated (`inputs: []`); 6 new workflow directories (approval-status, rollback-phase, pause-epic, resume-epic, audit-all, profile) |
+| Workflows | 20+ updated (preflight, init-initiative, expressplan, sprintplan, discover, help, status, dashboard, move-feature, next, cross-initiative + step files); 5 router workflows updated (`inputs: []`); 6 new workflow directories (approval-status, rollback-phase, pause-epic, resume-epic, audit-all, profile) |
 | Documentation | 8 updated (architecture §12 governance requirements, configuration-examples, GETTING-STARTED, onboarding-checklist, pipeline-source-to-release, copilot-repo-instructions, README); 1 added (preflight-strategy.md) |
 | Agents | lens.agent.md, lens.agent.yaml updated (7 new menu items: AS, RB, PE, RE, AA, PF + config diagnostics) |
 | Scripts | All scripts converted to cross-platform Python (`.py`); `promote-branch` removed (v3.4+) |
@@ -593,7 +603,7 @@ Five new workflow directories with full step-driven architecture, SKILL.md, and 
 ### v3.1 → v3.2 (Non-breaking)
 
 1. Update module version — `schema_version: 3.1` → `schema_version: 3.2`
-2. New commands available immediately: `/expressplan`, `/retrospective`, `/log-problem`, `/split-feature`
+2. New commands available immediately: `/expressplan`, `/retrospective`, `/log-problem`, `/move-feature`, `/split-feature`
 3. Feature-only naming: create `features.yaml` at control-repo root when ready
 4. Gate collapsing now fully functional — enable via `collapse_gates` constitution capability
 

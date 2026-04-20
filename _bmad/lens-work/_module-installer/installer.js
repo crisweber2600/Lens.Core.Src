@@ -310,10 +310,11 @@ const SKILLS = [];
 const STUB_PROMPTS = [
     { file: 'lens-onboard.prompt.md', name: 'lens-onboard', desc: 'Run shared preflight and show role-aware next steps', target: 'lens-onboard.prompt.md' },
     { file: 'lens-preflight.prompt.md', name: 'lens-preflight', desc: 'Run shared workspace preflight sync and validation', target: 'lens-preflight.prompt.md' },
-    { file: 'lens-init-milestone.prompt.md', name: 'lens-init-milestone', desc: 'Create a new milestone with 2-branch topology', target: 'lens-init-milestone.prompt.md' },
-    { file: 'lens-new-workstream.prompt.md', name: 'lens-new-workstream', desc: 'Create new workstream-level constitution scaffolding', target: 'lens-new-workstream.prompt.md' },
-    { file: 'lens-new-project.prompt.md', name: 'lens-new-project', desc: 'Create new project-level constitution scaffolding within a workstream', target: 'lens-new-project.prompt.md' },
-    { file: 'lens-new-milestone.prompt.md', name: 'lens-new-milestone', desc: 'Initialize a new milestone with 2-branch topology, milestone YAML, and PR', target: 'lens-new-milestone.prompt.md' },
+    { file: 'lens-init-feature.prompt.md', name: 'lens-init-feature', desc: 'Create a new feature with 2-branch topology', target: 'lens-init-feature.prompt.md' },
+    { file: 'lens-new-domain.prompt.md', name: 'lens-new-domain', desc: 'Create new domain-level constitution scaffolding', target: 'lens-new-domain.prompt.md' },
+    { file: 'lens-new-service.prompt.md', name: 'lens-new-service', desc: 'Create new service-level constitution scaffolding within a domain', target: 'lens-new-service.prompt.md' },
+    { file: 'lens-new-feature.prompt.md', name: 'lens-new-feature', desc: 'Initialize a new feature with 2-branch topology, feature YAML, and PR', target: 'lens-new-feature.prompt.md' },
+    { file: 'lens-new-project.prompt.md', name: 'lens-new-project', desc: 'Bootstrap a new project by creating or reusing domain/service containers, initializing a feature, and provisioning a target repo', target: 'lens-new-project.prompt.md' },
     { file: 'lens-target-repo.prompt.md', name: 'lens-target-repo', desc: 'Provision or register a feature target repo in GitHub, TargetProjects, and governance metadata', target: 'lens-target-repo.prompt.md' },
     { file: 'lens-preplan.prompt.md', name: 'lens-preplan', desc: 'Run PrePlan phase (brainstorm, research, product brief)', target: 'lens-preplan.prompt.md' },
     { file: 'lens-businessplan.prompt.md', name: 'lens-businessplan', desc: 'Run BusinessPlan phase (PRD, UX design)', target: 'lens-businessplan.prompt.md' },
@@ -333,6 +334,7 @@ const STUB_PROMPTS = [
     { file: 'lens-approval-status.prompt.md', name: 'lens-approval-status', desc: 'Show promotion PR approval status', target: 'lens-approval-status.prompt.md' },
     { file: 'lens-help.prompt.md', name: 'lens-help', desc: 'Show available commands and usage', target: 'lens-help.prompt.md' },
     { file: 'lens-log-problem.prompt.md', name: 'lens-log-problem', desc: 'Record issues and friction points for active feature', target: 'lens-log-problem.prompt.md' },
+    { file: 'lens-move-feature.prompt.md', name: 'lens-move-feature', desc: 'Reclassify feature to different domain/service', target: 'lens-move-feature.prompt.md' },
     { file: 'lens-split-feature.prompt.md', name: 'lens-split-feature', desc: 'Split feature into multiple initiatives', target: 'lens-split-feature.prompt.md' },
     { file: 'lens-pause-resume.prompt.md', name: 'lens-pause-resume', desc: 'Pause or resume feature with state preservation', target: 'lens-pause-resume.prompt.md' },
     { file: 'lens-rollback.prompt.md', name: 'lens-rollback', desc: 'Safely roll back to a previous lifecycle phase', target: 'lens-rollback.prompt.md' },
@@ -357,7 +359,7 @@ const STUB_PROMPTS = [
     { file: 'lens-upgrade.prompt.md', name: 'lens-upgrade', desc: 'Migrate control repo schema to current version', target: 'lens-upgrade.prompt.md' },
     { file: 'lens-dashboard.prompt.md', name: 'lens-dashboard', desc: 'Cross-feature dashboard with dependency graphs', target: 'lens-dashboard.prompt.md' },
     { file: 'lens-discover.prompt.md', name: 'lens-discover', desc: 'Sync TargetProjects with governance repo inventory', target: 'lens-discover.prompt.md' },
-    { file: 'lens-milestone-yaml.prompt.md', name: 'lens-milestone-yaml', desc: 'Milestone YAML lifecycle operations', target: 'lens-milestone-yaml.prompt.md' },
+    { file: 'lens-feature-yaml.prompt.md', name: 'lens-feature-yaml', desc: 'Feature YAML lifecycle operations', target: 'lens-feature-yaml.prompt.md' },
     { file: 'lens-git-orchestration.prompt.md', name: 'lens-git-orchestration', desc: 'Git write operations for Lens features', target: 'lens-git-orchestration.prompt.md' },
     { file: 'lens-git-state.prompt.md', name: 'lens-git-state', desc: 'Read-only git queries for Lens features', target: 'lens-git-state.prompt.md' },
     { file: 'lens-migrate.prompt.md', name: 'lens-migrate', desc: 'Migration bridge between LENS v3 and Lens Next', target: 'lens-migrate.prompt.md' },
@@ -368,7 +370,7 @@ const STUB_PROMPTS = [
 const IDE_COMMANDS = [
     { file: 'bmad-lens-onboard.md', name: 'onboard', desc: 'Run shared preflight and show role-aware next steps', wf: 'skills/bmad-lens-onboard/SKILL.md' },
     { file: 'bmad-lens-preflight.md', name: 'preflight', desc: 'Run shared workspace preflight sync and validation', wf: 'prompts/lens-preflight.prompt.md' },
-    { file: 'bmad-lens-init-milestone.md', name: 'init-milestone', desc: 'Create new milestone with 2-branch topology', wf: 'skills/bmad-lens-init-feature/SKILL.md' },
+    { file: 'bmad-lens-init-feature.md', name: 'init-feature', desc: 'Create new feature with 2-branch topology', wf: 'skills/bmad-lens-init-feature/SKILL.md' },
     { file: 'bmad-lens-target-repo.md', name: 'target-repo', desc: 'Provision or register a feature target repo and persist governance metadata', wf: 'skills/bmad-lens-target-repo/SKILL.md' },
     { file: 'bmad-lens-preplan.md', name: 'preplan', desc: 'Launch PrePlan phase (brainstorm/research/product brief)', wf: 'skills/bmad-lens-preplan/SKILL.md' },
     { file: 'bmad-lens-businessplan.md', name: 'businessplan', desc: 'Launch BusinessPlan phase (PRD/UX design)', wf: 'skills/bmad-lens-businessplan/SKILL.md' },
@@ -449,7 +451,7 @@ async function installGitHubCopilot(projectRoot, { updateMode, logger }) {
     for (const p of STUB_PROMPTS) {
         await writeAdapterFile(
             path.join(promptsDir, p.file),
-            ghStubPrompt(p.name, p.desc, p.target, p.extra, { noModel: p.noModel !== false }),
+            ghStubPrompt(p.name, p.desc, p.target, p.extra, { noModel: !!p.noModel }),
             { updateMode, logger }
         );
     }

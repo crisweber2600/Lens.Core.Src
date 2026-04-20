@@ -45,7 +45,7 @@ This inventory summarizes the active lens-work surfaces in the editable source m
 | `/switch` | `skills/bmad-lens-switch/SKILL.md` | Feature context switching |
 | `/discover` | `skills/bmad-lens-discover/SKILL.md` | Repo inventory reconciliation |
 | `/retrospective`, `/log-problem` | retrospective and problem logging skills | Feedback capture |
-| `/split-feature` | split skill | Feature reshaping |
+| `/move-feature`, `/split-feature` | move and split skills | Feature reshaping |
 | `/approval-status`, `/rollback`, `/profile`, `/module-management` | operational skills | Approval, rollback, profile, and module support |
 
 ### Governance Commands

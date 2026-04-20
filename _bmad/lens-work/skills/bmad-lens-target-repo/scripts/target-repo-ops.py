@@ -24,8 +24,6 @@ import yaml
 REPO_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$")
 VALID_VISIBILITIES = {"public", "private", "internal"}
 VALID_DEV_BRANCH_MODES = {"direct-default", "feature-id", "feature-id-username"}
-ROOT_CANDIDATES = ["milestones", "features"]
-RECORD_CANDIDATES = ["milestone.yaml", "feature.yaml"]
 
 
 def now_iso() -> str:
@@ -53,22 +51,16 @@ def get_repos_list(data: dict) -> list[dict]:
     return data.get("repositories", data.get("repos", []))
 
 
-def get_item_id(data: dict) -> str:
-    return str(data.get("milestoneId") or data.get("featureId") or data.get("id") or "")
-
-
 def find_feature(governance_repo: Path, feature_id: str) -> Path | None:
-    for root_name in ROOT_CANDIDATES:
-        features_dir = governance_repo / root_name
-        if not features_dir.exists():
+    features_dir = governance_repo / "features"
+    if not features_dir.exists():
+        return None
+    for yaml_file in features_dir.rglob("feature.yaml"):
+        try:
+            if load_yaml(yaml_file).get("featureId") == feature_id:
+                return yaml_file
+        except OSError:
             continue
-        for record_name in RECORD_CANDIDATES:
-            for yaml_file in features_dir.rglob(record_name):
-                try:
-                    if get_item_id(load_yaml(yaml_file)) == feature_id:
-                        return yaml_file
-                except OSError:
-                    continue
     return None
 
 

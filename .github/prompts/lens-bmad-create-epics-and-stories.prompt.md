@@ -1,4 +1,5 @@
 ---
+model: Claude Sonnet 4.6 (copilot)
 description: 'Run BMAD create epics and stories with Lens context'
 ---
 

@@ -1,8 +1,8 @@
 ---
-description: 'Initialize a new milestone with 2-branch topology and governance entries.'
+description: 'Initialize a new feature with 2-branch topology and governance entries.'
 ---
 
-# lens-init-milestone (Stub)
+# lens-init-feature (Stub)
 
 > **This is a stub.** Load and execute the full prompt from the release module.
 

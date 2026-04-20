@@ -1,4 +1,5 @@
 ---
+model: Claude Sonnet 4.6 (copilot)
 description: 'Provision or register a feature target repo in GitHub, TargetProjects, and governance metadata'
 ---
 

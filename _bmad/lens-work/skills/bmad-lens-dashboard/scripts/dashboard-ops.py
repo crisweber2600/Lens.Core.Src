@@ -23,19 +23,6 @@ import yaml
 
 STALE_DAYS = 14
 ACTIVE_PHASES = {"dev", "finalizeplan", "businessplan", "techplan"}
-INDEX_CANDIDATES = ["milestone-index.yaml", "feature-index.yaml"]
-
-
-def get_item_id(data: dict) -> str:
-    return str(data.get("milestoneId") or data.get("featureId") or data.get("id") or "")
-
-
-def get_workstream(data: dict) -> str:
-    return str(data.get("workstream") or data.get("domain") or "")
-
-
-def get_project(data: dict) -> str:
-    return str(data.get("project") or data.get("service") or "")
 
 
 # ---------------------------------------------------------------------------
@@ -59,20 +46,18 @@ def git_show(governance_repo: str, ref: str, path: str) -> str | None:
 
 
 def read_feature_index(governance_repo: str) -> list[dict]:
-    """Read and parse the milestone index from main. Returns empty list on any failure."""
-    for index_name in INDEX_CANDIDATES:
-        content = git_show(governance_repo, "main", index_name)
-        if not content:
-            continue
-        try:
-            data = yaml.safe_load(content)
-        except yaml.YAMLError:
-            return []
-        if not isinstance(data, dict):
-            return []
-        features = data.get("milestones") or data.get("features") or []
-        return features if isinstance(features, list) else []
-    return []
+    """Read and parse feature-index.yaml from main. Returns empty list on any failure."""
+    content = git_show(governance_repo, "main", "feature-index.yaml")
+    if not content:
+        return []
+    try:
+        data = yaml.safe_load(content)
+    except yaml.YAMLError:
+        return []
+    if not isinstance(data, dict):
+        return []
+    features = data.get("features", [])
+    return features if isinstance(features, list) else []
 
 
 # ---------------------------------------------------------------------------
@@ -143,10 +128,10 @@ def collect_data(governance_repo: str) -> dict:
     dependency_edges: list[dict] = []
 
     for feature in features:
-        fid = get_item_id(feature)
+        fid = feature.get("featureId", "")
         phase = feature.get("phase", "")
-        domain = get_workstream(feature)
-        service = get_project(feature)
+        domain = feature.get("domain", "")
+        service = feature.get("service", "")
         domains.add(domain)
 
         stale = is_stale(feature)
@@ -154,7 +139,7 @@ def collect_data(governance_repo: str) -> dict:
             stale_count += 1
 
         # Deep content from governance main (graceful degradation)
-        feature_dir = f"milestones/{domain}/{service}/{fid}"
+        feature_dir = f"features/{domain}/{service}/{fid}"
         problems_content = git_show(governance_repo, "main", f"{feature_dir}/problems.md")
         retro_content = git_show(governance_repo, "main", f"{feature_dir}/retrospective.md")
         summary_content = git_show(
@@ -170,12 +155,9 @@ def collect_data(governance_repo: str) -> dict:
         enriched.append(
             {
                 "featureId": fid,
-                "milestoneId": fid,
                 "name": feature.get("name", ""),
                 "domain": domain,
                 "service": service,
-                "workstream": domain,
-                "project": service,
                 "phase": phase,
                 "track": feature.get("track", ""),
                 "priority": feature.get("priority", ""),
@@ -223,7 +205,7 @@ def build_feature_overview_table(features: list[dict]) -> str:
             f"</tr>"
         )
     if not rows:
-        rows = ['<tr><td colspan="7" class="empty">No milestones found in milestone-index.yaml</td></tr>']
+        rows = ['<tr><td colspan="7" class="empty">No features found in feature-index.yaml</td></tr>']
     return (
         '<table class="data-table"><thead><tr>'
         "<th>Feature ID</th><th>Name</th><th>Domain</th><th>Service</th>"
