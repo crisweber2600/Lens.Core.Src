@@ -83,6 +83,7 @@ class TestGeneratedAdapters:
         assert discover_prompt.is_file()
         assert quickplan_prompt.is_file()
         assert not status_prompt.exists()
+        assert "light-preflight.py" in discover_prompt.read_text(encoding="utf-8")
         assert "lens.core/_bmad/lens-work/prompts/lens-discover.prompt.md" in discover_prompt.read_text(encoding="utf-8")
         assert "lens.core/_bmad/lens-work/prompts/lens-quickplan.prompt.md" in quickplan_prompt.read_text(encoding="utf-8")
 
@@ -99,7 +100,16 @@ class TestGeneratedAdapters:
 
         assert discover_command.is_file()
         assert not status_command.exists()
+        assert "light-preflight.py" in discover_command.read_text(encoding="utf-8")
         assert "skills/bmad-lens-discover/SKILL.md" in discover_command.read_text(encoding="utf-8")
+
+    def test_javascript_installer_mentions_light_preflight(self):
+        installer = (SCRIPT.parent.parent / "_module-installer" / "installer.js").read_text(encoding="utf-8")
+
+        assert "light-preflight.py" in installer
+        assert "LIGHT_PREFLIGHT_COMMAND" in installer
+        assert "shared lightweight prompt-start sync" in installer
+        assert "FIRST, run \\`${LIGHT_PREFLIGHT_COMMAND}\\`" in installer
 
 
 # TODO: Test ensure_dir creates directories
