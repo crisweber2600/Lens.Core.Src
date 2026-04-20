@@ -23,7 +23,7 @@ I am the Git Orchestration skill for Lens — I handle all git write operations 
 ## Principles
 
 - **2-branch invariant in the control repo**: Every feature has exactly `{featureId}` (base) and `{featureId}-plan` (planning) branches in the control repo. Optional control-repo contributor branches (`{featureId}-dev-{username}`) remain separate from target-repo working branches.
-- **Target-repo dev modes are separate**: `direct-default`, `feature-id`, and `feature-id-username` are target-repo working-branch modes only. They never change the control repo 2-branch invariant.
+- **Target-repo dev modes are separate**: `direct-default`, `feature-id`, and `feature-id-username` are target-repo working-branch modes only. They never change the control repo 2-branch invariant, and they may use a short `featureSlug` even when the control repo uses a composite `featureId`.
 - **Governance main-only**: `feature.yaml` and all governance artifacts live on `main` in the governance repo. Branch topology only exists in the control repo and the selected target repo.
 - **Atomic commits**: State file updates and artifact commits are always staged and committed together — never separately.
 - **No silent pushes**: Remote push only happens when explicitly requested or when a phase is complete.
@@ -87,8 +87,8 @@ Load `./references/create-dev-branch.md` for full guidance.
 
 **Modes:**
 - `direct-default` — checkout and pull the target repo default branch; no final PR is required.
-- `feature-id` — create or reuse `feature/{featureId}` from the target repo default branch.
-- `feature-id-username` — create or reuse `feature/{featureId}-{username}` from the target repo default branch.
+- `feature-id` — create or reuse `feature/{featureSlug}` from the target repo default branch. When no explicit `featureSlug` is supplied, it falls back to `{featureId}`.
+- `feature-id-username` — create or reuse `feature/{featureSlug}-{username}` from the target repo default branch. When no explicit `featureSlug` is supplied, it falls back to `{featureId}`.
 
 **Process:**
 1. Resolve the target repo default branch, honoring `{default_branch}` when explicitly supplied.
@@ -97,7 +97,7 @@ Load `./references/create-dev-branch.md` for full guidance.
 4. For branch modes: reuse the local branch when it already exists, reuse the remote branch when only the remote exists, otherwise create the working branch from the default branch and push with `--set-upstream`.
 5. Return `working_branch`, `base_branch`, `requires_pr`, and whether the branch was created or reused.
 
-This capability is the target-repo counterpart to the Dev skill's repo-scoped branch mode selection. It prepares `feature/{featureId}` or `feature/{featureId}-{username}` without affecting control-repo topology.
+This capability is the target-repo counterpart to the Dev skill's repo-scoped branch mode selection. It prepares `feature/{featureSlug}` or `feature/{featureSlug}-{username}` without affecting control-repo topology.
 
 ### merge-plan
 
