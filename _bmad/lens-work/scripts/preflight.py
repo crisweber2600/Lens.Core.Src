@@ -614,6 +614,24 @@ def main() -> int:
         if profile_removed:
             echo(f"  ✓ Removed {profile_removed} prompt(s) excluded by profile (experience={experience}, role={role})")
 
+    # Managed stale file hygiene (.github/**/lens-* and .github/**/len-*)
+    managed_stale_removed = 0
+    for local_file in sorted(local_github.rglob("*")):
+        if not local_file.is_file():
+            continue
+
+        rel_path = local_file.relative_to(local_github)
+        if (release_github / rel_path).is_file():
+            continue
+
+        if re.match(r"^(?:lens|len)-", local_file.name):
+            local_file.unlink()
+            managed_stale_removed += 1
+            remove_empty_parent_dirs(local_file.parent, local_github)
+
+    if managed_stale_removed:
+        echo(f"  ✓ Removed {managed_stale_removed} stale managed .github file(s)")
+
     # ------------------------------------------------------------------
     # Step 3b: Sync agent entry points
     # ------------------------------------------------------------------

@@ -249,6 +249,29 @@ class TestGitHubSync:
         assert result.returncode == 0, result.stdout + result.stderr
         assert (workspace / ".github/prompts/len-keep.prompt.md").read_text(encoding="utf-8") == keep_prompt
 
+    def test_removes_stale_managed_non_prompt_github_files(self, workspace: Path):
+        _write_file(workspace / "lens.core/.github/workflows/keep.yml", "name: keep\n")
+        _write_file(workspace / ".github/instructions/lens-legacy.instructions.md", "legacy\n")
+        _write_file(workspace / ".github/instructions/len-legacy.instructions.md", "legacy\n")
+        _write_hash_manifest(workspace, {})
+
+        result = _run(cwd=workspace)
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert not (workspace / ".github/instructions/lens-legacy.instructions.md").exists()
+        assert not (workspace / ".github/instructions/len-legacy.instructions.md").exists()
+
+    def test_keeps_release_tracked_managed_non_prompt_github_files(self, workspace: Path):
+        keep_contents = "active\n"
+        _write_file(workspace / "lens.core/.github/instructions/lens-keep.instructions.md", keep_contents)
+        _write_file(workspace / ".github/instructions/lens-keep.instructions.md", "old\n")
+        _write_hash_manifest(workspace, {})
+
+        result = _run(cwd=workspace)
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert (workspace / ".github/instructions/lens-keep.instructions.md").read_text(encoding="utf-8") == keep_contents
+
     def test_onboard_caller_prints_dev_next_steps(self, workspace: Path):
         _write_file(workspace / "lens.core/.github/workflows/keep.yml", "name: keep\n")
         _write_file(workspace / ".lens/personal/profile.yaml", "primary_role: dev\n")
