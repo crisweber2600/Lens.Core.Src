@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Generate or resume a two-pass batch intake for planning targets'
 ---
 

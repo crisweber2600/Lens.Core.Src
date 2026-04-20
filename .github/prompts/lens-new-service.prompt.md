@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Create new service-level constitution scaffolding within a domain'
 ---
 

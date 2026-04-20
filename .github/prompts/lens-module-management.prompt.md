@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Check module version and guide self-service updates'
 ---
 

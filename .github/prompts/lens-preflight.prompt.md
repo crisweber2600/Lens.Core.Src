@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Run shared workspace preflight sync and validation'
 ---
 

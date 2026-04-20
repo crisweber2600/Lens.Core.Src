@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Bootstrap a new project by creating or reusing domain/service containers, initializing a feature, and provisioning a target repo'
 ---
 

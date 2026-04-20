@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Run BMAD create PRD with Lens context'
 ---
 

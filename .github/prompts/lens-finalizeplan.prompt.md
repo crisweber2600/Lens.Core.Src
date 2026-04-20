@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Run FinalizePlan phase (review, planning bundle, PR handoff)'
 ---
 

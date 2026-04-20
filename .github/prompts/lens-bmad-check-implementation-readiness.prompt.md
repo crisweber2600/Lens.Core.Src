@@ -1,5 +1,4 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Run BMAD implementation readiness with Lens context'
 ---
 
