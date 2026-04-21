@@ -677,7 +677,7 @@ jobs:
               MISSING=1
             fi
 
-            if ! grep -q 'Read and follow all instructions in: lens.core/_bmad/lens-work/prompts/' "$target"; then
+            if ! grep -Eqi 'read and follow all instructions in: *`?lens\.core/_bmad/lens-work/prompts/' "$target"; then
               echo "::error::Published prompt does not redirect to lens.core module content: $target"
               MISSING=1
             fi
