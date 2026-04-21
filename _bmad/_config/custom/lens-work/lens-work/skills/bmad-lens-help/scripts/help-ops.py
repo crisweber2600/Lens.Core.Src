@@ -1,7 +1,6 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.10"
-# dependencies = []
 # ///
 """Help topic operations — contextual filtering, search, and full listing of Lens help topics."""
 

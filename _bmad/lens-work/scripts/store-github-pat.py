@@ -1,7 +1,6 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = []
 # ///
 """Interactively collect a GitHub PAT and export it as an environment variable.
 

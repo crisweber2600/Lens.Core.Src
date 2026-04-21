@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = []
 # ///
 """Tests for quickplan-ops.py."""
 

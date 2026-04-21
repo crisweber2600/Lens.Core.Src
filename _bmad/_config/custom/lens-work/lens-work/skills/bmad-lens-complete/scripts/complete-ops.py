@@ -1,7 +1,6 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.10"
-# dependencies = []
 # ///
 """Complete operations — check preconditions, finalize, and archive Lens features.
 

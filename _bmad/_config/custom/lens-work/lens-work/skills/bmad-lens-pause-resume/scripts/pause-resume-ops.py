@@ -1,7 +1,6 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.10"
-# dependencies = []
 # ///
 """Pause/resume operations — pause and resume features with state preservation.
 

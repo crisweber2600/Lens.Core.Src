@@ -1,7 +1,6 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = []
 # ///
 """Validate Lens BMAD wrapper registry coverage across publication surfaces."""
 

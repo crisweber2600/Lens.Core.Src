@@ -1,6 +1,5 @@
 # /// script
 # requires-python = ">=3.9"
-# dependencies = []
 # ///
 """
 merge-config.py — Anti-zombie config merge for lens-work module.
