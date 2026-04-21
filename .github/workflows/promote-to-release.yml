@@ -97,6 +97,27 @@ jobs:
           done
           if [ "$MISSING" -eq 1 ]; then exit 1; fi
 
+      - name: Validate source lens-switch prompt stub
+        run: |
+          PROMPT=".github/prompts/lens-switch.prompt.md"
+
+          grep -q "light-preflight.py" "$PROMPT" || {
+            echo "::error::lens-switch source prompt stub must run light-preflight.py"
+            exit 1
+          }
+
+          grep -q "vscode_askQuestions" "$PROMPT" || {
+            echo "::error::lens-switch source prompt stub must preserve the question-tool hint"
+            exit 1
+          }
+
+          grep -q "lens.core/_bmad/lens-work/prompts/lens-switch.prompt.md" "$PROMPT" || {
+            echo "::error::lens-switch source prompt stub must point at the module prompt entry"
+            exit 1
+          }
+
+          echo "✅ lens-switch source prompt stub includes prompt-start sync and correct module routing"
+
       # ── 4. Setup Node.js ─────────────────────────────────────────────
       - name: Setup Node.js
         uses: actions/setup-node@v4

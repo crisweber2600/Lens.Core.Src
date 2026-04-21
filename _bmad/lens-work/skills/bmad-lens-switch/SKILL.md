@@ -47,12 +47,14 @@ You manage active feature context for the Lens agent session. You switch the wor
 
 ## On Activation
 
-Load available config from `{project-root}/lens.core/_bmad/config.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml` (root level and `lens` section). Expected config keys under `lens`: `governance_repo`, `control_repo`. Resolve:
+Load available config from `{project-root}/lens.core/_bmad/lens-work/bmadconfig.yaml`. If `{project-root}/.lens/governance-setup.yaml` exists and contains `governance_repo_path`, prefer that override for the governance repo. Resolve:
 
-- `{governance_repo}` (default: current repo) — governance repo root path
+- `{release_repo_root}` (default: `lens.core`) — release payload root used for anchored script paths
+- `{governance_repo}` (default: `{project-root}/TargetProjects/lens/lens-governance`) — governance repo root path
 - `{control_repo}` (default: `{project-root}`) — control repo root path; used for git branch checkout on switch
+- `{personal_output_folder}` (default: `{project-root}/.lens/personal`) — local session context location
 
-If both config files are absent, use all defaults. The session active feature is not set until an explicit `switch` is performed.
+Missing config is normal. Do not search the workspace for alternate config files or script copies. The session active feature is not set until an explicit `switch` is performed.
 
 ## Capabilities
 
@@ -60,18 +62,23 @@ If both config files are absent, use all defaults. The session active feature is
 | ---------- | ----- |
 | Switch Feature | Load `./references/switch-feature.md` |
 | List Features | Load `./references/list-features.md` |
-| Numbered Menu | When invoked with no `--feature-id`, run List then present a numbered menu and prompt the user to enter a number to switch |
+| Numbered Menu | When invoked with no `--feature-id`, run List then present a numbered menu and wait for the user's exact selection |
 
 ### Numbered Menu Flow
 
 When `lens-switch` is invoked without a target feature (no `--feature-id` argument), default to the numbered menu:
 
 1. Run `switch-ops.py list` to get features with `num` fields (1-indexed)
-2. Render as a numbered list (see `list-features.md` for format)
-3. Prompt: `Enter a number to switch, or q to cancel:`
-4. On valid number input: resolve the feature id at that position and run `switch-ops.py switch --feature-id <id>`
-5. Confirm switch with one line — e.g., `[auth-login] active. Phase: dev.`
-6. On `q` or invalid input: cancel cleanly with no changes
+2. If the result returns `mode: domains`, present the inventory and stop — no feature switch is possible yet
+3. If the result returns `mode: features`, render the numbered list (see `list-features.md` for format)
+4. Prompt: `Enter a number to switch, or q to cancel:`
+5. If a question tool is available, use it; otherwise STOP and wait for the user's next reply
+6. On valid number input: resolve the feature id at that position and run `switch-ops.py switch --feature-id <id>`
+7. Confirm switch with one line — e.g., `[auth-login] active. Phase: dev.`
+8. On `q`: cancel cleanly with no changes
+9. On invalid input: rerender the same menu and STOP again
+
+Never infer a target feature from the current branch, open files, or recent paths. The entry prompt owns menu state and must wait for the user's explicit selection.
 
 ## Script Reference
 
@@ -79,29 +86,28 @@ When `lens-switch` is invoked without a target feature (no `--feature-id` argume
 
 ```bash
 # List available features (non-archived by default)
-python3 scripts/switch-ops.py list \
-  --governance-repo /path/to/governance-repo/
+uv run --script {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
+  list \
+  --governance-repo {governance_repo}
 
 # List all features including archived
-python3 scripts/switch-ops.py list \
-  --governance-repo /path/to/governance-repo/ \
+uv run --script {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
+  list \
+  --governance-repo {governance_repo} \
   --status-filter all
 
 # Validate and prepare context for switching to a feature
-# Without --control-repo: defaults to '.' (workspace root) and checks out there
-python3 scripts/switch-ops.py switch \
-  --governance-repo /path/to/governance-repo/ \
-  --feature-id auth-login
-
-# With --control-repo: overrides the default checkout location
-python3 scripts/switch-ops.py switch \
-  --governance-repo /path/to/governance-repo/ \
+uv run --script {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
+  switch \
+  --governance-repo {governance_repo} \
   --feature-id auth-login \
-  --control-repo /path/to/control-repo/
+  --control-repo {control_repo} \
+  --personal-folder {personal_output_folder}
 
 # Get file paths for cross-feature context
-python3 scripts/switch-ops.py context-paths \
-  --governance-repo /path/to/governance-repo/ \
+uv run --script {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
+  context-paths \
+  --governance-repo {governance_repo} \
   --feature-id auth-login \
   --domain platform \
   --service identity

@@ -22,13 +22,16 @@ If the feature is not found in `feature-index.yaml`, return an error immediately
 Run the switch operation:
 
 ```bash
-python3 ./scripts/switch-ops.py switch \
+uv run --script {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
+  switch \
   --governance-repo {governance_repo} \
   --feature-id {target_feature_id} \
   --control-repo {control_repo}
 ```
 
 If `{personal_output_folder}` is known, pass `--personal-folder {personal_output_folder}`. When `--personal-folder` is omitted and `--control-repo` is provided, the script defaults local context to `{control_repo}/.lens/personal/context.yaml`.
+
+The entry prompt owns numbered-menu interaction. Do not guess a target feature from branch names or open files when the user has not explicitly chosen one.
 
 ## Output
 
