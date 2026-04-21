@@ -117,6 +117,62 @@ def remote_branch_exists(repo: Path, remote: str, branch: str) -> tuple[bool, st
     return False, git_error(result)
 
 
+def remote_has_new_commits(
+    repo: Path,
+    preferred_remote: str | None = None,
+    preferred_branch: str | None = None,
+) -> tuple[bool, str | None]:
+    """Return (has_new, detail). has_new=True means the tracked remote has commits
+    the local branch does not contain. Fails open (returns False) on any probe
+    error so offline/unreachable remotes do not invalidate a fresh cache.
+    """
+
+    if not repo.is_dir():
+        return False, "missing directory"
+
+    worktree_check = git_repo(repo, ["rev-parse", "--is-inside-work-tree"])
+    if worktree_check.returncode != 0 or worktree_check.stdout.strip() != "true":
+        return False, "not a git worktree"
+
+    if preferred_branch is None:
+        branch, branch_error = git_symbolic_branch(repo)
+        if branch_error or branch is None:
+            return False, branch_error or "no branch"
+    else:
+        branch = preferred_branch
+
+    remote, local_branch, remote_branch_or_error = resolve_sync_target(repo, branch, preferred_remote)
+    if remote is None or local_branch is None:
+        return False, remote_branch_or_error or "no remote"
+
+    remote_branch = remote_branch_or_error
+    ls = git_repo(repo, ["ls-remote", remote, f"refs/heads/{remote_branch}"])
+    if ls.returncode != 0:
+        return False, f"ls-remote failed: {git_error(ls)}"
+
+    parts = ls.stdout.strip().split()
+    if not parts:
+        return False, "remote branch absent"
+
+    remote_sha = parts[0]
+    local = git_repo(repo, ["rev-parse", local_branch])
+    if local.returncode != 0:
+        return False, f"rev-parse failed: {git_error(local)}"
+
+    local_sha = local.stdout.strip()
+    if remote_sha == local_sha:
+        return False, None
+
+    # If the remote SHA is reachable as an ancestor of the local branch tip,
+    # the local branch already contains every remote commit (local is ahead).
+    # Otherwise the remote has commits the local branch does not include.
+    ancestor = git_repo(repo, ["merge-base", "--is-ancestor", remote_sha, local_branch])
+    if ancestor.returncode == 0:
+        return False, None
+
+    return True, f"remote {remote}/{remote_branch} at {remote_sha[:7]} not in local"
+
+
 def resolve_sync_target(repo: Path, branch: str, preferred_remote: str | None = None) -> tuple[str, str, str] | tuple[None, None, str]:
     upstream = git_upstream(repo)
     if upstream is not None:
@@ -305,6 +361,11 @@ def main() -> int:
     parser.add_argument("--force", action="store_true", help="Ignore the timestamp and run sync now")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser.add_argument("--governance-path", default="", help="Override the governance repo path")
+    parser.add_argument(
+        "--no-remote-probe",
+        action="store_true",
+        help="Skip the cheap ls-remote cache-invalidation probe (offline mode)",
+    )
     args = HELPERS.parse_compat_args(parser)
 
     HELPERS.echo = (lambda msg: None) if args.json else print
@@ -314,29 +375,50 @@ def main() -> int:
     active_personal_dir = HELPERS.migrate_legacy_personal_dir(project_root)
     governance_setup = HELPERS.ensure_governance_setup_file(project_root)
 
+    governance_path: Path | None = None
+    if args.governance_path:
+        governance_path = HELPERS.resolve_workspace_path(project_root, args.governance_path)
+    elif governance_setup.get("governance_repo_path"):
+        governance_path = HELPERS.resolve_workspace_path(project_root, governance_setup["governance_repo_path"])
+
     timestamp_file = active_personal_dir / ".light-preflight-timestamp"
     now = datetime.now(tz=timezone.utc)
     cached_at = HELPERS.parse_timestamp(timestamp_file.read_text(encoding="utf-8")) if timestamp_file.is_file() else None
     if cached_at is not None and not args.force:
         age_seconds = int((now - cached_at).total_seconds())
         if age_seconds < args.ttl:
-            payload = {
-                "status": "cached",
-                "cached_at": cached_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "age_seconds": age_seconds,
-                "ttl_seconds": args.ttl,
-                "ttl_remaining": args.ttl - age_seconds,
-                "ran_light_preflight": False,
-                "repos": [],
-            }
-            emit_payload(payload, args.json)
-            return 0
+            bypass_reason: str | None = None
+            if not args.no_remote_probe:
+                control_new, control_detail = remote_has_new_commits(project_root)
+                if control_new:
+                    bypass_reason = f"control repo: {control_detail}"
+                elif governance_path is not None and governance_path.is_dir():
+                    preferred_branch = HELPERS.resolve_governance_branch(governance_path)
+                    gov_new, gov_detail = remote_has_new_commits(
+                        governance_path,
+                        preferred_remote="origin",
+                        preferred_branch=preferred_branch,
+                    )
+                    if gov_new:
+                        bypass_reason = f"governance repo: {gov_detail}"
 
-    governance_path: Path | None = None
-    if args.governance_path:
-        governance_path = HELPERS.resolve_workspace_path(project_root, args.governance_path)
-    elif governance_setup.get("governance_repo_path"):
-        governance_path = HELPERS.resolve_workspace_path(project_root, governance_setup["governance_repo_path"])
+            if bypass_reason is None:
+                payload = {
+                    "status": "cached",
+                    "cached_at": cached_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "age_seconds": age_seconds,
+                    "ttl_seconds": args.ttl,
+                    "ttl_remaining": args.ttl - age_seconds,
+                    "ran_light_preflight": False,
+                    "repos": [],
+                }
+                emit_payload(payload, args.json)
+                return 0
+
+            if not args.json:
+                print(
+                    f"[light-preflight] Cache invalidated ({bypass_reason}); running sync."
+                )
 
     repo_results: list[dict[str, object]] = []
 

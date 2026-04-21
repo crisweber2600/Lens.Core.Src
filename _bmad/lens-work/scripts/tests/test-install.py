@@ -83,9 +83,15 @@ class TestGeneratedAdapters:
         assert discover_prompt.is_file()
         assert quickplan_prompt.is_file()
         assert not status_prompt.exists()
-        assert "light-preflight.py" in discover_prompt.read_text(encoding="utf-8")
-        assert "lens.core/_bmad/lens-work/prompts/lens-discover.prompt.md" in discover_prompt.read_text(encoding="utf-8")
-        assert "lens.core/_bmad/lens-work/prompts/lens-quickplan.prompt.md" in quickplan_prompt.read_text(encoding="utf-8")
+        discover_prompt_text = discover_prompt.read_text(encoding="utf-8")
+        quickplan_prompt_text = quickplan_prompt.read_text(encoding="utf-8")
+
+        assert "light-preflight.py" in discover_prompt_text
+        assert "You MUST execute these steps in order:" in discover_prompt_text
+        assert "FIRST, run `uv run ./lens.core/_bmad/lens-work/scripts/light-preflight.py`" in discover_prompt_text
+        assert "ONLY AFTER a successful prompt-start sync" in discover_prompt_text
+        assert "lens.core/_bmad/lens-work/prompts/lens-discover.prompt.md" in discover_prompt_text
+        assert "lens.core/_bmad/lens-work/prompts/lens-quickplan.prompt.md" in quickplan_prompt_text
 
     def test_cursor_generation_includes_discover_command(self, tmp_path):
         module = _load_script_module()
@@ -108,7 +114,8 @@ class TestGeneratedAdapters:
 
         assert "light-preflight.py" in installer
         assert "LIGHT_PREFLIGHT_COMMAND" in installer
-        assert "shared lightweight prompt-start sync" in installer
+        assert "You MUST execute these steps in order:" in installer
+        assert "ONLY AFTER a successful prompt-start sync" in installer
         assert "FIRST, run \\`${LIGHT_PREFLIGHT_COMMAND}\\`" in installer
 
     def test_all_source_managed_prompt_stubs_include_shared_preflight_template(self):
@@ -121,6 +128,9 @@ class TestGeneratedAdapters:
             prompt_text = prompt_file.read_text(encoding="utf-8")
 
             assert "light-preflight.py" in prompt_text, prompt_file.name
+            assert "You MUST execute these steps in order:" in prompt_text, prompt_file.name
+            assert "FIRST, run `uv run ./lens.core/_bmad/lens-work/scripts/light-preflight.py`" in prompt_text, prompt_file.name
+            assert "ONLY AFTER a successful prompt-start sync" in prompt_text, prompt_file.name
             assert "vscode_askQuestions" in prompt_text, prompt_file.name
             assert f"lens.core/_bmad/lens-work/prompts/{prompt_file.name}" in prompt_text, prompt_file.name
 
@@ -129,6 +139,9 @@ class TestGeneratedAdapters:
         prompt_text = source_prompt.read_text(encoding="utf-8")
 
         assert "light-preflight.py" in prompt_text
+        assert "You MUST execute these steps in order:" in prompt_text
+        assert "FIRST, run `uv run ./lens.core/_bmad/lens-work/scripts/light-preflight.py`" in prompt_text
+        assert "ONLY AFTER a successful prompt-start sync" in prompt_text
         assert "vscode_askQuestions" in prompt_text
         assert "lens.core/_bmad/lens-work/prompts/lens-switch.prompt.md" in prompt_text
 
@@ -137,6 +150,8 @@ class TestGeneratedAdapters:
         prompt_text = release_prompt.read_text(encoding="utf-8")
 
         assert "Use this prompt as the entry controller for `/lens-switch`." in prompt_text
+        assert "If not, run that command now from the workspace root." in prompt_text
+        assert "Do not resolve config paths or execute `switch-ops.py` until the shared prompt-start sync has succeeded." in prompt_text
         assert "Missing config is normal. Do not search the workspace" in prompt_text
         assert "If `vscode_askQuestions` is not available, render the numbered menu and STOP." in prompt_text
         assert "Do not infer a target from the current branch" in prompt_text
@@ -147,6 +162,8 @@ class TestGeneratedAdapters:
 
         assert "Published prompt file differs from source" in workflow
         assert "Source prompt missing shared preflight template" in workflow
+        assert "must require running preflight before loading the release prompt" in workflow
+        assert "must block release-prompt loading until preflight succeeds" in workflow
         assert "Source prompt missing question-tool guidance" in workflow
         assert "Source prompt delegates to the wrong release prompt" in workflow
 

@@ -6,6 +6,15 @@ description: 'Feature context switcher'
 
 Use this prompt as the entry controller for `/lens-switch`. Do not begin by reading the switch skill or by searching the workspace for config or script copies. Resolve the exact paths below first, then execute the appropriate switch command.
 
+## Prompt-Start Sync
+
+Before reading config or invoking `switch-ops.py`:
+
+1. Check whether this `/lens-switch` invocation already includes a successful run of `uv run ./lens.core/_bmad/lens-work/scripts/light-preflight.py` from the workspace root.
+2. If not, run that command now from the workspace root.
+3. If that command exits non-zero, stop and surface the failure.
+4. Do not resolve config paths or execute `switch-ops.py` until the shared prompt-start sync has succeeded.
+
 ## Exact Paths
 
 - Module config: `{project-root}/lens.core/_bmad/lens-work/bmadconfig.yaml`

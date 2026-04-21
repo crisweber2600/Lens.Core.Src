@@ -364,10 +364,40 @@ def ensure_governance_setup_file(project_root: Path) -> dict[str, str]:
 
         return load_governance_setup(active_file)
 
+    bmadconfig_values = _load_bmadconfig_governance(project_root)
+    if bmadconfig_values:
+        return bmadconfig_values
+
+    return {}
+
+
+def _load_bmadconfig_governance(project_root: Path) -> dict[str, str]:
+    """Fallback governance settings read from lens-work bmadconfig.yaml.
+
+    Allows light-preflight and other callers to sync the governance repo even
+    when the per-user .lens/governance-setup.yaml has not been created yet.
+    """
+
+    candidates = [
+        project_root / "lens.core" / "_bmad" / "lens-work" / "bmadconfig.yaml",
+        project_root / "_bmad" / "lens-work" / "bmadconfig.yaml",
+    ]
+    for candidate in candidates:
+        if not candidate.is_file():
+            continue
+        values = load_governance_setup(candidate)
+        if not values:
+            continue
+        resolved: dict[str, str] = {}
+        for key, raw_value in values.items():
+            resolved[key] = raw_value.replace("{project-root}", str(project_root))
+        if resolved.get("governance_repo_path"):
+            return resolved
     return {}
 
 
 def resolve_workspace_path(project_root: Path, raw_path: str) -> Path:
+    raw_path = raw_path.replace("{project-root}", str(project_root))
     path = Path(raw_path).expanduser()
     return path if path.is_absolute() else project_root / path
 
