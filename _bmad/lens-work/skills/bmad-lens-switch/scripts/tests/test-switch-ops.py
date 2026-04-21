@@ -793,6 +793,14 @@ def test_switch_with_control_repo_existing_plan_branch():
             assert_eq("plan_branch in result", result.get("plan_branch"), "auth-login-plan")
             assert_eq("branch_switched true", result.get("branch_switched"), True)
             assert_false("no branch_error", bool(result.get("branch_error")))
+            feat = result.get("feature", {})
+            context_path = Path(feat.get("context_path", ""))
+            assert_eq(
+                "ctrl repo default context path",
+                context_path,
+                Path(ctrl_tmp) / ".lens" / "personal" / "context.yaml",
+            )
+            assert_eq("ctrl repo context.yaml exists", context_path.exists(), True)
 
             head = subprocess.run(
                 ["git", "-C", ctrl_tmp, "rev-parse", "--abbrev-ref", "HEAD"],

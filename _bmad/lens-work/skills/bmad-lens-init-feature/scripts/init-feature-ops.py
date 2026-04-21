@@ -710,6 +710,37 @@ def build_control_repo_git_commands(governance_repo: str, control_repo: str | No
     ]
 
 
+def build_control_repo_activation_commands(
+    governance_repo: str,
+    control_repo: str | None,
+    feature_id: str,
+    personal_folder: str | None = None,
+) -> list[str]:
+    """Return control-repo commands that activate the new feature context on the plan branch."""
+    if not control_repo:
+        return []
+
+    switch_script = (
+        Path(__file__).resolve().parents[2]
+        / "bmad-lens-switch"
+        / "scripts"
+        / "switch-ops.py"
+    )
+    switch_args = [
+        "switch",
+        "--governance-repo",
+        governance_repo,
+        "--feature-id",
+        feature_id,
+        "--control-repo",
+        control_repo,
+    ]
+    if personal_folder:
+        switch_args.extend(["--personal-folder", personal_folder])
+
+    return [uv_script_command_text(switch_script, switch_args)]
+
+
 def build_feature_governance_rel_paths(
     feature_id: str,
     domain: str,
@@ -813,17 +844,22 @@ def build_container_result_fields(
 def build_feature_result_fields(
     governance_git_commands: list[str],
     control_repo_git_commands: list[str],
+    control_repo_activation_commands: list[str] | None = None,
     governance_git_executed: bool = False,
     governance_commit_sha: str | None = None,
 ) -> dict:
     """Return structured git result fields for feature initialization flows."""
+    activation_commands = list(control_repo_activation_commands or [])
     all_git_commands = control_repo_git_commands + governance_git_commands
     remaining_git_commands = control_repo_git_commands if governance_git_executed else all_git_commands
+    remaining_commands = remaining_git_commands + activation_commands
     return {
         "git_commands": all_git_commands,
         "governance_git_commands": governance_git_commands,
         "control_repo_git_commands": control_repo_git_commands,
+        "control_repo_activation_commands": activation_commands,
         "remaining_git_commands": remaining_git_commands,
+        "remaining_commands": remaining_commands,
         "governance_git_executed": governance_git_executed,
         "governance_commit_sha": governance_commit_sha,
     }
@@ -885,6 +921,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
     name = args.name
     track = args.track
     username = args.username
+    personal_folder = getattr(args, "personal_folder", None)
     execute_governance_git = bool(getattr(args, "execute_governance_git", False))
 
     if not track:
@@ -950,6 +987,12 @@ def cmd_create(args: argparse.Namespace) -> dict:
     pr_repo = control_repo or governance_repo
 
     control_repo_git_commands = build_control_repo_git_commands(governance_repo, ctrl_for_git, feature_id)
+    control_repo_activation_commands = build_control_repo_activation_commands(
+        governance_repo,
+        ctrl_for_git,
+        feature_id,
+        personal_folder=personal_folder,
+    )
     governance_git_steps = build_feature_governance_git_steps(
         feature_id,
         domain,
@@ -972,7 +1015,11 @@ def cmd_create(args: argparse.Namespace) -> dict:
             "index_updated": True,
             "summary_path": str(summary_path),
             "container_markers": container_markers,
-            **build_feature_result_fields(governance_git_commands, control_repo_git_commands),
+            **build_feature_result_fields(
+                governance_git_commands,
+                control_repo_git_commands,
+                control_repo_activation_commands=control_repo_activation_commands,
+            ),
             "gh_commands": gh_cmds,
             "planning_pr_created": bool(gh_cmds),
         }
@@ -1045,6 +1092,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
                 **build_feature_result_fields(
                     governance_git_commands,
                     control_repo_git_commands,
+                    control_repo_activation_commands=control_repo_activation_commands,
                     governance_commit_sha=current_head_sha(governance_repo),
                 ),
                 "gh_commands": gh_cmds,
@@ -1065,6 +1113,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
         **build_feature_result_fields(
             governance_git_commands,
             control_repo_git_commands,
+            control_repo_activation_commands=control_repo_activation_commands,
             governance_git_executed=governance_git_executed,
             governance_commit_sha=governance_commit_sha,
         ),
@@ -1716,6 +1765,12 @@ Examples:
         help="Lifecycle track (must be selected explicitly)",
     )
     create_p.add_argument("--username", required=True, help="Username of the creator")
+    create_p.add_argument(
+        "--personal-folder",
+        default=None,
+        dest="personal_folder",
+        help="Path to personal folder; forwarded to the activation step when provided",
+    )
     create_p.add_argument(
         "--dry-run",
         action="store_true",

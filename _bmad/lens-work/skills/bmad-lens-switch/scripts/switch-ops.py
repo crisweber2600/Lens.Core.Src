@@ -239,14 +239,23 @@ def resolve_service_context(
     )
 
 
-def resolve_personal_folder(governance_repo: str, personal_folder: str | None) -> str:
+def resolve_personal_folder(
+    governance_repo: str,
+    personal_folder: str | None,
+    control_repo: str | None = None,
+) -> str:
     """Resolve the personal folder used for context.yaml persistence.
 
-    If not provided explicitly, default to sibling of governance repo root:
+    If not provided explicitly and a control repo is set, default to:
+    <control_repo>/.lens/personal
+
+    Otherwise default to sibling of governance repo root:
     <governance_repo_parent>/.lens/personal
     """
     if personal_folder:
         return personal_folder
+    if control_repo:
+        return str(Path(control_repo) / ".lens" / "personal")
     return str(Path(governance_repo).parent / ".lens" / "personal")
 
 
@@ -439,9 +448,10 @@ def cmd_switch(args: argparse.Namespace) -> dict:
         if err:
             return {"status": "fail", "error": err}
 
-    personal_folder = resolve_personal_folder(args.governance_repo, args.personal_folder)
+    explicit_control_repo = getattr(args, "control_repo", None)
+    personal_folder = resolve_personal_folder(args.governance_repo, args.personal_folder, explicit_control_repo)
     plan_branch = f"{args.feature_id}-plan"
-    control_repo = getattr(args, "control_repo", ".") or "."
+    control_repo = explicit_control_repo or "."
 
     index_data, err = load_feature_index(args.governance_repo)
     if err:
@@ -675,11 +685,11 @@ Examples:
     switch_p.add_argument(
         "--control-repo",
         required=False,
-        default=".",
         dest="control_repo",
         help=(
-            "Path to the control repo root. Defaults to '.' (the workspace root) and performs "
-            "'git checkout {featureId}-plan' there after resolving the feature context."
+            "Path to the control repo root. Defaults to '.' (the workspace root) for branch checkout. "
+            "When provided and --personal-folder is omitted, context.yaml defaults to "
+            "<control_repo>/.lens/personal."
         ),
     )
 

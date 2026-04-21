@@ -74,20 +74,26 @@ The script:
 3. Adds an entry to `{governance-repo}/feature-index.yaml` (creates if absent)
 4. Creates `{governance-repo}/features/{domain}/{service}/{featureId}/summary.md` stub
 5. Executes governance checkout/pull/add/commit/push directly on `main`
-6. Returns `featureSlug`, `governance_git_commands`, `control_repo_git_commands`, `remaining_git_commands`, `governance_git_executed`, and `governance_commit_sha`, plus `gh_commands`, plus `planning_pr_created`, `starting_phase`, `recommended_command`, and `router_command` so the handoff matches `lifecycle.yaml`
+6. Returns `featureSlug`, `governance_git_commands`, `control_repo_git_commands`, `control_repo_activation_commands`, `remaining_git_commands`, `remaining_commands`, `governance_git_executed`, and `governance_commit_sha`, plus `gh_commands`, plus `planning_pr_created`, `starting_phase`, `recommended_command`, and `router_command` so the handoff matches `lifecycle.yaml`
 
 ### Step 4: Execute Git and GitHub Commands
 
-When `--execute-governance-git` succeeds, the script has already published governance artifacts on `main`. Execute only the returned `remaining_git_commands`, then the `gh_commands` when present. Do not rewrite the returned branch-creation step into raw `git checkout -b` commands; the generated git-orchestration command anchors the feature topology to the control repo's default branch.
+When `--execute-governance-git` succeeds, the script has already published governance artifacts on `main`. Execute the returned `remaining_commands` in order, then the `gh_commands` when present. Do not rewrite the returned branch-creation step into raw `git checkout -b` commands; the generated git-orchestration command anchors the feature topology to the control repo's default branch, and the activation step switches to `{featureId}-plan` while updating local Lens context.
 
 ```bash
-# Each command in remaining_git_commands runs in order
+# Each command in remaining_commands runs in order
 # Example remaining commands after governance auto-publish:
 # uv run --script {project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-git-orchestration/scripts/git-orchestration-ops.py \
 #   create-feature-branches \
 #   --governance-repo {governance_repo} \
 #   --repo {control_repo} \
 #   --feature-id {featureId}
+# uv run --script {project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
+#   switch \
+#   --governance-repo {governance_repo} \
+#   --feature-id {featureId} \
+#   --control-repo {control_repo} \
+#   --personal-folder {personal_output_folder}
 
 # Then gh_commands when `planning_pr_created == true`
 # (PR is in the control repo, not governance):
@@ -96,7 +102,7 @@ When `--execute-governance-git` succeeds, the script has already published gover
 
 > **Note:** The governance repo stays on `main` throughout — no feature branches are created there. The 2-branch topology (`{featureId}` + `{featureId}-plan`) exists only in the control repo and should be created through git-orchestration so `{featureId}` starts from the repo default branch.
 
-> **Auto-publish note:** `create`, `create-domain`, and `create-service` can be run with `--execute-governance-git`. In that mode the script performs the governance checkout/pull/add/commit/push itself and callers should surface only the returned `remaining_git_commands` for any manual follow-up.
+> **Auto-publish note:** `create`, `create-domain`, and `create-service` can be run with `--execute-governance-git`. In that mode the script performs the governance checkout/pull/add/commit/push itself and callers should surface only the returned `remaining_commands` for any manual follow-up.
 
 > **Failure note:** If governance git preflight or execution fails, stop and surface the error. Do not fall back to a manual governance publish recipe.
 

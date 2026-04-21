@@ -977,6 +977,32 @@ def test_control_repo_git_commands():
                 "control repo command includes feature id",
                 any(f"--feature-id {expected_feature_id}" in c for c in git_cmds),
             )
+            activation_cmds = result.get("control_repo_activation_commands", [])
+            assert_true(
+                "control repo activation commands returned separately",
+                len(activation_cmds) > 0,
+            )
+            assert_true(
+                "activation routes through switch ops",
+                any("switch-ops.py switch" in c for c in activation_cmds),
+            )
+            assert_true(
+                "activation command includes governance repo",
+                any(f"--governance-repo {gov_tmp}" in c for c in activation_cmds),
+            )
+            assert_true(
+                "activation command includes control repo",
+                any(f"--control-repo {ctrl_tmp}" in c for c in activation_cmds),
+            )
+            assert_true(
+                "activation command includes feature id",
+                any(f"--feature-id {expected_feature_id}" in c for c in activation_cmds),
+            )
+            assert_eq(
+                "remaining commands append activation",
+                result.get("remaining_commands"),
+                result.get("remaining_git_commands") + activation_cmds,
+            )
             assert_true(
                 "raw checkout feature command removed",
                 not any(f"git -C {ctrl_tmp} checkout -b {expected_feature_id}" == c for c in git_cmds),
@@ -985,6 +1011,36 @@ def test_control_repo_git_commands():
                 "raw checkout plan command removed",
                 not any(f"git -C {ctrl_tmp} checkout -b {expected_feature_id}-plan" == c for c in git_cmds),
             )
+
+
+def test_control_repo_activation_commands_include_personal_folder():
+    """Feature follow-up activation preserves the configured personal folder."""
+    print("test_control_repo_activation_commands_include_personal_folder", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as gov_tmp:
+        with tempfile.TemporaryDirectory() as ctrl_tmp:
+            with tempfile.TemporaryDirectory() as personal_tmp:
+                result, code = run([
+                    "create",
+                    "--governance-repo", gov_tmp,
+                    "--control-repo", ctrl_tmp,
+                    "--feature-id", "ctrl-test",
+                    "--domain", "platform",
+                    "--service", "svc",
+                    "--name", "Control Repo Test",
+                    "--track", "quickplan",
+                    "--username", "cweber",
+                    "--personal-folder", personal_tmp,
+                    "--dry-run",
+                ])
+
+                assert_eq("activation personal folder status", result.get("status"), "pass")
+                assert_eq("activation personal folder exit code", code, 0)
+                activation_cmds = result.get("control_repo_activation_commands", [])
+                assert_true("activation commands present", activation_cmds)
+                assert_true(
+                    "activation command carries personal folder",
+                    any(f"--personal-folder {personal_tmp}" in c for c in activation_cmds),
+                )
 
 
 def test_create_feature_execute_governance_git():
@@ -1016,10 +1072,16 @@ def test_create_feature_execute_governance_git():
         assert_true("feature governance commit sha present", result.get("governance_commit_sha"))
         assert_true("feature governance git commands present", result.get("governance_git_commands"))
         assert_true("feature control repo git commands present", result.get("control_repo_git_commands"))
+        assert_true("feature control repo activation commands present", result.get("control_repo_activation_commands"))
         assert_eq(
             "feature remaining commands limited to control repo",
             result.get("remaining_git_commands"),
             result.get("control_repo_git_commands"),
+        )
+        assert_eq(
+            "feature remaining commands append activation",
+            result.get("remaining_commands"),
+            result.get("control_repo_git_commands") + result.get("control_repo_activation_commands"),
         )
         assert_true("feature gh commands still present", result.get("gh_commands"))
 
@@ -1068,8 +1130,14 @@ def test_create_feature_execute_governance_git_dry_run_skips_git():
                 result.get("remaining_git_commands"),
                 result.get("git_commands"),
             )
+            assert_eq(
+                "feature execute dry-run remaining commands append activation",
+                result.get("remaining_commands"),
+                result.get("remaining_git_commands") + result.get("control_repo_activation_commands"),
+            )
             assert_true("feature execute dry-run governance commands present", result.get("governance_git_commands"))
             assert_true("feature execute dry-run control repo commands present", result.get("control_repo_git_commands"))
+            assert_true("feature execute dry-run activation commands present", result.get("control_repo_activation_commands"))
             assert_eq(
                 "dry-run feature yaml absent",
                 (Path(gov_tmp) / "features" / "platform" / "identity" / expected_feature_id / "feature.yaml").exists(),
