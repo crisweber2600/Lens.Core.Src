@@ -170,6 +170,8 @@ async function copyDirContents(srcDir, destDir, { skipExisting = true, logger } 
 // Stub generators — thin adapters that redirect to module content by path
 // ─────────────────────────────────────────────────────────────────────────────
 
+const LIGHT_PREFLIGHT_COMMAND = 'uv run ./lens.core/_bmad/lens-work/scripts/light-preflight.py';
+
 function ghSkillStub(name, description, targetPath) {
     return `---
 name: ${name}
@@ -226,6 +228,12 @@ ${modelLine}description: '${description}'
 > All \`_bmad/\` paths in the full prompt are relative to \`lens.core/\` — do NOT resolve paths against the user's main project repo.
 
 \`\`\`
+First run the shared lightweight prompt-start sync from the workspace root:
+
+${LIGHT_PREFLIGHT_COMMAND}
+
+If that command exits non-zero, stop and surface the failure.
+
 Read and follow all instructions in: lens.core/_bmad/lens-work/prompts/${targetPrompt}
 \`\`\`
 ${extraBlock}
@@ -238,7 +246,7 @@ name: '${name}'
 description: '${description}'
 ---
 
-IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL @lens.core/_bmad/lens-work/${workflowPath}, READ its entire contents and follow its directions exactly!
+IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: FIRST, run \`${LIGHT_PREFLIGHT_COMMAND}\` from the workspace root. If it fails, stop and surface the error. THEN LOAD the FULL @lens.core/_bmad/lens-work/${workflowPath}, READ its entire contents and follow its directions exactly!
 `;
 }
 

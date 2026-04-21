@@ -89,8 +89,10 @@ After a successful run, your control repo will look like this:
 │   ├── governance-setup.yaml                   ← governance coordinates
 │   ├── LENS_VERSION                            ← version compatibility file
 │   ├── .preflight-cache                        ← local preflight cache
-│   ├── .preflight-timestamp                    ← last successful preflight time
-│   └── .github-hashes                          ← managed .github sync manifest
+│   └── personal/
+│       ├── .light-preflight-timestamp         ← last successful prompt-start sync
+│       ├── .preflight-timestamp               ← last successful shared preflight
+│       └── .github-hashes                     ← managed .github sync manifest
 └── .gitignore                                  ← updated with required entries
 ```
 
@@ -210,6 +212,7 @@ uv run lens.core/_bmad/lens-work/scripts/install.py --all-ides
 Run preflight from the **control repo root** against the promoted `lens.core/` payload:
 
 ```bash
+uv run ./lens.core/_bmad/lens-work/scripts/light-preflight.py
 uv run ./lens.core/_bmad/lens-work/scripts/preflight.py
 uv run ./lens.core/_bmad/lens-work/scripts/preflight.py --caller onboard
 uv run ./lens.core/_bmad/lens-work/scripts/run-preflight-cached.py --json

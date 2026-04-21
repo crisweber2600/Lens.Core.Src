@@ -84,6 +84,9 @@ def remove_stale_adapter_files(dir_path: Path, predicate, label: str) -> None:
 # Stub generators
 # ---------------------------------------------------------------------------
 
+LIGHT_PREFLIGHT_COMMAND = "uv run ./lens.core/_bmad/lens-work/scripts/light-preflight.py"
+
+
 def gh_stub_prompt(name: str, description: str, target_prompt: str, extra: str = "") -> str:
     extra_block = f"\n{extra}" if extra else ""
     return f"""---
@@ -98,6 +101,12 @@ description: '{description}'
 > All `lens.core/_bmad/` paths in the full prompt are relative to `lens.core/` — do NOT resolve paths against the user's main project repo.
 
 ```
+First run the shared lightweight prompt-start sync from the workspace root:
+
+{LIGHT_PREFLIGHT_COMMAND}
+
+If that command exits non-zero, stop and surface the failure.
+
 Read and follow all instructions in: lens.core/_bmad/lens-work/prompts/{target_prompt}
 ```
 {extra_block}"""
@@ -109,7 +118,7 @@ name: '{name}'
 description: '{description}'
 ---
 
-IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: LOAD the FULL @lens.core/_bmad/lens-work/{workflow_path}, READ its entire contents and follow its directions exactly!
+IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND: FIRST, run `{LIGHT_PREFLIGHT_COMMAND}` from the workspace root. If it fails, stop and surface the error. THEN LOAD the FULL @lens.core/_bmad/lens-work/{workflow_path}, READ its entire contents and follow its directions exactly!
 """
 
 
