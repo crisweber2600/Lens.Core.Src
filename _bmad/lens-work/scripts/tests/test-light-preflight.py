@@ -100,6 +100,18 @@ def _secondary_clone(remote: Path, dest: Path) -> Path:
     return dest
 
 
+def _write_bmadconfig_governance(workspace: Path, governance_repo: Path) -> None:
+    """Write a minimal bmadconfig.yaml that points governance_repo_path at the test repo."""
+
+    config_dir = workspace / "lens.core" / "_bmad" / "lens-work"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    rel = governance_repo.relative_to(workspace).as_posix()
+    (config_dir / "bmadconfig.yaml").write_text(
+        f'governance_repo_path: "{{project-root}}/{rel}"\n',
+        encoding="utf-8",
+    )
+
+
 def test_skips_when_fresh_timestamp(tmp_path: Path):
     workspace = tmp_path / "workspace"
     _init_control_repo(workspace, tmp_path / "control-remote.git")
@@ -116,6 +128,95 @@ def test_skips_when_fresh_timestamp(tmp_path: Path):
     assert result.returncode == 0, result.stdout + result.stderr
     assert payload["status"] == "cached"
     assert payload["ran_light_preflight"] is False
+
+
+def test_fresh_cache_bypassed_when_governance_remote_has_new_commits(tmp_path: Path):
+    workspace = tmp_path / "workspace"
+    governance_remote = tmp_path / "governance-remote.git"
+
+    _init_control_repo(workspace, tmp_path / "control-remote.git")
+    governance_repo = _init_governance_repo(workspace, governance_remote)
+    _write_governance_setup(workspace, governance_repo)
+
+    # Simulate another contributor pushing to the governance remote.
+    governance_secondary = _secondary_clone(governance_remote, tmp_path / "governance-secondary")
+    _write_file(governance_secondary / "REMOTE-GOVERNANCE.md", "remote governance\n")
+    _git(["add", "REMOTE-GOVERNANCE.md"], cwd=governance_secondary)
+    _git(["commit", "-m", "remote governance update"], cwd=governance_secondary)
+    _git(["push", "origin", "main"], cwd=governance_secondary)
+
+    # Write a fresh cache timestamp so the classic behavior would short-circuit.
+    _write_file(
+        workspace / ".lens/personal/.light-preflight-timestamp",
+        datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    )
+
+    result = _run("--json", cwd=workspace)
+    payload = _payload(result)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert payload["status"] == "passed", payload
+    assert payload["ran_light_preflight"] is True
+    assert (governance_repo / "REMOTE-GOVERNANCE.md").read_text(encoding="utf-8") == "remote governance\n"
+
+
+def test_no_remote_probe_flag_honors_fresh_cache(tmp_path: Path):
+    workspace = tmp_path / "workspace"
+    governance_remote = tmp_path / "governance-remote.git"
+
+    _init_control_repo(workspace, tmp_path / "control-remote.git")
+    governance_repo = _init_governance_repo(workspace, governance_remote)
+    _write_governance_setup(workspace, governance_repo)
+
+    governance_secondary = _secondary_clone(governance_remote, tmp_path / "governance-secondary")
+    _write_file(governance_secondary / "REMOTE-GOVERNANCE.md", "remote governance\n")
+    _git(["add", "REMOTE-GOVERNANCE.md"], cwd=governance_secondary)
+    _git(["commit", "-m", "remote governance update"], cwd=governance_secondary)
+    _git(["push", "origin", "main"], cwd=governance_secondary)
+
+    _write_file(
+        workspace / ".lens/personal/.light-preflight-timestamp",
+        datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    )
+
+    result = _run("--json", "--no-remote-probe", cwd=workspace)
+    payload = _payload(result)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert payload["status"] == "cached"
+    assert payload["ran_light_preflight"] is False
+    assert not (governance_repo / "REMOTE-GOVERNANCE.md").exists()
+
+
+def test_governance_path_falls_back_to_bmadconfig(tmp_path: Path):
+    """When .lens/governance-setup.yaml is absent, read governance_repo_path
+    from lens.core/_bmad/lens-work/bmadconfig.yaml so the governance repo
+    still gets synced."""
+
+    workspace = tmp_path / "workspace"
+    governance_remote = tmp_path / "governance-remote.git"
+
+    _init_control_repo(workspace, tmp_path / "control-remote.git")
+    governance_repo = _init_governance_repo(workspace, governance_remote)
+    # Intentionally do NOT call _write_governance_setup — force the fallback.
+    _write_bmadconfig_governance(workspace, governance_repo)
+
+    # Another contributor advances the governance remote.
+    governance_secondary = _secondary_clone(governance_remote, tmp_path / "governance-secondary")
+    _write_file(governance_secondary / "REMOTE-GOVERNANCE.md", "remote governance\n")
+    _git(["add", "REMOTE-GOVERNANCE.md"], cwd=governance_secondary)
+    _git(["commit", "-m", "remote governance update"], cwd=governance_secondary)
+    _git(["push", "origin", "main"], cwd=governance_secondary)
+
+    result = _run("--json", "--force", cwd=workspace)
+    payload = _payload(result)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert payload["status"] == "passed", payload
+    governance_result = payload["repos"][1]
+    assert governance_result["status"] == "synced", payload
+    assert governance_result["pulled"] is True, payload
+    assert (governance_repo / "REMOTE-GOVERNANCE.md").read_text(encoding="utf-8") == "remote governance\n"
 
 
 def test_accepts_compat_trailing_dot(tmp_path: Path):
