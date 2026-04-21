@@ -114,6 +114,24 @@ class TestArgumentParsing:
         # --help should override and exit 0 even with additional flags
         assert result.returncode == 0
 
+    def test_compat_trailing_dot_accepted(self, workspace: Path):
+        _write_file(workspace / "lens.core/.github/workflows/keep.yml", "name: keep\n")
+        _write_hash_manifest(workspace, {})
+
+        result = _run(".", cwd=workspace)
+
+        assert result.returncode == 0, result.stdout + result.stderr
+
+    def test_source_root_cwd_resolves_workspace_root(self, workspace: Path):
+        _write_file(workspace / "lens.core/.github/workflows/keep.yml", "name: keep\n")
+        _write_hash_manifest(workspace, {})
+        source_root = workspace / "TargetProjects" / "lens.core" / "src" / "Lens.Core.Src"
+        source_root.mkdir(parents=True, exist_ok=True)
+
+        result = _run(cwd=source_root)
+
+        assert result.returncode == 0, result.stdout + result.stderr
+
 
 class TestGitHubSync:
     def test_prunes_manifest_tracked_stale_github_files(self, workspace: Path):

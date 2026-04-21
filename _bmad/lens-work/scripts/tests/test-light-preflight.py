@@ -118,6 +118,36 @@ def test_skips_when_fresh_timestamp(tmp_path: Path):
     assert payload["ran_light_preflight"] is False
 
 
+def test_accepts_compat_trailing_dot(tmp_path: Path):
+    workspace = tmp_path / "workspace"
+    _init_control_repo(workspace, tmp_path / "control-remote.git")
+    governance_repo = _init_governance_repo(workspace, tmp_path / "governance-remote.git")
+    _write_governance_setup(workspace, governance_repo)
+    _write_file(
+        workspace / ".lens/personal/.light-preflight-timestamp",
+        datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    )
+
+    result = _run("--json", ".", cwd=workspace)
+    payload = _payload(result)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert payload["status"] == "cached"
+
+
+def test_source_root_cwd_resolves_workspace_root(tmp_path: Path):
+    workspace = tmp_path / "workspace"
+    _init_control_repo(workspace, tmp_path / "control-remote.git")
+    source_root = workspace / "TargetProjects" / "lens.core" / "src" / "Lens.Core.Src"
+    source_root.mkdir(parents=True, exist_ok=True)
+
+    result = _run("--json", cwd=source_root)
+    payload = _payload(result)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert payload["status"] == "passed"
+
+
 def test_commits_dirty_control_repo_and_pushes(tmp_path: Path):
     workspace = tmp_path / "workspace"
     control_remote = tmp_path / "control-remote.git"

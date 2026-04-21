@@ -1,5 +1,5 @@
 ---
-description: 'Feature context switcher'
+description: 'Switch to a different feature via git checkout'
 ---
 
 # lens-switch (Stub)
@@ -17,3 +17,4 @@ If that command exits non-zero, stop and surface the failure.
 
 Read and follow all instructions in: lens.core/_bmad/lens-work/prompts/lens-switch.prompt.md
 ```
+

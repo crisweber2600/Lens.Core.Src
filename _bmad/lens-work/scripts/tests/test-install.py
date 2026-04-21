@@ -111,6 +111,19 @@ class TestGeneratedAdapters:
         assert "shared lightweight prompt-start sync" in installer
         assert "FIRST, run \\`${LIGHT_PREFLIGHT_COMMAND}\\`" in installer
 
+    def test_all_source_managed_prompt_stubs_include_shared_preflight_template(self):
+        prompts_dir = SCRIPT.parents[3] / ".github/prompts"
+        prompt_files = sorted(prompts_dir.glob("*.prompt.md"))
+
+        assert prompt_files, "expected source-managed GitHub prompt stubs"
+
+        for prompt_file in prompt_files:
+            prompt_text = prompt_file.read_text(encoding="utf-8")
+
+            assert "light-preflight.py" in prompt_text, prompt_file.name
+            assert "vscode_askQuestions" in prompt_text, prompt_file.name
+            assert f"lens.core/_bmad/lens-work/prompts/{prompt_file.name}" in prompt_text, prompt_file.name
+
     def test_source_managed_lens_switch_prompt_includes_light_preflight(self):
         source_prompt = SCRIPT.parents[3] / ".github/prompts/lens-switch.prompt.md"
         prompt_text = source_prompt.read_text(encoding="utf-8")
@@ -118,6 +131,24 @@ class TestGeneratedAdapters:
         assert "light-preflight.py" in prompt_text
         assert "vscode_askQuestions" in prompt_text
         assert "lens.core/_bmad/lens-work/prompts/lens-switch.prompt.md" in prompt_text
+
+    def test_release_lens_switch_prompt_controls_menu_execution(self):
+        release_prompt = SCRIPT.parent.parent / "prompts/lens-switch.prompt.md"
+        prompt_text = release_prompt.read_text(encoding="utf-8")
+
+        assert "Use this prompt as the entry controller for `/lens-switch`." in prompt_text
+        assert "Missing config is normal. Do not search the workspace" in prompt_text
+        assert "If `vscode_askQuestions` is not available, render the numbered menu and STOP." in prompt_text
+        assert "Do not infer a target from the current branch" in prompt_text
+        assert "uv run --script {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py" in prompt_text
+
+    def test_promote_workflow_validates_source_managed_prompt_stubs(self):
+        workflow = (SCRIPT.parents[3] / ".github/workflows/promote-to-release.yml").read_text(encoding="utf-8")
+
+        assert "Published prompt file differs from source" in workflow
+        assert "Source prompt missing shared preflight template" in workflow
+        assert "Source prompt missing question-tool guidance" in workflow
+        assert "Source prompt delegates to the wrong release prompt" in workflow
 
 
 # TODO: Test ensure_dir creates directories

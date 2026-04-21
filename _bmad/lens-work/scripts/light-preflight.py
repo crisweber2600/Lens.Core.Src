@@ -264,11 +264,7 @@ def sync_repo(
 
 
 def find_project_root(script_dir: Path) -> Path:
-    current = Path.cwd()
-    if (current / "lens.core").exists():
-        return current
-
-    return next(parent for parent in script_dir.parents if (parent / "lens.core").exists())
+    return HELPERS.resolve_project_root(script_dir)
 
 
 def emit_payload(payload: dict[str, object], json_mode: bool) -> None:
@@ -309,7 +305,7 @@ def main() -> int:
     parser.add_argument("--force", action="store_true", help="Ignore the timestamp and run sync now")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser.add_argument("--governance-path", default="", help="Override the governance repo path")
-    args = parser.parse_args()
+    args = HELPERS.parse_compat_args(parser)
 
     HELPERS.echo = (lambda msg: None) if args.json else print
 
