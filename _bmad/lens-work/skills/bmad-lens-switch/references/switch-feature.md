@@ -28,6 +28,8 @@ python3 ./scripts/switch-ops.py switch \
   --control-repo {control_repo}
 ```
 
+If `{personal_output_folder}` is known, pass `--personal-folder {personal_output_folder}`. When `--personal-folder` is omitted and `--control-repo` is provided, the script defaults local context to `{control_repo}/.lens/personal/context.yaml`.
+
 ## Output
 
 ```json

@@ -196,11 +196,11 @@ uv run scripts/init-feature-ops.py read-context \
 - verifies that `{governance_repo}` is a clean git worktree
 - checks out `main` and pulls latest before duplicate detection
 - stages, commits, and pushes governance artifacts automatically on `main`
-- returns `governance_git_commands`, `remaining_git_commands`, `governance_git_executed`, and `governance_commit_sha`
+- returns `governance_git_commands`, `remaining_git_commands`, `remaining_commands`, `governance_git_executed`, and `governance_commit_sha`
 
-Feature init also returns `featureSlug` and `control_repo_git_commands` so callers can preserve short target-repo branch names while the governance and control-repo topology uses the canonical `{featureId}`. These commands route through `bmad-lens-git-orchestration create-feature-branches` so `{featureId}` is created from the control repo default branch before `{featureId}-plan` is created.
+Feature init also returns `featureSlug`, `control_repo_git_commands`, and `control_repo_activation_commands` so callers can preserve short target-repo branch names while the governance and control-repo topology uses the canonical `{featureId}`. The git commands route through `bmad-lens-git-orchestration create-feature-branches` so `{featureId}` is created from the control repo default branch before `{featureId}-plan` is created. The activation command then routes through `bmad-lens-switch switch` so the control repo lands on `{featureId}-plan` and local Lens context is updated.
 
-`git_commands` remains the full planned command list for compatibility. When governance git already ran, callers should surface only `remaining_git_commands` plus any returned `gh_commands` to the user.
+`git_commands` remains the full planned git-only command list for compatibility. When governance git already ran, callers should surface `remaining_commands` plus any returned `gh_commands` to the user. If a caller still needs the split view, `remaining_git_commands` excludes the post-creation activation step while `control_repo_activation_commands` exposes it directly.
 
 If governance git preflight or execution fails, stop and surface the error. Do not fall back to a manual governance publish recipe in the chat response.
 

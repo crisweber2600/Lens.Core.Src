@@ -15,6 +15,7 @@ The user wants to initialize a new **feature**. This means:
 Apply progressive disclosure — ask only for feature name, domain, and service upfront; derive featureId and validate against `feature-index.yaml`; then require the user to choose a track explicitly before writing anything.
 
 Use the `create` subcommand of `skills/bmad-lens-init-feature/scripts/init-feature-ops.py` with `--execute-governance-git`.
-Report governance git success, include the returned `governance_commit_sha` when present, and only surface any `remaining_git_commands` plus `gh_commands` for manual follow-up.
-Execute the returned branch-creation command exactly as provided; do not replace it with manual `git checkout -b` steps, because it resolves the control repo default branch before creating `{featureId}` and `{featureId}-plan`.
+When `{personal_output_folder}` is configured, pass `--personal-folder {personal_output_folder}` so the returned activation step writes `context.yaml` to the correct local Lens folder.
+Report governance git success, include the returned `governance_commit_sha` when present, and only surface any `remaining_commands` plus `gh_commands` for manual follow-up.
+Execute the returned `remaining_commands` in order exactly as provided. Do not replace the returned branch-creation step with manual `git checkout -b` commands, because it resolves the control repo default branch before creating `{featureId}` and `{featureId}-plan`. The returned activation step then switches the control repo to `{featureId}-plan` and makes the new feature the active Lens context.
 If governance git preflight or execution fails, stop and surface the error; do not provide a manual governance git recipe.
