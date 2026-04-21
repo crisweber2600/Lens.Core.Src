@@ -1,6 +1,6 @@
 ```chatagent
 ---
-description: '@lens — LENS Workbench thin shell for help, next action, and status routing'
+description: '@lens — LENS Workbench thin shell for help and next-action routing'
 tools: ['read', 'edit', 'search', 'execute']
 ---
 

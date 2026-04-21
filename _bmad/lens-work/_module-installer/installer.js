@@ -227,14 +227,13 @@ ${modelLine}description: '${description}'
 > When appropriate, use \`vscode_askQuestions\` to get feedback from users if the tool is available.
 > All \`_bmad/\` paths in the full prompt are relative to \`lens.core/\` — do NOT resolve paths against the user's main project repo.
 
-\`\`\`
-First run the shared lightweight prompt-start sync from the workspace root:
+You MUST execute these steps in order:
+1. FIRST, run \`${LIGHT_PREFLIGHT_COMMAND}\` from the workspace root.
+2. If that command exits non-zero, stop and surface the failure.
+3. ONLY AFTER a successful prompt-start sync, read and follow all instructions in: \`lens.core/_bmad/lens-work/prompts/${targetPrompt}\`
 
+\`\`\`bash
 ${LIGHT_PREFLIGHT_COMMAND}
-
-If that command exits non-zero, stop and surface the failure.
-
-Read and follow all instructions in: lens.core/_bmad/lens-work/prompts/${targetPrompt}
 \`\`\`
 ${extraBlock}
 `;

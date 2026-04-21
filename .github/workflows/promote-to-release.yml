@@ -106,6 +106,16 @@ jobs:
             exit 1
           }
 
+          grep -q "FIRST, run" "$PROMPT" || {
+            echo "::error::lens-switch source prompt stub must require running preflight before loading the release prompt"
+            exit 1
+          }
+
+          grep -q "ONLY AFTER a successful prompt-start sync" "$PROMPT" || {
+            echo "::error::lens-switch source prompt stub must block release-prompt loading until preflight succeeds"
+            exit 1
+          }
+
           grep -q "vscode_askQuestions" "$PROMPT" || {
             echo "::error::lens-switch source prompt stub must preserve the question-tool hint"
             exit 1
@@ -435,6 +445,12 @@ jobs:
               MISSING=1
             elif ! grep -q 'light-preflight.py' "$src"; then
               echo "::error::Source prompt missing shared preflight template: $src"
+              MISSING=1
+            elif ! grep -q 'FIRST, run' "$src"; then
+              echo "::error::Source prompt missing ordered preflight execution requirement: $src"
+              MISSING=1
+            elif ! grep -q 'ONLY AFTER a successful prompt-start sync' "$src"; then
+              echo "::error::Source prompt missing post-preflight release-prompt gate: $src"
               MISSING=1
             elif ! grep -q 'vscode_askQuestions' "$src"; then
               echo "::error::Source prompt missing question-tool guidance: $src"
