@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pyyaml"]
+# dependencies = []
 # ///
 """Lessons-learned operations — format, filter, and list task-level micro-lessons.
 

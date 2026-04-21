@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pyyaml>=6.0"]
+# dependencies = []
 # ///
 """Tests for migrate-ops.py fix-feature-dirs subcommand."""
 

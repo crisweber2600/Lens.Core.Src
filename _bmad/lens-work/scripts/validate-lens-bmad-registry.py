@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["pyyaml>=6.0"]
+# dependencies = []
 # ///
 """Validate Lens BMAD wrapper registry coverage across publication surfaces."""
 
@@ -91,4 +91,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    if any(arg in {"-h", "--help"} for arg in sys.argv[1:]):
+        print("usage: validate-lens-bmad-registry.py")
+        print("Validate Lens BMAD wrapper registry coverage across publication surfaces.")
+        raise SystemExit(0)
     raise SystemExit(main())

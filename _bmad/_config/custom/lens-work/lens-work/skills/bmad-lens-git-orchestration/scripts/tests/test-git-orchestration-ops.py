@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["PyYAML>=6.0", "pytest>=8.0"]
+# dependencies = ["pytest>=8.0"]
 # ///
 """Tests for git-orchestration-ops.py — uses real temporary git repos."""
 

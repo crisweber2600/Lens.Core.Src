@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pyyaml>=6.0"]
+# dependencies = []
 # ///
 """Tests for init-feature-ops.py."""
 
@@ -1657,6 +1657,11 @@ def test_read_context_not_found():
 
 
 if __name__ == "__main__":
+    if any(arg in {"-h", "--help"} for arg in sys.argv[1:]):
+        print("usage: test-init-feature-ops.py")
+        print("Run init-feature-ops script tests.")
+        sys.exit(0)
+
     test_create_feature()
     test_full_track_starts_in_preplan()
     test_create_domain_marker()

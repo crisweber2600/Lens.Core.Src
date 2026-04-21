@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["PyYAML>=6.0"]
+# dependencies = []
 # ///
 """
 git-orchestration-ops.py — Lens git write operations for the 2-branch feature model.

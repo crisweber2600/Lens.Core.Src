@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["pyyaml>=6.0"]
+# dependencies = []
 # ///
 """Bootstrap TargetProjects by cloning, verifying, or syncing repos from repo-inventory.yaml."""
 

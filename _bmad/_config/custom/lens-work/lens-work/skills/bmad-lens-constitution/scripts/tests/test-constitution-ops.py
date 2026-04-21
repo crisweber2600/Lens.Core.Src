@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["pyyaml", "pytest"]
+# dependencies = ["pytest"]
 # ///
 """
 Tests for constitution-ops.py — resolve, check-compliance, progressive-display.
