@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.11"
+# dependencies = ["pyyaml>=6.0"]
 # ///
 """Tests for discover-ops.py."""
 
@@ -113,11 +114,6 @@ def test_scan_reports_untracked_repo_with_targetprojects_prefix() -> None:
 
 
 if __name__ == "__main__":
-    if any(arg in {"-h", "--help"} for arg in sys.argv[1:]):
-        print("usage: test-discover-ops.py")
-        print("Run discover-ops script tests.")
-        sys.exit(0)
-
     test_scan_tracks_project_root_relative_local_path()
     test_scan_reports_untracked_repo_with_targetprojects_prefix()
 

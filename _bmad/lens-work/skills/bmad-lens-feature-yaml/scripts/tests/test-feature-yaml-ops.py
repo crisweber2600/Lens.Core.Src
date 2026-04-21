@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
+# dependencies = ["pyyaml>=6.0"]
 # ///
 """Tests for feature-yaml-ops.py."""
 
@@ -727,11 +728,6 @@ def test_yaml_parse_errors_surfaced():
 
 
 if __name__ == "__main__":
-    if any(arg in {"-h", "--help"} for arg in sys.argv[1:]):
-        print("usage: test-feature-yaml-ops.py")
-        print("Run feature-yaml-ops script tests.")
-        sys.exit(0)
-
     test_create_and_read()
     test_create_duplicate()
     test_update_phase()

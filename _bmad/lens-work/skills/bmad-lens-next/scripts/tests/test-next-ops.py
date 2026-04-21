@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
+# dependencies = ["pyyaml>=6.0"]
 # ///
 """Tests for next-ops.py."""
 
@@ -460,11 +461,6 @@ def test_feature_index_lookup():
 
 
 if __name__ == "__main__":
-    if any(arg in {"-h", "--help"} for arg in sys.argv[1:]):
-        print("usage: test-next-ops.py")
-        print("Run next-ops script tests.")
-        sys.exit(0)
-
     test_preplan_phase()
     test_dev_phase()
     test_complete_phase()
