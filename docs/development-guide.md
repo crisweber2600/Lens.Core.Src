@@ -80,15 +80,15 @@ Run this from the outer control-repo workspace root after the promotion workflow
 uv run ./lens.core/_bmad/lens-work/scripts/preflight.py
 ```
 
-### Source-root preflight caveat
+### Source-root preflight
 
-Do **not** use this from the Lens.Core.Src root as your main validation path:
+The canonical post-promotion validation command remains the workspace-root form above. When you are iterating directly in `Lens.Core.Src`, the source-root form now resolves the outer control-repo root correctly:
 
 ```bash
 uv run _bmad/lens-work/scripts/preflight.py
 ```
 
-In the current source layout, that invocation resolves the wrong project root and fails looking for `TargetProjects/lens.core/_bmad/lens-work/lifecycle.yaml`. Use the outer control-repo root invocation against `./lens.core/...` instead.
+Use the workspace-root invocation against `./lens.core/...` for release/promotion validation, and use the source-root form for focused source-side checks when you are already in `Lens.Core.Src`.
 
 ## Typical Change Paths
 

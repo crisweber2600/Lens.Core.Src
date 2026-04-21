@@ -430,6 +430,18 @@ jobs:
             if [ ! -f "$target" ]; then
               echo "::error::Missing published prompt file: $target"
               MISSING=1
+            elif ! cmp -s "$src" "$target"; then
+              echo "::error::Published prompt file differs from source: $target"
+              MISSING=1
+            elif ! grep -q 'light-preflight.py' "$src"; then
+              echo "::error::Source prompt missing shared preflight template: $src"
+              MISSING=1
+            elif ! grep -q 'vscode_askQuestions' "$src"; then
+              echo "::error::Source prompt missing question-tool guidance: $src"
+              MISSING=1
+            elif ! grep -q "lens.core/_bmad/lens-work/prompts/$(basename "$src")" "$src"; then
+              echo "::error::Source prompt delegates to the wrong release prompt: $src"
+              MISSING=1
             else
               echo "✅ $target"
             fi

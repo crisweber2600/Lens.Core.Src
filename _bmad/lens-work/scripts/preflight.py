@@ -372,6 +372,30 @@ def resolve_workspace_path(project_root: Path, raw_path: str) -> Path:
     return path if path.is_absolute() else project_root / path
 
 
+def parse_compat_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
+    args, extras = parser.parse_known_args()
+    if not extras or extras == ["."]:
+        return args
+
+    parser.error(f"unrecognized arguments: {' '.join(extras)}")
+    raise AssertionError("argparse parser.error should exit")
+
+
+def resolve_project_root(script_dir: Path) -> Path:
+    sentinel = Path("lens.core/_bmad/lens-work/lifecycle.yaml")
+    current = Path.cwd().resolve()
+    script_dir = script_dir.resolve()
+
+    for start in (current, script_dir):
+        for candidate in (start, *start.parents):
+            if (candidate / sentinel).is_file():
+                return candidate
+
+    raise RuntimeError(
+        "Unable to resolve control repo root containing lens.core/_bmad/lens-work/lifecycle.yaml"
+    )
+
+
 def prune_stale_synced_github_files(
     project_root: Path,
     stored_hashes: dict[str, str],
@@ -530,15 +554,10 @@ def main() -> int:
     parser.add_argument("--skip-constitution", action="store_true")
     parser.add_argument("--caller", default="")
     parser.add_argument("--governance-path", default="")
-    args = parser.parse_args()
+    args = parse_compat_args(parser)
 
     script_dir = Path(__file__).resolve().parent
-    # Find control repo root: the directory that contains lens.core/
-    _cwd = Path.cwd()
-    project_root = (
-        _cwd if (_cwd / "lens.core").exists()
-        else next(p for p in script_dir.parents if (p / "lens.core").exists())
-    )
+    project_root = resolve_project_root(script_dir)
     active_personal_dir = migrate_legacy_personal_dir(project_root)
     active_lens_dir = lens_dir(project_root)
     release_dir = project_root / "lens.core"
