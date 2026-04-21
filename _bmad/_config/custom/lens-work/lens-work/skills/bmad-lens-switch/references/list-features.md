@@ -17,7 +17,8 @@ Feature list always reads from `feature-index.yaml` at the governance repo root.
 Run the list operation:
 
 ```bash
-python3 ./scripts/switch-ops.py list \
+uv run --script {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
+  list \
   --governance-repo {governance_repo}
 ```
 
@@ -25,12 +26,14 @@ Optional status filter (default: all non-archived features):
 
 ```bash
 # Show all features including archived
-python3 ./scripts/switch-ops.py list \
+uv run --script {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
+  list \
   --governance-repo {governance_repo} \
   --status-filter all
 
 # Show only archived/completed items
-python3 ./scripts/switch-ops.py list \
+uv run --script {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
+  list \
   --governance-repo {governance_repo} \
   --status-filter archived
 ```
@@ -82,6 +85,8 @@ Enter a number to switch, or q to cancel:
 ```
 
 When the user enters a valid number, resolve the feature id at that position and proceed with the switch flow. On `q` or any non-numeric input, cancel with no changes.
+
+If a question tool is unavailable, render the menu and STOP. Do not auto-select a feature from branch names, open files, or recent activity.
 
 ## Domain Fallback (no features yet)
 

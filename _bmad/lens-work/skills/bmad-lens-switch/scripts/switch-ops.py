@@ -71,14 +71,8 @@ def normalize_target_repo_state(feature_data: dict) -> dict | None:
 
 def load_feature_yaml_for_index_entry(governance_repo: str, entry: dict) -> dict | None:
     """Load feature.yaml for an index entry when available."""
-    feature_id = str(entry.get("id") or entry.get("featureId") or "").strip()
-    domain = str(entry.get("domain") or "").strip()
-    service = str(entry.get("service") or "").strip()
-    if not feature_id or not domain or not service:
-        return None
-
-    feature_path = Path(governance_repo) / "features" / domain / service / feature_id / "feature.yaml"
-    if not feature_path.exists():
+    feature_path = feature_yaml_path_for_index_entry(governance_repo, entry)
+    if feature_path is None:
         return None
 
     try:
@@ -87,6 +81,18 @@ def load_feature_yaml_for_index_entry(governance_repo: str, entry: dict) -> dict
     except (yaml.YAMLError, OSError):
         return None
     return data if isinstance(data, dict) else None
+
+
+def feature_yaml_path_for_index_entry(governance_repo: str, entry: dict) -> Path | None:
+    """Return the direct feature.yaml path for an index entry when available."""
+    feature_id = str(entry.get("id") or entry.get("featureId") or "").strip()
+    domain = str(entry.get("domain") or "").strip()
+    service = str(entry.get("service") or "").strip()
+    if not feature_id or not domain or not service:
+        return None
+
+    feature_path = Path(governance_repo) / "features" / domain / service / feature_id / "feature.yaml"
+    return feature_path if feature_path.exists() else None
 
 
 def validate_identifier(value: str, field_name: str) -> str | None:
@@ -519,7 +525,9 @@ def cmd_switch(args: argparse.Namespace) -> dict:
             "error": f"Feature '{args.feature_id}' not found in feature-index.yaml",
         }
 
-    feature_path = find_feature_yaml(args.governance_repo, args.feature_id)
+    feature_path = feature_yaml_path_for_index_entry(args.governance_repo, index_entry)
+    if feature_path is None:
+        feature_path = find_feature_yaml(args.governance_repo, args.feature_id)
     if not feature_path:
         return {
             "status": "fail",

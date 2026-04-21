@@ -111,6 +111,14 @@ class TestGeneratedAdapters:
         assert "shared lightweight prompt-start sync" in installer
         assert "FIRST, run \\`${LIGHT_PREFLIGHT_COMMAND}\\`" in installer
 
+    def test_source_managed_lens_switch_prompt_includes_light_preflight(self):
+        source_prompt = SCRIPT.parents[3] / ".github/prompts/lens-switch.prompt.md"
+        prompt_text = source_prompt.read_text(encoding="utf-8")
+
+        assert "light-preflight.py" in prompt_text
+        assert "vscode_askQuestions" in prompt_text
+        assert "lens.core/_bmad/lens-work/prompts/lens-switch.prompt.md" in prompt_text
+
 
 # TODO: Test ensure_dir creates directories
 # TODO: Test write_file respects --update flag

@@ -354,6 +354,29 @@ def test_switch_existing_feature():
         assert_true("has full_docs key", "full_docs" in ctx)
 
 
+def test_switch_prefers_indexed_feature_path_over_repo_scan():
+    """Switch uses the indexed feature path before scanning the whole repo."""
+    print("test_switch_prefers_indexed_feature_path_over_repo_scan", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmp:
+        write_index(tmp, SAMPLE_INDEX_ENTRIES)
+        write_feature(tmp, "aaa", "legacy", "auth-login", {
+            **SAMPLE_FEATURE,
+            "name": "Wrong Feature Copy",
+            "domain": "aaa",
+            "service": "legacy",
+            "phase": "archived",
+        })
+        write_feature(tmp, "platform", "identity", "auth-login", SAMPLE_FEATURE)
+
+        result, code = run(["switch", "--governance-repo", tmp, "--feature-id", "auth-login"])
+        assert_eq("prefer indexed path status", result["status"], "pass")
+        assert_eq("prefer indexed path exit code", code, 0)
+        feat = result.get("feature", {})
+        assert_eq("prefer indexed path name", feat.get("name"), "User Authentication")
+        assert_eq("prefer indexed path domain", feat.get("domain"), "platform")
+        assert_eq("prefer indexed path service", feat.get("service"), "identity")
+
+
 def test_switch_nonexistent_feature():
     """Switch to a nonexistent featureId returns fail and exit 1."""
     print("test_switch_nonexistent_feature", file=sys.stderr)
