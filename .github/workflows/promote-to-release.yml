@@ -13,13 +13,9 @@
 
 name: Promote to Release
 
-concurrency:
-  group: promote-to-release
-  cancel-in-progress: false
-
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - "_bmad/lens-work/**"
       - ".github/agents/**"
@@ -32,6 +28,17 @@ on:
 jobs:
   promote-release:
     runs-on: ubuntu-latest
+    concurrency:
+      group: promote-to-release-${{ matrix.config.release_branch }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { branch: main,    release_branch: alpha,              bmad_spec: "bmad-method@6.2.2" }
+          - { branch: develop, release_branch: develop,            bmad_spec: "bmad-method@6.2.2" }
+          - { branch: develop, release_branch: develop-latestbmad, bmad_spec: "bmad-method"       }
+    if: ${{ github.ref_name == matrix.config.branch }}
 
     steps:
       # ── 1. Checkout source repo ──────────────────────────────────────
@@ -136,6 +143,7 @@ jobs:
 
       # ── 5+6. Prepare release repo while preserving alpha history ──────
       - name: Prepare release repo (preserve alpha history)
+        if: matrix.config.release_branch == 'alpha'
         run: |
           # Strategy:
           # 1) If alpha exists and is related to beta, commit directly to alpha.
@@ -182,6 +190,28 @@ jobs:
             echo "✅ Alpha branch will be created from beta"
           fi
 
+      # ── 5+6b. Prepare release repo for develop branches ─────────────
+      - name: Prepare release repo (develop branch)
+        if: matrix.config.release_branch != 'alpha'
+        run: |
+          RELEASE_BRANCH="${{ matrix.config.release_branch }}"
+          mkdir release-repo
+          cd release-repo
+          git init
+          git remote add origin \
+            "https://x-access-token:${{ secrets.RELEASE_REPO_TOKEN }}@github.com/${{ github.repository_owner }}/Lens.Core.Release.git"
+          # Fetch target branch if it exists; otherwise create orphan
+          if git ls-remote --exit-code --heads origin "$RELEASE_BRANCH" >/dev/null 2>&1; then
+            git fetch --prune --no-tags origin \
+              "+refs/heads/$RELEASE_BRANCH:refs/remotes/origin/$RELEASE_BRANCH"
+            git checkout -B "$RELEASE_BRANCH" "refs/remotes/origin/$RELEASE_BRANCH"
+            echo "✅ Checked out existing $RELEASE_BRANCH branch"
+          else
+            git checkout --orphan "$RELEASE_BRANCH"
+            git rm -rf . 2>/dev/null || true
+            echo "✅ Created orphan $RELEASE_BRANCH branch (first publish)"
+          fi
+
       - name: Prepare clean build workspace
         run: |
           rm -rf build-output
@@ -203,7 +233,7 @@ jobs:
       - name: Install BMAD framework (all modules + IDEs)
         working-directory: build-output
         run: |
-          npx bmad-method@6.2.2 install \
+          npx ${{ matrix.config.bmad_spec }} install \
             --directory . \
             --modules "core,bmm,bmb,cis,gds,tea,wds" \
             --custom-content "$BMB_SRC" \
@@ -409,7 +439,6 @@ jobs:
         run: |
           REQUIRED=(
             "build-output/.github/agents/bmad-agent-lens-work-lens.agent.md"
-            "build-output/.github/instructions/lens-control-repo.instructions.md"
             "build-output/.github/lens-work-instructions.md"
           )
 
@@ -705,6 +734,7 @@ jobs:
 
       # ── 15. Commit & push to alpha ───────────────────────────────────
       - name: Commit and push to alpha
+        if: matrix.config.release_branch == 'alpha'
         working-directory: release-repo
         run: |
           git config user.name "github-actions[bot]"
@@ -750,8 +780,32 @@ jobs:
             echo "has_changes=true" >> "$GITHUB_ENV"
           fi
 
+      # ── 15b. Commit & push to develop branch ────────────────────────
+      - name: Commit and push to develop branch
+        if: matrix.config.release_branch != 'alpha'
+        working-directory: release-repo
+        run: |
+          RELEASE_BRANCH="${{ matrix.config.release_branch }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          rsync -a --delete --exclude '.git' ../build-output/ ./
+
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "No changes to promote — skipping"
+            echo "has_changes=false" >> "$GITHUB_ENV"
+          else
+            git commit -m "[PROMOTE] Full BMAD + lens-work v${{ steps.version.outputs.version }} → $RELEASE_BRANCH"
+            git push --set-upstream origin "$RELEASE_BRANCH"
+            echo "✅ Pushed to $RELEASE_BRANCH"
+            echo "has_changes=true" >> "$GITHUB_ENV"
+          fi
+
       # ── 16. Create PR alpha → beta ──────────────────────────────────
       - name: Verify alpha and beta ancestry
+        if: matrix.config.release_branch == 'alpha'
         working-directory: release-repo
         run: |
           git fetch --no-tags origin \
@@ -767,7 +821,7 @@ jobs:
           fi
 
       - name: Create PR alpha → beta
-        if: env.has_changes == 'true'
+        if: env.has_changes == 'true' && matrix.config.release_branch == 'alpha'
         env:
           GH_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
         run: |
