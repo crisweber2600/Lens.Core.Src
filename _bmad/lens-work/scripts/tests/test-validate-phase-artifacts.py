@@ -270,6 +270,29 @@ class TestValidatePhaseArtifactsStoryFiles:
         assert set(payload["missing"]) == {"product-brief", "research", "brainstorm", "prd", "ux-design", "architecture"}
         assert payload["misplaced"] == {}
 
+    def test_finalizeplan_review_ready_tech_change_does_not_require_ux_design(self, tmp_path):
+        docs_root = tmp_path / "feature-docs"
+        docs_root.mkdir()
+        (docs_root / "product-brief.md").write_text("# Brief\n", encoding="utf-8")
+        (docs_root / "research.md").write_text("# Research\n", encoding="utf-8")
+        (docs_root / "brainstorm.md").write_text("# Brainstorm\n", encoding="utf-8")
+        (docs_root / "prd.md").write_text("# PRD\n", encoding="utf-8")
+        (docs_root / "architecture.md").write_text("# Architecture\n", encoding="utf-8")
+
+        result = _run(
+            "--phase", "finalizeplan",
+            "--contract", "review-ready",
+            "--track", "tech-change",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--json",
+        )
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["status"] == "pass"
+        assert payload["missing"] == []
+
     def test_accepts_finalizeplan_phase_artifacts_contract(self, tmp_path):
         docs_root = _make_docs(tmp_path)
         (docs_root / "product-brief.md").write_text("# Brief\n", encoding="utf-8")

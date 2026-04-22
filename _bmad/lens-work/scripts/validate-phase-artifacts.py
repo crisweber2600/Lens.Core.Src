@@ -34,6 +34,18 @@ def get_required_artifacts(lifecycle_path: Path, phase: str, contract: str) -> l
     raise ValueError(f"Unsupported contract: {contract}")
 
 
+def apply_track_overrides(
+    required: list[str],
+    phase: str,
+    contract: str,
+    track: str | None,
+) -> list[str]:
+    if contract == "review-ready" and phase == "finalizeplan" and (track or "").strip().lower() == "tech-change":
+        return [artifact for artifact in required if artifact != "ux-design"]
+
+    return required
+
+
 def is_batch_input(candidate: Path) -> bool:
     return candidate.name.endswith("-batch-input.md")
 
@@ -126,6 +138,7 @@ def main() -> int:
         choices=("phase-artifacts", "completion-review", "review-ready"),
         help="Which lifecycle artifact contract to validate.",
     )
+    parser.add_argument("--track", help="Optional feature track override for track-specific artifact rules.")
     parser.add_argument("--lifecycle-path", required=True, help="Path to lifecycle.yaml")
     parser.add_argument("--docs-root", required=True, help="Path to docs root")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
@@ -138,7 +151,12 @@ def main() -> int:
         print(f"ERROR: lifecycle.yaml not found: {lifecycle_path}", file=sys.stderr)
         return 1
 
-    required = get_required_artifacts(lifecycle_path, args.phase, args.contract)
+    required = apply_track_overrides(
+        get_required_artifacts(lifecycle_path, args.phase, args.contract),
+        args.phase,
+        args.contract,
+        args.track,
+    )
 
     if not required:
         if args.json:
