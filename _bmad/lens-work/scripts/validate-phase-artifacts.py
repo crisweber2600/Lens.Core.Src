@@ -49,21 +49,22 @@ def artifact_candidates(docs_root: Path, name: str) -> list[Path]:
             candidates += list((docs_root / "research").glob("*.md"))
         case "brainstorm":
             candidates = [docs_root / "brainstorm.md"]
-        case "prd":
-            candidates = [docs_root / "prd.md"]
+        case "prd" | "business-plan":
+            candidates = [docs_root / "prd.md", docs_root / "business-plan.md"]
         case "ux-design":
             candidates = [docs_root / "ux-design.md", docs_root / "ux-design-specification.md"]
-        case "architecture":
+        case "architecture" | "tech-plan":
             candidates = [docs_root / "architecture.md"]
             candidates += list(docs_root.glob("*architecture*.md"))
+            candidates += list(docs_root.glob("*tech-plan*.md"))
         case "epics":
             candidates = [docs_root / "epics.md"]
         case "stories":
             candidates = [docs_root / "stories.md"]
         case "implementation-readiness":
             candidates = [docs_root / "readiness-checklist.md", docs_root / "implementation-readiness.md"]
-        case "sprint-status":
-            candidates = [docs_root / "sprint-status.yaml", docs_root / "sprint-backlog.md"]
+        case "sprint-status" | "sprint-plan":
+            candidates = [docs_root / "sprint-status.yaml", docs_root / "sprint-backlog.md", docs_root / "sprint-plan.md"]
         case "story-files":
             candidates = story_file_candidates(docs_root)
         case "review-report":
