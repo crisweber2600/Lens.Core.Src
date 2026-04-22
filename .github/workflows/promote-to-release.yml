@@ -399,7 +399,7 @@ jobs:
 
           echo ""
           echo "=== Step 2: Update .xml references → .yaml ==="
-          find . -type f -not -path './.git/*' \( \
+          find . -type f -not -path './.git/*' -not -path './.github/*' \( \
             -name '*.md' -o -name '*.yaml' -o -name '*.yml' -o \
             -name '*.csv' -o -name '*.json' -o -name '*.txt' -o \
             -name '*.js' \
@@ -410,7 +410,7 @@ jobs:
 
           echo ""
           echo "=== Step 3: Rename config.yaml → bmadconfig.yaml ==="
-          find . -name 'config.yaml' -type f -not -path './.git/*' | while IFS= read -r f; do
+          find . -name 'config.yaml' -type f -not -path './.git/*' -not -path './.github/*' | while IFS= read -r f; do
             dir=$(dirname "$f")
             mv "$f" "$dir/bmadconfig.yaml"
             echo "  $f → $dir/bmadconfig.yaml"
@@ -418,7 +418,7 @@ jobs:
 
           echo ""
           echo "=== Step 4: Update config.yaml references → bmadconfig.yaml ==="
-          find . -type f -not -path './.git/*' \( \
+          find . -type f -not -path './.git/*' -not -path './.github/*' \( \
             -name '*.md' -o -name '*.yaml' -o -name '*.yml' -o \
             -name '*.csv' -o -name '*.json' -o -name '*.txt' -o \
             -name '*.js' \
@@ -429,8 +429,8 @@ jobs:
 
           echo ""
           echo "=== Verification ==="
-          XML_COUNT=$(find . -name '*.xml' -type f -not -path './.git/*' | wc -l)
-          CFG_COUNT=$(find . -name 'config.yaml' -type f -not -path './.git/*' | wc -l)
+          XML_COUNT=$(find . -name '*.xml' -type f -not -path './.git/*' -not -path './.github/*' | wc -l)
+          CFG_COUNT=$(find . -name 'config.yaml' -type f -not -path './.git/*' -not -path './.github/*' | wc -l)
           echo "Remaining .xml files: $XML_COUNT"
           echo "Remaining config.yaml files: $CFG_COUNT"
           if [ "$XML_COUNT" -gt 0 ] || [ "$CFG_COUNT" -gt 0 ]; then
