@@ -26,19 +26,34 @@ on:
   workflow_dispatch: # Allow manual trigger
 
 jobs:
+  # ── Determine which matrix entries to run based on the pushed branch ──
+  determine-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set matrix for branch
+        id: set-matrix
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo 'matrix={"config":[{"release_branch":"alpha","bmad_spec":"bmad-method@6.2.2"}]}' >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.ref_name }}" == "develop" ]]; then
+            echo 'matrix={"config":[{"release_branch":"develop","bmad_spec":"bmad-method@6.2.2"},{"release_branch":"develop-latestbmad","bmad_spec":"bmad-method"}]}' >> "$GITHUB_OUTPUT"
+          else
+            echo "Unsupported branch: ${{ github.ref_name }} — skipping"
+            echo 'matrix={"config":[]}' >> "$GITHUB_OUTPUT"
+          fi
+
   promote-release:
+    needs: determine-matrix
+    if: ${{ needs.determine-matrix.outputs.matrix != '{"config":[]}' }}
     runs-on: ubuntu-latest
     concurrency:
       group: promote-to-release-${{ matrix.config.release_branch }}
       cancel-in-progress: false
     strategy:
       fail-fast: false
-      matrix:
-        config:
-          - { branch: main,    release_branch: alpha,              bmad_spec: "bmad-method@6.2.2" }
-          - { branch: develop, release_branch: develop,            bmad_spec: "bmad-method@6.2.2" }
-          - { branch: develop, release_branch: develop-latestbmad, bmad_spec: "bmad-method"       }
-    if: ${{ github.ref_name == matrix.config.branch }}
+      matrix: ${{ fromJson(needs.determine-matrix.outputs.matrix) }}
 
     steps:
       # ── 1. Checkout source repo ──────────────────────────────────────
