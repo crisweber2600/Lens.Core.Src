@@ -1,0 +1,2 @@
+module,skill,display-name,menu-code,description,action,args,phase,after,before,required,output-location,outputs
+lc,lc-setup,Setup Lens Core,SU,Install and configure the Lens Core module,configure,[setup|configure],anytime,,,false,,
