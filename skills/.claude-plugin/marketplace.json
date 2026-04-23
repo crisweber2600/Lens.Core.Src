@@ -1,0 +1,26 @@
+{
+  "name": "bmad-lcb",
+  "owner": {
+    "name": ""
+  },
+  "license": "",
+  "homepage": "",
+  "repository": "",
+  "keywords": [
+    "bmad"
+  ],
+  "plugins": [
+    {
+      "name": "bmad-lcb",
+      "source": "./",
+      "description": "Validates and enforces Lens Core structural constructs across workspaces.",
+      "version": "1.0.0",
+      "author": {
+        "name": ""
+      },
+      "skills": [
+        "./lc-agent-core-repo"
+      ]
+    }
+  ]
+}
