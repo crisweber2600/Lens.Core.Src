@@ -15,7 +15,7 @@ from pathlib import Path
 import yaml
 
 
-def get_required_artifacts(lifecycle_path: Path, phase: str, contract: str) -> list[str]:
+def get_required_artifacts(lifecycle_path: Path, phase: str, contract: str, track: str | None = None) -> list[str]:
     data = yaml.safe_load(lifecycle_path.read_text(encoding="utf-8"))
     phases = data.get("phases", {})
     phase_data = phases.get(phase, {})
@@ -23,9 +23,18 @@ def get_required_artifacts(lifecycle_path: Path, phase: str, contract: str) -> l
         return phase_data.get("artifacts", [])
 
     completion_review = phase_data.get("completion_review", {})
+    normalized_track = (track or "").strip().lower() or None
+
     if contract == "completion-review":
+        by_track = completion_review.get("reviewed_artifacts_by_track", {})
+        if normalized_track and normalized_track in by_track:
+            return by_track[normalized_track]
         return completion_review.get("reviewed_artifacts", [])
+
     if contract == "review-ready":
+        by_track = completion_review.get("ready_when_artifacts_by_track", {})
+        if normalized_track and normalized_track in by_track:
+            return by_track[normalized_track]
         return completion_review.get(
             "ready_when_artifacts",
             completion_review.get("reviewed_artifacts", []),
@@ -40,9 +49,9 @@ def apply_track_overrides(
     contract: str,
     track: str | None,
 ) -> list[str]:
-    if contract == "review-ready" and phase == "finalizeplan" and (track or "").strip().lower() == "tech-change":
-        return [artifact for artifact in required if artifact != "ux-design"]
-
+    # Track-specific artifact filtering is now driven by lifecycle.yaml
+    # (ready_when_artifacts_by_track / reviewed_artifacts_by_track).
+    # This function is retained for backwards compatibility but is a no-op.
     return required
 
 
@@ -151,12 +160,7 @@ def main() -> int:
         print(f"ERROR: lifecycle.yaml not found: {lifecycle_path}", file=sys.stderr)
         return 1
 
-    required = apply_track_overrides(
-        get_required_artifacts(lifecycle_path, args.phase, args.contract),
-        args.phase,
-        args.contract,
-        args.track,
-    )
+    required = get_required_artifacts(lifecycle_path, args.phase, args.contract, args.track)
 
     if not required:
         if args.json:

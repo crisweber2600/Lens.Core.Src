@@ -183,8 +183,24 @@ phases:
       gate: adversarial-review
       mode: party
       report: finalizeplan-review.md
+      # Default (full track) — all planning artifacts accumulated across all prior phases.
+      # Use ready_when_artifacts_by_track to narrow requirements for non-full tracks.
       ready_when_artifacts: [product-brief, research, brainstorm, prd, ux-design, architecture]
+      ready_when_artifacts_by_track:
+        tech-change: [architecture]
+        hotfix: [architecture]
+        hotfix-express: [architecture]
+        feature: [prd, ux-design, architecture]
+        express: [business-plan, tech-plan, sprint-plan]
+        quickdev: []
       reviewed_artifacts: [product-brief, research, brainstorm, prd, ux-design, architecture]
+      reviewed_artifacts_by_track:
+        tech-change: [architecture]
+        hotfix: [architecture]
+        hotfix-express: [architecture]
+        feature: [prd, ux-design, architecture]
+        express: [business-plan, tech-plan, sprint-plan]
+        quickdev: []
       outcomes: [pass, pass-with-warnings, fail]
     execution_contract:
       - step: 1
