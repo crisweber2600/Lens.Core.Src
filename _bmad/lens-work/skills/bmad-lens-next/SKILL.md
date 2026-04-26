@@ -45,6 +45,7 @@ You read feature state and route to the most actionable next step. You are opini
 |-----------|---------------|
 | Phase=`{lifecycle phase}` | Delegate to the phase command (`/preplan`, `/businessplan`, `/techplan`, `/finalizeplan`, `/expressplan`) |
 | Phase=`{phase}-complete` | Delegate to that phase's `auto_advance_to` command from `lifecycle.yaml` |
+| Phase=`dev-complete` | Delegate to `/complete` |
 | Phase=dev | Delegate to `/dev` |
 | Phase=complete | Delegate to `/complete` |
 | Phase=paused | Delegate to `/pause-resume` |

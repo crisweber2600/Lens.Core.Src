@@ -21,6 +21,7 @@ import yaml
 
 SAFE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
 COMPLETE_SUFFIX = "-complete"
+DEV_COMPLETE_PHASE = "dev-complete"
 LIFECYCLE_PATH = Path(__file__).resolve().parents[3] / "lifecycle.yaml"
 
 # Legacy track names still appear in existing feature.yaml files.
@@ -81,6 +82,14 @@ def get_effective_phase(data: dict, lifecycle: dict) -> str:
 def build_phase_recommendation(data: dict, phase: str, lifecycle: dict) -> dict:
     """Resolve the action/command pair from lifecycle phase state."""
     phases = lifecycle.get("phases") or {}
+
+    if phase == DEV_COMPLETE_PHASE:
+        return {
+            "action": "complete",
+            "command": "/complete",
+            "rationale": "Dev execution is complete — continue with /complete to run retrospective, documentation, and archival",
+            "gate_phase": "complete",
+        }
 
     if phase.endswith(COMPLETE_SUFFIX):
         completed_phase = phase[: -len(COMPLETE_SUFFIX)]

@@ -100,7 +100,7 @@ milestones:
     tracked_state:
       stories_terminal: true          # All stories must be merged or explicitly deferred
       epics_merged_to_develop: true   # All epic branches merged to develop
-      close_validation: true          # /close validates dev-complete before allowing 'completed' state
+      close_validation: true          # /complete validates dev-complete before allowing 'completed' state
 
 # -----------------------------------------------------------------------------
 # PHASES
