@@ -1,7 +1,0 @@
-code: lc
-name: "Lens Core"
-description: "Providing a LENS into your SDD workflow"
-module_version: 0.1.0
-default_selected: false
-module_greeting: >
-  Lens Core is ready. Use [LC] commands to explore your SDD workflow.
