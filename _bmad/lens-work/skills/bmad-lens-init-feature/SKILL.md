@@ -11,6 +11,12 @@ Owns the shared container initialization behavior used by `new-domain`, `new-ser
 
 For `new-domain`, this skill delegates to `scripts/init-feature-ops.py create-domain`.
 
+## On Activation
+
+1. If user passed `setup` or `configure`, load `./assets/module-setup.md` and complete registration before any other action.
+2. If module config section `lens` is missing in `{project-root}/_bmad/config.yaml`, load `./assets/module-setup.md` and complete registration before continuing.
+3. Otherwise continue to the requested intent flow.
+
 ## new-domain Intent Flow
 
 1. Resolve config values:
@@ -19,11 +25,21 @@ For `new-domain`, this skill delegates to `scripts/init-feature-ops.py create-do
 - `output_folder` (optional)
 - `personal_output_folder` (required for context write)
 
-2. Ask user for display name.
+2. Ask user for display name. This is the only required interactive input before slug confirmation.
 
 3. Derive slug candidate and confirm:
+- slug derivation rules:
+  - trim leading/trailing whitespace
+  - lowercase
+  - replace spaces and non-alphanumeric characters with `-`
+  - collapse consecutive `-`
+  - strip leading/trailing `-`
+  - validate against `SAFE_ID_PATTERN` from `scripts/init-feature-ops.py`
 - show: `Domain slug will be: {slug}. Proceed? [Y/n/edit]`
-- on `edit`, ask manual slug and re-validate
+- on `Y`: invoke `create-domain`
+- on `n`: cancel without invoking the script
+- on `edit`: ask manual slug, validate against `SAFE_ID_PATTERN`, then confirm again
+- if derived slug is invalid or empty, ask for a manual slug before invocation
 
 4. Invoke:
 
@@ -44,6 +60,7 @@ uv run _bmad/lens-work/skills/bmad-lens-init-feature/scripts/init-feature-ops.py
 - on pass + auto git: show `governance_commit_sha`
 - on pass + manual git: show `remaining_git_commands`
 - on fail: show `error` field verbatim
+- never report success unless the script returned `status: pass` and exit code 0
 
 ## Non-Negotiables
 

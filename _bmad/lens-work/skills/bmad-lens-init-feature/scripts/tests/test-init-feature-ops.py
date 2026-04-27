@@ -23,27 +23,34 @@ enforce_stories: true
 enforce_review: true
 ---
 
-# {domain} Domain Constitution
+# {display} Domain Constitution
+
+This constitution defines governance rules for the **{display}** domain.
 
 ## Scope
 
-This constitution governs all features under the `{domain}` domain.
+Applies to all services and repositories within the `{domain}` domain.
+Lower-level constitutions (service, repo) may add constraints but may not remove those defined here.
 
 ## Tracks
 
-All tracks listed in `permitted_tracks` are available for features in this domain.
+All standard tracks are permitted: `quickplan`, `full`, `hotfix`, `tech-change`.
+Service-level constitutions may restrict this list further.
 
 ## Artifacts
 
-Planning artifacts and development artifacts listed in `required_artifacts` are required for features in this domain.
+- **Planning phase:** a `business-plan` is required before promotion to dev.
+- **Dev phase:** at least one story file must exist before dev work begins.
 
 ## Review
 
-Reviews are `{gate_mode}`. Sensing is `{sensing_gate_mode}`.
+Peer review is enforced for all features in this domain.
+Additional participants may be named at the service or repo level.
 
 ## Notes
 
-This is an auto-generated default constitution. Edit this file to add domain-specific governance rules.
+This constitution was initialized with domain defaults.
+Update it to reflect the specific governance needs of the {display} domain.
 """
 
 
@@ -129,6 +136,7 @@ def test_create_domain_basic(tmp_path):
     )
     assert completed.returncode == 0
     assert payload["status"] == "pass"
+    assert payload["dry_run"] is False
     assert (gov / "features" / "platform" / "domain.yaml").exists()
     assert (gov / "constitutions" / "platform" / "constitution.md").exists()
     assert (personal / "context.yaml").exists()
@@ -162,6 +170,10 @@ def test_create_domain_with_scaffolds(tmp_path):
     assert payload["target_projects_path"] == str(target / "infra")
     assert payload["docs_path"] == str(docs / "infra")
     assert payload["created_marker_paths"] == ["features/infra/domain.yaml"]
+    assert len(payload["workspace_git_commands"]) == 2
+    assert "target/infra/.gitkeep" in payload["workspace_git_commands"][0]
+    assert "docs/infra/.gitkeep" in payload["workspace_git_commands"][0]
+    assert payload["git_commands"] == payload["remaining_git_commands"]
 
 
 def test_create_domain_duplicate_fails(tmp_path):
@@ -285,13 +297,15 @@ def test_constitution_content_parity(tmp_path):
             str(gov),
             "--domain",
             "audit",
+            "--name",
+            "Audit",
             "--personal-folder",
             str(personal),
         ]
     )
     assert completed.returncode == 0
     content = (gov / "constitutions" / "audit" / "constitution.md").read_text(encoding="utf-8")
-    assert content == EXPECTED_CONSTITUTION_BODY.replace("{domain}", "audit")
+    assert content == EXPECTED_CONSTITUTION_BODY.replace("{domain}", "audit").replace("{display}", "Audit")
 
 
 def test_context_yaml_schema_parity(tmp_path):

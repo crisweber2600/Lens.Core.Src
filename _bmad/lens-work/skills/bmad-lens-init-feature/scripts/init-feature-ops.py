@@ -56,6 +56,16 @@ def run_git(repo: str, args: list[str]) -> subprocess.CompletedProcess[str]:
     return result
 
 
+def unique_paths(paths: list[str]) -> list[str]:
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for path in paths:
+        if path not in seen:
+            seen.add(path)
+            ordered.append(path)
+    return ordered
+
+
 def ensure_git_worktree(repo: str) -> None:
     result = subprocess.run(
         git_command_argv(repo, ["rev-parse", "--is-inside-work-tree"]),
@@ -130,7 +140,8 @@ def make_domain_yaml(domain: str, name: str, username: str, timestamp: str) -> d
     }
 
 
-def make_domain_constitution_md(domain: str) -> str:
+def make_domain_constitution_md(domain: str, name: str) -> str:
+    display = name or domain
     return (
         "---\n"
         "permitted_tracks: [quickplan, full, hotfix, tech-change]\n"
@@ -144,18 +155,37 @@ def make_domain_constitution_md(domain: str) -> str:
         "additional_review_participants: []\n"
         "enforce_stories: true\n"
         "enforce_review: true\n"
-        "---\n\n"
-        f"# {domain} Domain Constitution\n\n"
-        "## Scope\n\n"
-        f"This constitution governs all features under the `{domain}` domain.\n\n"
-        "## Tracks\n\n"
-        "All tracks listed in `permitted_tracks` are available for features in this domain.\n\n"
-        "## Artifacts\n\n"
-        "Planning artifacts and development artifacts listed in `required_artifacts` are required for features in this domain.\n\n"
-        "## Review\n\n"
-        "Reviews are `{gate_mode}`. Sensing is `{sensing_gate_mode}`.\n\n"
-        "## Notes\n\n"
-        "This is an auto-generated default constitution. Edit this file to add domain-specific governance rules.\n"
+        "---\n"
+        "\n"
+        f"# {display} Domain Constitution\n"
+        "\n"
+        f"This constitution defines governance rules for the **{display}** domain.\n"
+        "\n"
+        "## Scope\n"
+        "\n"
+        f"Applies to all services and repositories within the `{domain}` domain.\n"
+        "Lower-level constitutions (service, repo) may add constraints but may not remove those defined here.\n"
+        "\n"
+        "## Tracks\n"
+        "\n"
+        "All standard tracks are permitted: `quickplan`, `full`, `hotfix`, `tech-change`.\n"
+        "Service-level constitutions may restrict this list further.\n"
+        "\n"
+        "## Artifacts\n"
+        "\n"
+        "- **Planning phase:** a `business-plan` is required before promotion to dev.\n"
+        "- **Dev phase:** at least one story file must exist before dev work begins.\n"
+        "\n"
+        "## Review\n"
+        "\n"
+        "Peer review is enforced for all features in this domain.\n"
+        "Additional participants may be named at the service or repo level.\n"
+        "\n"
+        "## Notes\n"
+        "\n"
+        "This constitution was initialized with domain defaults.\n"
+        "Update it to reflect the specific governance needs of the "
+        f"{display} domain.\n"
     )
 
 
@@ -179,6 +209,7 @@ def build_container_result_fields(
     all_git_commands = [*governance_git_commands, *workspace_git_commands]
     remaining_git_commands = workspace_git_commands if governance_git_executed else all_git_commands
     return {
+        "git_commands": all_git_commands,
         "governance_git_commands": governance_git_commands,
         "workspace_git_commands": workspace_git_commands,
         "remaining_git_commands": remaining_git_commands,
@@ -187,13 +218,33 @@ def build_container_result_fields(
     }
 
 
+def build_workspace_scaffold_commands(
+    scaffold_entries: list[tuple[str, str]],
+    scope: str,
+    identifier: str,
+) -> list[str]:
+    grouped: dict[str, list[str]] = {}
+    for workspace_root, rel_path in scaffold_entries:
+        grouped.setdefault(workspace_root, []).append(rel_path)
+
+    commands: list[str] = []
+    for workspace_root, rel_paths in grouped.items():
+        unique_rel_paths = unique_paths(rel_paths)
+        noun = "folder" if len(unique_rel_paths) == 1 else "folders"
+        commands.extend([
+            f"git -C {workspace_root} add {' '.join(unique_rel_paths)}",
+            f'git -C {workspace_root} commit -m "scaffold({scope}): add {identifier} {noun}"',
+        ])
+    return commands
+
+
 def resolve_personal_folder(args: argparse.Namespace) -> Path:
     if args.personal_folder:
-        return Path(args.personal_folder)
+        return Path(args.personal_folder).expanduser().resolve()
     env_value = os.environ.get("LENS_PERSONAL_FOLDER")
     if env_value:
-        return Path(env_value)
-    return Path.cwd() / ".lens" / "personal"
+        return Path(env_value).expanduser().resolve()
+    return (Path.cwd() / ".lens" / "personal").resolve()
 
 
 def cmd_create_domain(args: argparse.Namespace) -> dict:
@@ -204,11 +255,16 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
 
     err = validate_safe_id(domain, "domain")
     if err:
-        return {"status": "fail", "scope": "domain", "error": err}
+        return {"status": "fail", "scope": "domain", "dry_run": bool(args.dry_run), "error": err}
 
     gov_path = Path(governance_repo)
     if not gov_path.is_dir():
-        return {"status": "fail", "scope": "domain", "error": f"Governance repo not found: {governance_repo}"}
+        return {
+            "status": "fail",
+            "scope": "domain",
+            "dry_run": bool(args.dry_run),
+            "error": f"Governance repo not found: {governance_repo}",
+        }
 
     marker_path = gov_path / "features" / domain / "domain.yaml"
     constitution_path = gov_path / "constitutions" / domain / "constitution.md"
@@ -216,12 +272,21 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
     constitution_paths = [constitution_path.relative_to(gov_path).as_posix()]
 
     tp_gitkeep_path: Path | None = None
+    workspace_scaffold_entries: list[tuple[str, str]] = []
     if args.target_projects_root:
-        tp_gitkeep_path = Path(args.target_projects_root) / domain / ".gitkeep"
+        target_projects_root = Path(args.target_projects_root)
+        tp_gitkeep_path = target_projects_root / domain / ".gitkeep"
+        workspace_scaffold_entries.append(
+            (str(target_projects_root.parent), (Path(target_projects_root.name) / domain / ".gitkeep").as_posix())
+        )
 
     docs_gitkeep_path: Path | None = None
     if args.docs_root:
-        docs_gitkeep_path = Path(args.docs_root) / domain / ".gitkeep"
+        docs_root = Path(args.docs_root)
+        docs_gitkeep_path = docs_root / domain / ".gitkeep"
+        workspace_scaffold_entries.append(
+            (str(docs_root.parent), (Path(docs_root.name) / domain / ".gitkeep").as_posix())
+        )
 
     personal_folder = resolve_personal_folder(args)
     context_path = str((personal_folder / "context.yaml"))
@@ -229,7 +294,7 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
     gov_paths = marker_paths + constitution_paths
     gov_steps = build_container_git_steps(gov_paths, f"feat(domain): add {domain} container")
     governance_git_commands = [git_command_text(governance_repo, step) for step in gov_steps]
-    workspace_git_commands: list[str] = []
+    workspace_git_commands = build_workspace_scaffold_commands(workspace_scaffold_entries, "domain", domain)
 
     if args.execute_governance_git and not args.dry_run:
         try:
@@ -238,6 +303,7 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
             return {
                 "status": "fail",
                 "scope": "domain",
+                "dry_run": False,
                 "error": f"Governance git preflight failed: {exc}",
                 **build_container_result_fields(governance_git_commands, workspace_git_commands),
             }
@@ -246,6 +312,7 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
         return {
             "status": "fail",
             "scope": "domain",
+            "dry_run": bool(args.dry_run),
             "error": f"Domain '{domain}' already exists at {marker_path}",
         }
 
@@ -261,6 +328,7 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
             "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
             "docs_path": str(docs_gitkeep_path.parent) if docs_gitkeep_path else None,
             "context_path": context_path,
+            "error": None,
             **build_container_result_fields(governance_git_commands, workspace_git_commands),
         }
 
@@ -269,13 +337,18 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
     try:
         atomic_write_yaml(marker_path, make_domain_yaml(domain, name, username, timestamp))
     except OSError as exc:
-        return {"status": "fail", "scope": "domain", "error": f"Failed to write domain marker: {exc}"}
+        return {"status": "fail", "scope": "domain", "dry_run": False, "error": f"Failed to write domain marker: {exc}"}
 
     try:
         constitution_path.parent.mkdir(parents=True, exist_ok=True)
-        constitution_path.write_text(make_domain_constitution_md(domain), encoding="utf-8")
+        constitution_path.write_text(make_domain_constitution_md(domain, name), encoding="utf-8")
     except OSError as exc:
-        return {"status": "fail", "scope": "domain", "error": f"Failed to write domain constitution: {exc}"}
+        return {
+            "status": "fail",
+            "scope": "domain",
+            "dry_run": False,
+            "error": f"Failed to write domain constitution: {exc}",
+        }
 
     if tp_gitkeep_path is not None:
         try:
@@ -285,6 +358,7 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
             return {
                 "status": "fail",
                 "scope": "domain",
+                "dry_run": False,
                 "error": f"Failed to scaffold TargetProjects domain folder: {exc}",
             }
 
@@ -296,13 +370,14 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
             return {
                 "status": "fail",
                 "scope": "domain",
+                "dry_run": False,
                 "error": f"Failed to scaffold docs domain folder: {exc}",
             }
 
     try:
         written_context_path = str(write_context_yaml(str(personal_folder), domain, "new-domain"))
     except OSError as exc:
-        return {"status": "fail", "scope": "domain", "error": f"Failed to write context.yaml: {exc}"}
+        return {"status": "fail", "scope": "domain", "dry_run": False, "error": f"Failed to write context.yaml: {exc}"}
 
     governance_commit_sha: str | None = None
     governance_git_executed = False
@@ -316,6 +391,7 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
             return {
                 "status": "fail",
                 "scope": "domain",
+                "dry_run": False,
                 "path": str(marker_path),
                 "constitution_path": str(constitution_path),
                 "created_marker_paths": marker_paths,
@@ -333,6 +409,7 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
 
     return {
         "status": "pass",
+        "dry_run": False,
         "scope": "domain",
         "path": str(marker_path),
         "constitution_path": str(constitution_path),
@@ -341,6 +418,7 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
         "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
         "docs_path": str(docs_gitkeep_path.parent) if docs_gitkeep_path else None,
         "context_path": written_context_path,
+        "error": None,
         **build_container_result_fields(
             governance_git_commands,
             workspace_git_commands,
