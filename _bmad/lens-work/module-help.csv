@@ -12,7 +12,7 @@ Lens,bmad-lens-quickplan,validate-plan,VP,Validate frontmatter and plan state fo
 Lens,bmad-lens-log-problem,log-problem,LG,Capture a problem or blocker in the feature's problem log,log,<featureId> <description> [--phase] [--category] [--dry-run],anytime,,,false,,problems.md entry
 Lens,bmad-lens-next,next-action,NA,Resolve the one unblocked next command for the current feature and auto-delegate into it,suggest,[featureId] [--governance-dir],anytime,,,false,,delegated command or blocker report
 Lens,bmad-lens-batch,batch,BT,Generate or resume a two-pass batch intake for the current planning target,run,[featureId] [--target <current|preplan|businessplan|techplan|finalizeplan|expressplan|quickplan>],anytime,,,false,,{target}-batch-input.md or resumed planning target
-Lens,bmad-lens-switch,switch-feature,FE,Switch active feature context loading paths and related deps,switch,<featureId> [--governance-dir],anytime,,,false,,context paths JSON
+Lens,bmad-lens-switch,switch-feature,FE,Switch the active Lens feature context,switch,<featureId> [--governance-dir],anytime,,,false,,context paths JSON
 Lens,bmad-lens-switch,list-features,LF,List all features with status and staleness info,list,[--status] [--governance-dir],anytime,,,false,,features list JSON
 Lens,bmad-lens-help,contextual-help,HE,Show phase-filtered help for the current lifecycle state,contextual,[--phase] [--track],anytime,,,false,,help table
 Lens,bmad-lens-help,search-help,SH,Search help topics by keyword,search,--query <text>,anytime,,,false,,ranked help results
@@ -73,6 +73,6 @@ Lens,bmad-lens-approval-status,approval-status,AS,Show pending promotion PR appr
 Lens,bmad-lens-module-management,module-management,MM,Check module version and clarify legacy branch migration status,check,,anytime,,,false,,version check results
 Lens,bmad-lens-rollback,rollback,RB,Safely roll back to a previous lifecycle phase,rollback,<featureId> [--target-phase] [--dry-run],anytime,,,false,,rollback results
 Lens,bmad-lens-upgrade,upgrade,UG,Migrate control repo schema to current version or route legacy branches to lens-migrate,upgrade,[--dry-run],anytime,,,false,,migration results
+Lens,bmad-lens-new-domain,new-domain,ND,Create a new domain scaffold and register it with Lens,new-domain,<domainId> [--dry-run],anytime,,,false,,domain scaffold and governance updates
+Lens,bmad-lens-new-service,new-service,NS,Create a new service scaffold within a domain and register it with Lens,new-service,<serviceId> --domain <domainId> [--dry-run],anytime,bmad-lens-new-domain:new-domain,,false,,service scaffold and governance updates
 Lens,bmad-lens-profile,profile,PF,View and edit onboarding profile,view,[--edit],anytime,,,false,.lens/personal,profile.yaml
-Lens,bmad-lens-init-feature,new-domain,ND,Initialize a governance domain container in the governance repository,create-domain,[--governance-repo] --domain <id> [--name <name>] [--username] [--target-projects-root] [--docs-root] [--personal-folder] [--dry-run],anytime,,,false,,domain.yaml domain constitution .gitkeep scaffold
-Lens,bmad-lens-init-feature,new-service,NS,Initialize a service container in the governance repository,create-service,[--governance-repo] --domain <id> --service <id> [--name <name>] [--username] [--target-projects-root] [--docs-root] [--personal-folder] [--dry-run],anytime,,,false,,service.yaml service constitution .gitkeep scaffold
