@@ -28,12 +28,12 @@ Before reading config or invoking `switch-ops.py`:
 	 - `{governance_repo}` from `governance_repo_path`
 	 - `{personal_output_folder}` from `personal_output_folder`
 2. If `{project-root}/.lens/governance-setup.yaml` exists and contains `governance_repo_path`, prefer that value over `bmadconfig.yaml`.
-3. If any values remain unset, use these defaults:
+3. If `{governance_repo}` remains unset, stop with `config_missing` and tell the user: `Run /lens-onboard to set up governance config.`
+4. If non-governance values remain unset, use these defaults:
 	 - `{release_repo_root}` = `lens.core`
-	 - `{governance_repo}` = `{project-root}/TargetProjects/lens/lens-governance`
 	 - `{control_repo}` = `{project-root}`
 	 - `{personal_output_folder}` = `{project-root}/.lens/personal`
-4. Missing config is normal. Do not search the workspace for alternate config files or script locations.
+5. Do not search the workspace for alternate config files or script locations.
 
 ## Execution
 

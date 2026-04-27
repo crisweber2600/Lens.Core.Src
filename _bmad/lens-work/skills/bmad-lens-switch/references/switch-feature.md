@@ -62,14 +62,14 @@ The entry prompt owns numbered-menu interaction. Do not guess a target feature f
 
 `stale: true` is set when `updated` is more than 30 days old. `context_to_load.summaries` contains paths for `related` dependencies. `context_to_load.full_docs` contains paths for `depends_on` and `blocks` dependencies.
 
-`plan_branch` is always `{featureId}-plan`. `branch_switched: true` means the control repo was checked out to that branch. `branch_switched: false` with a `branch_error` means the checkout failed — typically the branch does not exist yet; run `/lens-init-feature` to initialize it.
+`plan_branch` is always `{featureId}-plan`. `branch_switched: true` means the control repo was checked out to that branch. `branch_switched: false` with a `branch_error` means the checkout failed — typically the branch does not exist yet; run `/new-feature` to initialize it.
 
 ## Branch Checkout
 
 After running the switch command:
 
 - If `branch_switched: true` — confirm with: `[{featureId}] active. Branch: {plan_branch}.`
-- If `branch_switched: false` — include a warning: `⚠ Could not checkout {plan_branch}: {branch_error}. Run /lens-init-feature to create the feature branches.`
+- If `branch_switched: false` — include a warning: `⚠ Could not checkout {plan_branch}: {branch_error}. Run /new-feature to create the feature branches.`
 - If `--control-repo` is omitted, the script defaults to `.` and attempts the checkout in the workspace root.
 
 ## Stale Context Warning

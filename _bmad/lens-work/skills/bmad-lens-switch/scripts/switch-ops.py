@@ -5,8 +5,9 @@
 # ///
 """Switch operations — manage active feature context for Lens agent sessions.
 
-Reads feature-index.yaml (always from main) and feature.yaml files to validate
-targets, load cross-feature context paths, and confirm feature switches.
+Reads feature-index.yaml and feature.yaml files to validate targets, writes the
+local-only .lens/personal/context.yaml session pointer, computes cross-feature
+context paths, and reports control-repo branch checkout status.
 """
 
 import argparse
@@ -22,9 +23,83 @@ from pathlib import Path
 import yaml
 
 
-SAFE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
+SAFE_ID_PATTERN = re.compile(r"^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$")
 MAX_INDEX_BYTES = 1_000_000  # 1 MB sanity cap on feature-index.yaml
 STALE_DAYS = 30
+NEW_FEATURE_COMMAND = "/new-feature"
+
+
+def fail(error: str, message: str) -> dict:
+    """Return a structured failure payload."""
+    return {"status": "fail", "error": error, "message": message}
+
+
+def expand_config_value(value: str, workspace_root: Path) -> str:
+    """Expand config placeholders used by Lens module config files."""
+    return value.replace("{project-root}", str(workspace_root))
+
+
+def read_yaml_mapping(path: Path) -> tuple[dict | None, str | None]:
+    """Read a YAML mapping from path, returning a message on failure."""
+    try:
+        with open(path) as f:
+            data = yaml.safe_load(f)
+    except (yaml.YAMLError, OSError) as exc:
+        return None, str(exc)
+    if not isinstance(data, dict):
+        return None, f"{path} must contain a YAML mapping"
+    return data, None
+
+
+def resolve_governance_repo(args: argparse.Namespace) -> tuple[str | None, dict | None]:
+    """Resolve governance repo from CLI, local override, then module config.
+
+    Order:
+      1. Explicit --governance-repo
+      2. <workspace-root>/.lens/governance-setup.yaml governance_repo_path
+      3. Module bmadconfig.yaml governance_repo_path
+
+    Missing config returns config_missing with /lens-onboard guidance.
+    """
+    explicit = getattr(args, "governance_repo", None)
+    if explicit:
+        return explicit, None
+
+    workspace_root = Path(getattr(args, "workspace_root", None) or os.getcwd())
+    override_path = workspace_root / ".lens" / "governance-setup.yaml"
+    if override_path.exists():
+        data, error = read_yaml_mapping(override_path)
+        if error:
+            return None, fail("config_malformed", f"Could not read {override_path}: {error}")
+        value = str(data.get("governance_repo_path") or "").strip()
+        if value:
+            return expand_config_value(value, workspace_root), None
+
+    config_candidates: list[Path] = []
+    module_config = getattr(args, "module_config", None)
+    if module_config:
+        config_candidates.append(Path(module_config))
+    config_candidates.extend(
+        [
+            workspace_root / "_bmad" / "lens-work" / "bmadconfig.yaml",
+            workspace_root / "lens.core" / "_bmad" / "lens-work" / "bmadconfig.yaml",
+        ]
+    )
+
+    for config_path in config_candidates:
+        if not config_path.exists():
+            continue
+        data, error = read_yaml_mapping(config_path)
+        if error:
+            return None, fail("config_malformed", f"Could not read {config_path}: {error}")
+        value = str(data.get("governance_repo_path") or "").strip()
+        if value:
+            return expand_config_value(value, workspace_root), None
+
+    return None, fail(
+        "config_missing",
+        "Governance repo config not found. Run /lens-onboard to set up governance config.",
+    )
 
 
 def normalize_target_repo_state(feature_data: dict) -> dict | None:
@@ -37,6 +112,7 @@ def normalize_target_repo_state(feature_data: dict) -> dict | None:
     if not primary:
         return None
 
+    repo = str(primary.get("repo") or primary.get("name") or "").strip() or None
     dev_branch_mode = str(primary.get("dev_branch_mode") or "").strip() or None
     working_branch = (
         str(primary.get("dev_branch_name") or primary.get("working_branch") or primary.get("branch") or "").strip() or None
@@ -46,22 +122,20 @@ def normalize_target_repo_state(feature_data: dict) -> dict | None:
     final_review_report = str(primary.get("final_review_report") or "").strip() or None
     final_party_mode_report = str(primary.get("final_party_mode_report") or "").strip() or None
 
-    if dev_branch_mode == "direct-default":
-        final_pr_state = "not-required"
-    elif final_pr_url:
-        final_pr_state = "created"
-    elif dev_branch_mode:
-        final_pr_state = "pending"
-    else:
-        final_pr_state = "unknown"
+    pr_state = primary.get("pr_state")
+    if pr_state is None and final_pr_url:
+        pr_state = "created"
+    final_pr_state = pr_state or ("not-required" if dev_branch_mode == "direct-default" else None)
 
     return {
+        "repo": repo,
         "name": primary.get("name", ""),
         "local_path": primary.get("local_path", ""),
         "remote_url": primary.get("remote_url") or primary.get("url", ""),
         "dev_branch_mode": dev_branch_mode,
         "working_branch": working_branch,
         "base_branch": base_branch,
+        "pr_state": pr_state,
         "final_pr_state": final_pr_state,
         "final_pr_url": final_pr_url,
         "final_review_report": final_review_report,
@@ -100,34 +174,47 @@ def validate_identifier(value: str, field_name: str) -> str | None:
     if not SAFE_ID_PATTERN.match(value):
         return (
             f"Invalid {field_name}: '{value}'. "
-            f"Must match [a-z0-9][a-z0-9._-]{{0,63}} "
-            f"(lowercase alphanumeric, dots, hyphens, underscores)."
+            "Use lowercase alphanumeric characters and hyphens only."
         )
     return None
 
 
-def load_feature_index(governance_repo: str) -> tuple[dict | None, str | None]:
+def load_feature_index(governance_repo: str) -> tuple[dict | None, dict | None]:
     """Load feature-index.yaml from the governance repo root.
 
-    Returns (data, error). On success error is None; on failure data is None.
+    Returns (data, error_payload). On success error_payload is None.
     """
     index_path = Path(governance_repo) / "feature-index.yaml"
     if not index_path.exists():
-        return None, f"feature-index.yaml not found at {index_path}"
+        return None, fail("index_not_found", f"feature-index.yaml not found at {index_path}")
 
     if index_path.stat().st_size > MAX_INDEX_BYTES:
-        return None, f"feature-index.yaml exceeds size limit ({MAX_INDEX_BYTES} bytes)"
+        return None, fail("index_malformed", f"feature-index.yaml exceeds size limit ({MAX_INDEX_BYTES} bytes)")
 
     try:
         with open(index_path) as f:
             data = yaml.safe_load(f)
     except yaml.YAMLError as e:
-        return None, f"Failed to parse feature-index.yaml: {e}"
+        return None, fail("index_malformed", f"Failed to parse feature-index.yaml: {e}")
     except OSError as e:
-        return None, f"Failed to read feature-index.yaml: {e}"
+        return None, fail("index_malformed", f"Failed to read feature-index.yaml: {e}")
 
     if not isinstance(data, dict):
-        return None, "feature-index.yaml must be a YAML mapping"
+        return None, fail("index_malformed", "feature-index.yaml must be a YAML mapping")
+
+    features = data.get("features")
+    if not isinstance(features, list):
+        return None, fail("index_malformed", "feature-index.yaml must contain a features list")
+
+    for index, entry in enumerate(features):
+        if not isinstance(entry, dict):
+            return None, fail("index_malformed", f"feature-index.yaml features[{index}] must be a mapping")
+        missing = [field for field in ("id", "domain", "service") if not entry.get(field)]
+        if missing:
+            return None, fail(
+                "index_malformed",
+                f"feature-index.yaml features[{index}] missing required field(s): {', '.join(missing)}",
+            )
 
     return data, None
 
@@ -162,7 +249,7 @@ def write_context_yaml(personal_folder: str, domain: str, service: str, source: 
     fd, tmp_path = tempfile.mkstemp(dir=str(context_path.parent), suffix=".yaml.tmp")
     try:
         with os.fdopen(fd, "w") as f:
-            yaml.dump(context_data, f, default_flow_style=False, sort_keys=False)
+            yaml.safe_dump(context_data, f, default_flow_style=False, sort_keys=False)
         os.replace(tmp_path, str(context_path))
     except Exception:
         try:
@@ -280,39 +367,49 @@ def is_stale(feature_data: dict) -> bool:
 def build_context_paths(
     feature_data: dict,
     index_by_id: dict[str, dict],
-) -> tuple[list[str], list[str]]:
-    """Derive cross-feature context paths from dependencies.
-
-    Returns (summaries, full_docs):
-      - summaries: summary.md paths for 'related' features
-      - full_docs: tech-plan.md paths for 'depends_on' and 'blocks' features
-    """
+    governance_repo: str,
+    control_repo: str,
+) -> dict[str, list[dict]]:
+    """Derive cross-feature context paths from dependencies with exists flags."""
     deps = feature_data.get("dependencies") or {}
     depends_on: list[str] = deps.get("depends_on") or []
     related: list[str] = deps.get("related") or []
     blocks: list[str] = deps.get("blocks") or []
 
-    full_doc_ids = list(dict.fromkeys(depends_on + blocks))
-    # related features not already in full_doc_ids get summaries only
-    summary_ids = [fid for fid in related if fid not in full_doc_ids]
-
-    summaries: list[str] = []
-    for fid in summary_ids:
-        entry = index_by_id.get(fid)
+    def build_item(feature_id: str, kind: str) -> dict:
+        path: Path | None = None
+        entry = index_by_id.get(feature_id)
         if entry:
             d = entry.get("domain", "")
             s = entry.get("service", "")
-            summaries.append(f"features/{d}/{s}/{fid}/summary.md")
+            if kind == "related":
+                path = Path(governance_repo) / "features" / d / s / feature_id / "summary.md"
+            else:
+                path = Path(control_repo) / "docs" / d / s / feature_id / "tech-plan.md"
+        return {
+            "id": feature_id,
+            "path": str(path) if path else None,
+            "exists": bool(path and path.exists()),
+        }
 
-    full_docs: list[str] = []
-    for fid in full_doc_ids:
-        entry = index_by_id.get(fid)
-        if entry:
-            d = entry.get("domain", "")
-            s = entry.get("service", "")
-            full_docs.append(f"features/{d}/{s}/{fid}/tech-plan.md")
+    return {
+        "related": [build_item(fid, "related") for fid in related],
+        "depends_on": [build_item(fid, "depends_on") for fid in depends_on],
+        "blocks": [build_item(fid, "blocks") for fid in blocks],
+    }
 
-    return summaries, full_docs
+
+def context_to_load_from_paths(context_paths: dict[str, list[dict]]) -> dict[str, list[str]]:
+    """Return existing paths in the legacy context_to_load shape."""
+    return {
+        "summaries": [item["path"] for item in context_paths.get("related", []) if item.get("exists") and item.get("path")],
+        "full_docs": [
+            item["path"]
+            for key in ("depends_on", "blocks")
+            for item in context_paths.get(key, [])
+            if item.get("exists") and item.get("path")
+        ],
+    }
 
 
 def scan_domain_inventory(governance_repo: str) -> dict:
@@ -374,7 +471,7 @@ def scan_domain_inventory(governance_repo: str) -> dict:
     if domains:
         message = "No features initialized yet. Showing domain/service inventory from governance repo."
     else:
-        message = "No features initialized and no domains registered. Run /lens-init-feature to begin."
+        message = f"No features initialized and no domains registered. Run {NEW_FEATURE_COMMAND} to begin."
     return {
         "status": "pass",
         "mode": "domains",
@@ -391,11 +488,15 @@ def cmd_list(args: argparse.Namespace) -> dict:
     Falls back to domain/service inventory (scan_domain_inventory) when
     feature-index.yaml does not yet exist in the governance repo.
     """
-    index_data, err = load_feature_index(args.governance_repo)
+    governance_repo, config_error = resolve_governance_repo(args)
+    if config_error:
+        return config_error
+
+    index_data, err = load_feature_index(governance_repo)
     if err:
-        if "not found" in err:
-            return scan_domain_inventory(args.governance_repo)
-        return {"status": "fail", "error": err}
+        if err["error"] == "index_not_found":
+            return scan_domain_inventory(governance_repo)
+        return err
 
     raw_features: list[dict] = index_data.get("features") or []
 
@@ -407,7 +508,7 @@ def cmd_list(args: argparse.Namespace) -> dict:
 
     features = []
     for i, f in enumerate(raw_features):
-        feature_data = load_feature_yaml_for_index_entry(args.governance_repo, f)
+        feature_data = load_feature_yaml_for_index_entry(governance_repo, f)
         features.append(
             {
                 "num": i + 1,
@@ -425,7 +526,7 @@ def cmd_list(args: argparse.Namespace) -> dict:
 
 
 def try_git_checkout(control_repo: str, branch: str) -> tuple[bool, str | None]:
-    """Attempt git checkout of branch in control_repo. Returns (switched, error_msg)."""
+    """Attempt git checkout of branch in control_repo. Returns (switched, error_code_or_msg)."""
     try:
         result = subprocess.run(
             ["git", "-C", control_repo, "checkout", branch],
@@ -434,7 +535,10 @@ def try_git_checkout(control_repo: str, branch: str) -> tuple[bool, str | None]:
         )
         if result.returncode == 0:
             return True, None
-        return False, result.stderr.strip() or result.stdout.strip() or f"git checkout {branch} failed"
+        output = result.stderr.strip() or result.stdout.strip() or f"git checkout {branch} failed"
+        if "pathspec" in output and "did not match any file" in output:
+            return False, "branch_not_found"
+        return False, output
     except OSError as e:
         return False, f"git not available: {e}"
 
@@ -443,110 +547,55 @@ def cmd_switch(args: argparse.Namespace) -> dict:
     """Validate and prepare context for switching to a feature."""
     err = validate_identifier(args.feature_id, "feature-id")
     if err:
-        return {"status": "fail", "error": err}
+        return fail("invalid_feature_id", err)
 
     if args.domain:
         err = validate_identifier(args.domain, "domain")
         if err:
-            return {"status": "fail", "error": err}
+            return fail("invalid_domain", err)
     if args.service:
         err = validate_identifier(args.service, "service")
         if err:
-            return {"status": "fail", "error": err}
+            return fail("invalid_service", err)
+
+    governance_repo, config_error = resolve_governance_repo(args)
+    if config_error:
+        return config_error
 
     explicit_control_repo = getattr(args, "control_repo", None)
-    personal_folder = resolve_personal_folder(args.governance_repo, args.personal_folder, explicit_control_repo)
+    personal_folder = resolve_personal_folder(governance_repo, args.personal_folder, explicit_control_repo)
     plan_branch = f"{args.feature_id}-plan"
     control_repo = explicit_control_repo or "."
 
-    index_data, err = load_feature_index(args.governance_repo)
+    index_data, err = load_feature_index(governance_repo)
     if err:
-        if "not found" not in err:
-            return {"status": "fail", "error": err}
-
-        service_meta, service_err = resolve_service_context(
-            args.governance_repo,
-            args.feature_id,
-            args.domain,
-            args.service,
-        )
-        if service_err:
-            return {"status": "fail", "error": service_err}
-
-        try:
-            context_path = str(
-                write_context_yaml(
-                    personal_folder,
-                    service_meta["domain"],
-                    service_meta["service"],
-                    "lens-switch",
-                )
-            )
-        except OSError as e:
-            return {"status": "fail", "error": f"Failed to write context.yaml: {e}"}
-
-        branch_switched: bool | None = None
-        branch_error: str | None = None
-        if control_repo:
-            branch_switched, branch_error = try_git_checkout(control_repo, plan_branch)
-
-        result: dict = {
-            "status": "pass",
-            "mode": "service-context",
-            "plan_branch": plan_branch,
-            "service_context": {
-                "id": service_meta["id"],
-                "name": service_meta["name"],
-                "domain": service_meta["domain"],
-                "service": service_meta["service"],
-                "status": service_meta["status"],
-                "owner": service_meta["owner"],
-                "context_path": context_path,
-            },
-            "context_to_load": {
-                "summaries": [],
-                "full_docs": [],
-            },
-            "message": "feature-index.yaml missing; switched to service context fallback.",
-        }
-        if control_repo is not None:
-            result["branch_switched"] = branch_switched
-            if branch_error:
-                result["branch_error"] = branch_error
-        return result
+        return err
 
     raw_features: list[dict] = index_data.get("features") or []
     index_by_id = {f.get("id"): f for f in raw_features if f.get("id")}
 
     index_entry = index_by_id.get(args.feature_id)
     if not index_entry:
-        return {
-            "status": "fail",
-            "error": f"Feature '{args.feature_id}' not found in feature-index.yaml",
-        }
+        return fail("feature_not_found", f"Feature '{args.feature_id}' not found in feature-index.yaml")
 
-    feature_path = feature_yaml_path_for_index_entry(args.governance_repo, index_entry)
-    if feature_path is None:
-        feature_path = find_feature_yaml(args.governance_repo, args.feature_id)
+    feature_path = feature_yaml_path_for_index_entry(governance_repo, index_entry)
     if not feature_path:
-        return {
-            "status": "fail",
-            "error": f"feature.yaml not found for '{args.feature_id}'",
-        }
+        return fail("feature_yaml_not_found", f"feature.yaml not found for '{args.feature_id}'")
 
     try:
         with open(feature_path) as f:
             feature_data = yaml.safe_load(f)
     except (yaml.YAMLError, OSError) as e:
-        return {"status": "fail", "error": f"Failed to read feature.yaml: {e}"}
+        return fail("feature_yaml_malformed", f"Failed to read feature.yaml: {e}")
 
     if not isinstance(feature_data, dict):
-        return {"status": "fail", "error": "feature.yaml is not a valid YAML mapping"}
+        return fail("feature_yaml_malformed", "feature.yaml is not a valid YAML mapping")
 
-    summaries, full_docs = build_context_paths(feature_data, index_by_id)
+    context_paths = build_context_paths(feature_data, index_by_id, governance_repo, control_repo)
+    context_to_load = context_to_load_from_paths(context_paths)
 
     try:
-        context_path = str(
+        personal_context_path = str(
             write_context_yaml(
                 personal_folder,
                 str(feature_data.get("domain", "")),
@@ -555,16 +604,37 @@ def cmd_switch(args: argparse.Namespace) -> dict:
             )
         )
     except OSError as e:
-        return {"status": "fail", "error": f"Failed to write context.yaml: {e}"}
+        return fail("context_write_failed", f"Failed to write context.yaml: {e}")
 
     branch_switched2: bool | None = None
     branch_error2: str | None = None
     if control_repo:
         branch_switched2, branch_error2 = try_git_checkout(control_repo, plan_branch)
 
+    owner = index_entry.get("owner", "")
+    if not owner and isinstance(feature_data.get("team"), list) and feature_data["team"]:
+        first_member = feature_data["team"][0]
+        if isinstance(first_member, dict):
+            owner = first_member.get("username", "")
+
+    target_repo_state = normalize_target_repo_state(feature_data)
+    feature_dir = str(feature_path.parent)
     out: dict = {
         "status": "pass",
         "plan_branch": plan_branch,
+        "feature_id": args.feature_id,
+        "domain": feature_data.get("domain", ""),
+        "service": feature_data.get("service", ""),
+        "phase": feature_data.get("phase", ""),
+        "track": feature_data.get("track", ""),
+        "priority": feature_data.get("priority", ""),
+        "owner": owner,
+        "stale": is_stale(feature_data),
+        "context_path": feature_dir,
+        "personal_context_path": personal_context_path,
+        "target_repo_state": target_repo_state,
+        "context_paths": context_paths,
+        "context_to_load": context_to_load,
         "feature": {
             "id": args.feature_id,
             "name": feature_data.get("name", ""),
@@ -574,21 +644,24 @@ def cmd_switch(args: argparse.Namespace) -> dict:
             "track": feature_data.get("track", ""),
             "priority": feature_data.get("priority", ""),
             "status": index_entry.get("status", "active"),
-            "owner": index_entry.get("owner", ""),
+            "owner": owner,
             "stale": is_stale(feature_data),
             "updated": str(feature_data.get("updated", "")),
-            "context_path": context_path,
-            "target_repo": normalize_target_repo_state(feature_data),
-        },
-        "context_to_load": {
-            "summaries": summaries,
-            "full_docs": full_docs,
+            "context_path": feature_dir,
+            "personal_context_path": personal_context_path,
+            "target_repo": target_repo_state,
         },
     }
     if control_repo is not None:
         out["branch_switched"] = branch_switched2
+        out["checked_out_branch"] = plan_branch if branch_switched2 else None
+        out["branch_error"] = branch_error2
         if branch_error2:
-            out["branch_error"] = branch_error2
+            out["message"] = (
+                f"Run {NEW_FEATURE_COMMAND} to initialize branches."
+                if branch_error2 == "branch_not_found"
+                else branch_error2
+            )
     return out
 
 
@@ -596,11 +669,15 @@ def cmd_context_paths(args: argparse.Namespace) -> dict:
     """Get file paths needed for cross-feature context for a given feature."""
     err = validate_identifier(args.feature_id, "feature-id")
     if err:
-        return {"status": "fail", "error": err}
+        return fail("invalid_feature_id", err)
+
+    governance_repo, config_error = resolve_governance_repo(args)
+    if config_error:
+        return config_error
 
     # Prefer direct path using provided domain/service; fall back to scan
     direct_path = (
-        Path(args.governance_repo)
+        Path(governance_repo)
         / "features"
         / args.domain
         / args.service
@@ -610,34 +687,38 @@ def cmd_context_paths(args: argparse.Namespace) -> dict:
     if direct_path.exists():
         feature_path: Path | None = direct_path
     else:
-        feature_path = find_feature_yaml(args.governance_repo, args.feature_id)
+        feature_path = find_feature_yaml(governance_repo, args.feature_id)
 
     if not feature_path:
-        return {
-            "status": "fail",
-            "error": f"Feature '{args.feature_id}' not found",
-        }
+        return fail("feature_not_found", f"Feature '{args.feature_id}' not found")
 
     try:
         with open(feature_path) as f:
             feature_data = yaml.safe_load(f)
     except (yaml.YAMLError, OSError) as e:
-        return {"status": "fail", "error": f"Failed to read feature.yaml: {e}"}
+        return fail("feature_yaml_malformed", f"Failed to read feature.yaml: {e}")
 
     if not isinstance(feature_data, dict):
-        return {"status": "fail", "error": "feature.yaml is not a valid YAML mapping"}
+        return fail("feature_yaml_malformed", "feature.yaml is not a valid YAML mapping")
 
     # Load index for domain/service lookups of dependency features
-    index_data, _ = load_feature_index(args.governance_repo)
+    index_data, _ = load_feature_index(governance_repo)
     index_by_id: dict[str, dict] = {}
     if index_data:
         for f in (index_data.get("features") or []):
             if f.get("id"):
                 index_by_id[f["id"]] = f
 
-    summaries, full_docs = build_context_paths(feature_data, index_by_id)
+    control_repo = getattr(args, "control_repo", None) or os.getcwd()
+    context_paths = build_context_paths(feature_data, index_by_id, governance_repo, control_repo)
+    context_to_load = context_to_load_from_paths(context_paths)
 
-    return {"status": "pass", "summaries": summaries, "full_docs": full_docs}
+    return {
+        "status": "pass",
+        "context_paths": context_paths,
+        "summaries": context_to_load["summaries"],
+        "full_docs": context_to_load["full_docs"],
+    }
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -660,7 +741,9 @@ Examples:
 
     # list
     list_p = subparsers.add_parser("list", help="List features from feature-index.yaml")
-    list_p.add_argument("--governance-repo", required=True, help="Governance repo root path")
+    list_p.add_argument("--governance-repo", required=False, help="Governance repo root path")
+    list_p.add_argument("--workspace-root", required=False, help="Workspace root for config resolution")
+    list_p.add_argument("--module-config", required=False, help="Explicit bmadconfig.yaml path")
     list_p.add_argument(
         "--status-filter",
         default="active",
@@ -670,7 +753,9 @@ Examples:
 
     # switch
     switch_p = subparsers.add_parser("switch", help="Validate and prepare context for a feature switch")
-    switch_p.add_argument("--governance-repo", required=True, help="Governance repo root path")
+    switch_p.add_argument("--governance-repo", required=False, help="Governance repo root path")
+    switch_p.add_argument("--workspace-root", required=False, help="Workspace root for config resolution")
+    switch_p.add_argument("--module-config", required=False, help="Explicit bmadconfig.yaml path")
     switch_p.add_argument("--feature-id", required=True, help="Target feature identifier")
     switch_p.add_argument(
         "--domain",
@@ -703,10 +788,13 @@ Examples:
 
     # context-paths
     ctx_p = subparsers.add_parser("context-paths", help="Get cross-feature context file paths")
-    ctx_p.add_argument("--governance-repo", required=True, help="Governance repo root path")
+    ctx_p.add_argument("--governance-repo", required=False, help="Governance repo root path")
+    ctx_p.add_argument("--workspace-root", required=False, help="Workspace root for config resolution")
+    ctx_p.add_argument("--module-config", required=False, help="Explicit bmadconfig.yaml path")
     ctx_p.add_argument("--feature-id", required=True, help="Feature identifier")
     ctx_p.add_argument("--domain", required=True, help="Feature domain")
     ctx_p.add_argument("--service", required=True, help="Feature service")
+    ctx_p.add_argument("--control-repo", required=False, help="Control repo root path for docs context paths")
 
     return parser
 

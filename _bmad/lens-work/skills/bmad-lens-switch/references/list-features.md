@@ -128,7 +128,7 @@ No features initialized yet. Domain/service inventory (1 domain, 1 service):
 LENS.CORE — Lens Core
   src   active   crisweber2600
 
-Run /lens-init-feature to create the first feature.
+Run /new-feature to create the first feature.
 ```
 
 ## Errors

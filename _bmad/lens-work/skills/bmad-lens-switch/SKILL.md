@@ -113,12 +113,134 @@ uv run --script {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-l
   --service identity
 ```
 
-The `switch` result always includes `plan_branch` (`{featureId}-plan`). It also includes `branch_switched: true|false` and `branch_error` (if the checkout failed), using `.` as the default control-repo root when `--control-repo` is omitted.
+The `switch` result always includes `plan_branch` (`{featureId}-plan`). It also includes `branch_switched: true|false`, `checked_out_branch`, and `branch_error`, using `.` as the default control-repo root when `--control-repo` is omitted.
+
+## JSON Contracts
+
+### List Success - Features Mode
+
+Returned when `feature-index.yaml` exists and contains feature records.
+
+```json
+{
+  "status": "pass",
+  "mode": "features",
+  "features": [
+    {
+      "num": 1,
+      "id": "auth-login",
+      "domain": "platform",
+      "service": "identity",
+      "status": "active",
+      "owner": "cweber",
+      "summary": "User authentication flow",
+      "target_repo": {
+        "repo": "lens.core.src",
+        "working_branch": "feature/auth-login",
+        "dev_branch_mode": "feature-id",
+        "pr_state": null
+      }
+    }
+  ],
+  "total": 1
+}
+```
+
+Fields:
+
+- `num` is 1-based and stable within the returned list.
+- `target_repo` is null when no target repo metadata exists; otherwise it contains `repo`, `working_branch`, `dev_branch_mode`, `pr_state`, and compatibility fields.
+
+### List Success - Domains Mode
+
+Returned when `feature-index.yaml` does not exist. This is an orientation view only; no feature should be selected from it.
+
+```json
+{
+  "status": "pass",
+  "mode": "domains",
+  "domains": [
+    {
+      "id": "platform",
+      "name": "Platform",
+      "domain": "platform",
+      "status": "active",
+      "owner": "cweber",
+      "services": []
+    }
+  ],
+  "total_domains": 1,
+  "total_services": 0,
+  "message": "No features initialized yet. Showing domain/service inventory from governance repo."
+}
+```
+
+### Switch Success
+
+Returned after a target feature id validates against `feature-index.yaml`, `feature.yaml` loads, local context is written, and branch checkout is attempted.
+
+```json
+{
+  "status": "pass",
+  "feature_id": "auth-login",
+  "domain": "platform",
+  "service": "identity",
+  "phase": "dev",
+  "track": "quickplan",
+  "priority": "high",
+  "owner": "cweber",
+  "stale": false,
+  "context_path": "/repo/features/platform/identity/auth-login",
+  "personal_context_path": "/control/.lens/personal/context.yaml",
+  "target_repo_state": {
+    "repo": "lens.core.src",
+    "working_branch": "feature/auth-login",
+    "dev_branch_mode": "feature-id",
+    "pr_state": null
+  },
+  "context_paths": {
+    "related": [{"id": "user-profile", "path": "/gov/features/platform/identity/user-profile/summary.md", "exists": true}],
+    "depends_on": [{"id": "oauth-provider", "path": "/control/docs/platform/auth/oauth-provider/tech-plan.md", "exists": false}],
+    "blocks": []
+  },
+  "branch_switched": true,
+  "checked_out_branch": "auth-login-plan",
+  "branch_error": null
+}
+```
+
+Semantics:
+
+- `stale` is true only when `feature.yaml.updated` is more than 30 days old. It is a warning, not a blocker.
+- `context_path` points to the governance feature directory. `personal_context_path` points to the local context file written by switch.
+- `target_repo_state` is null when `target_repos` is empty.
+- `context_paths.*[].exists` tells callers whether to load the file. Missing paths remain in the response with `exists: false`.
+- `branch_switched` reports checkout success. `checked_out_branch` is null when checkout fails. `branch_error` is null on success, `branch_not_found` for a missing `{featureId}-plan` branch, or raw git stderr for other checkout errors.
+
+### Switch Failure
+
+```json
+{
+  "status": "fail",
+  "error": "feature_not_found",
+  "message": "Feature 'missing-feature' not found in feature-index.yaml"
+}
+```
+
+Known error codes: `invalid_feature_id`, `invalid_domain`, `invalid_service`, `config_missing`, `config_malformed`, `index_not_found`, `index_malformed`, `feature_not_found`, `feature_yaml_not_found`, `feature_yaml_malformed`, `context_write_failed`.
+
+## Focused Regression
+
+Run from the target source repo root:
+
+```bash
+uv run --with pytest _bmad/lens-work/skills/bmad-lens-switch/scripts/tests/test-switch-ops.py -q
+```
 
 ## Integration Points
 
 | Skill | How switch is used |
 |-------|-------------------|
-| `bmad-lens-init-feature` | Sets the initial active feature after feature creation |
+| New Feature flow | Sets the initial active feature after feature creation |
 | `bmad-lens-quickplan` | Uses active feature as the planning target |
 | All feature-context skills | Read active featureId from session context set by this skill |
