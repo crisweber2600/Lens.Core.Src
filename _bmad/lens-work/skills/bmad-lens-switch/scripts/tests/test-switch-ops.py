@@ -25,6 +25,8 @@ AGENT_MENU = MODULE_ROOT / "agents" / "lens.agent.md"
 
 def first_existing_path(*paths: Path) -> Path:
     """Return the first existing path, or the first candidate if none exist."""
+    if not paths:
+        raise ValueError("first_existing_path requires at least one path")
     for path in paths:
         if path.exists():
             return path
