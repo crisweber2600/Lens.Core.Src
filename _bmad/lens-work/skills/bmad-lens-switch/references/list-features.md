@@ -10,7 +10,7 @@ Discover and enumerate available features from `feature-index.yaml`.
 
 ## Source
 
-Feature list always reads from `feature-index.yaml` at the governance repo root. This file is always read from `main` — no branch switching is performed. The index is the authoritative source for listing; individual `feature.yaml` files are only read during a `switch` operation.
+Feature list always reads from `feature-index.yaml` at the governance repo root. This file is always read from `main` — no branch switching is performed. The index is the authoritative source for listing and status filtering. During `list`, individual `feature.yaml` files may also be read when present to populate additional metadata such as `target_repo`; they are not the primary source for feature enumeration.
 
 ## Process
 

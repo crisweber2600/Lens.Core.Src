@@ -1,0 +1,9 @@
+code: "lens"
+name: "Lens Workbench"
+description: "LENS lifecycle workbench — feature context switching, initialization, planning, and governance."
+module_version: "1.0.0"
+standalone: true
+prompts:
+  - lens-new-domain.prompt.md
+  - lens-new-service.prompt.md
+  - lens-switch.prompt.md

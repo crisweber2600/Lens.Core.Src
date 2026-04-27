@@ -23,7 +23,7 @@ from pathlib import Path
 import yaml
 
 
-SAFE_ID_PATTERN = re.compile(r"^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$")
+SAFE_ID_PATTERN = re.compile(r"^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$")
 MAX_INDEX_BYTES = 1_000_000  # 1 MB sanity cap on feature-index.yaml
 STALE_DAYS = 30
 NEW_FEATURE_COMMAND = "/new-feature"
@@ -174,7 +174,7 @@ def validate_identifier(value: str, field_name: str) -> str | None:
     if not SAFE_ID_PATTERN.match(value):
         return (
             f"Invalid {field_name}: '{value}'. "
-            "Use lowercase alphanumeric characters and hyphens only."
+            "Use lowercase alphanumeric characters, hyphens, dots, and underscores only."
         )
     return None
 
@@ -259,77 +259,6 @@ def write_context_yaml(personal_folder: str, domain: str, service: str, source: 
         raise
 
     return context_path
-
-
-def find_service_by_id(governance_repo: str, service_id: str) -> dict | None:
-    """Find service metadata by service id from service.yaml files under features/."""
-    features_dir = Path(governance_repo) / "features"
-    if not features_dir.exists():
-        return None
-
-    for yaml_file in sorted(features_dir.rglob("service.yaml")):
-        try:
-            with open(yaml_file) as f:
-                data = yaml.safe_load(f)
-        except (yaml.YAMLError, OSError):
-            continue
-        if not isinstance(data, dict):
-            continue
-        if data.get("id") == service_id:
-            return {
-                "id": data.get("id", ""),
-                "name": data.get("name", ""),
-                "domain": data.get("domain", ""),
-                "service": data.get("service", ""),
-                "status": data.get("status", "active"),
-                "owner": data.get("owner", ""),
-            }
-    return None
-
-
-def load_service_by_path(governance_repo: str, domain: str, service: str) -> dict | None:
-    """Load service metadata using an explicit domain/service path."""
-    service_yaml = Path(governance_repo) / "features" / domain / service / "service.yaml"
-    if not service_yaml.exists():
-        return None
-    try:
-        with open(service_yaml) as f:
-            data = yaml.safe_load(f)
-    except (yaml.YAMLError, OSError):
-        return None
-    if not isinstance(data, dict):
-        return None
-    return {
-        "id": data.get("id", f"{domain}-{service}"),
-        "name": data.get("name", ""),
-        "domain": data.get("domain", domain),
-        "service": data.get("service", service),
-        "status": data.get("status", "active"),
-        "owner": data.get("owner", ""),
-    }
-
-
-def resolve_service_context(
-    governance_repo: str,
-    selector_id: str,
-    domain: str | None,
-    service: str | None,
-) -> tuple[dict | None, str | None]:
-    """Resolve a service context from explicit domain/service or service id."""
-    if domain and service:
-        service_meta = load_service_by_path(governance_repo, domain, service)
-        if not service_meta:
-            return None, f"Service '{domain}/{service}' not found in governance repo"
-        return service_meta, None
-
-    service_meta = find_service_by_id(governance_repo, selector_id)
-    if service_meta:
-        return service_meta, None
-
-    return None, (
-        "feature-index.yaml not found and no matching service context found. "
-        f"Expected service id '{selector_id}' from domain inventory, or provide --domain and --service."
-    )
 
 
 def resolve_personal_folder(
@@ -549,15 +478,6 @@ def cmd_switch(args: argparse.Namespace) -> dict:
     if err:
         return fail("invalid_feature_id", err)
 
-    if args.domain:
-        err = validate_identifier(args.domain, "domain")
-        if err:
-            return fail("invalid_domain", err)
-    if args.service:
-        err = validate_identifier(args.service, "service")
-        if err:
-            return fail("invalid_service", err)
-
     governance_repo, config_error = resolve_governance_repo(args)
     if config_error:
         return config_error
@@ -671,6 +591,14 @@ def cmd_context_paths(args: argparse.Namespace) -> dict:
     if err:
         return fail("invalid_feature_id", err)
 
+    err = validate_identifier(args.domain, "domain")
+    if err:
+        return fail("invalid_domain", err)
+
+    err = validate_identifier(args.service, "service")
+    if err:
+        return fail("invalid_service", err)
+
     governance_repo, config_error = resolve_governance_repo(args)
     if config_error:
         return config_error
@@ -757,16 +685,6 @@ Examples:
     switch_p.add_argument("--workspace-root", required=False, help="Workspace root for config resolution")
     switch_p.add_argument("--module-config", required=False, help="Explicit bmadconfig.yaml path")
     switch_p.add_argument("--feature-id", required=True, help="Target feature identifier")
-    switch_p.add_argument(
-        "--domain",
-        required=False,
-        help="Domain for service-context fallback when feature-index.yaml is missing",
-    )
-    switch_p.add_argument(
-        "--service",
-        required=False,
-        help="Service for service-context fallback when feature-index.yaml is missing",
-    )
     switch_p.add_argument(
         "--personal-folder",
         required=False,

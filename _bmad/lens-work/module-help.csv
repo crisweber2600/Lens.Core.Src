@@ -73,4 +73,6 @@ Lens,bmad-lens-approval-status,approval-status,AS,Show pending promotion PR appr
 Lens,bmad-lens-module-management,module-management,MM,Check module version and clarify legacy branch migration status,check,,anytime,,,false,,version check results
 Lens,bmad-lens-rollback,rollback,RB,Safely roll back to a previous lifecycle phase,rollback,<featureId> [--target-phase] [--dry-run],anytime,,,false,,rollback results
 Lens,bmad-lens-upgrade,upgrade,UG,Migrate control repo schema to current version or route legacy branches to lens-migrate,upgrade,[--dry-run],anytime,,,false,,migration results
+Lens,bmad-lens-new-domain,new-domain,ND,Create a new domain scaffold and register it with Lens,new-domain,<domainId> [--dry-run],anytime,,,false,,domain scaffold and governance updates
+Lens,bmad-lens-new-service,new-service,NS,Create a new service scaffold within a domain and register it with Lens,new-service,<serviceId> --domain <domainId> [--dry-run],anytime,bmad-lens-new-domain:new-domain,,false,,service scaffold and governance updates
 Lens,bmad-lens-profile,profile,PF,View and edit onboarding profile,view,[--edit],anytime,,,false,.lens/personal,profile.yaml

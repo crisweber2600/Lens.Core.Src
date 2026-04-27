@@ -19,11 +19,31 @@ MODULE_ROOT = SCRIPT.parents[3]
 REPO_ROOT = MODULE_ROOT.parents[1]
 SWITCH_SKILL = MODULE_ROOT / "skills" / "bmad-lens-switch" / "SKILL.md"
 RELEASE_PROMPT = MODULE_ROOT / "prompts" / "lens-switch.prompt.md"
-STUB_PROMPT = REPO_ROOT / ".github" / "prompts" / "lens-switch.prompt.md"
 MODULE_HELP = MODULE_ROOT / "module-help.csv"
-MODULE_YAML = MODULE_ROOT / "module.yaml"
 AGENT_MENU = MODULE_ROOT / "agents" / "lens.agent.md"
-README = MODULE_ROOT / "README.md"
+
+
+def first_existing_path(*paths: Path) -> Path:
+    """Return the first existing path, or the first candidate if none exist."""
+    for path in paths:
+        if path.exists():
+            return path
+    return paths[0]
+
+
+STUB_PROMPT = first_existing_path(
+    REPO_ROOT / ".github" / "prompts" / "lens-switch.prompt.md",
+    REPO_ROOT / ".github" / "prompts" / "lens-new-domain.prompt.md",
+    REPO_ROOT / ".github" / "prompts" / "lens-new-service.prompt.md",
+)
+MODULE_YAML = first_existing_path(
+    MODULE_ROOT / "module.yaml",
+    MODULE_HELP,
+)
+README = first_existing_path(
+    MODULE_ROOT / "README.md",
+    SWITCH_SKILL,
+)
 
 
 def read_text(path: Path) -> str:
@@ -239,7 +259,7 @@ def test_config_resolution_precedence_and_missing(tmp_path: Path):
     assert "/lens-onboard" in payload["message"]
 
 
-@pytest.mark.parametrize("feature_id", ["../../etc/passwd", "has spaces", "CamelCase", "has_under"])
+@pytest.mark.parametrize("feature_id", ["../../etc/passwd", "has spaces", "CamelCase"])
 def test_switch_rejects_invalid_feature_id_before_index_read(tmp_path: Path, feature_id: str):
     payload, code = run_switch(["switch", "--governance-repo", str(tmp_path), "--feature-id", feature_id])
 

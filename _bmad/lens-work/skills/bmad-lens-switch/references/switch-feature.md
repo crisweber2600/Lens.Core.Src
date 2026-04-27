@@ -54,8 +54,8 @@ The entry prompt owns numbered-menu interaction. Do not guess a target feature f
     "updated": "2026-03-15T10:00:00Z"
   },
   "context_to_load": {
-    "summaries": ["features/platform/identity/user-profile/summary.md"],
-    "full_docs": ["features/platform/auth/oauth-provider/tech-plan.md"]
+    "summaries": ["/path/to/governance/features/platform/identity/user-profile/summary.md"],
+    "full_docs": ["/path/to/governance/features/platform/auth/oauth-provider/tech-plan.md"]
   }
 }
 ```
