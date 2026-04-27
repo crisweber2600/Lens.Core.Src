@@ -144,7 +144,7 @@ def make_domain_constitution_md(domain: str, name: str) -> str:
     display = name or domain
     return (
         "---\n"
-        "permitted_tracks: [quickplan, full, hotfix, tech-change]\n"
+        "permitted_tracks: [quickplan, full, hotfix, tech-change, express, expressplan]\n"
         "required_artifacts:\n"
         "  planning:\n"
         "    - business-plan\n"

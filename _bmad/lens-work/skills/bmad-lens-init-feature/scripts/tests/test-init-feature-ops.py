@@ -10,7 +10,7 @@ import yaml
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "init-feature-ops.py"
 EXPECTED_CONSTITUTION_BODY = """\
 ---
-permitted_tracks: [quickplan, full, hotfix, tech-change]
+permitted_tracks: [quickplan, full, hotfix, tech-change, express, expressplan]
 required_artifacts:
   planning:
     - business-plan
@@ -34,7 +34,7 @@ Lower-level constitutions (service, repo) may add constraints but may not remove
 
 ## Tracks
 
-All standard tracks are permitted: `quickplan`, `full`, `hotfix`, `tech-change`.
+All standard tracks are permitted: `quickplan`, `full`, `hotfix`, `tech-change`, `express`, `expressplan`.
 Service-level constitutions may restrict this list further.
 
 ## Artifacts
