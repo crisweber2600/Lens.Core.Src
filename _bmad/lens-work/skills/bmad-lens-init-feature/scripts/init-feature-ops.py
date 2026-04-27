@@ -115,11 +115,11 @@ def atomic_write_yaml(path: Path, data: dict) -> None:
         raise
 
 
-def write_context_yaml(personal_folder: str, domain: str, source: str) -> Path:
+def write_context_yaml(personal_folder: str, domain: str, source: str, service: str | None = None) -> Path:
     context_path = Path(personal_folder) / "context.yaml"
     context_data = {
         "domain": domain,
-        "service": None,
+        "service": service,
         "updated_at": now_iso(),
         "updated_by": source,
     }
@@ -428,6 +428,327 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# NS-4: Service marker and constitution builders
+# ADR-3 delegation boundary: create-service calls create-domain helpers
+# (make_domain_yaml, make_domain_constitution_md) for parent domain creation.
+# There is exactly one code path that writes domain.yaml — owned by those helpers.
+# ---------------------------------------------------------------------------
+
+
+def get_service_marker_path(gov_path: Path, domain: str, service: str) -> Path:
+    return gov_path / "features" / domain / service / "service.yaml"
+
+
+def get_service_constitution_path(gov_path: Path, domain: str, service: str) -> Path:
+    return gov_path / "constitutions" / domain / service / "constitution.md"
+
+
+def make_service_yaml(domain: str, service: str, name: str, username: str, timestamp: str) -> dict:
+    return {
+        "kind": "service",
+        "id": f"{domain}-{service}",
+        "name": name,
+        "domain": domain,
+        "service": service,
+        "status": "active",
+        "owner": username,
+        "created": timestamp,
+        "updated": timestamp,
+    }
+
+
+def make_service_constitution_md(domain: str, service: str, name: str) -> str:
+    display = name or service
+    return (
+        "---\n"
+        "permitted_tracks: [quickplan, full, hotfix, tech-change, express, expressplan]\n"
+        "required_artifacts:\n"
+        "  planning:\n"
+        "    - business-plan\n"
+        "  dev:\n"
+        "    - stories\n"
+        "gate_mode: informational\n"
+        "sensing_gate_mode: informational\n"
+        "additional_review_participants: []\n"
+        "enforce_stories: true\n"
+        "enforce_review: true\n"
+        "---\n"
+        "\n"
+        f"# {display} Service Constitution\n"
+        "\n"
+        f"This constitution defines governance rules for the **{display}** service "
+        f"within the `{domain}` domain.\n"
+        "\n"
+        "## Scope\n"
+        "\n"
+        f"Applies to all repositories within the `{domain}/{service}` service.\n"
+        "Inherits domain-level constraints and may add further restrictions.\n"
+        "\n"
+        "## Tracks\n"
+        "\n"
+        "All standard tracks are permitted: `quickplan`, `full`, `hotfix`, `tech-change`, "
+        "`express`, `expressplan`.\n"
+        "\n"
+        "## Artifacts\n"
+        "\n"
+        "- **Planning phase:** a `business-plan` is required before promotion to dev.\n"
+        "- **Dev phase:** at least one story file must exist before dev work begins.\n"
+        "\n"
+        "## Review\n"
+        "\n"
+        "Peer review is enforced for all features in this service.\n"
+        "Additional participants may be named at the repo level.\n"
+        "\n"
+        "## Notes\n"
+        "\n"
+        "This constitution was initialized with service defaults.\n"
+        f"Update it to reflect the specific governance needs of the {display} service.\n"
+    )
+
+
+# ---------------------------------------------------------------------------
+# NS-5: create-service command handler
+# NS-6: Context writer extended (service param added to write_context_yaml above)
+# NS-7: Governance git behavior follows the same create-domain pattern
+# ---------------------------------------------------------------------------
+
+
+def cmd_create_service(args: argparse.Namespace) -> dict:
+    # NS-5 AC-4: mutual exclusion guard — no file writes before this check
+    if args.dry_run and args.execute_governance_git:
+        return {
+            "status": "fail",
+            "scope": "service",
+            "dry_run": True,
+            "error": "--dry-run and --execute-governance-git are mutually exclusive.",
+        }
+
+    domain = args.domain
+    service = args.service
+    name = args.name if args.name else service
+    username = args.username if args.username else ""
+    governance_repo = args.governance_repo
+
+    err = validate_safe_id(domain, "domain")
+    if err:
+        return {"status": "fail", "scope": "service", "dry_run": bool(args.dry_run), "error": err}
+
+    err = validate_safe_id(service, "service")
+    if err:
+        return {"status": "fail", "scope": "service", "dry_run": bool(args.dry_run), "error": err}
+
+    gov_path = Path(governance_repo)
+    if not gov_path.is_dir():
+        return {
+            "status": "fail",
+            "scope": "service",
+            "dry_run": bool(args.dry_run),
+            "error": f"Governance repo not found: {governance_repo}",
+        }
+
+    # Service marker and constitution paths
+    service_marker_path = get_service_marker_path(gov_path, domain, service)
+    service_const_path = get_service_constitution_path(gov_path, domain, service)
+    service_marker_paths = [service_marker_path.relative_to(gov_path).as_posix()]
+    service_const_paths = [service_const_path.relative_to(gov_path).as_posix()]
+
+    # Domain marker and constitution paths (ADR-3 delegation)
+    domain_marker_path = gov_path / "features" / domain / "domain.yaml"
+    domain_const_path = gov_path / "constitutions" / domain / "constitution.md"
+    domain_marker_rel = domain_marker_path.relative_to(gov_path).as_posix()
+    domain_const_rel = domain_const_path.relative_to(gov_path).as_posix()
+
+    parent_domain_absent = not domain_marker_path.exists()
+    created_domain_marker = False
+    created_domain_constitution = False
+
+    # Scaffold paths
+    tp_gitkeep_path: Path | None = None
+    workspace_scaffold_entries: list[tuple[str, str]] = []
+    if args.target_projects_root:
+        tp_root = Path(args.target_projects_root)
+        tp_gitkeep_path = tp_root / domain / service / ".gitkeep"
+        workspace_scaffold_entries.append(
+            (str(tp_root.parent), (Path(tp_root.name) / domain / service / ".gitkeep").as_posix())
+        )
+
+    docs_gitkeep_path: Path | None = None
+    if args.docs_root:
+        docs_root = Path(args.docs_root)
+        docs_gitkeep_path = docs_root / domain / service / ".gitkeep"
+        workspace_scaffold_entries.append(
+            (str(docs_root.parent), (Path(docs_root.name) / domain / service / ".gitkeep").as_posix())
+        )
+
+    personal_folder = resolve_personal_folder(args)
+    context_path = str(personal_folder / "context.yaml")
+
+    # Build governance git paths: domain artifacts first if absent, then service artifacts
+    gov_marker_paths = []
+    if parent_domain_absent:
+        gov_marker_paths.extend([domain_marker_rel, domain_const_rel])
+    gov_marker_paths.extend(service_marker_paths + service_const_paths)
+
+    gov_steps = build_container_git_steps(
+        gov_marker_paths, f"feat(service): add {domain}/{service} container"
+    )
+    governance_git_commands = [git_command_text(governance_repo, step) for step in gov_steps]
+    workspace_git_commands = build_workspace_scaffold_commands(
+        workspace_scaffold_entries, "service", f"{domain}-{service}"
+    )
+
+    # NS-7: governance git preflight (validate -> sync -> duplicate check -> write)
+    if args.execute_governance_git and not args.dry_run:
+        try:
+            sync_governance_main(governance_repo)
+        except RuntimeError as exc:
+            return {
+                "status": "fail",
+                "scope": "service",
+                "dry_run": False,
+                "error": f"Governance git preflight failed: {exc}",
+                **build_container_result_fields(governance_git_commands, workspace_git_commands),
+            }
+
+    if service_marker_path.exists():
+        return {
+            "status": "fail",
+            "scope": "service",
+            "dry_run": bool(args.dry_run),
+            "error": f"Service '{domain}/{service}' already exists at {service_marker_path}",
+        }
+
+    if args.dry_run:
+        return {
+            "status": "pass",
+            "dry_run": True,
+            "scope": "service",
+            "path": str(service_marker_path),
+            "constitution_path": str(service_const_path),
+            "created_marker_paths": service_marker_paths,
+            "created_constitution_paths": service_const_paths,
+            "created_domain_marker": parent_domain_absent,
+            "created_domain_constitution": parent_domain_absent,
+            "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
+            "docs_path": str(docs_gitkeep_path.parent) if docs_gitkeep_path else None,
+            "context_path": context_path,
+            "error": None,
+            **build_container_result_fields(governance_git_commands, workspace_git_commands),
+        }
+
+    timestamp = now_iso()
+
+    # ADR-3: Auto-establish missing parent domain using create-domain helpers
+    if parent_domain_absent:
+        domain_name = domain
+        try:
+            atomic_write_yaml(domain_marker_path, make_domain_yaml(domain, domain_name, username, timestamp))
+            created_domain_marker = True
+        except OSError as exc:
+            return {"status": "fail", "scope": "service", "dry_run": False,
+                    "error": f"Failed to write parent domain marker: {exc}"}
+        try:
+            domain_const_path.parent.mkdir(parents=True, exist_ok=True)
+            domain_const_path.write_text(make_domain_constitution_md(domain, domain_name), encoding="utf-8")
+            created_domain_constitution = True
+        except OSError as exc:
+            return {"status": "fail", "scope": "service", "dry_run": False,
+                    "error": f"Failed to write parent domain constitution: {exc}"}
+
+    # Write service marker
+    try:
+        atomic_write_yaml(service_marker_path, make_service_yaml(domain, service, name, username, timestamp))
+    except OSError as exc:
+        return {"status": "fail", "scope": "service", "dry_run": False,
+                "error": f"Failed to write service marker: {exc}"}
+
+    # Write service constitution
+    try:
+        service_const_path.parent.mkdir(parents=True, exist_ok=True)
+        service_const_path.write_text(make_service_constitution_md(domain, service, name), encoding="utf-8")
+    except OSError as exc:
+        return {"status": "fail", "scope": "service", "dry_run": False,
+                "error": f"Failed to write service constitution: {exc}"}
+
+    # Write scaffold .gitkeep files
+    if tp_gitkeep_path is not None:
+        try:
+            tp_gitkeep_path.parent.mkdir(parents=True, exist_ok=True)
+            tp_gitkeep_path.touch()
+        except OSError as exc:
+            return {"status": "fail", "scope": "service", "dry_run": False,
+                    "error": f"Failed to scaffold TargetProjects service folder: {exc}"}
+
+    if docs_gitkeep_path is not None:
+        try:
+            docs_gitkeep_path.parent.mkdir(parents=True, exist_ok=True)
+            docs_gitkeep_path.touch()
+        except OSError as exc:
+            return {"status": "fail", "scope": "service", "dry_run": False,
+                    "error": f"Failed to scaffold docs service folder: {exc}"}
+
+    # NS-6: Write context with service value
+    try:
+        written_context_path = str(write_context_yaml(str(personal_folder), domain, "new-service", service))
+    except OSError as exc:
+        return {"status": "fail", "scope": "service", "dry_run": False,
+                "error": f"Failed to write context.yaml: {exc}"}
+
+    # NS-7: Execute governance git if requested
+    governance_commit_sha: str | None = None
+    governance_git_executed = False
+    if args.execute_governance_git:
+        try:
+            for step in gov_steps[2:]:
+                run_git(governance_repo, step)
+            governance_commit_sha = current_head_sha(governance_repo)
+            governance_git_executed = True
+        except RuntimeError as exc:
+            return {
+                "status": "fail",
+                "scope": "service",
+                "dry_run": False,
+                "path": str(service_marker_path),
+                "constitution_path": str(service_const_path),
+                "created_marker_paths": service_marker_paths,
+                "created_constitution_paths": service_const_paths,
+                "created_domain_marker": created_domain_marker,
+                "created_domain_constitution": created_domain_constitution,
+                "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
+                "docs_path": str(docs_gitkeep_path.parent) if docs_gitkeep_path else None,
+                "context_path": written_context_path,
+                "error": f"Governance git execution failed: {exc}",
+                **build_container_result_fields(
+                    governance_git_commands,
+                    workspace_git_commands,
+                    governance_commit_sha=current_head_sha(governance_repo),
+                ),
+            }
+
+    return {
+        "status": "pass",
+        "dry_run": False,
+        "scope": "service",
+        "path": str(service_marker_path),
+        "constitution_path": str(service_const_path),
+        "created_marker_paths": service_marker_paths,
+        "created_constitution_paths": service_const_paths,
+        "created_domain_marker": created_domain_marker,
+        "created_domain_constitution": created_domain_constitution,
+        "target_projects_path": str(tp_gitkeep_path.parent) if tp_gitkeep_path else None,
+        "docs_path": str(docs_gitkeep_path.parent) if docs_gitkeep_path else None,
+        "context_path": written_context_path,
+        "error": None,
+        **build_container_result_fields(
+            governance_git_commands,
+            workspace_git_commands,
+            governance_git_executed=governance_git_executed,
+            governance_commit_sha=governance_commit_sha,
+        ),
+    }
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Lens init-feature ops")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -443,6 +764,18 @@ def build_parser() -> argparse.ArgumentParser:
     create_domain.add_argument("--execute-governance-git", action="store_true")
     create_domain.add_argument("--dry-run", action="store_true")
 
+    create_service = subparsers.add_parser("create-service", help="Create a governance service container")
+    create_service.add_argument("--governance-repo", required=True)
+    create_service.add_argument("--domain", required=True)
+    create_service.add_argument("--service", required=True)
+    create_service.add_argument("--name")
+    create_service.add_argument("--username", default="")
+    create_service.add_argument("--target-projects-root")
+    create_service.add_argument("--docs-root")
+    create_service.add_argument("--personal-folder")
+    create_service.add_argument("--execute-governance-git", action="store_true")
+    create_service.add_argument("--dry-run", action="store_true")
+
     return parser
 
 
@@ -452,6 +785,8 @@ def main() -> int:
 
     if args.command == "create-domain":
         result = cmd_create_domain(args)
+    elif args.command == "create-service":
+        result = cmd_create_service(args)
     else:
         result = {"status": "fail", "error": f"Unsupported command: {args.command}"}
 
