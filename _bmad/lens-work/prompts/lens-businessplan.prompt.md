@@ -1,6 +1,5 @@
 ---
 description: 'BusinessPlan phase — PRD creation and UX design for a feature'
-mode: agent
 ---
 
 # /businessplan

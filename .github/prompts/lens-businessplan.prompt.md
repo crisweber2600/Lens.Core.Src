@@ -1,19 +1,12 @@
 ---
-model: Claude Sonnet 4.6 (copilot)
 description: 'Run BusinessPlan phase (PRD, UX design)'
 ---
 
-# lens-businessplan (Stub)
-
-> **This is a stub.** Load and execute the full prompt from the release module.
-> When appropriate, use `vscode_askQuestions` to get feedback from users if the tool is available.
-> All `lens.core/_bmad/` paths in the full prompt are relative to `lens.core/` — do NOT resolve paths against the user's main project repo.
-
-You MUST execute these steps in order:
-1. FIRST, run `uv run ./lens.core/_bmad/lens-work/scripts/light-preflight.py` from the workspace root.
-2. If that command exits non-zero, stop and surface the failure.
-3. ONLY AFTER a successful prompt-start sync, read and follow all instructions in: `lens.core/_bmad/lens-work/prompts/lens-businessplan.prompt.md`
+Run preflight gate first:
 
 ```bash
-uv run ./lens.core/_bmad/lens-work/scripts/light-preflight.py
+uv run _bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py
 ```
+
+If preflight exits 0, continue with `_bmad/lens-work/prompts/lens-businessplan.prompt.md`.
+If preflight fails, stop and show the error.
