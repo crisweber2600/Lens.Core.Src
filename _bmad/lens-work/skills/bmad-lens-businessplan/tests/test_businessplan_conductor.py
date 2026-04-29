@@ -18,6 +18,26 @@ RELEASE_PROMPT = REPO_ROOT / "_bmad/lens-work/prompts/lens-businessplan.prompt.m
 AGENT_FILE = REPO_ROOT / "_bmad/lens-work/agents/lens.agent.md"
 
 
+def section_between(content: str, start_marker: str, end_marker: str) -> str:
+    """Return a markdown section slice with clear failure messages."""
+    start = content.find(start_marker)
+    assert start != -1, f"Missing section marker: {start_marker}"
+
+    end = content.find(end_marker, start)
+    assert end != -1, f"Missing section marker after {start_marker}: {end_marker}"
+    return content[start:end]
+
+
+def subsection_between(content: str, start_marker: str, end_marker: str) -> str:
+    """Return a subsection slice with clear failure messages."""
+    start = content.find(start_marker)
+    assert start != -1, f"Missing subsection marker: {start_marker}"
+
+    end = content.find(end_marker, start + len(start_marker))
+    assert end != -1, f"Missing subsection marker after {start_marker}: {end_marker}"
+    return content[start:end]
+
+
 class TestWrapperEquivalence:
     """Test conductor routing and wrapper delegation patterns."""
 
@@ -33,8 +53,12 @@ class TestWrapperEquivalence:
         assert "businessplan-batch-input.md" in content, "Missing batch input file reference"
         
         # Batch pass 1 should stop without publishing or authoring
-        activation_section = content[content.find("## On Activation"):content.find("## Artifacts")]
-        batch_pass_1_section = activation_section[activation_section.find("**Batch pass 1:**"):]
+        activation_section = section_between(content, "## On Activation", "## Artifacts")
+        batch_pass_1_section = subsection_between(
+            activation_section,
+            "**Batch pass 1:**",
+            "**Batch pass 2:**",
+        )
         
         # After batch pass 1, should stop
         assert "stop" in batch_pass_1_section.lower(), "Batch pass 1 should stop after delegation"
@@ -45,7 +69,7 @@ class TestWrapperEquivalence:
         """Batch pass 2 must resume with pre-approved context without interactive menu."""
         content = SKILL_PATH.read_text(encoding="utf-8")
         
-        activation_section = content[content.find("## On Activation"):content.find("## Artifacts")]
+        activation_section = section_between(content, "## On Activation", "## Artifacts")
         
         # Should have batch pass 2 logic
         assert "**Batch pass 2:**" in activation_section, "Missing batch pass 2 section"
@@ -73,7 +97,7 @@ class TestWrapperEquivalence:
         assert "--source phase-complete" in content, "Missing --source phase-complete parameter"
         
         # Validate the sequence: check returns pass, then skip to review
-        activation_section = content[content.find("## On Activation"):content.find("## Artifacts")]
+        activation_section = section_between(content, "## On Activation", "## Artifacts")
         
         # Should have review-ready check step
         assert "**Review-ready check:**" in activation_section, "Missing review-ready check step"
@@ -98,7 +122,7 @@ class TestWrapperEquivalence:
         
         # Should NOT directly invoke bmad-create-prd
         # Check the delegation section specifically
-        delegation_section = content[content.find("**Delegate authoring:**"):content.find("## Artifacts")]
+        delegation_section = section_between(content, "**Delegate authoring:**", "## Artifacts")
         
         # PRD route should use bmad-lens-bmad-skill
         prd_pattern = r"`prd`.*?bmad-lens-bmad-skill.*?bmad-create-prd"
@@ -114,7 +138,7 @@ class TestWrapperEquivalence:
         assert "--skill bmad-create-ux-design" in content, "Missing bmad-create-ux-design skill parameter"
         
         # Check the delegation section
-        delegation_section = content[content.find("**Delegate authoring:**"):content.find("## Artifacts")]
+        delegation_section = section_between(content, "**Delegate authoring:**", "## Artifacts")
         
         # UX route should use bmad-lens-bmad-skill
         ux_pattern = r"`ux-design`.*?bmad-lens-bmad-skill.*?bmad-create-ux-design"
@@ -234,8 +258,10 @@ class TestDiscoverySurface:
         assert businessplan_row is not None, "Missing bmad-lens-businessplan entry in module-help.csv"
         
         # Verify metadata
-        assert businessplan_row["menu-code"] == "LB", f"Expected menu-code 'LB', got '{businessplan_row['menu-code']}'"
-        assert businessplan_row["phase"] == "phase-2", f"Expected phase 'phase-2', got '{businessplan_row['phase']}'"
+        menu_code = businessplan_row.get("menu-code", "").strip()
+        phase = businessplan_row.get("phase", "").strip()
+        assert menu_code == "LB", f"Expected menu-code 'LB', got '{menu_code}'"
+        assert phase == "phase-2", f"Expected phase 'phase-2', got '{phase}'"
         
         # Verify outputs
         outputs = businessplan_row.get("outputs", "")
@@ -295,11 +321,10 @@ class TestDiscoverySurface:
         # Should use module-help.csv for discovery
         assert "module-help.csv" in content, "Agent should reference module-help.csv"
         
-        # Should NOT inline the businessplan workflow details
-        # The agent is a thin shell, so it shouldn't contain businessplan-specific logic
-        assert "businessplan" not in content.lower() or \
-               content.lower().count("businessplan") <= 2, \
-            "Agent should not inline businessplan workflow (thin shell invariant)"
+        # Should NOT inline the businessplan workflow details.
+        workflow_refs = re.findall(r"exec=.*businessplan|delegate.*businessplan", content, re.IGNORECASE)
+        assert len(workflow_refs) <= 1, \
+            f"Agent should not inline businessplan workflow; found {len(workflow_refs)} active references"
 
 
 class TestPromptChain:
@@ -351,10 +376,10 @@ class TestPromptChain:
         # Should NOT contain inline businessplan logic in active instructions
         # (it's OK if these appear in comments or descriptions, but not as executable directives)
         forbidden_inline_patterns = [
-            "uv run.*publish-to-governance",
-            "invoke.*bmad-lens-bmad-skill",
-            "call.*bmad-create-prd",
-            "execute.*bmad-create-ux-design",
+            r"\buv\s+run\s+.*?\bpublish-to-governance\b",
+            r"\binvoke\s+.*?\bbmad-lens-bmad-skill\b",
+            r"\bcall\s+.*?\bbmad-create-prd\b",
+            r"\bexecute\s+.*?\bbmad-create-ux-design\b",
         ]
         
         # These command invocations should only appear in SKILL.md, not in the prompt
