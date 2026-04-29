@@ -1,5 +1,5 @@
 ---
-agent: ask
+mode: ask
 ---
 
 Run preflight gate first:
