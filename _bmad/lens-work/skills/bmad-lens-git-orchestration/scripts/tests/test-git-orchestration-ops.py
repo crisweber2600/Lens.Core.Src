@@ -233,7 +233,9 @@ class TestCreateFeatureBranches:
 
     def test_creates_both_branches_with_real_remote(self, repo_pair):
         local, remote = repo_pair
-        write_feature_yaml(local, "new-feat")
+        yaml_path = write_feature_yaml(local, "new-feat")
+        subprocess.run(["git", "-C", str(local), "add", str(yaml_path)], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(local), "commit", "-m", "add feature.yaml"], check=True, capture_output=True)
         result, code = ops.cmd_create_feature_branches(_no_args(
             governance_repo=str(local),
             feature_id="new-feat",
@@ -247,7 +249,9 @@ class TestCreateFeatureBranches:
 
     def test_detects_remote_default_branch_when_not_overridden(self, tmp_path):
         local, remote = init_repo_pair(tmp_path, default_branch="develop")
-        write_feature_yaml(local, "develop-feat")
+        yaml_path = write_feature_yaml(local, "develop-feat")
+        subprocess.run(["git", "-C", str(local), "add", str(yaml_path)], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(local), "commit", "-m", "add feature.yaml"], check=True, capture_output=True)
         result, code = ops.cmd_create_feature_branches(_no_args(
             governance_repo=str(local),
             feature_id="develop-feat",

@@ -37,7 +37,7 @@ You are the Lens BMAD skill router. You load the skill registry, resolve Lens co
 
 ## On Activation
 
-1. Load config from `{project-root}/lens.core/_bmad/config.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml`.
+1. Load config from `{project-root}/_bmad/config.yaml` and `{project-root}/_bmad/config.user.yaml`.
 2. Load skill registry from `{project-root}/lens.core/_bmad/lens-work/assets/lens-bmad-skill-registry.json`.
 3. Look up the requested `skill_id` in the registry. Reject if not found.
 

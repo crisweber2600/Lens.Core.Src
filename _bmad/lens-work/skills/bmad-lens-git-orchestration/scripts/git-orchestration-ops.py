@@ -344,6 +344,12 @@ def cmd_create_feature_branches(args: argparse.Namespace) -> tuple[dict[str, Any
     if branch_exists(repo, plan_branch, include_remote=True):
         return {"error": "branch_already_exists", "branch": plan_branch}, 1
 
+    # Precondition: working directory must be clean before switching branches
+    if not args.dry_run:
+        dirty = verify_clean(repo)
+        if dirty:
+            return {"error": "dirty_working_tree", "detail": dirty}, 1
+
     runner = Runner(args.dry_run, repo)
     saved = current_branch(repo)
     try:
@@ -414,17 +420,33 @@ def cmd_commit_artifacts(args: argparse.Namespace) -> tuple[dict[str, Any], int]
 
     commit_msg = f"[{phase}] {feature_id} — {description}"
 
+    # Confirmation step: print staged files and ask unless --no-confirm is set
+    if not args.no_confirm and not args.dry_run:
+        print(f"Files to be staged and committed:", file=sys.stderr)
+        for f in files:
+            print(f"  {f}", file=sys.stderr)
+        print(f"Commit message: {commit_msg}", file=sys.stderr)
+        print("Proceed? [y/N] ", end="", flush=True, file=sys.stderr)
+        answer = sys.stdin.readline().strip().lower()
+        if answer not in ("y", "yes"):
+            return {"error": "cancelled", "reason": "user declined confirmation"}, 1
+
     runner = Runner(args.dry_run, repo)
     try:
         runner.run(["add"] + list(files))
     except RuntimeError as exc:
         return {"error": "stage_failed", "detail": str(exc)}, 1
 
-    # Check nothing to commit
+    # Check nothing to commit (inspect the index directly, not working-tree status)
     if not args.dry_run:
-        status = git(["status", "--porcelain"], cwd=repo)
-        if not status.stdout.strip():
+        staged_check = git(["diff", "--cached", "--quiet"], cwd=repo, check=False)
+        if staged_check.returncode == 0:
             return {"error": "nothing_to_commit"}, 1
+        if staged_check.returncode != 1:
+            return {
+                "error": "nothing_to_commit_check_failed",
+                "detail": (staged_check.stderr or staged_check.stdout).strip(),
+            }, 1
 
     try:
         runner.run(["commit", "-m", commit_msg])
@@ -837,6 +859,12 @@ def cmd_merge_plan(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
 def cmd_push(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     repo = args.repo or args.governance_repo
     branch = args.branch or current_branch(repo)
+
+    # Precondition: verify origin remote is configured
+    if not args.dry_run:
+        remote_check = git(["remote", "get-url", "origin"], cwd=repo, check=False)
+        if remote_check.returncode != 0:
+            return {"error": "remote_not_found", "remote": "origin"}, 1
 
     runner = Runner(args.dry_run, repo)
     tracking = has_tracking_ref(repo) if not args.dry_run else False

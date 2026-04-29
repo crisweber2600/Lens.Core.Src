@@ -32,7 +32,7 @@ VALID_TRACKS = {"quickplan", "full", "hotfix", "tech-change"}
 VALID_PHASES = {"planning", "dev", "complete"}
 VALID_GATE_MODES = {"informational", "hard"}
 KNOWN_CONSTITUTION_KEYS = frozenset({
-    "permitted_tracks", "required_artifacts", "gate_mode",
+    "permitted_tracks", "required_artifacts", "gate_mode", "sensing_gate_mode",
     "additional_review_participants", "enforce_stories", "enforce_review",
 })
 
@@ -50,6 +50,7 @@ DEFAULTS: dict = {
         "dev": ["stories"],
     },
     "gate_mode": "informational",
+    "sensing_gate_mode": "informational",
     "additional_review_participants": [],
     "enforce_stories": False,
     "enforce_review": False,
@@ -166,6 +167,14 @@ def merge_constitutions(levels: list[dict]) -> tuple[dict, list[dict]]:
             elif mode not in VALID_GATE_MODES:
                 warnings.append({"type": "unknown_gate_mode",
                                   "detail": f"Unknown gate_mode '{mode}' ignored — must be 'informational' or 'hard'"})
+
+        if "sensing_gate_mode" in level:
+            mode = level["sensing_gate_mode"]
+            if mode == "hard":
+                result["sensing_gate_mode"] = "hard"
+            elif mode not in VALID_GATE_MODES:
+                warnings.append({"type": "unknown_sensing_gate_mode",
+                                  "detail": f"Unknown sensing_gate_mode '{mode}' ignored — must be 'informational' or 'hard'"})
 
         if "additional_review_participants" in level:
             incoming = level["additional_review_participants"]
