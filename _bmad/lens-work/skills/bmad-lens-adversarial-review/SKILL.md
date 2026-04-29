@@ -34,9 +34,9 @@ Verifies that the review artifact for the specified phase is present and in a co
 - Fail if the artifact has no YAML frontmatter.
 - Fail if `status` is not `responses-recorded`.
 
-### `--phase <phase> --source phase-complete` (generate mode)
+### `--phase <phase> --source phase-complete --generate`
 
-When called without an existing artifact, generates the adversarial review document for the completed phase and presents it for response.
+When called with `--generate`, generates the adversarial review document for the completed phase and presents it for response. This operation is explicitly opt-in; the gate check without `--generate` always fails deterministically if the artifact is absent.
 
 **Steps:**
 1. Load the phase artifacts from the staged docs path.

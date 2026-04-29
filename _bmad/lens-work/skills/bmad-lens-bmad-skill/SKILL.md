@@ -30,7 +30,7 @@ Delegates architecture document authoring to the BMAD architecture creation skil
    - `{prd_path}` — path to the located PRD artifact
    - `{staged_docs_path}` — output destination for the architecture document
    - `{governance_repo}` — governance repo path for constitution context
-4. Report delegation: `[bmad-wrapper:delegate] skill=bmad-create-architecture feature={featureId}`
+4. Report delegation: `[bmad-wrapper:delegate] skill=bmad-create-architecture feature={feature_id}`
 5. After the BMAD skill completes, verify that `architecture.md` exists at `{staged_docs_path}/architecture.md`.
 6. Report: `[bmad-wrapper:complete] architecture.md created at {staged_docs_path}`
 

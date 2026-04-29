@@ -17,8 +17,8 @@ You are the Constitution Loader. When called, you resolve the applicable constit
 
 When called for a feature in domain `{domain}` and service `{service}`:
 
-1. **Domain-specific constitution:** Check `{governance_repo}/constitutions/{domain}-constitution.md`
-2. **Service-specific constitution:** Check `{governance_repo}/constitutions/{domain}-{service}-constitution.md`
+1. **Service-specific constitution:** Check `{governance_repo}/constitutions/{domain}-{service}-constitution.md`
+2. **Domain-specific constitution:** Check `{governance_repo}/constitutions/{domain}-constitution.md`
 3. **Global fallback constitution:** Check `{governance_repo}/constitutions/constitution.md`
 
 Apply the most specific match found. If multiple levels exist (global + domain), merge them with the more specific level taking precedence.

@@ -21,19 +21,32 @@ Publishes reviewed phase artifacts from the control repo staging path to the gov
 
 **Steps:**
 1. Verify the calling conductor has resolved `{governance_repo}` path.
-2. Verify the governance repo is clean (no uncommitted changes) at the target path. If not clean, stop and report: "Governance repo has uncommitted changes — cannot publish to governance."
-3. Copy the phase artifacts from `docs/{domain}/{service}/{featureId}/` to `{governance_repo}/features/{domain}/{service}/{featureId}/`.
-4. Stage and commit in the governance repo:
+2. Ensure the governance repo is on `main` and up-to-date:
+   ```
+   git -C {governance_repo} checkout main
+   git -C {governance_repo} pull --ff-only origin main
+   ```
+   If either command fails, stop and report: "Governance repo could not be synced to main — cannot publish to governance."
+3. Verify the governance repo is clean (no uncommitted changes) at the target path. If not clean, stop and report: "Governance repo has uncommitted changes — cannot publish to governance."
+4. Copy the phase artifacts from `docs/{domain}/{service}/{featureId}/` to `{governance_repo}/features/{domain}/{service}/{featureId}/`.
+5. Stage and commit in the governance repo:
    ```
    git -C {governance_repo} add features/{domain}/{service}/{featureId}/
    git -C {governance_repo} commit -m "publish({phase}): {featureId} phase artifacts"
    ```
-5. Report: `[git-orchestration:publish] ✓ {phase} artifacts committed to governance at {governance_repo}`
+6. Push the commit to the remote:
+   ```
+   git -C {governance_repo} push origin main
+   ```
+   If the push fails, stop and report: "Governance repo push failed — resolve conflicts on main and retry."
+7. Report: `[git-orchestration:publish] ✓ {phase} artifacts committed and pushed to governance at {governance_repo}`
 
 **Exit conditions:**
 - Non-zero exit if governance repo path does not exist.
+- Non-zero exit if branch checkout or pull fails.
 - Non-zero exit if governance repo has uncommitted changes.
 - Non-zero exit if git commit fails.
+- Non-zero exit if git push fails.
 
 ### `create-feature-branches --feature-id <id>`
 
