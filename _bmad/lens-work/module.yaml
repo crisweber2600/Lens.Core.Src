@@ -6,10 +6,10 @@ standalone: true
 prompts:
   - lens-complete.prompt.md
   - lens-discover.prompt.md
+  - lens-expressplan.prompt.md
   - lens-new-domain.prompt.md
   - lens-new-feature.prompt.md
   - lens-new-service.prompt.md
   - lens-switch.prompt.md
   - lens-techplan.prompt.md
   - lens-finalizeplan.prompt.md
-  - lens-expressplan.prompt.md
