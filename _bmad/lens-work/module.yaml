@@ -10,3 +10,5 @@ prompts:
   - lens-new-service.prompt.md
   - lens-switch.prompt.md
   - lens-techplan.prompt.md
+  - lens-finalizeplan.prompt.md
+  - lens-expressplan.prompt.md
