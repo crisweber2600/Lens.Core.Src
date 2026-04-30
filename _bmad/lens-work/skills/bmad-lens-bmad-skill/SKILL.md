@@ -27,7 +27,7 @@ You are the Lens BMAD skill router. You load the skill registry, resolve Lens co
 
 ## Principles
 
-- **Registry-driven** — skill metadata comes from `assets/lens-bmad-skill-registry.json`. Unknown skill IDs are rejected.
+- **Registry-driven** — skill metadata comes from `{module_path}/assets/lens-bmad-skill-registry.json`. Unknown skill IDs are rejected.
 - **Context modes** — `feature-optional` skills run without feature context; `feature-required` skills prompt for missing domain/service/feature.
 - **Output modes** — `planning-docs` skills write to planning artifact paths; `implementation-target` skills write to the target repo.
 - **Feature docs authority** — when feature context exists, planning-doc skills treat `feature.yaml.docs.path` as the authoritative `planning_artifacts` root. The global `docs/planning-artifacts` fallback is only for no-feature runs.
@@ -38,8 +38,9 @@ You are the Lens BMAD skill router. You load the skill registry, resolve Lens co
 ## On Activation
 
 1. Load config from `{project-root}/_bmad/config.yaml` and `{project-root}/_bmad/config.user.yaml`.
-2. Load skill registry from `{project-root}/lens.core/_bmad/lens-work/assets/lens-bmad-skill-registry.json`.
-3. Look up the requested `skill_id` in the registry. Reject if not found.
+2. Resolve `{module_path}` as `{project-root}/_bmad/lens-work` (the Lens module root that contains `assets/lens-bmad-skill-registry.json`).
+3. Load skill registry from `{module_path}/assets/lens-bmad-skill-registry.json`.
+4. Look up the requested `skill_id` in the registry. Reject if not found.
 
 ## Context Resolution
 
@@ -130,6 +131,7 @@ After the handoff, stop wrapper-side orchestration. Do not ask follow-on workflo
 | `bmad-create-prd` | BMAD Create PRD | feature-required | planning-docs | businessplan |
 | `bmad-create-ux-design` | BMAD Create UX Design | feature-required | planning-docs | businessplan |
 | `bmad-create-architecture` | BMAD Create Architecture | feature-required | planning-docs | techplan |
+| `bmad-lens-quickplan` | Lens QuickPlan Internal | feature-required | planning-docs | expressplan |
 | `bmad-create-epics-and-stories` | BMAD Create Epics and Stories | feature-required | planning-docs | finalizeplan |
 | `bmad-check-implementation-readiness` | BMAD Implementation Readiness | feature-required | planning-docs | finalizeplan |
 | `bmad-sprint-planning` | BMAD Sprint Planning | feature-required | planning-docs | finalizeplan |

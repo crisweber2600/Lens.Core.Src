@@ -9,11 +9,11 @@ description: Universal two-pass batch intake and resume flow for Lens planning t
 
 This skill provides the shared batch contract for Lens planning targets. On pass 1 it resolves the current planning target or an explicit override, analyzes available context, writes or refreshes a target-specific batch input markdown file, and stops. On pass 2 it resumes the owning planning target only after it can automatically detect that the required answer blocks in that file have been filled.
 
-**Scope:** Supports `preplan`, `businessplan`, `techplan`, `finalizeplan`, `expressplan`, and `quickplan`. It does not bypass the owning phase conductor or native BMAD workflow.
+**Scope:** Supports `preplan`, `businessplan`, `techplan`, `finalizeplan`, and `expressplan`. It does not bypass the owning phase conductor or native BMAD workflow. QuickPlan is internal-only and is reached only through ExpressPlan's wrapper delegation.
 
 **Args:**
 - `--feature-id <id>` (optional): Target a specific feature.
-- `--target <current|preplan|businessplan|techplan|finalizeplan|expressplan|quickplan>` (optional): Override the resolved planning target. Defaults to `current`.
+- `--target <current|preplan|businessplan|techplan|finalizeplan|expressplan>` (optional): Override the resolved planning target. Defaults to `current`.
 
 ## Identity
 
@@ -33,7 +33,7 @@ You are the shared Lens batch orchestrator. You do not author lifecycle artifact
 - **Context-derived questions** — generate questions from `feature.yaml`, predecessor artifacts, cross-feature context, and constitution inputs; do not emit a generic static questionnaire
 - **Lifecycle-safe intake files** — batch input markdown files are supporting inputs, not lifecycle artifacts, and must not satisfy phase validation gates
 - **Automatic readiness detection** — pass 2 starts only when every required `**Your answer:**` block contains non-placeholder content; users must not toggle a status field by hand
-- **Resume through the owning target** — pass 2 resumes the phase conductor or quickplan workflow; it never authors outputs directly inside this skill
+- **Resume through the owning target** — pass 2 resumes the phase conductor; it never authors outputs directly inside this skill and never calls internal-only QuickPlan directly
 - **Interactive boundaries remain intact** — once pass 2 delegates to the owning target, the existing BusinessPlan and TechPlan interactive/native handoff rules still apply
 
 ## Supported Targets
@@ -45,7 +45,6 @@ You are the shared Lens batch orchestrator. You do not author lifecycle artifact
 | `techplan` | `techplan-batch-input.md` | businessplan artifacts, architecture dependencies, constitution | `bmad-lens-techplan` |
 | `finalizeplan` | `finalizeplan-batch-input.md` | techplan artifacts, review scope, governance impacts, and story-bundle constraints | `bmad-lens-finalizeplan` |
 | `expressplan` | `expressplan-batch-input.md` | feature scope, constitution, combined planning risks | `bmad-lens-expressplan` |
-| `quickplan` | `quickplan-batch-input.md` | full planning context, phase ordering, adversarial-review stop conditions | `bmad-lens-quickplan` |
 
 ## On Activation
 
@@ -73,7 +72,7 @@ You are the shared Lens batch orchestrator. You do not author lifecycle artifact
    - Cross-feature context and any named service dependencies already available
    - Domain constitution constraints and mandatory gates
 2. Generate questions that close only the gaps that remain after that analysis.
-3. Write or refresh `{target}-batch-input.md` using `./references/batch-input-template.md`.
+3. Write or refresh `{target}-batch-input.md` using `references/batch-input-template.md`.
 4. Preserve any existing user-authored answers when refreshing the file; only update stale context snapshots and unanswered question prompts.
 5. Report the file path and stop.
 
@@ -117,7 +116,6 @@ Tailor questions to the resolved target:
 - `techplan`: architecture decision gaps, system boundaries, integration assumptions, rollout and migration unknowns
 - `finalizeplan`: review scope, governance-impact checks, epic decomposition tradeoffs, readiness blockers, sprint boundaries, and story-file expectations
 - `expressplan`: unresolved cross-artifact assumptions that would otherwise fracture a one-session plan
-- `quickplan`: which planning questions must be settled up front so the pipeline can progress cleanly, plus adversarial-review halt expectations
 
 Never ask for information that is already explicit in loaded context unless the existing context is contradictory or stale.
 
