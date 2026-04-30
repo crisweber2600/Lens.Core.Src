@@ -42,6 +42,8 @@ After this flow completes, the caller has a structured context payload for the t
 
 ## Invocation
 
+> **not_yet_implemented**: The `fetch-context` and `read-context` subcommands documented below are not yet available in `init-feature-ops.py`. The current implementation only exposes `create-domain` and `create-service`. These commands will be added during the lens-dev-new-codebase-new-feature dev phase. Do not attempt to run them until that phase is complete.
+
 ```bash
 uv run --script {project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-init-feature/scripts/init-feature-ops.py \
   fetch-context \

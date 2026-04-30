@@ -224,7 +224,7 @@ Known error codes:
 
 ## Test Contract
 
-The scaffolded tests in `scripts/tests/test-complete-ops.py` define the red-phase contract for the future `complete-ops.py` implementation. They intentionally contain docstring-only bodies until the complete feature implements runtime behavior.
+The scaffolded tests in `scripts/tests/test-complete-ops.py` define the red-phase contract for the future `complete-ops.py` implementation. Each test is marked `@pytest.mark.xfail(strict=True)` and raises `NotImplementedError`, so the suite reports expected failures (xfail) now and will go red (xpass → failure) if a test starts passing before the implementation is merged.
 
 Focused validation for the scaffold:
 
