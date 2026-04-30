@@ -27,13 +27,13 @@ import yaml
 #   parents[2] = bmad-lens-expressplan/  <- SKILL_ROOT
 #   parents[3] = skills/
 #   parents[4] = lens-work/              <- MODULE_ROOT
-#   parents[5] = _bmad/
-#   parents[6] = lens.core.src/          <- REPO_ROOT
+#   MODULE_ROOT.parents[0] = _bmad/
+#   MODULE_ROOT.parents[1] = lens.core.src/  <- REPO_ROOT
 # ---------------------------------------------------------------------------
 TEST_FILE = Path(__file__).resolve()
 SKILL_ROOT = TEST_FILE.parents[2]
 MODULE_ROOT = TEST_FILE.parents[4]
-REPO_ROOT = TEST_FILE.parents[6]
+REPO_ROOT = MODULE_ROOT.parents[1]
 
 STUB_PROMPT = REPO_ROOT / ".github" / "prompts" / "lens-expressplan.prompt.md"
 RELEASE_PROMPT = MODULE_ROOT / "prompts" / "lens-expressplan.prompt.md"
@@ -61,8 +61,8 @@ def test_stub_exists_and_preflights_before_release_prompt():
     """Public stub must run light preflight before loading the release prompt."""
     assert STUB_PROMPT.exists(), f"Missing public stub: {STUB_PROMPT}"
     text = read_text(STUB_PROMPT)
-    preflight = "uv run ./lens.core/_bmad/lens-work/scripts/light-preflight.py"
-    release = "lens.core/_bmad/lens-work/prompts/lens-expressplan.prompt.md"
+    preflight = "light-preflight.py"
+    release = "_bmad/lens-work/prompts/lens-expressplan.prompt.md"
     assert preflight in text, f"Stub missing preflight command: {preflight!r}"
     assert release in text, f"Stub missing release prompt reference: {release!r}"
     assert text.index(preflight) < text.index(release), (
