@@ -5,6 +5,7 @@ module_version: "1.0.0"
 standalone: true
 prompts:
   - lens-complete.prompt.md
+  - lens-discover.prompt.md
   - lens-new-domain.prompt.md
   - lens-new-feature.prompt.md
   - lens-new-service.prompt.md
