@@ -4,6 +4,7 @@ description: "LENS lifecycle workbench — feature context switching, initializa
 module_version: "1.0.0"
 standalone: true
 prompts:
+  - lens-discover.prompt.md
   - lens-new-domain.prompt.md
   - lens-new-service.prompt.md
   - lens-switch.prompt.md
