@@ -5,7 +5,7 @@ description: 'Run ExpressPlan phase (QuickPlan and express review)'
 Before loading workflow logic, run the preflight gate from the workspace root:
 
 ```bash
-uv run --script _bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py
+uv run _bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py
 ```
 
 If that command exits non-zero, stop and surface the failure.
