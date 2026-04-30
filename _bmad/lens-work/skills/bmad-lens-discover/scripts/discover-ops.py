@@ -253,7 +253,7 @@ def emit(payload: dict[str, Any], as_json: bool) -> None:
     if as_json:
         print(json.dumps(payload, indent=2, sort_keys=True))
     else:
-        print(json.dumps(payload, indent=2, sort_keys=True))
+        print(yaml.safe_dump(payload, sort_keys=True, allow_unicode=True), end="")
 
 
 def build_parser() -> argparse.ArgumentParser:
