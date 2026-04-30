@@ -2,7 +2,7 @@
 feature: lens-dev-new-codebase-discover
 doc_type: arch-review-note
 status: draft
-updated_at: 2026-04-29T00:00:00Z
+updated_at: 2026-04-30T00:00:00Z
 ---
 
 # Architecture Isolation Audit - Discover Auto-Commit Exception
@@ -11,11 +11,11 @@ updated_at: 2026-04-29T00:00:00Z
 
 `ISOLATED`
 
-The discover auto-commit exception is isolated to `bmad-lens-discover/SKILL.md` in this target branch. No other `SKILL.md` file contains direct `git commit` or `git push` command references under the audited patterns.
+The discover auto-commit exception is isolated to `bmad-lens-discover/SKILL.md` in this target branch. No other `SKILL.md` file contains a direct governance-main `git commit` or `git push` sequence under the audited patterns.
 
 ## Method
 
-Searched all `SKILL.md` files under `_bmad/lens-work/skills/` in the target worktree for direct `git push`, `git commit`, and governance-main commit references.
+Searched all tracked `SKILL.md` files under `_bmad/lens-work/skills/` in the target worktree after merging the latest `origin/develop` into `feature/lens-dev-new-codebase-discover`. The audit looked for direct `git push`, `git commit`, and governance-main commit references.
 
 Patterns reviewed:
 
@@ -27,13 +27,21 @@ Patterns reviewed:
 
 ## Files Searched
 
-Count: 3
+Count: 11
 
+- `_bmad/lens-work/skills/bmad-lens-adversarial-review/SKILL.md`
+- `_bmad/lens-work/skills/bmad-lens-batch/SKILL.md`
+- `_bmad/lens-work/skills/bmad-lens-bmad-skill/SKILL.md`
+- `_bmad/lens-work/skills/bmad-lens-businessplan/SKILL.md`
+- `_bmad/lens-work/skills/bmad-lens-constitution/SKILL.md`
 - `_bmad/lens-work/skills/bmad-lens-discover/SKILL.md`
+- `_bmad/lens-work/skills/bmad-lens-git-orchestration/SKILL.md`
 - `_bmad/lens-work/skills/bmad-lens-init-feature/SKILL.md`
+- `_bmad/lens-work/skills/bmad-lens-preplan/SKILL.md`
 - `_bmad/lens-work/skills/bmad-lens-switch/SKILL.md`
+- `_bmad/lens-work/skills/bmad-lens-techplan/SKILL.md`
 
-`bmad-lens-git-orchestration` is not present in this target branch, so it could not be evaluated as an expected exception.
+`bmad-lens-git-orchestration` is present after the develop merge and is evaluated as the expected centralized git-write workflow. It contains generic push guidance but no direct discover-style governance-main commit exception.
 
 ## Findings
 
@@ -44,10 +52,24 @@ Count: 3
 - Assessment: Expected. The section is labelled `## Auto-Commit (Governance-Main Exception)`, uses pre/post SHA-256 hashes, commits only when hashes differ, and uses the required commit message `[discover] Sync repo-inventory.yaml`.
 - Recommended follow-up: Keep this section unique and rerun this audit before dev-complete.
 
+### Finding 2 - Expected Centralized Git Workflow: git-orchestration
+
+- File: `_bmad/lens-work/skills/bmad-lens-git-orchestration/SKILL.md`
+- Pattern: generic `git push` guidance and governance main-only description
+- Assessment: Expected. This skill is the centralized git-write workflow and does not contain a direct governance-main `repo-inventory.yaml` auto-commit sequence.
+- Recommended follow-up: None for this discover story.
+
 ## Non-Findings
 
+- `_bmad/lens-work/skills/bmad-lens-adversarial-review/SKILL.md` was searched and did not contain direct `git commit` or `git push` command references under the audited patterns.
+- `_bmad/lens-work/skills/bmad-lens-batch/SKILL.md` was searched and did not contain direct `git commit` or `git push` command references under the audited patterns.
+- `_bmad/lens-work/skills/bmad-lens-bmad-skill/SKILL.md` was searched and did not contain direct `git commit` or `git push` command references under the audited patterns.
+- `_bmad/lens-work/skills/bmad-lens-businessplan/SKILL.md` was searched and did not contain direct `git commit` or `git push` command references under the audited patterns.
+- `_bmad/lens-work/skills/bmad-lens-constitution/SKILL.md` was searched and did not contain direct `git commit` or `git push` command references under the audited patterns.
 - `_bmad/lens-work/skills/bmad-lens-init-feature/SKILL.md` was searched and did not contain direct `git commit` or `git push` command references under the audited patterns.
+- `_bmad/lens-work/skills/bmad-lens-preplan/SKILL.md` was searched and did not contain direct `git commit` or `git push` command references under the audited patterns.
 - `_bmad/lens-work/skills/bmad-lens-switch/SKILL.md` was searched and did not contain direct `git commit` or `git push` command references under the audited patterns.
+- `_bmad/lens-work/skills/bmad-lens-techplan/SKILL.md` was searched and did not contain direct `git commit` or `git push` command references under the audited patterns.
 
 ## Sign-Off
 
