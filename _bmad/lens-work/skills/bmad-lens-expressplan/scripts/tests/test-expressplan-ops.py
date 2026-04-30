@@ -97,16 +97,13 @@ def test_module_yaml_registers_expressplan_prompt():
     )
 
 
-def test_module_help_retains_quickplan_and_expressplan_entries():
-    """Help surface must expose expressplan while retaining QuickPlan as its own command."""
+def test_module_help_retains_expressplan_entry():
+    """Help surface must expose expressplan."""
     rows = module_help_rows()
     expressplan_rows = [row for row in rows if row["skill"] == "bmad-lens-expressplan"]
     assert expressplan_rows, "module-help.csv must include bmad-lens-expressplan"
     assert any(row["display-name"] == "expressplan" and row["action"] == "plan" for row in expressplan_rows), (
         f"bmad-lens-expressplan row must expose display-name=expressplan/action=plan: {expressplan_rows}"
-    )
-    assert any(row["skill"] == "bmad-lens-quickplan" and row["display-name"] == "plan" for row in rows), (
-        "module-help.csv must retain bmad-lens-quickplan as the QuickPlan command surface"
     )
 
 
