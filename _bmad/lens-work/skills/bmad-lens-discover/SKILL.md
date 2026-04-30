@@ -163,5 +163,5 @@ Run from the target source repo root:
 
 ```bash
 uv run --with pytest pytest _bmad/lens-work/skills/bmad-lens-discover/scripts/tests/ -q
-uv run _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py --help
+uv run --script _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py --help
 ```
