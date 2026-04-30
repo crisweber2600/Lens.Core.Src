@@ -79,12 +79,12 @@ No `add-entry` calls are made and no governance commit is attempted. If the pre/
 
 ## Script Subcommands
 
-Run script commands with `uv run` from the source repo root.
+Run script commands with `uv run --script` from the source repo root.
 
 ### scan
 
 ```bash
-uv run _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py scan \
+uv run --script _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py scan \
   --inventory-path {inventory_path} \
   --target-root {target_root} \
   --json
@@ -95,7 +95,7 @@ uv run _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py scan \
 ### add-entry
 
 ```bash
-uv run _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py add-entry \
+uv run --script _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py add-entry \
   --inventory-path {inventory_path} \
   --name {repo_name} \
   --remote-url {remote_url} \
@@ -108,7 +108,7 @@ uv run _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py add-ent
 ### validate
 
 ```bash
-uv run _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py validate \
+uv run --script _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py validate \
   --inventory-path {inventory_path} \
   --json
 ```

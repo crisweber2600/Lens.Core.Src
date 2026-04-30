@@ -211,15 +211,19 @@ def scan_inventory(inventory_path: Path, target_root: Path) -> dict[str, Any]:
 
 
 def add_inventory_entry(inventory_path: Path, name: str, remote_url: str, local_path: str | None) -> dict[str, Any]:
+    normalized_name = name.strip()
+    normalized_remote_url = remote_url.strip()
+    normalized_local_path = local_path.strip() if local_path is not None else None
+
     data, entries = read_inventory(inventory_path)
     for entry in entries:
-        if isinstance(entry, dict) and str(entry.get("remote_url") or "").strip() == remote_url:
+        if isinstance(entry, dict) and str(entry.get("remote_url") or "").strip() == normalized_remote_url:
             return {"added": False, "reason": "already_exists"}
 
     new_entry = {
-        "name": name,
-        "remote_url": remote_url,
-        "local_path": local_path or default_local_path(name),
+        "name": normalized_name,
+        "remote_url": normalized_remote_url,
+        "local_path": normalized_local_path or default_local_path(normalized_name),
     }
     canonical_entries = [entry for entry in entries]
     canonical_entries.append(new_entry)
