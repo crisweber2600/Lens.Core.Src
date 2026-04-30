@@ -19,7 +19,7 @@ Before reading config or invoking discover:
 Resolve paths in this order:
 
 1. If `{project-root}/.lens/governance-setup.yaml` exists and contains `governance_repo_path`, use it.
-2. Otherwise read `{project-root}/_bmad/lens-work/bmadconfig.yaml` and use `governance_repo_path`.
+2. Otherwise read `{project-root}/lens.core/_bmad/lens-work/bmadconfig.yaml` and use `governance_repo_path`.
 3. Resolve `target_projects_path` from config when present, otherwise use `{project-root}/TargetProjects`.
 
 If governance config is missing, stop and tell the user to run Lens onboarding or domain/service setup before discover.
