@@ -17,7 +17,7 @@ import os
 import subprocess
 import sys
 import tempfile
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Any
 
 import yaml
@@ -94,7 +94,7 @@ def resolve_inventory_local_path(local_path: str, inventory_path: Path, target_r
 
     project_root = canonical_path(target_root).parent
     if normalized == "TargetProjects" or normalized.startswith("TargetProjects/"):
-        return canonical_path(project_root / Path(PurePosixPath(normalized)))
+        return canonical_path(project_root / Path(normalized))
 
     return canonical_path(inventory_path.parent / candidate)
 
