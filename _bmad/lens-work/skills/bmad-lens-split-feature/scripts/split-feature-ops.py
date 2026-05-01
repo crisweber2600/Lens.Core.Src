@@ -260,16 +260,39 @@ def find_story_file(stories_dir: Path, story_id: str) -> Path | None:
     return None
 
 
+def find_story_file_near_sprint_plan(sprint_plan_path: Path, story_id: str) -> Path | None:
+    search_dirs = [sprint_plan_path.parent, sprint_plan_path.parent / "stories"]
+    suffixes = (".md", ".yaml", ".yml")
+
+    for directory in search_dirs:
+        for suffix in suffixes:
+            candidate = directory / f"{story_id}{suffix}"
+            if candidate.exists():
+                return candidate
+
+        for suffix in suffixes:
+            matches = sorted(path for path in directory.glob(f"{story_id}*{suffix}") if path.is_file())
+            if matches:
+                return matches[0]
+
+    return None
+
+
 def cmd_validate_split(args: argparse.Namespace) -> dict:
     story_ids = parse_story_ids(args.story_ids)
     if not story_ids:
         return fail("story_ids_missing", "No story IDs provided.", eligible=[], blocked=[], blockers=[])
 
+    sprint_plan_path = Path(args.sprint_plan_file)
     sprint_statuses = parse_sprint_plan(args.sprint_plan_file)
     eligible: list[str] = []
     blocked: list[dict[str, str]] = []
     for story_id in story_ids:
         status = sprint_statuses.get(story_id)
+        if status is None:
+            story_file = find_story_file_near_sprint_plan(sprint_plan_path, story_id)
+            if story_file is not None:
+                status = get_story_status_from_file(story_file)
         if is_in_progress_status(status):
             blocked.append({"id": story_id, "reason": IN_PROGRESS_STATUS})
         else:
