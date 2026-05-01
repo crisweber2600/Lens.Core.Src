@@ -63,6 +63,10 @@ DEFAULTS: dict = {
 
 def _validate_slug(value: str, name: str) -> tuple[dict | None, int]:
     """Validate a domain/service/repo slug.  Returns (error_dict, code) on failure, (None, 0) on ok."""
+    if not isinstance(value, str):
+        return {"error": "invalid_slug", "field": name,
+                "detail": f"'{name}' must be a string",
+                "value_type": type(value).__name__}, 1
     if not value or not value.strip():
         return {"error": "invalid_slug", "field": name,
                 "detail": f"'{name}' must not be empty"}, 1
@@ -327,9 +331,19 @@ def cmd_check_compliance(args: argparse.Namespace) -> tuple[dict, int]:
     except yaml.YAMLError as exc:
         return {"error": "feature_yaml_parse_error", "detail": str(exc)}, 1
 
+    if not isinstance(feature_data, dict):
+        return {"error": "feature_yaml_invalid_shape",
+                "detail": "feature.yaml must parse to a mapping"}, 1
+
     domain = feature_data.get("domain")
     service = feature_data.get("service")
     track = feature_data.get("track", "quickplan")
+
+    if not isinstance(track, str):
+        return {"error": "feature_yaml_invalid_field",
+                "field": "track",
+                "detail": "feature.yaml field 'track' must be a string",
+                "value_type": type(track).__name__}, 1
 
     if not domain or not service:
         return {"error": "feature_yaml_missing_fields",

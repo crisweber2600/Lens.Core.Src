@@ -58,7 +58,7 @@ Artifact search checks `{artifact}.md`, `{artifact}.yaml`, and `{artifact}`.
 | Code | Meaning |
 |------|---------|
 | 0 | All checks pass, only informational failures exist, or artifact checks are incomplete because no artifact path was supplied. |
-| 1 | Script/input error, including malformed feature YAML or malformed constitution frontmatter. |
+| 1 | Script/input error, including malformed feature YAML, invalid feature YAML shape or field types, or malformed constitution frontmatter. |
 | 2 | At least one hard-gate compliance failure. |
 
 ## Status Values

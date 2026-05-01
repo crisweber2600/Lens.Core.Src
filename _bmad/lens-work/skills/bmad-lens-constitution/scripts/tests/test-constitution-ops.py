@@ -502,6 +502,24 @@ class TestCheckCompliance:
         out = run(["check-compliance", "--governance-repo", str(gov_repo), "--feature-id", "x", "--feature-yaml", str(fy), "--phase", "planning"], expect_code=1)
         assert out["error"] == "feature_yaml_parse_error"
 
+    def test_compliance_feature_yaml_non_mapping_rejected(self, gov_repo: Path, tmp_path: Path) -> None:
+        fy = tmp_path / "feature.yaml"
+        fy.write_text("- not\n- a\n- mapping\n")
+        out = run(["check-compliance", "--governance-repo", str(gov_repo), "--feature-id", "x", "--feature-yaml", str(fy), "--phase", "planning"], expect_code=1)
+        assert out["error"] == "feature_yaml_invalid_shape"
+
+    def test_compliance_feature_yaml_non_string_domain_rejected(self, gov_repo: Path, tmp_path: Path) -> None:
+        fy = self._make_feature_yaml(tmp_path, {"domain": {"nested": "value"}, "service": "y", "track": "quickplan"})
+        out = run(["check-compliance", "--governance-repo", str(gov_repo), "--feature-id", "x", "--feature-yaml", str(fy), "--phase", "planning"], expect_code=1)
+        assert out["error"] == "invalid_slug"
+        assert out["field"] == "domain"
+
+    def test_compliance_feature_yaml_non_string_track_rejected(self, gov_repo: Path, tmp_path: Path) -> None:
+        fy = self._make_feature_yaml(tmp_path, {"domain": "x", "service": "y", "track": ["express"]})
+        out = run(["check-compliance", "--governance-repo", str(gov_repo), "--feature-id", "x", "--feature-yaml", str(fy), "--phase", "planning"], expect_code=1)
+        assert out["error"] == "feature_yaml_invalid_field"
+        assert out["field"] == "track"
+
     def test_compliance_missing_domain_in_yaml(self, gov_repo: Path, tmp_path: Path) -> None:
         fy = self._make_feature_yaml(tmp_path, {"track": "quickplan"})
         out = run(["check-compliance", "--governance-repo", str(gov_repo), "--feature-id", "x", "--feature-yaml", str(fy), "--phase", "planning"], expect_code=1)
