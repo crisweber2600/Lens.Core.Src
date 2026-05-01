@@ -18,22 +18,38 @@ import yaml
 
 def merge_module_config(module_yaml_path: Path, target_config_path: Path) -> None:
     with open(module_yaml_path, "r", encoding="utf-8") as f:
-        module_config = yaml.safe_load(f)
+        module_config = yaml.safe_load(f) or {}
+
+    if not isinstance(module_config, dict):
+        print(f"❌ module.yaml must contain a YAML mapping, got {type(module_config).__name__}", file=sys.stderr)
+        sys.exit(1)
 
     module_code = module_config.get("code", "lens")
 
     with open(target_config_path, "r", encoding="utf-8") as f:
         target_config = yaml.safe_load(f) or {}
 
+    if not isinstance(target_config, dict):
+        print(f"❌ Target config must contain a YAML mapping, got {type(target_config).__name__}", file=sys.stderr)
+        sys.exit(1)
+
     # Anti-zombie: remove existing module entry
     modules = target_config.get("modules", [])
     if isinstance(modules, list):
-        target_config["modules"] = [
-            m for m in modules if m.get("code") != module_code
-        ]
+        cleaned = []
+        for m in modules:
+            if not isinstance(m, dict):
+                print(f"⚠️  Skipping non-dict entry in modules list: {m!r}", file=sys.stderr)
+                continue
+            if m.get("code") != module_code:
+                cleaned.append(m)
+        target_config["modules"] = cleaned
     elif isinstance(modules, dict):
         modules.pop(module_code, None)
         target_config["modules"] = modules
+    else:
+        # Normalize unexpected types (null, string, etc.) to an empty list
+        target_config["modules"] = []
 
     # Add current module entry
     entry = {

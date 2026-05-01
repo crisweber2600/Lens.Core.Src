@@ -22,22 +22,36 @@ def merge_help_csv(module_csv_path: Path, target_csv_path: Path) -> None:
     # Read module CSV
     with open(module_csv_path, "r", encoding="utf-8", newline="") as f:
         reader = csv.reader(f)
-        module_header = next(reader)
+        try:
+            module_header = next(reader)
+        except StopIteration:
+            print("⚠️ Module CSV is empty — nothing to merge.")
+            return
         module_rows = list(reader)
 
     if not module_rows:
         print("⚠️ Module CSV has no data rows — nothing to merge.")
         return
 
-    # Derive module identifier from first data row (column 0)
-    module_name = module_rows[0][0]
+    # Derive module identifier from first non-empty data row (column 0)
+    first_non_empty = next((row for row in module_rows if row and row[0].strip()), None)
+    if first_non_empty is None:
+        print("⚠️ Module CSV has no non-empty data rows — nothing to merge.")
+        return
+    module_name = first_non_empty[0]
 
     # Read target CSV (or create if empty)
     if target_csv_path.exists():
         with open(target_csv_path, "r", encoding="utf-8", newline="") as f:
             reader = csv.reader(f)
-            target_header = next(reader)
-            target_rows = list(reader)
+            try:
+                target_header = next(reader)
+            except StopIteration:
+                # Target exists but is completely empty — treat as no header/rows
+                target_header = module_header
+                target_rows = []
+            else:
+                target_rows = list(reader)
     else:
         target_header = module_header
         target_rows = []
