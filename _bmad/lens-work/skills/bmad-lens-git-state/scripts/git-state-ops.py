@@ -125,11 +125,17 @@ def run_git_read_only(
             capture_output=True,
             text=True,
             check=False,
+            timeout=30,
         )
     except OSError as exc:
         raise GitStateError("git_unavailable", f"Could not execute git: {exc}") from exc
+    except subprocess.TimeoutExpired as exc:
+        raise GitStateError("git_timeout", f"git {' '.join(args)} timed out after 30s") from exc
     if result.returncode != 0:
-        message = result.stderr.strip() or result.stdout.strip() or f"git {' '.join(args)} failed"
+        if result.stderr.strip():
+            message = f"git {' '.join(args)} failed"
+        else:
+            message = result.stdout.strip() or f"git {' '.join(args)} failed"
         raise GitStateError("git_query_failed", message, git_args=args, repo=str(repo))
     return result
 
@@ -260,10 +266,21 @@ def collect_branch_state(repo: str | os.PathLike[str], *, runner: Runner = subpr
 
 
 def read_yaml_mapping(path: Path) -> dict[str, Any]:
+    MAX_YAML_SIZE = 10_000_000  # 10MB
+    
     try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except (OSError, yaml.YAMLError) as exc:
+        data_bytes = path.read_bytes()
+    except OSError as exc:
         raise GitStateError("yaml_read_failed", f"Could not read {path}: {exc}") from exc
+    
+    if len(data_bytes) > MAX_YAML_SIZE:
+        raise GitStateError("yaml_too_large", f"{path} exceeds {MAX_YAML_SIZE} bytes")
+    
+    try:
+        data = yaml.safe_load(data_bytes.decode("utf-8"))
+    except yaml.YAMLError as exc:
+        raise GitStateError("yaml_parse_failed", f"Could not parse {path}: {exc}") from exc
+    
     if not isinstance(data, dict):
         raise GitStateError("yaml_malformed", f"{path} must contain a YAML mapping")
     return data
@@ -483,6 +500,19 @@ def compare_features_to_branches(
                     branches.get("plan_branches", []),
                     "plan branch is merged or closed before dev starts",
                     f"feature.yaml.phase=dev but plan branch state is still open for {feature_id}.",
+                )
+            )
+
+        if phase != "dev" and branches.get("has_dev_branch"):
+            discrepancies.append(
+                discrepancy(
+                    feature_id,
+                    "feature.yaml.phase",
+                    phase,
+                    "branch_state.dev_branches",
+                    branches.get("dev_branches", []),
+                    "phase must be 'dev' if dev branch exists",
+                    f"feature.yaml.phase={phase} but {feature_id}-dev branch exists.",
                 )
             )
 
