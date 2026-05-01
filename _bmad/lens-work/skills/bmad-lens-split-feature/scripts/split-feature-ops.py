@@ -21,7 +21,7 @@ import yaml
 
 
 SAFE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
-_UNSAFE_STORY_ID_RE = re.compile(r'[/\\*?\[\]]|\.\.')
+UNSAFE_STORY_ID_RE = re.compile(r'[/\\*?\[\]]|\.\.')
 IN_PROGRESS_STATUS = "in-progress"
 
 
@@ -63,7 +63,7 @@ def validate_story_id(story_id: str) -> str | None:
         return "Story ID cannot be empty."
     if os.path.isabs(story_id):
         return f"Invalid story ID '{story_id}': absolute paths are not allowed."
-    if _UNSAFE_STORY_ID_RE.search(story_id):
+    if UNSAFE_STORY_ID_RE.search(story_id):
         return (
             f"Invalid story ID '{story_id}': must not contain path separators, "
             "'..' segments, or glob metacharacters."
@@ -535,7 +535,7 @@ def cmd_move_stories(args: argparse.Namespace) -> dict:
     except OSError as exc:
         return fail("write_failed", f"Cannot create target directory: {exc}", moved=[], total_moved=0)
 
-    conflicts = [move["to"] for move in planned_moves if Path(move["to"]).exists()]
+    conflicts = [dest for move in planned_moves if Path(dest := move["to"]).exists()]
     if conflicts:
         return fail(
             "destination_conflict",
