@@ -4,7 +4,10 @@ description: "LENS lifecycle workbench — feature context switching, initializa
 module_version: "1.0.0"
 standalone: true
 prompts:
+  - lens-preflight.prompt.md
   - lens-complete.prompt.md
+  - lens-constitution.prompt.md
+  - lens-dev.prompt.md
   - lens-discover.prompt.md
   - lens-expressplan.prompt.md
   - lens-new-domain.prompt.md
@@ -15,3 +18,4 @@ prompts:
   - lens-switch.prompt.md
   - lens-techplan.prompt.md
   - lens-finalizeplan.prompt.md
+  - lens-upgrade.prompt.md
