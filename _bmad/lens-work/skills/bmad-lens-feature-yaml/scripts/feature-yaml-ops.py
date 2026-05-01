@@ -300,6 +300,56 @@ def parse_yaml_value(raw: str, field_name: str, expected_type: type) -> Any:
     return value
 
 
+def resolve_feature_index_path(governance_repo: Path) -> Path:
+    return governance_repo / "feature-index.yaml"
+
+
+def sync_feature_index(governance_repo: Path, feature_data: dict[str, Any]) -> dict[str, Any]:
+    feature_id = str(feature_data.get("featureId") or feature_data.get("feature_id") or feature_data.get("id") or "").strip()
+    if not feature_id:
+        raise FeatureYamlError("feature_id_missing", "feature.yaml is missing featureId/feature_id")
+
+    index_path = resolve_feature_index_path(governance_repo)
+    if index_path.exists():
+        index_data = load_yaml_mapping(index_path)
+    else:
+        index_data = {"features": []}
+
+    features = index_data.get("features")
+    if not isinstance(features, list):
+        raise FeatureYamlError("index_malformed", "feature-index.yaml must contain a features list")
+
+    entry = {
+        "id": feature_id,
+        "domain": feature_data.get("domain"),
+        "service": feature_data.get("service"),
+        "phase": feature_data.get("phase"),
+        "track": feature_data.get("track"),
+        "status": feature_data.get("status"),
+    }
+
+    updated = False
+    for idx, candidate in enumerate(features):
+        if not isinstance(candidate, dict):
+            continue
+        candidate_id = str(candidate.get("id") or candidate.get("featureId") or candidate.get("feature_id") or "").strip()
+        if candidate_id == feature_id:
+            features[idx] = {**candidate, **{k: v for k, v in entry.items() if v is not None}}
+            updated = True
+            break
+
+    if not updated:
+        features.append({k: v for k, v in entry.items() if v is not None})
+
+    index_data["features"] = features
+    atomic_write_yaml(index_path, index_data)
+    return {
+        "feature_index_path": str(index_path),
+        "feature_id": feature_id,
+        "updated_existing_entry": updated,
+    }
+
+
 def apply_updates(feature_data: dict[str, Any], args: argparse.Namespace) -> list[str]:
     changed_fields: list[str] = []
     if args.phase is not None and feature_data.get("phase") != args.phase:
@@ -445,14 +495,27 @@ def cmd_update(args: argparse.Namespace) -> dict[str, Any]:
         return phase_error
 
     changed_fields = apply_updates(feature_data, args)
+    sync_result: dict[str, Any] | None = None
     if changed_fields:
         atomic_write_yaml(feature_path, feature_data)
+        if "phase" in changed_fields:
+            governance_repo = resolve_governance_repo(args)
+            sync_result = sync_feature_index(governance_repo, feature_data)
     return {
         "status": "pass",
         "feature_yaml_path": str(feature_path),
         "changed_fields": changed_fields,
+        "feature_index_sync": sync_result,
         "feature": build_read_payload(feature_path, feature_data),
     }
+
+
+def cmd_sync_feature_index(args: argparse.Namespace) -> dict[str, Any]:
+    feature_path = resolve_feature_path(args)
+    governance_repo = resolve_governance_repo(args)
+    feature_data = load_yaml_mapping(feature_path)
+    result = sync_feature_index(governance_repo, feature_data)
+    return {"status": "pass", **result}
 
 
 def cmd_commit_dirty(args: argparse.Namespace) -> dict[str, Any]:
@@ -496,6 +559,9 @@ def build_parser() -> argparse.ArgumentParser:
     update_parser.add_argument("--target-repos", required=False, help="JSON or YAML list for target_repos")
     update_parser.add_argument("--milestones", required=False, help="JSON or YAML mapping for milestones")
 
+    sync_parser = subparsers.add_parser("sync-feature-index", help="Synchronize feature-index.yaml from feature.yaml")
+    add_feature_args(sync_parser)
+
     commit_parser = subparsers.add_parser("commit-dirty", help="Commit and push relevant dirty governance changes")
     commit_parser.add_argument("--governance-repo", required=False, help="Governance repo root path")
     commit_parser.add_argument("--workspace-root", required=False, help="Workspace/project root for config discovery")
@@ -514,6 +580,7 @@ def main() -> None:
         "read": cmd_read,
         "validate": cmd_validate,
         "update": cmd_update,
+        "sync-feature-index": cmd_sync_feature_index,
         "commit-dirty": cmd_commit_dirty,
     }
     try:
