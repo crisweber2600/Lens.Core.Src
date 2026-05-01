@@ -1113,6 +1113,12 @@ def cmd_publish_to_governance(args: argparse.Namespace) -> tuple[dict[str, Any],
         "published_files": published_files,
         "missing_artifacts": missing_artifacts,
         "matched_review_filename": matched_review_filename,
+        "express_review_resolution_order": [
+            "expressplan-adversarial-review.md",
+            "expressplan-review.md",
+        ]
+        if args.phase == "expressplan"
+        else [],
         "dry_run": args.dry_run,
     }, 0
 

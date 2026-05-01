@@ -1217,6 +1217,10 @@ class TestExpressPublishMapping:
         assert (target_root / "sprint-plan.md").exists()
         assert (target_root / "expressplan-review.md").exists()
         assert result["matched_review_filename"] == "expressplan-review.md"
+        assert result["express_review_resolution_order"] == [
+            "expressplan-adversarial-review.md",
+            "expressplan-review.md",
+        ]
 
     def test_express_publish_prefers_current_review_filename_when_both_exist(self, tmp_path):
         governance = tmp_path / "governance"
@@ -1245,6 +1249,7 @@ class TestExpressPublishMapping:
 
         assert code == 0
         assert result["matched_review_filename"] == "expressplan-adversarial-review.md"
+        assert result["express_review_resolution_order"][0] == "expressplan-adversarial-review.md"
 
 
 
