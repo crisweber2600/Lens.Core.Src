@@ -24,3 +24,11 @@ skills:
   - bmad-lens-dev
   - bmad-lens-split-feature
   - bmad-lens-upgrade
+
+# Internal skills are not exposed as public commands or prompt stubs.
+# They are invoked programmatically by other skills only.
+internal_skills:
+  - name: bmad-lens-quickplan
+    classification: internal
+    invoked_by: bmad-lens-bmad-skill
+    description: "Internal express planning pipeline for ExpressPlan. Has no public prompt stub."
