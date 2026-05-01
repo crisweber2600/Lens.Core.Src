@@ -468,6 +468,35 @@ def test_invalid_feature_id_fails_before_lookup(governance_repo):
     assert exit_code != 0
 
 
+def test_feature_id_with_dots_and_underscores_passes_validation(governance_repo):
+    """feature-id containing dots and underscores must pass the regex and proceed to lookup."""
+    # The ID does not exist in the governance repo, so we expect a "not found" error,
+    # not a feature-id validation error — proving the pattern now accepts dots/underscores.
+    payload, exit_code = run_next([
+        "suggest",
+        "--feature-id", "my.feature_id",
+        "--governance-repo", str(governance_repo),
+    ])
+
+    assert payload["status"] == "fail"
+    # Must fail on lookup, not on ID validation
+    assert "feature-id" not in payload["error"]
+    assert exit_code != 0
+
+
+def test_feature_id_ending_with_hyphen_fails_validation(governance_repo):
+    """feature-id ending with a non-alphanumeric character must be rejected."""
+    payload, exit_code = run_next([
+        "suggest",
+        "--feature-id", "bad-feature-",
+        "--governance-repo", str(governance_repo),
+    ])
+
+    assert payload["status"] == "fail"
+    assert "feature-id" in payload["error"]
+    assert exit_code != 0
+
+
 def test_lifecycle_yaml_must_be_mapping(tmp_path):
     """A YAML-valid but non-mapping lifecycle file must fail with a clear error."""
     repo = tmp_path / "governance"

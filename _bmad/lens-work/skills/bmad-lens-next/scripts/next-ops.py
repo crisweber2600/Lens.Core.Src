@@ -118,7 +118,7 @@ def _find_feature_yaml(feature_id: str, governance_repo: Path) -> Path | None:
 
 # Phases that indicate a dependency feature is sufficiently complete to unblock dependents.
 _DEPENDENCY_COMPLETE_PHASES = frozenset(("dev-complete", "complete", "finalizeplan-complete"))
-_FEATURE_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+_FEATURE_ID_RE = re.compile(r"^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$")
 
 
 def _empty_result(phase: str = "", track: str = "") -> dict:
@@ -174,7 +174,8 @@ def suggest(feature_id: str, governance_repo_override: str | None,
 
     if not feature_id or not _FEATURE_ID_RE.fullmatch(feature_id):
         return _fail_result(
-            "feature-id must be lowercase alphanumeric plus hyphens and cannot be empty"
+            "feature-id must be lowercase alphanumeric with optional dots, underscores, or hyphens, "
+            "start and end with an alphanumeric character, and cannot be empty"
         )
 
     # --- Resolve governance repo ---
