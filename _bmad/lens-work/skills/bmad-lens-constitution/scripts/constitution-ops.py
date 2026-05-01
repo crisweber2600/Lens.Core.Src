@@ -28,7 +28,7 @@ import yaml
 # Constants
 # ---------------------------------------------------------------------------
 
-VALID_TRACKS = {"quickplan", "full", "hotfix", "tech-change"}
+VALID_TRACKS = {"quickplan", "full", "express", "hotfix", "tech-change"}
 VALID_PHASES = {"planning", "dev", "complete"}
 VALID_GATE_MODES = {"informational", "hard"}
 KNOWN_CONSTITUTION_KEYS = frozenset({
@@ -44,7 +44,7 @@ _SLUG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 _FM_DELIM = re.compile(r"^---\s*$", re.MULTILINE)
 
 DEFAULTS: dict = {
-    "permitted_tracks": ["quickplan", "full", "hotfix", "tech-change"],
+    "permitted_tracks": ["quickplan", "full", "express", "hotfix", "tech-change"],
     "required_artifacts": {
         "planning": ["business-plan", "tech-plan"],
         "dev": ["stories"],
@@ -87,15 +87,16 @@ def _assert_within(candidate: Path, base: Path) -> bool:
 # ---------------------------------------------------------------------------
 
 
-def load_constitution(path: Path) -> dict:
+def load_constitution(path: Path) -> dict | None:
     """Parse YAML frontmatter from a constitution.md file.
 
-    Returns {} if the file does not exist or has no frontmatter.
-    Returns {"_parse_error": str(path)} on YAML parse failure.
+    Returns None if the file does not exist.
+    Returns {} if the file exists but has no frontmatter.
+    Returns {"_parse_error": str(exc), "_parse_error_path": str(path)} on YAML parse failure.
     Includes {"_unknown_keys": [...]} alongside parsed data when unknown keys are found.
     """
     if not path.exists():
-        return {}
+        return None
 
     text = path.read_text(encoding="utf-8")
     # Use regex split so `---` embedded in YAML values is not treated as a delimiter
@@ -108,8 +109,8 @@ def load_constitution(path: Path) -> dict:
         data = yaml.safe_load(parts[1])
         if not isinstance(data, dict):
             return {}
-    except yaml.YAMLError:
-        return {"_parse_error": str(path)}
+    except yaml.YAMLError as exc:
+        return {"_parse_error": str(exc), "_parse_error_path": str(path)}
 
     unknown = set(data.keys()) - KNOWN_CONSTITUTION_KEYS
     if unknown:
@@ -133,6 +134,13 @@ def merge_constitutions(levels: list[dict]) -> tuple[dict, list[dict]]:
     result = copy.deepcopy(DEFAULTS)
     warnings: list[dict] = []
 
+    if not levels:
+        warnings.append({
+            "type": "no_levels_loaded",
+            "detail": "No constitution levels found; using defaults",
+        })
+        return result, warnings
+
     for level in levels:
         if not level:
             continue
@@ -144,8 +152,9 @@ def merge_constitutions(levels: list[dict]) -> tuple[dict, list[dict]]:
                 if unknown_tracks:
                     warnings.append({"type": "unknown_tracks",
                                      "detail": f"Unknown track values ignored: {unknown_tracks}"})
+                valid_incoming = [t for t in incoming if t in VALID_TRACKS]
                 result["permitted_tracks"] = [
-                    t for t in result["permitted_tracks"] if t in incoming
+                    t for t in result["permitted_tracks"] if t in valid_incoming
                 ]
 
         if "required_artifacts" in level:
@@ -260,36 +269,29 @@ def cmd_resolve(args: argparse.Namespace) -> tuple[dict, int]:
 
     levels_loaded: list[str] = []
     level_data: list[dict] = []
-    parse_errors: list[dict] = []
+    all_warnings: list[dict] = []
 
     for level_name, path in level_specs:
         data = load_constitution(path)
+        if data is None:
+            all_warnings.append({
+                "type": "level_absent",
+                "level": level_name,
+                "path": str(path),
+                "detail": f"{level_name} constitution is absent; continuing with available levels and defaults",
+            })
+            continue
         if "_parse_error" in data:
-            # Org parse error is fatal — governance cannot be resolved without it
-            if level_name == "org":
-                return {
-                    "error": "org_constitution_parse_error",
-                    "path": str(path),
-                    "detail": "org/constitution.md has invalid YAML frontmatter — fix it to restore governance",
-                }, 1
-            parse_errors.append({"level": level_name, "path": str(path)})
-            data = {}
-        if path.exists():
-            levels_loaded.append(level_name)
+            return {
+                "error": "constitution_parse_error",
+                "level": level_name,
+                "path": data.get("_parse_error_path", str(path)),
+                "detail": data["_parse_error"],
+            }, 1
+        levels_loaded.append(level_name)
         level_data.append(data)
 
-    if "org" not in levels_loaded:
-        return {
-            "error": "org_constitution_missing",
-            "path": str(constitutions_path / "org" / "constitution.md"),
-            "detail": "org/constitution.md is required — create it to define org-level defaults",
-        }, 1
-
     merged, merge_warnings = merge_constitutions(level_data)
-
-    all_warnings: list[dict] = []
-    if parse_errors:
-        all_warnings.extend({"type": "parse_error", **e} for e in parse_errors)
     all_warnings.extend(merge_warnings)
 
     result: dict = {
@@ -298,6 +300,7 @@ def cmd_resolve(args: argparse.Namespace) -> tuple[dict, int]:
         "repo": getattr(args, "repo", None) or None,
         "levels_loaded": levels_loaded,
         "resolved_constitution": merged,
+        "full_constitution_available": "org" in levels_loaded,
     }
     if all_warnings:
         result["warnings"] = all_warnings
@@ -367,6 +370,7 @@ def cmd_check_compliance(args: argparse.Namespace) -> tuple[dict, int]:
 
     if track in permitted:
         checks.append({"requirement": req_label, "status": "PASS",
+                        "gate": gate,
                         "detail": "Track permitted by constitution"})
     else:
         checks.append({"requirement": req_label, "status": "FAIL", "gate": gate,
@@ -382,6 +386,7 @@ def cmd_check_compliance(args: argparse.Namespace) -> tuple[dict, int]:
         req_label = f"Artifact '{artifact}' present for phase '{phase}'"
         if artifacts_path is None:
             checks.append({"requirement": req_label, "status": "SKIP",
+                            "gate": gate,
                             "detail": "No --artifacts-path provided — artifact check skipped"})
             skipped_artifact_count += 1
             continue
@@ -409,11 +414,36 @@ def cmd_check_compliance(args: argparse.Namespace) -> tuple[dict, int]:
         req_label = "Reviewers configured (enforce_review=true)"
         if participants:
             checks.append({"requirement": req_label, "status": "PASS",
+                            "gate": gate,
                             "detail": f"Reviewers: {', '.join(str(p) for p in participants)}"})
         else:
             checks.append({"requirement": req_label, "status": "FAIL", "gate": gate,
                             "detail": "enforce_review=true but additional_review_participants is empty in constitution"})
             (hard_failures if gate == "hard" else informational_failures).append(req_label)
+
+    # ---- Check: enforce_stories (dev stories artifact must exist) ------------
+    if phase == "dev" and constitution.get("enforce_stories"):
+        req_label = "Stories artifact present (enforce_stories=true)"
+        if artifacts_path is None:
+            if not any(check["requirement"] == req_label for check in checks):
+                checks.append({"requirement": req_label, "status": "SKIP",
+                                "gate": gate,
+                                "detail": "No --artifacts-path provided — stories check skipped"})
+                skipped_artifact_count += 1
+        else:
+            candidate_paths = [
+                artifacts_path / "stories.md",
+                artifacts_path / "stories.yaml",
+                artifacts_path / "stories",
+            ]
+            found = any(p.exists() for p in candidate_paths)
+            if not any(check["requirement"] == req_label for check in checks):
+                checks.append({"requirement": req_label,
+                                "status": "PASS" if found else "FAIL",
+                                "gate": gate,
+                                "detail": "Found stories artifact" if found else "Missing stories artifact"})
+                if not found:
+                    (hard_failures if gate == "hard" else informational_failures).append(req_label)
 
     # Determine overall status
     if skipped_artifact_count > 0 and not hard_failures:
@@ -433,10 +463,20 @@ def cmd_check_compliance(args: argparse.Namespace) -> tuple[dict, int]:
         "track": track,
         "phase": phase,
         "status": overall_status,
+        "compliance_summary": overall_status,
+        "constitution_scope": {
+            "domain": domain,
+            "service": service,
+            "repo": getattr(args, "repo", None) or None,
+            "levels_loaded": resolved.get("levels_loaded", []),
+        },
         "checks": checks,
+        "hard_failures": hard_failures,
         "hard_gate_failures": hard_failures,
         "informational_failures": informational_failures,
     }
+    if resolved.get("warnings"):
+        result["warnings"] = resolved["warnings"]
     if skipped_artifact_count:
         result["skipped_artifact_count"] = skipped_artifact_count
 
@@ -489,6 +529,7 @@ def cmd_progressive_display(args: argparse.Namespace) -> tuple[dict, int]:
         "enforce_review": constitution.get("enforce_review", False),
         # full_constitution_available: true only if org level was loaded successfully
         "full_constitution_available": "org" in resolved["levels_loaded"],
+        "sensing_gate_mode": constitution.get("sensing_gate_mode", "informational"),
     }
 
     if phase:

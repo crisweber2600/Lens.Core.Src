@@ -64,6 +64,14 @@ def write_feature_yaml(path: Path, data: dict) -> None:
     path.write_text(yaml.dump(data), encoding="utf-8")
 
 
+def snapshot_tree(path: Path) -> dict[str, bytes]:
+    return {
+        str(item.relative_to(path)): item.read_bytes()
+        for item in sorted(path.rglob("*"))
+        if item.is_file()
+    }
+
+
 @pytest.fixture
 def gov_repo(tmp_path: Path) -> Path:
     """Minimal governance repo with only an org constitution."""
@@ -106,8 +114,8 @@ def full_gov_repo(tmp_path: Path) -> Path:
 
 
 class TestLoadConstitution:
-    def test_missing_file_returns_empty(self, ops, tmp_path: Path) -> None:
-        assert ops.load_constitution(tmp_path / "missing.md") == {}
+    def test_missing_file_returns_none(self, ops, tmp_path: Path) -> None:
+        assert ops.load_constitution(tmp_path / "missing.md") is None
 
     def test_file_without_frontmatter_returns_empty(self, ops, tmp_path: Path) -> None:
         f = tmp_path / "constitution.md"
@@ -159,8 +167,9 @@ class TestMergeConstitutions:
         return ops.merge_constitutions(levels)
 
     def test_empty_levels_returns_defaults(self, ops) -> None:
-        result, _ = self._merge(ops, [])
-        assert set(result["permitted_tracks"]) == {"quickplan", "full", "hotfix", "tech-change"}
+        result, warnings = self._merge(ops, [])
+        assert set(result["permitted_tracks"]) == {"quickplan", "full", "express", "hotfix", "tech-change"}
+        assert any(w["type"] == "no_levels_loaded" for w in warnings)
 
     def test_tracks_intersection(self, ops) -> None:
         result, _ = self._merge(ops, [
@@ -263,7 +272,21 @@ class TestMergeConstitutions:
     def test_invalid_permitted_tracks_type_ignored(self, ops) -> None:
         result, _ = self._merge(ops, [{"permitted_tracks": "all"}])
         # String type — ignored, defaults preserved
-        assert set(result["permitted_tracks"]) == {"quickplan", "full", "hotfix", "tech-change"}
+        assert set(result["permitted_tracks"]) == {"quickplan", "full", "express", "hotfix", "tech-change"}
+
+    def test_express_track_intersection_preserved(self, ops) -> None:
+        result, _ = self._merge(ops, [
+            {"permitted_tracks": ["quickplan", "full", "express"]},
+            {"permitted_tracks": ["express", "full"]},
+        ])
+        assert set(result["permitted_tracks"]) == {"express", "full"}
+
+    def test_sensing_gate_mode_strongest_wins(self, ops) -> None:
+        result, _ = self._merge(ops, [
+            {"sensing_gate_mode": "informational"},
+            {"sensing_gate_mode": "hard"},
+        ])
+        assert result["sensing_gate_mode"] == "hard"
 
     def test_invalid_artifacts_type_ignored(self, ops) -> None:
         result, _ = self._merge(ops, [{"required_artifacts": ["stories"]}])
@@ -341,15 +364,21 @@ class TestResolve:
 
     def test_resolve_missing_org_constitution(self, tmp_path: Path) -> None:
         (tmp_path / "constitutions").mkdir()
-        out = run(["resolve", "--governance-repo", str(tmp_path), "--domain", "x", "--service", "y"], expect_code=1)
-        assert out["error"] == "org_constitution_missing"
+        out = run(["resolve", "--governance-repo", str(tmp_path), "--domain", "x", "--service", "y"], expect_code=0)
+        assert out["levels_loaded"] == []
+        assert out["full_constitution_available"] is False
+        warning_types = [w["type"] for w in out.get("warnings", [])]
+        assert "level_absent" in warning_types
+        assert "no_levels_loaded" in warning_types
 
     def test_resolve_org_parse_error_is_hard_failure(self, tmp_path: Path) -> None:
         bad = tmp_path / "constitutions" / "org" / "constitution.md"
         bad.parent.mkdir(parents=True)
         bad.write_text("---\n: [broken yaml\n---\n")
         out = run(["resolve", "--governance-repo", str(tmp_path), "--domain", "x", "--service", "y"], expect_code=1)
-        assert out["error"] == "org_constitution_parse_error"
+        assert out["error"] == "constitution_parse_error"
+        assert out["level"] == "org"
+        assert "detail" in out
 
     def test_resolve_three_levels(self, full_gov_repo: Path) -> None:
         out = run(["resolve", "--governance-repo", str(full_gov_repo), "--domain", "platform", "--service", "auth"])
@@ -382,14 +411,14 @@ class TestResolve:
         bad = gov_repo / "constitutions" / "platform" / "constitution.md"
         bad.parent.mkdir(parents=True, exist_ok=True)
         bad.write_text("---\n: [broken yaml\n---\n")
-        out = run(["resolve", "--governance-repo", str(gov_repo), "--domain", "platform", "--service", "auth"])
-        warnings = out.get("warnings", [])
-        assert any(w["type"] == "parse_error" for w in warnings)
+        out = run(["resolve", "--governance-repo", str(gov_repo), "--domain", "platform", "--service", "auth"], expect_code=1)
+        assert out["error"] == "constitution_parse_error"
+        assert out["level"] == "domain"
 
     def test_resolve_returns_all_default_fields(self, gov_repo: Path) -> None:
         out = run(["resolve", "--governance-repo", str(gov_repo), "--domain", "x", "--service", "y"])
         const = out["resolved_constitution"]
-        for field in ("permitted_tracks", "required_artifacts", "gate_mode",
+        for field in ("permitted_tracks", "required_artifacts", "gate_mode", "sensing_gate_mode",
                       "additional_review_participants", "enforce_stories", "enforce_review"):
             assert field in const
 
@@ -400,6 +429,28 @@ class TestResolve:
     def test_resolve_path_traversal_service_rejected(self, gov_repo: Path) -> None:
         out = run(["resolve", "--governance-repo", str(gov_repo), "--domain", "x", "--service", "../../../tmp"], expect_code=1)
         assert "error" in out
+
+    def test_resolve_path_traversal_repo_rejected(self, gov_repo: Path) -> None:
+        out = run(["resolve", "--governance-repo", str(gov_repo), "--domain", "x", "--service", "y", "--repo", "../bad"], expect_code=1)
+        assert out["error"] == "invalid_slug"
+
+    def test_resolve_empty_hierarchy_uses_defaults_with_warnings(self, tmp_path: Path) -> None:
+        (tmp_path / "constitutions").mkdir()
+        out = run(["resolve", "--governance-repo", str(tmp_path), "--domain", "x", "--service", "y"], expect_code=0)
+        assert out["resolved_constitution"]["gate_mode"] == "informational"
+        assert out["resolved_constitution"]["sensing_gate_mode"] == "informational"
+        assert any(w["type"] == "no_levels_loaded" for w in out["warnings"])
+
+    def test_resolve_sparse_domain_service_hierarchy(self, tmp_path: Path) -> None:
+        (tmp_path / "constitutions").mkdir()
+        write_constitution(tmp_path / "constitutions" / "platform" / "auth" / "constitution.md", {
+            "permitted_tracks": ["express", "full"],
+            "gate_mode": "hard",
+        })
+        out = run(["resolve", "--governance-repo", str(tmp_path), "--domain", "platform", "--service", "auth"], expect_code=0)
+        assert out["levels_loaded"] == ["service"]
+        assert out["resolved_constitution"]["gate_mode"] == "hard"
+        assert set(out["resolved_constitution"]["permitted_tracks"]) == {"express", "full"}
 
     def test_resolve_empty_permitted_tracks_warning(self, tmp_path: Path) -> None:
         write_constitution(
@@ -476,6 +527,26 @@ class TestCheckCompliance:
                    "--feature-yaml", str(fy), "--phase", "planning"], expect_code=2)
         assert out["status"] == "FAIL"
         assert len(out["hard_gate_failures"]) == 1
+        assert out["hard_failures"] == out["hard_gate_failures"]
+
+    def test_compliance_express_track_passes_when_permitted(self, tmp_path: Path) -> None:
+        gov = tmp_path / "gov"
+        write_constitution(gov / "constitutions" / "org" / "constitution.md",
+                           {"permitted_tracks": ["express", "full"]})
+        fy = tmp_path / "feature.yaml"
+        write_feature_yaml(fy, {"domain": "x", "service": "y", "track": "express"})
+        artifacts = tmp_path / "artifacts"
+        artifacts.mkdir()
+        (artifacts / "business-plan.md").write_text("content")
+        (artifacts / "tech-plan.md").write_text("content")
+        out = run([
+            "check-compliance", "--governance-repo", str(gov),
+            "--feature-id", "feat", "--feature-yaml", str(fy),
+            "--artifacts-path", str(artifacts), "--phase", "planning",
+        ], expect_code=0)
+        assert out["track"] == "express"
+        track_check = next(c for c in out["checks"] if c["requirement"] == "Track 'express' permitted")
+        assert track_check["status"] == "PASS"
 
     def test_compliance_artifacts_pass_when_present(self, full_gov_repo: Path, tmp_path: Path) -> None:
         fy = self._make_feature_yaml(tmp_path, {"domain": "platform", "service": "auth", "track": "full"})
@@ -620,6 +691,14 @@ class TestCheckCompliance:
         if review_check:
             assert review_check["status"] == "PASS"
 
+    def test_compliance_read_operations_do_not_write_files(self, gov_repo: Path, tmp_path: Path) -> None:
+        fy = self._make_feature_yaml(tmp_path, {"domain": "x", "service": "y", "track": "quickplan"})
+        before = snapshot_tree(gov_repo)
+        run(["resolve", "--governance-repo", str(gov_repo), "--domain", "x", "--service", "y"], expect_code=0)
+        run(["progressive-display", "--governance-repo", str(gov_repo), "--domain", "x", "--service", "y"], expect_code=0)
+        run(["check-compliance", "--governance-repo", str(gov_repo), "--feature-id", "feat", "--feature-yaml", str(fy), "--phase", "planning"], expect_code=0)
+        assert snapshot_tree(gov_repo) == before
+
 
 # ---------------------------------------------------------------------------
 # Integration tests: progressive-display subcommand
@@ -641,9 +720,10 @@ class TestProgressiveDisplay:
         assert out["full_constitution_available"] is True
 
     def test_display_full_constitution_available_false_when_org_missing(self, tmp_path: Path) -> None:
-        # No org constitution — should fail (org is required) so this tests error propagation
-        out = run(["progressive-display", "--governance-repo", str(tmp_path), "--domain", "x", "--service", "y"], expect_code=1)
-        assert "error" in out
+        (tmp_path / "constitutions").mkdir()
+        out = run(["progressive-display", "--governance-repo", str(tmp_path), "--domain", "x", "--service", "y"], expect_code=0)
+        assert out["full_constitution_available"] is False
+        assert any(w["type"] == "level_absent" for w in out.get("warnings", []))
 
     def test_display_with_phase(self, full_gov_repo: Path) -> None:
         out = run(["progressive-display", "--governance-repo", str(full_gov_repo), "--domain", "platform", "--service", "auth", "--phase", "planning"])
@@ -658,6 +738,13 @@ class TestProgressiveDisplay:
     def test_display_with_track_not_permitted(self, full_gov_repo: Path) -> None:
         out = run(["progressive-display", "--governance-repo", str(full_gov_repo), "--domain", "platform", "--service", "auth", "--track", "hotfix"])
         assert out["track_permitted"] is False
+
+    def test_display_with_express_track(self, tmp_path: Path) -> None:
+        write_constitution(tmp_path / "constitutions" / "org" / "constitution.md",
+                           {"permitted_tracks": ["express", "full"]})
+        out = run(["progressive-display", "--governance-repo", str(tmp_path), "--domain", "x", "--service", "y", "--track", "express"])
+        assert out["track_permitted"] is True
+        assert "express" in out["permitted_tracks"]
 
     def test_display_both_phase_and_track(self, full_gov_repo: Path) -> None:
         out = run(["progressive-display", "--governance-repo", str(full_gov_repo), "--domain", "platform", "--service", "auth", "--phase", "planning", "--track", "quickplan"])
