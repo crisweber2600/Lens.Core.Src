@@ -1,8 +1,8 @@
 code: "lens"
 name: "Lens Workbench"
 description: "LENS lifecycle workbench — feature context switching, initialization, planning, and governance."
-module_version: "1.0.0"
-standalone: true
+module_version: "5.4.30"
+type: standalone
 prompts:
   - lens-preflight.prompt.md
   - lens-complete.prompt.md
@@ -19,10 +19,30 @@ prompts:
   - lens-techplan.prompt.md
   - lens-finalizeplan.prompt.md
   - lens-upgrade.prompt.md
+  - lens-businessplan.prompt.md
+  - lens-preplan.prompt.md
 skills:
+  - bmad-lens-adversarial-review
+  - bmad-lens-batch
+  - bmad-lens-bmad-skill
+  - bmad-lens-businessplan
+  - bmad-lens-complete
   - bmad-lens-constitution
   - bmad-lens-dev
+  - bmad-lens-discover
+  - bmad-lens-expressplan
+  - bmad-lens-feature-yaml
+  - bmad-lens-finalizeplan
+  - bmad-lens-git-orchestration
+  - bmad-lens-git-state
+  - bmad-lens-init-feature
+  - bmad-lens-new-domain
+  - bmad-lens-next
+  - bmad-lens-preflight
+  - bmad-lens-preplan
   - bmad-lens-split-feature
+  - bmad-lens-switch
+  - bmad-lens-techplan
   - bmad-lens-upgrade
   # DEFERRED: bmad-lens-document-project — skill absent in new-codebase.
   # Full specification available in old-codebase: skills/bmad-lens-document-project/SKILL.md.
