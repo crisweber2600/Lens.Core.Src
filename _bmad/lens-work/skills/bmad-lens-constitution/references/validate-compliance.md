@@ -1,76 +1,6 @@
 # Validate Compliance
 
-Checks a feature against its resolved constitution, producing a per-check PASS/FAIL report with gate severity.
-
-## When to Use
-
-- At plan-commit time (before promoting to dev)
-- At feature completion (before archiving)
-- On demand when a developer asks "am I compliant?"
-
-## Required Context
-
-- Governance repo path (local checkout, constitution files on `main`)
-- Feature ID
-- Path to `feature.yaml` (caller extracts via `git show origin/{featureId}-plan:feature.yaml` if needed)
-- Path to feature's artifacts directory (caller extracts if needed)
-- Phase to check against: `planning` | `dev` | `complete`
-
-## Caller Responsibility
-
-The script checks local filesystem paths. If artifacts live on a `featureId-plan` branch, the caller must extract them first:
-
-```bash
-# Extract feature.yaml to a temp file
-git show origin/my-feature-plan:feature.yaml > /tmp/my-feature.yaml
-
-# Extract artifacts to a temp dir
-mkdir -p /tmp/my-feature-artifacts
-git show origin/my-feature-plan:planning/business-plan.md > /tmp/my-feature-artifacts/business-plan.md
-```
-
-Then pass those paths to the script.
-
-## Output
-
-```json
-{
-  "feature_id": "auth-sso",
-  "domain": "platform",
-  "service": "auth",
-  "track": "full",
-  "phase": "planning",
-  "status": "PASS",
-  "skipped_artifact_count": 0,
-  "checks": [
-    {
-      "requirement": "Track 'full' permitted",
-      "status": "PASS",
-      "detail": "Track permitted by constitution"
-    },
-    {
-      "requirement": "Artifact 'business-plan' present for phase 'planning'",
-      "status": "PASS",
-      "gate": "informational",
-      "detail": "Found: /tmp/my-feature-artifacts/business-plan.md"
-    },
-    {
-      "requirement": "Artifact 'tech-plan' present for phase 'planning'",
-      "status": "FAIL",
-      "gate": "informational",
-      "detail": "Missing: /tmp/my-feature-artifacts/tech-plan.md"
-    },
-    {
-      "requirement": "Reviewers configured (enforce_review=true)",
-      "status": "PASS",
-      "gate": "informational",
-      "detail": "additional_review_participants: ['security-team']"
-    }
-  ],
-  "hard_gate_failures": [],
-  "informational_failures": ["Artifact 'tech-plan' present for phase 'planning'"]
-}
-```
+Checks a feature against its resolved constitution. The command reads a local `feature.yaml`, optional artifact directory, and the governance constitution hierarchy. It never writes governance state, feature state, or artifacts.
 
 ## Script Usage
 
@@ -83,40 +13,62 @@ uv run scripts/constitution-ops.py check-compliance \
   --phase planning
 ```
 
+`--phase` must be one of `planning`, `dev`, or `complete`.
+
+## Output Shape
+
+```json
+{
+  "feature_id": "auth-sso",
+  "domain": "platform",
+  "service": "auth",
+  "track": "express",
+  "phase": "planning",
+  "status": "PASS",
+  "compliance_summary": "PASS",
+  "constitution_scope": {
+    "domain": "platform",
+    "service": "auth",
+    "repo": null,
+    "levels_loaded": ["org", "domain"]
+  },
+  "checks": [],
+  "hard_failures": [],
+  "hard_gate_failures": [],
+  "informational_failures": [],
+  "warnings": []
+}
+```
+
+`hard_gate_failures` remains as a compatibility alias for older callers. New callers may use `hard_failures`.
+
+## Checks Performed
+
+| Check | Condition |
+|-------|-----------|
+| Track permitted | Feature `track` must be in resolved `permitted_tracks`, including `express` when permitted. |
+| Required artifacts | Every artifact in `required_artifacts[phase]` must exist when `--artifacts-path` is supplied. |
+| Review enforcement | If `enforce_review=true`, `additional_review_participants` must be non-empty. |
+| Stories enforcement | If `enforce_stories=true` in dev phase, a stories artifact must be present. |
+
+Artifact search checks `{artifact}.md`, `{artifact}.yaml`, and `{artifact}`.
+
 ## Exit Codes
 
 | Code | Meaning |
 |------|---------|
-| 0 | All checks pass (or only informational failures) |
-| 0 | INCOMPLETE — artifacts skipped (no `--artifacts-path` provided but some required) |
-| 1 | Script error (bad input, missing files, parse error) |
-| 2 | Hard gate failure — workflow should block |
+| 0 | All checks pass, only informational failures exist, or artifact checks are incomplete because no artifact path was supplied. |
+| 1 | Script/input error, including malformed feature YAML or malformed constitution frontmatter. |
+| 2 | At least one hard-gate compliance failure. |
 
 ## Status Values
 
 | Status | Meaning |
 |--------|---------|
-| `PASS` | All checks passed (or all failures are informational and gate is informational) |
-| `INCOMPLETE` | Required artifact checks were skipped because `--artifacts-path` was not provided |
-| `FAIL` | One or more hard-gate checks failed |
+| `PASS` | All checks passed or all failures are informational. |
+| `INCOMPLETE` | Required artifact checks were skipped because no `--artifacts-path` was provided. |
+| `FAIL` | At least one hard-gate check failed. |
 
-## Checks Performed
+## Sparse Hierarchies
 
-| Check | Always run | Condition |
-|-------|-----------|-----------|
-| Track permitted | Yes | Fails if feature's track not in `permitted_tracks` |
-| Artifacts present | Only when `--artifacts-path` provided | SKIP when path not provided |
-| `enforce_review` | When `enforce_review=true` in constitution | Fails if `additional_review_participants` is empty |
-
-## Artifact Search
-
-The script looks for each required artifact in `--artifacts-path` by checking three possible names (in order):
-1. `{artifact}.md`
-2. `{artifact}.yaml`
-3. `{artifact}` (bare, no extension)
-
-## Presenting Results
-
-- **All PASS** → "Your feature satisfies all governance requirements for the `planning` phase."
-- **Informational failures** → "The following are recommended but won't block your workflow: ..."
-- **Hard failures** → "The following requirements must be satisfied before promotion: ..."
+Compliance reuses `resolve`; missing constitution levels are carried into the compliance payload as warnings. Missing levels do not fail compliance by themselves.
