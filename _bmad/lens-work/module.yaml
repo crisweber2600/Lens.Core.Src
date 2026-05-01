@@ -7,4 +7,5 @@ prompts:
   - lens-new-domain.prompt.md
   - lens-new-service.prompt.md
   - lens-switch.prompt.md
+  - lens-expressplan.prompt.md
   - lens-techplan.prompt.md
