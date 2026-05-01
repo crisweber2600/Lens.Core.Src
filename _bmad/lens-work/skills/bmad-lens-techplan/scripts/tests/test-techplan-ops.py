@@ -57,8 +57,8 @@ def test_stub_exists():
 def test_stub_preflight_then_release_prompt():
     """Stub must run preflight before loading the release prompt, and must stop on failure."""
     text = read_text(STUB_PROMPT)
-    preflight = "uv run ./lens.core/_bmad/lens-work/scripts/light-preflight.py"
-    release = "lens.core/_bmad/lens-work/prompts/lens-techplan.prompt.md"
+    preflight = "uv run _bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py"
+    release = "_bmad/lens-work/prompts/lens-techplan.prompt.md"
     assert preflight in text, f"Stub missing preflight command: {preflight!r}"
     assert release in text, f"Stub missing release prompt reference: {release!r}"
     assert text.index(preflight) < text.index(release), (

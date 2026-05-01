@@ -70,7 +70,10 @@ Based on `outputMode`:
 
 - **`planning-docs`**:
   ```
-  output_path = docs_path ?? "{output_folder}/planning-artifacts"
+  # Precedence: caller-supplied --output-path wins first.
+  # Then feature.yaml docs.path override.
+  # Finally module default fallback.
+  output_path = caller_output_path ?? docs_path ?? "{output_folder}/planning-artifacts"
   planning_artifacts = output_path
   write_scope = output_path
   ```
@@ -80,10 +83,17 @@ Based on `outputMode`:
 
 - **`implementation-target`**:
   ```
-  output_path = target_repo_path ?? "{output_folder}/implementation-artifacts"
+  # Precedence: caller-supplied --output-path wins first.
+  # Then feature.yaml target repo override.
+  # Finally module default fallback.
+  output_path = caller_output_path ?? target_repo_path ?? "{output_folder}/implementation-artifacts"
   write_scope = target_repo_path
   ```
   Blocked: `{release_repo_root}/`, `.github/`, governance metadata (unless explicitly required)
+
+At each precedence decision point, construct and normalize paths with `pathlib.Path` semantics for Windows and POSIX safety. Do not concatenate path strings manually.
+
+Never resolve output paths silently. Log the final resolved output path and the winning source (`caller`, `feature-yaml`, or `module-default`) before delegation.
 
 ### Step 3 — Constitutional Context
 

@@ -184,8 +184,8 @@ FEATURE = {
 
 def test_stub_preflight_then_release_prompt():
     text = read_text(STUB_PROMPT)
-    preflight = "uv run ./lens.core/_bmad/lens-work/scripts/light-preflight.py"
-    release = "lens.core/_bmad/lens-work/prompts/lens-switch.prompt.md"
+    preflight = "uv run _bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py"
+    release = "_bmad/lens-work/prompts/lens-switch.prompt.md"
     assert preflight in text
     assert release in text
     assert text.index(preflight) < text.index(release)
