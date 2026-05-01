@@ -5,7 +5,7 @@ description: 'Run the next command — resolve and delegate to the current featu
 Run preflight gate first:
 
 ```bash
-uv run _bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py
+uv run _bmad/lens-work/lens-preflight/scripts/light-preflight.py
 ```
 
 If that command exits non-zero, stop and surface the failure.

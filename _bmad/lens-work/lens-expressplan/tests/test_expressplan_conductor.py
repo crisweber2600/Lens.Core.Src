@@ -8,9 +8,9 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).parent.parent.parent.parent.parent.parent
-EXPRESS_SKILL = REPO_ROOT / "_bmad/lens-work/skills/bmad-lens-expressplan/SKILL.md"
-QUICKPLAN_SKILL = REPO_ROOT / "_bmad/lens-work/skills/bmad-lens-quickplan/SKILL.md"
-WRAPPER_SKILL = REPO_ROOT / "_bmad/lens-work/skills/bmad-lens-bmad-skill/SKILL.md"
+EXPRESS_SKILL = REPO_ROOT / "_bmad/lens-work/lens-expressplan/SKILL.md"
+QUICKPLAN_SKILL = REPO_ROOT / "_bmad/lens-work/lens-quickplan/SKILL.md"
+WRAPPER_SKILL = REPO_ROOT / "_bmad/lens-work/lens-bmad-skill/SKILL.md"
 WRAPPER_REGISTRY = REPO_ROOT / "_bmad/lens-work/assets/lens-bmad-skill-registry.json"
 MODULE_YAML = REPO_ROOT / "_bmad/lens-work/module.yaml"
 MODULE_HELP = REPO_ROOT / "_bmad/lens-work/module-help.csv"

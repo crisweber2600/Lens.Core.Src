@@ -7,7 +7,7 @@
 
 Run:
     cd TargetProjects/lens-dev/new-codebase/lens.core.src
-    uv run --with pytest pytest _bmad/lens-work/skills/bmad-lens-techplan/scripts/tests/test-techplan-ops.py -q
+    uv run --with pytest pytest _bmad/lens-work/lens-techplan/scripts/tests/test-techplan-ops.py -q
 """
 
 from pathlib import Path
@@ -17,7 +17,7 @@ import yaml
 
 # ---------------------------------------------------------------------------
 # Path resolution — anchored to this file's location
-#   test file: _bmad/lens-work/skills/bmad-lens-techplan/scripts/tests/test-techplan-ops.py
+#   test file: _bmad/lens-work/lens-techplan/scripts/tests/test-techplan-ops.py
 #   parents[0] = tests/
 #   parents[1] = scripts/
 #   parents[2] = bmad-lens-techplan/  ← SKILL_ROOT
@@ -57,7 +57,7 @@ def test_stub_exists():
 def test_stub_preflight_then_release_prompt():
     """Stub must run preflight before loading the release prompt, and must stop on failure."""
     text = read_text(STUB_PROMPT)
-    preflight = "uv run _bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py"
+    preflight = "uv run _bmad/lens-work/lens-preflight/scripts/light-preflight.py"
     release = "_bmad/lens-work/prompts/lens-techplan.prompt.md"
     assert preflight in text, f"Stub missing preflight command: {preflight!r}"
     assert release in text, f"Stub missing release prompt reference: {release!r}"
@@ -86,7 +86,7 @@ def test_release_prompt_routes_to_conductor_skill():
     """Release prompt must be a thin stub routing to SKILL.md with no inline logic branches."""
     text = read_text(RELEASE_PROMPT)
     assert "bmad-lens-techplan/SKILL.md" in text, (
-        "Release prompt must reference _bmad/lens-work/skills/bmad-lens-techplan/SKILL.md"
+        "Release prompt must reference _bmad/lens-work/lens-techplan/SKILL.md"
     )
     # The release prompt must not contain inline architecture prose or branching logic.
     # It delegates entirely — no 'if ... then' decision trees should appear.
@@ -102,7 +102,7 @@ def test_conductor_skill_exists():
     """Conductor SKILL.md must exist under skills/bmad-lens-techplan/."""
     assert CONDUCTOR_SKILL.exists(), (
         f"Missing conductor skill: {CONDUCTOR_SKILL}\n"
-        "Create _bmad/lens-work/skills/bmad-lens-techplan/SKILL.md (TK-2.3)"
+        "Create _bmad/lens-work/lens-techplan/SKILL.md (TK-2.3)"
     )
 
 

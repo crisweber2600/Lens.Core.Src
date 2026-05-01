@@ -7,7 +7,7 @@
 
 Run:
     cd TargetProjects/lens-dev/new-codebase/lens.core.src
-    uv run --with pytest --with pyyaml pytest _bmad/lens-work/skills/bmad-lens-expressplan/scripts/tests/test-expressplan-ops.py -q
+    uv run --with pytest --with pyyaml pytest _bmad/lens-work/lens-expressplan/scripts/tests/test-expressplan-ops.py -q
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ import yaml
 
 # ---------------------------------------------------------------------------
 # Path resolution - anchored to this file's location
-#   test file: _bmad/lens-work/skills/bmad-lens-expressplan/scripts/tests/test-expressplan-ops.py
+#   test file: _bmad/lens-work/lens-expressplan/scripts/tests/test-expressplan-ops.py
 #   parents[0] = tests/
 #   parents[1] = scripts/
 #   parents[2] = bmad-lens-expressplan/  <- SKILL_ROOT

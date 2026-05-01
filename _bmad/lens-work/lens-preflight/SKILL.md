@@ -23,5 +23,5 @@ Invoke this skill via the Lens preflight command flow.
 ## Usage
 
 ```bash
-uv run --script ./_bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py [--caller <name>] [--governance-path <path>]
+uv run --script ./_bmad/lens-work/lens-preflight/scripts/light-preflight.py [--caller <name>] [--governance-path <path>]
 ```

@@ -26,7 +26,7 @@ Act as a careful lifecycle archivist. Preserve the governance record, make irrev
 2. If `{project-root}/.lens/governance-setup.yaml` exists and defines `governance_repo_path`, prefer it for `{governance_repo}`.
 3. Resolve `{feature_id}` from the user request or active Lens context. If neither is available, ask for it.
 4. Resolve `{governance_repo}`. If unavailable, stop with `config_missing`.
-5. Resolve the script path: `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-complete/scripts/complete-ops.py`.
+5. Resolve the script path: `{project-root}/lens.core/_bmad/lens-work/lens-complete/scripts/complete-ops.py`.
 6. If the script is absent, stop with `not_yet_implemented` and explain that this skill currently provides the command contract only; do not simulate the operation.
 
 ## Command Contract
@@ -252,7 +252,7 @@ The scaffolded tests in `scripts/tests/test-complete-ops.py` define the red-phas
 Focused validation for the scaffold:
 
 ```bash
-uv run --with pytest pytest _bmad/lens-work/skills/bmad-lens-complete/scripts/tests/test-complete-ops.py -q
+uv run --with pytest pytest _bmad/lens-work/lens-complete/scripts/tests/test-complete-ops.py -q
 ```
 
 ## References

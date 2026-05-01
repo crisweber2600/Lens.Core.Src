@@ -8,10 +8,10 @@ from pathlib import Path
 
 
 # Resolve repo root from test file location
-# Test file is at: {repo_root}/_bmad/lens-work/skills/bmad-lens-businessplan/tests/test_businessplan_conductor.py
+# Test file is at: {repo_root}/_bmad/lens-work/lens-businessplan/tests/test_businessplan_conductor.py
 # So we need 6 parents to get to repo root
 REPO_ROOT = Path(__file__).parent.parent.parent.parent.parent.parent
-SKILL_PATH = REPO_ROOT / "_bmad/lens-work/skills/bmad-lens-businessplan/SKILL.md"
+SKILL_PATH = REPO_ROOT / "_bmad/lens-work/lens-businessplan/SKILL.md"
 MODULE_HELP = REPO_ROOT / "_bmad/lens-work/module-help.csv"
 GITHUB_PROMPT = REPO_ROOT / ".github/prompts/lens-businessplan.prompt.md"
 RELEASE_PROMPT = REPO_ROOT / "_bmad/lens-work/prompts/lens-businessplan.prompt.md"

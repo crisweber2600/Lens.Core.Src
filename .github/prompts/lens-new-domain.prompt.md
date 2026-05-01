@@ -5,7 +5,7 @@ mode: ask
 Run preflight gate first:
 
 ```bash
-uv run _bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py
+uv run _bmad/lens-work/lens-preflight/scripts/light-preflight.py
 ```
 
 If preflight exits 0, continue with `_bmad/lens-work/prompts/lens-new-domain.prompt.md`.

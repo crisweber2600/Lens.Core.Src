@@ -5,7 +5,7 @@ mode: agent
 
 # /new-service
 
-Load `_bmad/lens-work/skills/bmad-lens-init-feature/SKILL.md` and execute intent `create-service`.
+Load `_bmad/lens-work/lens-init-feature/SKILL.md` and execute intent `create-service`.
 
 Runtime config to resolve before invocation:
 - governance_repo

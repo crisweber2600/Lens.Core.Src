@@ -68,7 +68,7 @@ bmad-lens-adversarial-review --phase finalizeplan --source phase-complete
 4. Publish reviewed upstream planning artifacts to the governance mirror through the CLI-backed boundary:
 
 ```bash
-uv run _bmad/lens-work/skills/bmad-lens-git-orchestration/scripts/git-orchestration-ops.py \
+uv run _bmad/lens-work/lens-git-orchestration/scripts/git-orchestration-ops.py \
   publish-to-governance \
   --governance-repo {governance_repo} \
   --control-repo {control_repo} \

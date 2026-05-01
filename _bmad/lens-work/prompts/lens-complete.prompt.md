@@ -10,7 +10,7 @@ Use this prompt as the entry controller for `/lens-complete`. It must delegate l
 
 Before reading config or invoking `complete-ops.py`:
 
-1. Check whether this invocation already includes a successful run of `uv run ./lens.core/_bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py` from the workspace root.
+1. Check whether this invocation already includes a successful run of `uv run ./lens.core/_bmad/lens-work/lens-preflight/scripts/light-preflight.py` from the workspace root.
 2. If not, run that command now from the workspace root.
 3. If that command exits non-zero, stop and surface the failure.
 4. Do not resolve config paths, read governance state, or execute completion operations until the shared prompt-start sync has succeeded.
@@ -19,8 +19,8 @@ Before reading config or invoking `complete-ops.py`:
 
 - Module config: `{project-root}/lens.core/_bmad/lens-work/bmadconfig.yaml`
 - Optional governance override: `{project-root}/.lens/governance-setup.yaml`
-- Complete skill: `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-complete/SKILL.md`
-- Complete script: `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-complete/scripts/complete-ops.py`
+- Complete skill: `{project-root}/lens.core/_bmad/lens-work/lens-complete/SKILL.md`
+- Complete script: `{project-root}/lens.core/_bmad/lens-work/lens-complete/scripts/complete-ops.py`
 
 ## Resolution Rules
 
@@ -34,7 +34,7 @@ Before reading config or invoking `complete-ops.py`:
 
 ## Execution
 
-1. Load `{project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-complete/SKILL.md`.
+1. Load `{project-root}/{release_repo_root}/_bmad/lens-work/lens-complete/SKILL.md`.
 2. Determine the requested operation:
    - `check-preconditions`
    - `finalize`

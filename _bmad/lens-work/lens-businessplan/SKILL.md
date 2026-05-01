@@ -53,7 +53,7 @@ You are the BusinessPlan phase conductor. You delegate PRD and UX authoring thro
 13. **Interactive workflow selection:** If mode is `interactive` and check returns `status=fail`, present menu: `prd`, `ux-design`, or `both`
 14. **Interactive direct invocation:** If invoked directly (not via `/next`) and check returns `status=fail`, confirm governance publish and delegation. If user declines, stop cleanly.
 15. **Interactive auto-delegation:** If auto-delegated from `/next` and check returns `status=fail`, treat delegation as confirmed once workflow is selected. Do not ask redundant run prompt.
-16. **Publish PrePlan to governance:** Invoke `uv run {project-root}/_bmad/lens-work/skills/bmad-lens-git-orchestration/scripts/git-orchestration-ops.py publish-to-governance --governance-repo {governance_repo} --control-repo {control_repo} --feature-id {feature_id} --phase preplan` before authoring. Do not write governance files directly.
+16. **Publish PrePlan to governance:** Invoke `uv run {project-root}/_bmad/lens-work/lens-git-orchestration/scripts/git-orchestration-ops.py publish-to-governance --governance-repo {governance_repo} --control-repo {control_repo} --feature-id {feature_id} --phase preplan` before authoring. Do not write governance files directly.
 17. Load preplan artifacts from staged docs path for authoring context; use governance mirror for cross-feature references
 18. Load cross-feature context via `bmad-lens-init-feature fetch-context --depth full`
 19. Load domain constitution via `bmad-lens-constitution`

@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).parent.parent.parent.parent.parent.parent
-SKILL_PATH = REPO_ROOT / "_bmad/lens-work/skills/bmad-lens-finalizeplan/SKILL.md"
+SKILL_PATH = REPO_ROOT / "_bmad/lens-work/lens-finalizeplan/SKILL.md"
 MODULE_YAML = REPO_ROOT / "_bmad/lens-work/module.yaml"
 MODULE_HELP = REPO_ROOT / "_bmad/lens-work/module-help.csv"
 GITHUB_PROMPT = REPO_ROOT / ".github/prompts/lens-finalizeplan.prompt.md"
