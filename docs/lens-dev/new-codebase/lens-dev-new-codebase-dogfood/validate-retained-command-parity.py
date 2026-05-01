@@ -92,7 +92,12 @@ def parse_inventory(document_path: Path) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     headers: list[str] | None = None
 
-    for line in document_path.read_text(encoding="utf-8").splitlines():
+    try:
+        text = document_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise ParityMapError(f"could not read inventory document {document_path}: {exc}") from exc
+
+    for line in text.splitlines():
         stripped = line.strip()
         if headers is None:
             if stripped.startswith("| command |") and "public_stub_path" in stripped:
@@ -165,14 +170,14 @@ def validate_inventory(rows: list[dict[str, str]], repo_root: Path) -> list[str]
 
         for state_column, path_column in ARTIFACT_STATE_COLUMNS.items():
             declared_state = row[state_column]
-            if declared_state not in VALID_ARTIFACT_STATES:
+            invalid_declaration = declared_state not in VALID_ARTIFACT_STATES
+            if invalid_declaration:
                 errors.append(f"{command}: invalid {state_column} {declared_state!r}")
-                continue
 
             listed_path = row[path_column]
             actual_state = "present" if (repo_root / listed_path).exists() else "missing"
             actual_artifact_states.append(actual_state)
-            if declared_state != actual_state:
+            if not invalid_declaration and declared_state != actual_state:
                 errors.append(
                     f"{command}: {path_column} is {actual_state} in live tree but map declares {declared_state}"
                 )

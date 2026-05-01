@@ -491,6 +491,20 @@ def cmd_commit_artifacts(args: argparse.Namespace) -> tuple[dict[str, Any], int]
                 "detail": "Required control branches are missing. Re-run init-feature/create-feature-branches.",
             }, 1
 
+    # Resolve effective phase (args.phase if provided, else from feature.yaml)
+    phase = args.phase
+    warnings: list[str] = []
+    if not phase:
+        governance_repo = args.governance_repo or repo
+        yaml_path = find_feature_yaml(governance_repo, feature_id)
+        if yaml_path:
+            data = load_feature_yaml(yaml_path)
+            if data:
+                phase = data.get("phase")
+        if not phase:
+            phase = "unknown"
+            warnings.append("phase could not be resolved from feature.yaml — defaulted to 'unknown'")
+
     # Guard: must be on a branch belonging to this feature
     if not args.dry_run:
         cb = current_branch(repo)
@@ -502,9 +516,9 @@ def cmd_commit_artifacts(args: argparse.Namespace) -> tuple[dict[str, Any], int]
                 "expected": [feature_id, f"{feature_id}-plan", f"{feature_id}-dev", f"{feature_id}-dev-<username>"],
             }, 1
 
-        expected_branch, routing_rule = branch_for_phase_write(feature_id, args.phase, getattr(args, "phase_step", None))
+        expected_branch, routing_rule = branch_for_phase_write(feature_id, phase, getattr(args, "phase_step", None))
         routing_decision: dict[str, Any] = {
-            "phase": args.phase,
+            "phase": phase,
             "phase_step": getattr(args, "phase_step", None),
             "current_branch": cb,
             "expected_branch": expected_branch,
@@ -520,32 +534,18 @@ def cmd_commit_artifacts(args: argparse.Namespace) -> tuple[dict[str, Any], int]
         if expected_branch and cb != expected_branch:
             return {
                 "error": "phase_branch_mismatch",
-                "detail": f"Phase '{args.phase}' (step '{getattr(args, 'phase_step', None) or ''}') must write on branch '{expected_branch}', found '{cb}'.",
+                "detail": f"Phase '{phase}' (step '{getattr(args, 'phase_step', None) or ''}') must write on branch '{expected_branch}', found '{cb}'.",
                 "routing": routing_decision,
             }, 1
     else:
         routing_decision = {
-            "phase": args.phase,
+            "phase": phase,
             "phase_step": getattr(args, "phase_step", None),
             "current_branch": "(dry-run)",
-            "expected_branch": branch_for_phase_write(feature_id, args.phase, getattr(args, "phase_step", None))[0],
-            "routing_rule": branch_for_phase_write(feature_id, args.phase, getattr(args, "phase_step", None))[1],
+            "expected_branch": branch_for_phase_write(feature_id, phase, getattr(args, "phase_step", None))[0],
+            "routing_rule": branch_for_phase_write(feature_id, phase, getattr(args, "phase_step", None))[1],
             "routing_enforced": True,
         }
-
-    # Resolve phase from feature.yaml if not provided
-    phase = args.phase
-    warnings: list[str] = []
-    if not phase:
-        governance_repo = args.governance_repo or repo
-        yaml_path = find_feature_yaml(governance_repo, feature_id)
-        if yaml_path:
-            data = load_feature_yaml(yaml_path)
-            if data:
-                phase = data.get("phase")
-        if not phase:
-            phase = "unknown"
-            warnings.append("phase could not be resolved from feature.yaml — defaulted to 'unknown'")
 
     commit_msg = f"[{phase}] {feature_id} — {description}"
 

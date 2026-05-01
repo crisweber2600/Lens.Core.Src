@@ -278,6 +278,8 @@ def read_yaml_mapping(path: Path) -> dict[str, Any]:
     
     try:
         data = yaml.safe_load(data_bytes.decode("utf-8"))
+    except UnicodeDecodeError as exc:
+        raise GitStateError("yaml_parse_failed", f"Could not decode {path} as UTF-8: {exc}") from exc
     except yaml.YAMLError as exc:
         raise GitStateError("yaml_parse_failed", f"Could not parse {path}: {exc}") from exc
     

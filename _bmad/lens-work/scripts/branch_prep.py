@@ -4,12 +4,13 @@
 # dependencies = ["pyyaml>=6.0"]
 # ///
 """
-branch-prep.py — Target-repo branch preparation for the Lens Dev conductor.
+branch_prep.py — Target-repo branch preparation for the Lens Dev conductor.
 
-Reads target_branch_strategy from feature.yaml or bmadconfig.yaml and applies
-the strategy to determine the working branch name. Creates the branch from the
-base branch if absent; pulls if behind remote. Adds the target repo to
-feature.yaml.target_repos if absent and commits.
+Determines a working branch name from the provided CLI arguments and prepares
+that branch in the target repository. The script checks whether the branch
+exists locally or on the remote, creates it from the base branch when needed,
+and reports the result as YAML. In dry-run mode, git commands are printed
+instead of executed.
 
 Strategies:
   flat              → branch name == base_branch (no new branch; work directly)
@@ -17,7 +18,7 @@ Strategies:
   feature-user      → feature/{featureStub}-{username}
 
 Usage:
-  python branch-prep.py \\
+  uv run --script branch_prep.py \\
     --target-repo <path> \\
     --feature-id <id> \\
     --strategy <flat|feature-stub|feature-user> \\
