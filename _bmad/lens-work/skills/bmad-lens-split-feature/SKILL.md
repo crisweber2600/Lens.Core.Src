@@ -135,3 +135,44 @@ The old-codebase implementation is located at `TargetProjects/lens-dev/old-codeb
 - Do not create or edit governance files inline from this skill.
 - Do not patch story frontmatter automatically after `move-stories`; only report stale `feature:` values.
 - Do not bypass the load -> validate -> confirm -> dry-run -> execute -> report flow.
+
+## Input Contract
+
+Required inputs:
+- governance_repo: Absolute path to governance repo.
+- source_feature_id: Feature being split.
+
+Optional inputs:
+- new_feature_id: Target split feature id (required for create/move modes).
+- story_ids: Story ID subset for split and move operations.
+- split_mode: validate-only, scope, or stories.
+- dry_run: Dry-run toggle for mutating commands.
+
+## Output Contract
+
+Primary outputs:
+- Validation report for requested split boundary.
+- New feature shell creation result for scope/stories modes.
+- Story move report and post-move stale-frontmatter scan results.
+
+Secondary outputs:
+- Explicit list of blocked in-progress stories when validation fails.
+
+## Error Behavior
+
+Hard-stop errors:
+- validate-split fails due to in-progress or invalid stories.
+- Missing required inputs for selected mode.
+- create-split-feature or move-stories execution failure.
+
+Recoverable errors:
+- Missing optional split metadata: prompt and continue before execution.
+- dry-run requested: return planned actions without mutation.
+
+## Test Hooks
+
+Validate contract coverage with focused tests that assert this SKILL.md declares:
+- Required and optional inputs.
+- Output surfaces for validation, create, and move paths.
+- Hard-stop and recoverable error categories.
+- Required execution flow ordering: load -> validate -> confirm -> dry-run -> execute -> report.

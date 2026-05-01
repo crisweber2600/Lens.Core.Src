@@ -19,3 +19,8 @@ prompts:
   - lens-techplan.prompt.md
   - lens-finalizeplan.prompt.md
   - lens-upgrade.prompt.md
+skills:
+  - bmad-lens-constitution
+  - bmad-lens-dev
+  - bmad-lens-split-feature
+  - bmad-lens-upgrade

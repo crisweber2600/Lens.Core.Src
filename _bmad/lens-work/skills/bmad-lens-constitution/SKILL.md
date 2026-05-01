@@ -134,6 +134,44 @@ Returns a context-filtered constitution view for the current phase and/or track.
 - **dashboard** — Calls `resolve` to surface active governance rules in the portfolio view
 - **sensing** — Calls `resolve` to read `sensing_gate_mode`; controls advisory vs hard-gate overlap enforcement
 
+## Input Contract
+
+Required inputs:
+- governance_repo: Absolute path to the governance repository.
+
+Optional inputs:
+- domain: Domain scope for resolution.
+- service: Service scope for resolution.
+- repo: Repo scope for level-4 resolution.
+- phase: Lifecycle phase for progressive display.
+- track: Track filter for progressive display and compliance checks.
+
+## Output Contract
+
+Primary outputs:
+- Resolved constitution payload for the requested scope.
+- Compliance verdict payload (pass, informational-fail, hard-fail) when checking compliance.
+- Progressive-display payload filtered by current phase/track when requested.
+
+## Error Behavior
+
+Hard-stop errors:
+- Missing governance_repo input.
+- Missing required org constitution file.
+- Unparseable constitution files at active levels.
+
+Recoverable errors:
+- Missing optional domain/service/repo level files: skip level and continue.
+- Missing optional phase/track filters: return full resolved payload.
+
+## Test Hooks
+
+Validate contract coverage with focused tests that assert this SKILL.md declares:
+- Required and optional inputs.
+- Output payload surfaces for resolve/compliance/progressive-display.
+- Hard-stop and recoverable error categories.
+- Script mappings for resolve, check-compliance, and progressive-display.
+
 ## Script Reference
 
 | Script | Description |
