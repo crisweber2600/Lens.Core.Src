@@ -24,6 +24,10 @@ skills:
   - bmad-lens-dev
   - bmad-lens-split-feature
   - bmad-lens-upgrade
+  # DEFERRED: bmad-lens-document-project — skill absent in new-codebase.
+  # Full specification available in old-codebase: skills/bmad-lens-document-project/SKILL.md.
+  # Scope: feature-aware output path routing, governance docs copy, prompt stub, module.yaml registration.
+  # Schedule for next release cycle.
 
 # Internal skills are not exposed as public commands or prompt stubs.
 # They are invoked programmatically by other skills only.
