@@ -69,6 +69,11 @@ SUPPORTED_TRACKS = {
     "standard",
     "spike",
 }
+TRACK_ALIASES = {
+    "full": "standard",
+    "tech-change": "standard",
+    "quickplan": "express",
+}
 
 PHASE_ROUTE_TO_PLAN = {"preplan", "businessplan", "techplan", "expressplan"}
 
@@ -196,6 +201,11 @@ def branch_for_phase_write(feature_id: str, phase: str | None, phase_step: str |
         return f"{feature_id}-plan", "finalizeplan_default_to_plan"
 
     return None, None
+
+
+def canonical_track(track: str | None) -> str:
+    normalized = str(track or "").strip().lower()
+    return TRACK_ALIASES.get(normalized, normalized)
 
 
 # ---------------------------------------------------------------------------
@@ -1140,12 +1150,14 @@ def cmd_validate_phase_start(args: argparse.Namespace) -> tuple[dict[str, Any], 
     feature_data = load_feature_yaml(yaml_path)
     if not feature_data:
         return {"error": "invalid_feature_yaml", "path": str(yaml_path)}, 1
-    track = str(feature_data.get("track") or "").strip().lower()
+    raw_track = str(feature_data.get("track") or "").strip().lower()
+    track = canonical_track(raw_track)
     if track not in SUPPORTED_TRACKS:
         return {
             "error": "constitution_track_not_permitted",
             "feature_id": feature_id,
-            "track": track,
+            "track": raw_track,
+            "track_canonical": track,
             "detail": "Track failed phase-start constitution gate.",
         }, 1
 
@@ -1154,7 +1166,9 @@ def cmd_validate_phase_start(args: argparse.Namespace) -> tuple[dict[str, Any], 
         "feature_id": feature_id,
         "current_branch": cb,
         "expected_base_branch": expected_base,
-        "track": track,
+        "track": raw_track,
+        "track_canonical": track,
+        "constitution_gate": "pass",
         "required_branches": required_control_branches(feature_id),
         "message": "Phase-start validation passed.",
     }, 0

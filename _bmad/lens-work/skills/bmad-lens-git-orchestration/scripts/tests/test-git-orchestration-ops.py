@@ -1141,6 +1141,8 @@ class TestPhaseStartValidation:
         assert code == 0
         assert result["status"] == "pass"
         assert result["track"] == "express"
+        assert result["track_canonical"] == "express"
+        assert result["constitution_gate"] == "pass"
 
 
 class TestCleanupBranch:
