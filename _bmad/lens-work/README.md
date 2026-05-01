@@ -18,3 +18,8 @@ LENS lifecycle workbench — feature context switching, initialization, planning
 - `module-help.csv` — full command catalog with args, phases, and outputs
 - `module.yaml` — module registration and prompt list
 - `agents/lens.agent.md` — entry agent with compact menu
+
+## Configuration
+
+- `bmadconfig.yaml` — committed Lens module defaults for governance path, topology, target project path, git remote, and lifecycle contract
+- `docs/configuration.md` — user config contract for supported `config.user.yaml` overrides
