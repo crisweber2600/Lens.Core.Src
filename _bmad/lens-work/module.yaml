@@ -12,6 +12,5 @@ prompts:
   - lens-new-service.prompt.md
   - lens-next.prompt.md
   - lens-switch.prompt.md
-  - lens-expressplan.prompt.md
   - lens-techplan.prompt.md
   - lens-finalizeplan.prompt.md
