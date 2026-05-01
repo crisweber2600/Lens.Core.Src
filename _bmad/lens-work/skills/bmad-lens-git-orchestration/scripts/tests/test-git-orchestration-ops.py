@@ -1060,6 +1060,7 @@ class TestTopologyAndRouting:
         assert code == 1
         assert result["error"] == "phase_branch_mismatch"
         assert result["routing"]["expected_branch"] == "fin-feat-dev"
+        assert result["routing"]["routing_enforced"] is True
 
     def test_dev_phase_rejected_in_control_repo(self, repo):
         make_branch(repo, "dev-route")

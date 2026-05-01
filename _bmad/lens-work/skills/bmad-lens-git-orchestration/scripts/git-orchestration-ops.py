@@ -499,6 +499,7 @@ def cmd_commit_artifacts(args: argparse.Namespace) -> tuple[dict[str, Any], int]
             "current_branch": cb,
             "expected_branch": expected_branch,
             "routing_rule": routing_rule,
+            "routing_enforced": True,
         }
         if routing_rule == "target_repo_only":
             return {
@@ -519,6 +520,7 @@ def cmd_commit_artifacts(args: argparse.Namespace) -> tuple[dict[str, Any], int]
             "current_branch": "(dry-run)",
             "expected_branch": branch_for_phase_write(feature_id, args.phase, getattr(args, "phase_step", None))[0],
             "routing_rule": branch_for_phase_write(feature_id, args.phase, getattr(args, "phase_step", None))[1],
+            "routing_enforced": True,
         }
 
     # Resolve phase from feature.yaml if not provided
