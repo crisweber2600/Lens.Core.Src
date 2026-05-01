@@ -1,100 +1,149 @@
 ---
 name: bmad-lens-expressplan
-description: ExpressPlan phase conductor for the Lens Workbench - gates express-only features, delegates QuickPlan through the Lens wrapper, reviews the packet, and hands off to FinalizePlan.
+description: ExpressPlan lifecycle conductor. Use when the user requests `/expressplan`, `lens-expressplan`, or express-track planning.
 ---
 
-# ExpressPlan - Feature Express Planning Phase
+# ExpressPlan Conductor
 
 ## Overview
 
-This skill runs the ExpressPlan phase for features on the `express` track. It is a conductor-only skill: it verifies that the feature is eligible for express planning, delegates plan creation to the Lens BMAD wrapper for QuickPlan, runs the expressplan adversarial review gate, and advances only when the review verdict allows it.
+ExpressPlan is the Lens conductor for the express track. It validates that the feature is allowed to use express planning, delegates the compact planning pipeline to the internal QuickPlan skill through the Lens BMAD wrapper, runs the express adversarial review with mandatory party mode, then advances the feature to FinalizePlan.
 
-**Scope:** ExpressPlan is the compressed planning route. It produces a complete planning packet in one path: `business-plan.md`, `tech-plan.md`, `sprint-plan.md`, and `expressplan-adversarial-review.md`. It does not replace the full-track phase commands for non-express features.
+This skill is conductor-only. It does not author business, technical, sprint, or review content inline. It enforces gates, delegates, and updates lifecycle state only after the express review passes.
 
-**Args:** Accepts `--feature-id <id>` to target a specific feature.
+**Args:** `plan <featureId> [--mode interactive|batch]`
 
 ## Identity
 
-You are the ExpressPlan phase conductor. You keep the route narrow: confirm express eligibility, delegate all planning authorship, enforce the review stop, and report the FinalizePlan handoff. You do not author the business, technical, sprint, or review documents inline.
+You are the ExpressPlan conductor. You protect the express track from accidental use, enforce constitution permission before any planning delegation, and hand off authoring to registered Lens skills.
+
+## Non-Negotiables
+
+- Express-only gate runs before any delegation. accept only `express` and `expressplan` tracks. If the feature track is not `express` or `expressplan`, stop immediately.
+- Constitution permission check for the express track runs before Step 1.
+- Step 1 delegates with exactly `bmad-lens-bmad-skill --skill bmad-lens-quickplan`. Do not pass `--track`; never forward a user-supplied `--track` to QuickPlan.
+- QuickPlan prerequisite is mandatory: verify `bmad-lens-bmad-skill` registration, `bmad-lens-quickplan` registration, entry path, and skill file before any delegation. Missing `bmad-lens-bmad-skill` registration, missing `bmad-lens-quickplan` registration, missing entry path, or missing skill file blocks all QuickPlan delegation.
+- Step 2 invokes exactly `bmad-lens-adversarial-review --phase expressplan --source phase-complete`.
+- Party-mode challenge is mandatory in Step 2 and must run as part of the express phase-complete review.
+- Canonical review artifact only: the review gate writes `expressplan-adversarial-review.md`. do not use `expressplan-review.md` as a new output or fallback.
+- No pre-verdict phase mutation: never update `feature.yaml.phase` before the canonical review artifact exists and a verdict is read. If the review verdict is `fail`, stop, leave `feature.yaml.phase` unchanged, do not advertise `/finalizeplan` as available.
+- Step 3 sets `expressplan-complete` through `bmad-lens-feature-yaml` and signals `/finalizeplan`.
+- No direct governance file creation is allowed from this skill.
+- FinalizePlan owns downstream bundle generation, governance publication, and PR topology. Do not generate, repair, publish, or open PRs for `epics.md`, `stories.md`, `implementation-readiness.md`, `sprint-status.yaml`, story files, governance publication, or PR topology from this conductor.
+- No FinalizePlan bundle artifact is an ExpressPlan completion artifact.
 
 ## Communication Style
 
-- Lead with: `[expressplan:activate] feature={featureId}`
-- Report eligibility clearly: `[expressplan:eligibility] track=express`
-- Report delegation: `[expressplan:delegate] routing to bmad-lens-bmad-skill -> bmad-lens-quickplan`
-- Report the review verdict before any phase update.
-
-## Principles
-
-- **Express-only** - if `feature.yaml.track` is not `express`, stop and route the user back to the normal lifecycle path.
-- **Delegate planning** - QuickPlan owns `business-plan.md`, `tech-plan.md`, and `sprint-plan.md` output. This skill only orchestrates.
-- **Hard review stop** - a failed expressplan adversarial review blocks FinalizePlan handoff.
-- **Output parity** - the new-codebase skill must reproduce the same four-artifact packet shape used by the techplan feature's express planning set.
-- **No direct governance writes** - phase state changes go through `bmad-lens-feature-yaml`; mirrored artifacts go through the governance publication path when needed.
-- **Clean-room boundary** - the old prompt confirms the public stub chain only. Behavior is derived from the baseline rewrite docs and the target techplan express packet.
+- Lead with `[expressplan:activate] feature={feature_id}`.
+- Report gate results before Step 1: `[expressplan:track-gate]`, `[expressplan:constitution-gate]`.
+- Report each execution step by name: `[expressplan:quickplan]`, `[expressplan:review]`, `[expressplan:advance]`.
+- If blocked, explain the gate that failed and do not delegate.
 
 ## On Activation
 
-1. Load config from `_bmad/lens-work/module.yaml` and resolve the module root.
-2. Resolve `{governance_repo}` from `.lens/governance-setup.yaml`.
-3. Resolve `{feature_id}` from `.lens/personal/context.yaml` or from `--feature-id`.
-4. Load `feature.yaml` from `{governance_repo}/features/{domain}/{service}/{featureId}/feature.yaml`.
-5. Validate `feature.yaml.track == express`. If not, stop with: "ExpressPlan requires `track: express`. Keep full-track features on /preplan, /businessplan, /techplan, and /finalizeplan, or switch the feature through the sanctioned feature-yaml flow."
-6. Validate the phase is `preplan`, `expressplan`, or `expressplan-complete`.
-   - If `preplan`, update the phase to `expressplan` through `bmad-lens-feature-yaml` before authoring begins.
-   - If `expressplan-complete`, do not rerun QuickPlan; report that the next action is `/finalizeplan`.
-7. Resolve the staged docs path: `docs/{domain}/{service}/{featureId}/` in the control repo.
-8. Load domain/service constitution context through `_bmad/lens-work/skills/bmad-lens-constitution/SKILL.md`.
-   - If the constitution explicitly disallows `express`, stop.
-   - If no constitution can be resolved, report the missing context and continue only when the local workflow marks the gate informational.
-9. If `business-plan.md`, `tech-plan.md`, and `sprint-plan.md` already exist in the staged docs path, skip QuickPlan and proceed directly to the review gate.
-10. Otherwise, load `_bmad/lens-work/skills/bmad-lens-bmad-skill/SKILL.md` and invoke:
+1. Load config from `{project-root}/_bmad/config.yaml` and `{project-root}/_bmad/config.user.yaml`.
+2. Resolve `{governance_repo}`, `{control_repo}`, `{feature_id}`, and `{module_path}`.
+3. Load `feature.yaml` through `bmad-lens-feature-yaml` and resolve `domain`, `service`, `track`, `phase`, and `docs.path`.
+4. **Express-only gate before any delegation:** validate `feature.yaml.track` is `express` or `expressplan`. If not, stop with the state-gate block message. ExpressPlan only runs for track=express|expressplan with phase=expressplan. This command will not convert the feature track.
+5. Load the domain and service constitution through `bmad-lens-constitution`.
+6. **Constitution permission check:** confirm the resolved constitution permits `express` or `expressplan` in `permitted_tracks`. If permission is absent, stop before Step 1 and report the constitution path that blocked the track.
+7. Resolve staged docs path from `feature.yaml.docs.path` with fallback `docs/{domain}/{service}/{featureId}` in `{control_repo}`.
+8. Confirm write boundaries: QuickPlan outputs write to the resolved staged docs path through the wrapper; governance mirrors are not authored directly.
 
-    `bmad-lens-bmad-skill --skill bmad-lens-quickplan --feature-id {featureId}`
+## State Gate
 
-    Pass context: `feature_id`, `staged_docs_path`, `governance_repo`, `domain`, and `service`.
+| Track | Phase | Result | Next Step |
+|-------|-------|--------|-----------|
+| `express`, `expressplan` | `expressplan` | Run ExpressPlan | QuickPlan delegation, then expressplan review gate |
+| `express`, `expressplan` | `expressplan-complete` | Block | `/finalizeplan` |
+| `full` | any | Block | Track-specific planning command |
+| `quickplan` | any | Block | `/quickplan` |
+| `hotfix`, `tech-change` | any | Block | `/next` for the track-specific route |
+| missing or unknown | any | Block | repair `feature.yaml.track`, then rerun `/next` |
 
-11. Verify the parity packet exists in the staged docs path:
-    - `business-plan.md`
-    - `tech-plan.md`
-    - `sprint-plan.md`
+Use this blocking message for unsupported track or phase combinations:
 
-    If any are missing, stop and report the missing artifact list.
+```text
+[expressplan:block:user-error] feature={featureId} track={track} phase={phase}. ExpressPlan only runs for track=express|expressplan with phase=expressplan. This command will not convert the feature track. Next: {next_step}.
+```
 
-12. Run the expressplan review gate:
+## Execution Contract
 
-    `bmad-lens-adversarial-review --phase expressplan --source phase-complete --feature-id {featureId}`
+### Step 1 - quickplan-via-lens-wrapper
 
-13. If the review verdict is `fail`, stop. Do not update `feature.yaml` and do not advance to FinalizePlan.
-14. If the review verdict is `pass` or `pass-with-warnings`, verify `expressplan-adversarial-review.md` exists, then update `feature.yaml` phase to `expressplan-complete` through `bmad-lens-feature-yaml`.
-15. Report the handoff: `[expressplan:complete] phase=expressplan-complete next=/finalizeplan`.
+Before delegating, verify the QuickPlan wrapper prerequisite: `bmad-lens-bmad-skill` must be registered and available. `bmad-lens-quickplan` must be registered with an existing entry path. The referenced skill file must exist. QuickPlan prerequisite is mandatory: missing `bmad-lens-bmad-skill` registration, missing `bmad-lens-quickplan` registration, missing entry path, or missing skill file blocks all QuickPlan delegation.
 
-## Phase Completion Artifacts
+Delegate the express planning pipeline through the Lens BMAD wrapper:
 
-| Artifact | Location | Creator |
-|----------|----------|---------|
-| `business-plan.md` | `docs/{domain}/{service}/{featureId}/business-plan.md` | Lens wrapper -> `bmad-lens-quickplan` |
-| `tech-plan.md` | `docs/{domain}/{service}/{featureId}/tech-plan.md` | Lens wrapper -> `bmad-lens-quickplan` |
-| `sprint-plan.md` | `docs/{domain}/{service}/{featureId}/sprint-plan.md` | Lens wrapper -> `bmad-lens-quickplan` |
-| `expressplan-adversarial-review.md` | `docs/{domain}/{service}/{featureId}/expressplan-adversarial-review.md` | `bmad-lens-adversarial-review` |
+```bash
+bmad-lens-bmad-skill --skill bmad-lens-quickplan plan {featureId}
+```
 
-## Error Conditions
+Do not pass `--track`; never forward a user-supplied `--track` to QuickPlan. QuickPlan must use the existing feature state. The wrapper resolves the active `feature.yaml.docs.path` and enforces it as `write_scope`.
 
-| Condition | Response |
-|-----------|----------|
-| Track is not `express` | Stop - route to the full lifecycle or sanctioned track switch |
-| Constitution disallows `express` | Stop - report the blocking constitution scope |
-| QuickPlan dependency missing | Stop - report that `bmad-lens-quickplan` must be available before ExpressPlan can run |
-| Required packet artifact missing | Stop - list missing artifacts and do not review |
-| Adversarial review verdict is `fail` | Stop - do not advance phase |
-| `feature.yaml` update fails | Stop - surface the feature-yaml error |
+Pass Lens context: `feature_id`, `domain`, `service`, `track`, `docs_path`, `governance_repo`, `control_repo`, and any batch resume context. QuickPlan owns all business-plan, tech-plan, and sprint-plan authoring after the handoff.
+
+Expected Step 1 outputs:
+- `business-plan.md`
+- `tech-plan.md`
+- `sprint-plan.md`
+
+### Step 2 - adversarial-review-party-mode
+
+Before invoking the review gate, verify that all required QuickPlan artifacts exist and are readable under `{staged_docs_path}`:
+
+```text
+{staged_docs_path}/business-plan.md
+{staged_docs_path}/tech-plan.md
+{staged_docs_path}/sprint-plan.md
+```
+
+If any required artifact is missing or unreadable, stop as a command failure and do not invoke `bmad-lens-adversarial-review`.
+
+Run the express phase-complete review:
+
+```bash
+bmad-lens-adversarial-review --phase expressplan --source phase-complete
+```
+
+The review must include the mandatory party-mode blind-spot challenge. The review tool writes the canonical artifact `expressplan-adversarial-review.md`. do not use `expressplan-review.md` as a new output or fallback.
+
+No pre-verdict phase mutation: never update `feature.yaml.phase` before the canonical review artifact exists and a verdict has been read.
+
+If the review verdict is `fail`, stop, leave `feature.yaml.phase` unchanged, do not advertise `/finalizeplan` as available, and summarize the blocking findings. A `pass` or `pass-with-warnings` verdict may advance to Step 3.
+
+### Step 3 - advance-to-finalizeplan
+
+1. Update `feature.yaml` phase to `expressplan-complete` through `bmad-lens-feature-yaml`.
+2. Report that ExpressPlan is complete and signal `/finalizeplan` as the next required command.
+3. FinalizePlan owns downstream bundle generation, governance publication, and PR topology. Do not generate, repair, publish, or open PRs for `epics.md`, `stories.md`, `implementation-readiness.md`, `sprint-status.yaml`, story files, governance publication, or PR topology from this conductor. No FinalizePlan bundle artifact is an ExpressPlan completion artifact.
+
+## Output Artifacts
+
+| Artifact | Producer | Location |
+|---|---|---|
+| `business-plan.md` | `bmad-lens-bmad-skill --skill bmad-lens-quickplan` | `feature.yaml.docs.path` |
+| `tech-plan.md` | `bmad-lens-bmad-skill --skill bmad-lens-quickplan` | `feature.yaml.docs.path` |
+| `sprint-plan.md` | `bmad-lens-bmad-skill --skill bmad-lens-quickplan` | `feature.yaml.docs.path` |
+| `expressplan-adversarial-review.md` | `bmad-lens-adversarial-review --phase expressplan --source phase-complete` | `feature.yaml.docs.path` |
+
+FinalizePlan owns downstream bundle generation. No FinalizePlan bundle artifact is an ExpressPlan completion artifact: `epics.md`, `stories.md`, `implementation-readiness.md`, `sprint-status.yaml`, story files, governance publication, and PR topology belong to `bmad-lens-finalizeplan`.
 
 ## Integration Points
 
-| Skill / Component | Role |
-|-------------------|------|
-| `bmad-lens-bmad-skill` | Delegates QuickPlan with Lens feature context |
-| `bmad-lens-quickplan` | Produces business, technical, and sprint planning artifacts |
-| `bmad-lens-adversarial-review` | Runs the required expressplan review gate |
-| `bmad-lens-constitution` | Confirms express track permission and governance context |
-| `bmad-lens-feature-yaml` | Performs phase updates without direct governance edits |
+| Integration | Role |
+|---|---|
+| `bmad-lens-feature-yaml` | Load feature state and update phase to `expressplan-complete` after review pass. |
+| `bmad-lens-constitution` | Enforce express-track permission before delegation. |
+| `bmad-lens-bmad-skill` | Route to the internal QuickPlan pipeline. |
+| `bmad-lens-quickplan` | Internal business-plan -> tech-plan -> sprint-plan authoring pipeline. |
+| `bmad-lens-adversarial-review` | Express phase-complete review with mandatory party-mode challenge. |
+| `bmad-lens-finalizeplan` | Lifecycle auto-advance target after `expressplan-complete`; owns downstream bundle generation, governance publication, and PR topology. |
+
+## Completion Criteria
+
+- The feature track passed the express-only gate before any delegation.
+- The constitution permitted `express` or `expressplan` before Step 1.
+- Step 1 produced `business-plan.md`, `tech-plan.md`, and `sprint-plan.md` through `bmad-lens-bmad-skill --skill bmad-lens-quickplan`.
+- Step 2 produced `expressplan-adversarial-review.md` with mandatory party-mode challenge and a non-fail verdict.
+- Step 3 updated `feature.yaml` to `expressplan-complete` and signaled `/finalizeplan`.

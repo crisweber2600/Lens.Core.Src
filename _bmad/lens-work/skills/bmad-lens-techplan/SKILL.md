@@ -35,7 +35,7 @@ You are the TechPlan phase conductor. You orchestrate the technical planning pha
 
 1. Load config from `_bmad/lens-work/module.yaml` and resolve the module root.
 2. Resolve `{governance_repo}` from `.lens/governance-setup.yaml`.
-3. Resolve `{feature_id}` from `.lens/personal/context.yaml` or from `--feature-id` argument.
+3. Resolve `{featureId}` from `.lens/personal/context.yaml` or from `--feature-id` argument.
 4. Load `feature.yaml` for the feature from `{governance_repo}/features/{domain}/{service}/{featureId}/feature.yaml`.
 5. Validate that `feature.yaml.phase` is `businessplan-complete` or later. If not, stop with: "BusinessPlan must be complete before TechPlan can begin."
 6. Resolve staged docs path: `docs/{domain}/{service}/{featureId}/` in the control repo.
@@ -69,7 +69,7 @@ You are the TechPlan phase conductor. You orchestrate the technical planning pha
     Load `_bmad/lens-work/skills/bmad-lens-bmad-skill/SKILL.md` and invoke:
     `bmad-lens-bmad-skill --skill bmad-create-architecture`
 
-    Pass context: `feature_id`, `prd_path`, `staged_docs_path`, `governance_repo`.
+    Pass context: `featureId`, `prd_path`, `staged_docs_path`, `governance_repo`.
 
 12. After architecture authoring completes, run the TechPlan phase completion adversarial review:
     `bmad-lens-adversarial-review --phase techplan --source phase-complete`
