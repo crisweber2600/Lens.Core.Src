@@ -4,7 +4,10 @@ description: "LENS lifecycle workbench — feature context switching, initializa
 module_version: "1.0.0"
 standalone: true
 prompts:
+  - lens-preflight.prompt.md
   - lens-complete.prompt.md
+  - lens-constitution.prompt.md
+  - lens-dev.prompt.md
   - lens-discover.prompt.md
   - lens-expressplan.prompt.md
   - lens-new-domain.prompt.md
@@ -15,3 +18,21 @@ prompts:
   - lens-switch.prompt.md
   - lens-techplan.prompt.md
   - lens-finalizeplan.prompt.md
+  - lens-upgrade.prompt.md
+skills:
+  - bmad-lens-constitution
+  - bmad-lens-dev
+  - bmad-lens-split-feature
+  - bmad-lens-upgrade
+  # DEFERRED: bmad-lens-document-project — skill absent in new-codebase.
+  # Full specification available in old-codebase: skills/bmad-lens-document-project/SKILL.md.
+  # Scope: feature-aware output path routing, governance docs copy, prompt stub, module.yaml registration.
+  # Schedule for next release cycle.
+
+# Internal skills are not exposed as public commands or prompt stubs.
+# They are invoked programmatically by other skills only.
+internal_skills:
+  - name: bmad-lens-quickplan
+    classification: internal
+    invoked_by: bmad-lens-bmad-skill
+    description: "Internal express planning pipeline for ExpressPlan. Has no public prompt stub."

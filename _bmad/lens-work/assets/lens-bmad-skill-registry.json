@@ -59,6 +59,7 @@
     },
     "bmad-lens-quickplan": {
       "displayName": "Lens QuickPlan Internal",
+      "surface": "internal",
       "contextMode": "feature-required",
       "outputMode": "planning-docs",
       "phaseHints": ["expressplan"],

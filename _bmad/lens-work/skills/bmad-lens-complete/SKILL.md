@@ -45,7 +45,8 @@ Guards:
 
 - Feature must exist in governance.
 - `feature.yaml.phase` must be in a completable state: `dev`, `dev-complete`, or `complete`.
-- Missing `retrospective.md` is advisory and returns `status: warn` with `retrospective_skipped: true`.
+- **`retrospective.md` is a blocking prerequisite** (not advisory): the file MUST exist in the feature docs folder. If absent, return `status: fail` with `blocker: retrospective_missing` and a message directing the user to run `bmad-lens-retrospective` first. This check may not be downgraded to a warning.
+- **`retrospective.md` status must be `approved`**: the file's YAML frontmatter `status` field MUST equal `approved`. If the file exists but `status` is not `approved`, return `status: fail` with `blocker: retrospective_not_approved` and the current status value.
 - Missing document-project output is advisory and returns `status: warn` with `document_project_skipped: true`.
 - Malformed governance YAML or an unsupported phase returns `status: fail`.
 
@@ -59,10 +60,32 @@ Return shape:
   "retrospective_skipped": false,
   "document_project_skipped": false,
   "checks": [
-    {"name": "phase", "status": "pass", "message": "Feature is completable"}
+    {"name": "phase", "status": "pass", "message": "Feature is completable"},
+    {"name": "retrospective", "status": "pass", "message": "retrospective.md exists and status is approved"}
   ],
   "warnings": [],
   "blockers": []
+}
+```
+
+Failure shape when retrospective is missing:
+
+```json
+{
+  "status": "fail",
+  "blocker": "retrospective_missing",
+  "message": "retrospective.md is required before completing a feature. Run 'bmad-lens-retrospective' to create it, then set status: approved."
+}
+```
+
+Failure shape when retrospective exists but is not approved:
+
+```json
+{
+  "status": "fail",
+  "blocker": "retrospective_not_approved",
+  "retrospective_status": "<current-status>",
+  "message": "retrospective.md exists but status is not 'approved'. Update the file and set status: approved before completing."
 }
 ```
 
@@ -87,11 +110,11 @@ Inputs:
 
 Confirmation gate:
 
-Before non-dry-run execution, display the planned changes and require an explicit `yes` or `--confirm`. The summary must include the current phase, target phase, feature-index status change, summary path, and skipped prerequisite warnings. If the user does not confirm, return `status: cancelled` and perform no writes.
+Before non-dry-run execution, display the planned changes and require an explicit `yes` or `--confirm`. The summary must include the current phase, target phase, feature-index status change, summary path, and any skipped optional artifact warnings. If the user does not confirm, return `status: cancelled` and perform no writes.
 
 Operations:
 
-1. Run `check-preconditions` and require `pass` or `warn`.
+1. Run `check-preconditions` and require `pass` or `warn`. A `fail` status from any blocking check (including missing or unapproved retrospective) aborts finalize immediately.
 2. Update `feature.yaml.phase` to `complete` and set `completed_at`.
 3. Update the matching `feature-index.yaml` entry to `status: archived` and set `updated_at`.
 4. Write `summary.md` if absent, or update only the generated archive section if a managed section exists.

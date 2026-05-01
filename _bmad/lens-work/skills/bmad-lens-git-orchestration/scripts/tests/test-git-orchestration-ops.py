@@ -222,6 +222,7 @@ class TestCreateFeatureBranches:
         # Branches should NOT exist (dry run)
         assert not ops.branch_exists(str(repo), "dry-feat")
         assert not ops.branch_exists(str(repo), "dry-feat-plan")
+        assert not ops.branch_exists(str(repo), "dry-feat-dev")
 
     def test_dry_run_returns_expected_fields(self, repo):
         write_feature_yaml(repo, "dry-fields")
@@ -229,9 +230,10 @@ class TestCreateFeatureBranches:
         assert code == 0
         assert result["base_branch"] == "dry-fields"
         assert result["plan_branch"] == "dry-fields-plan"
+        assert result["dev_branch"] == "dry-fields-dev"
         assert result["created_from"] == "main"
 
-    def test_creates_both_branches_with_real_remote(self, repo_pair):
+    def test_creates_all_control_branches_with_real_remote(self, repo_pair):
         local, remote = repo_pair
         yaml_path = write_feature_yaml(local, "new-feat")
         subprocess.run(["git", "-C", str(local), "add", str(yaml_path)], check=True, capture_output=True)
@@ -246,6 +248,7 @@ class TestCreateFeatureBranches:
         assert code == 0
         assert ops.branch_exists(str(local), "new-feat")
         assert ops.branch_exists(str(local), "new-feat-plan")
+        assert ops.branch_exists(str(local), "new-feat-dev")
 
     def test_detects_remote_default_branch_when_not_overridden(self, tmp_path):
         local, remote = init_repo_pair(tmp_path, default_branch="develop")
@@ -263,6 +266,7 @@ class TestCreateFeatureBranches:
         assert result["created_from"] == "develop"
         assert ops.branch_exists(str(local), "develop-feat")
         assert ops.branch_exists(str(local), "develop-feat-plan")
+        assert ops.branch_exists(str(local), "develop-feat-dev")
 
 
 # ---------------------------------------------------------------------------
@@ -270,7 +274,7 @@ class TestCreateFeatureBranches:
 # ---------------------------------------------------------------------------
 
 class TestCommitArtifacts:
-    def _args(self, repo, feature_id, files, description, phase=None, push=False, dry_run=False):
+    def _args(self, repo, feature_id, files, description, phase=None, push=False, dry_run=False, phase_step=None):
         return _no_args(
             repo=str(repo),
             governance_repo=str(repo),
@@ -278,6 +282,7 @@ class TestCommitArtifacts:
             files=files,
             description=description,
             phase=phase,
+            phase_step=phase_step,
             push=push,
             no_confirm=True,
             dry_run=dry_run,
@@ -295,9 +300,11 @@ class TestCommitArtifacts:
 
     def test_commits_existing_file(self, repo):
         make_branch(repo, "commit-feat")
+        make_branch(repo, "commit-feat-plan")
+        make_branch(repo, "commit-feat-dev")
         subprocess.run(["git", "-C", str(repo), "checkout", "commit-feat"], check=True, capture_output=True)
         (repo / "artifact.md").write_text("content")
-        result, code = ops.cmd_commit_artifacts(self._args(repo, "commit-feat", ["artifact.md"], "initial artifact", phase="preplan"))
+        result, code = ops.cmd_commit_artifacts(self._args(repo, "commit-feat", ["artifact.md"], "initial artifact", phase="unknown"))
         assert code == 0
         assert result["commit_sha"] != ""
         assert "commit-feat" in result["commit_message"]
@@ -305,6 +312,8 @@ class TestCommitArtifacts:
     def test_phase_auto_resolved_from_yaml(self, repo):
         write_feature_yaml(repo, "phase-feat", phase="plan")
         make_branch(repo, "phase-feat")
+        make_branch(repo, "phase-feat-plan")
+        make_branch(repo, "phase-feat-dev")
         subprocess.run(["git", "-C", str(repo), "checkout", "phase-feat"], check=True, capture_output=True)
         (repo / "doc.md").write_text("doc")
         result, code = ops.cmd_commit_artifacts(
@@ -510,6 +519,7 @@ class TestMergePlanDirect:
     def test_dry_run_direct(self, repo):
         make_branch(repo, "drym-feat")
         make_branch(repo, "drym-feat-plan")
+        make_branch(repo, "drym-feat-dev")
         result, code = ops.cmd_merge_plan(self._args(repo, "drym-feat", dry_run=True))
         assert code == 0
         assert result["dry_run"] is True
@@ -517,6 +527,7 @@ class TestMergePlanDirect:
     def test_direct_merge_succeeds(self, repo_pair):
         local, remote = repo_pair
         make_branch(local, "merge-feat")
+        make_branch(local, "merge-feat-dev")
         subprocess.run(["git", "-C", str(local), "push", "--set-upstream", "origin", "merge-feat"], check=True, capture_output=True)
         make_branch(local, "merge-feat-plan")
         subprocess.run(["git", "-C", str(local), "checkout", "merge-feat-plan"], check=True, capture_output=True)
@@ -650,7 +661,7 @@ class TestPublishToGovernance:
         ))
         assert code == 0
         assert result["dry_run"] is True
-        assert any(path.endswith("features/platform/identity/dry-publish/docs/prd.md") for path in result["published_files"])
+        assert any(path.replace("\\", "/").endswith("features/platform/identity/dry-publish/docs/prd.md") for path in result["published_files"])
         assert not (governance / "features" / "platform" / "identity" / "dry-publish" / "docs" / "prd.md").exists()
 
     def test_publish_to_governance_copies_story_files_from_supported_shapes(self, tmp_path):
@@ -716,6 +727,7 @@ class TestMergePlanPRStrategy:
     def test_pr_strategy_reuses_existing_pr_and_enables_auto_merge(self, repo, monkeypatch):
         make_branch(repo, "pr-feat")
         make_branch(repo, "pr-feat-plan")
+        make_branch(repo, "pr-feat-dev")
 
         real_run = subprocess.run
         gh_calls: list[list[str]] = []
@@ -896,12 +908,16 @@ class TestCommitArtifactsBranchGuard:
             files=files,
             description=description,
             phase=phase,
+            phase_step=None,
             push=push,
             no_confirm=True,
             dry_run=dry_run,
         )
 
     def test_wrong_branch_returns_error(self, repo):
+        make_branch(repo, "other-feat")
+        make_branch(repo, "other-feat-plan")
+        make_branch(repo, "other-feat-dev")
         # On main, committing for a different feature_id
         (repo / "file.md").write_text("content")
         result, code = self._args_and_run(repo, "other-feat", ["file.md"])
@@ -915,14 +931,17 @@ class TestCommitArtifactsBranchGuard:
 
     def test_correct_base_branch_allowed(self, repo):
         make_branch(repo, "allowed-feat")
+        make_branch(repo, "allowed-feat-plan")
+        make_branch(repo, "allowed-feat-dev")
         subprocess.run(["git", "-C", str(repo), "checkout", "allowed-feat"], check=True, capture_output=True)
         (repo / "art.md").write_text("content")
-        result, code = ops.cmd_commit_artifacts(self._args(repo, "allowed-feat", ["art.md"], "desc", phase="dev"))
+        result, code = ops.cmd_commit_artifacts(self._args(repo, "allowed-feat", ["art.md"], "desc", phase="unknown"))
         assert code == 0
 
     def test_plan_branch_allowed(self, repo):
         make_branch(repo, "planb-feat")
         make_branch(repo, "planb-feat-plan")
+        make_branch(repo, "planb-feat-dev")
         subprocess.run(["git", "-C", str(repo), "checkout", "planb-feat-plan"], check=True, capture_output=True)
         (repo / "plan.md").write_text("plan")
         result, code = ops.cmd_commit_artifacts(self._args(repo, "planb-feat", ["plan.md"], "plan desc", phase="plan"))
@@ -930,11 +949,13 @@ class TestCommitArtifactsBranchGuard:
 
     def test_dev_branch_allowed(self, repo):
         make_branch(repo, "devb-feat")
-        make_branch(repo, "devb-feat-dev-alice")
-        subprocess.run(["git", "-C", str(repo), "checkout", "devb-feat-dev-alice"], check=True, capture_output=True)
+        make_branch(repo, "devb-feat-plan")
+        make_branch(repo, "devb-feat-dev")
+        subprocess.run(["git", "-C", str(repo), "checkout", "devb-feat-dev"], check=True, capture_output=True)
         (repo / "impl.md").write_text("impl")
         result, code = ops.cmd_commit_artifacts(self._args(repo, "devb-feat", ["impl.md"], "impl desc", phase="dev"))
-        assert code == 0
+        assert code == 1
+        assert result["error"] == "target_repo_only_phase"
 
 
 class TestCommitArtifactsPushFlag:
@@ -942,6 +963,8 @@ class TestCommitArtifactsPushFlag:
     def test_push_flag_commits_and_pushes(self, repo_pair):
         local, remote = repo_pair
         make_branch(local, "push-feat")
+        make_branch(local, "push-feat-plan")
+        make_branch(local, "push-feat-dev")
         subprocess.run(["git", "-C", str(local), "push", "--set-upstream", "origin", "push-feat"], check=True, capture_output=True)
         subprocess.run(["git", "-C", str(local), "checkout", "push-feat"], check=True, capture_output=True)
         (local / "pushed.md").write_text("pushed content")
@@ -951,7 +974,8 @@ class TestCommitArtifactsPushFlag:
             feature_id="push-feat",
             files=["pushed.md"],
             description="pushed artifact",
-            phase="dev",
+            phase="unknown",
+            phase_step=None,
             push=True,
             no_confirm=True,
             dry_run=False,
@@ -964,6 +988,8 @@ class TestCommitArtifactsNothingToCommit:
     """TC-3: nothing_to_commit error path."""
     def test_nothing_to_commit_returns_error(self, repo):
         make_branch(repo, "ntc-feat")
+        make_branch(repo, "ntc-feat-plan")
+        make_branch(repo, "ntc-feat-dev")
         subprocess.run(["git", "-C", str(repo), "checkout", "ntc-feat"], check=True, capture_output=True)
         # Create and commit a file
         (repo / "already.md").write_text("committed")
@@ -976,7 +1002,8 @@ class TestCommitArtifactsNothingToCommit:
             feature_id="ntc-feat",
             files=["already.md"],
             description="re-commit",
-            phase="dev",
+            phase="unknown",
+            phase_step=None,
             push=False,
             no_confirm=True,
             dry_run=False,
@@ -985,11 +1012,253 @@ class TestCommitArtifactsNothingToCommit:
         assert result["error"] == "nothing_to_commit"
 
 
+class TestTopologyAndRouting:
+    def test_commit_requires_three_branch_topology(self, repo):
+        make_branch(repo, "route-feat")
+        make_branch(repo, "route-feat-plan")
+        subprocess.run(["git", "-C", str(repo), "checkout", "route-feat-plan"], check=True, capture_output=True)
+        (repo / "plan.md").write_text("plan")
+
+        result, code = ops.cmd_commit_artifacts(_no_args(
+            repo=str(repo),
+            governance_repo=str(repo),
+            feature_id="route-feat",
+            files=["plan.md"],
+            description="route test",
+            phase="preplan",
+            phase_step=None,
+            push=False,
+            no_confirm=True,
+            dry_run=False,
+        ))
+
+        assert code == 1
+        assert result["error"] == "missing_required_branch"
+        assert "route-feat-dev" in result["missing_branches"]
+        assert result["action"] == "init-feature"
+
+    def test_finalizeplan_step3_requires_dev_branch(self, repo):
+        make_branch(repo, "fin-feat")
+        make_branch(repo, "fin-feat-plan")
+        make_branch(repo, "fin-feat-dev")
+        subprocess.run(["git", "-C", str(repo), "checkout", "fin-feat-plan"], check=True, capture_output=True)
+        (repo / "bundle.md").write_text("bundle")
+
+        result, code = ops.cmd_commit_artifacts(_no_args(
+            repo=str(repo),
+            governance_repo=str(repo),
+            feature_id="fin-feat",
+            files=["bundle.md"],
+            description="finalize step 3 bundle",
+            phase="finalizeplan",
+            phase_step="step3",
+            push=False,
+            no_confirm=True,
+            dry_run=False,
+        ))
+
+        assert code == 1
+        assert result["error"] == "phase_branch_mismatch"
+        assert result["routing"]["expected_branch"] == "fin-feat-dev"
+        assert result["routing"]["routing_enforced"] is True
+
+    def test_dev_phase_rejected_in_control_repo(self, repo):
+        make_branch(repo, "dev-route")
+        make_branch(repo, "dev-route-plan")
+        make_branch(repo, "dev-route-dev")
+        subprocess.run(["git", "-C", str(repo), "checkout", "dev-route-dev"], check=True, capture_output=True)
+        (repo / "impl.md").write_text("impl")
+
+        result, code = ops.cmd_commit_artifacts(_no_args(
+            repo=str(repo),
+            governance_repo=str(repo),
+            feature_id="dev-route",
+            files=["impl.md"],
+            description="impl",
+            phase="dev",
+            phase_step=None,
+            push=False,
+            no_confirm=True,
+            dry_run=False,
+        ))
+
+        assert code == 1
+        assert result["error"] == "target_repo_only_phase"
+
+
+class TestPhaseStartValidation:
+    def test_phase_start_rejects_missing_branch(self, repo):
+        make_branch(repo, "phase-start")
+        make_branch(repo, "phase-start-plan")
+        write_feature_yaml(repo, "phase-start", phase="preplan")
+        subprocess.run(["git", "-C", str(repo), "checkout", "phase-start"], check=True, capture_output=True)
+
+        result, code = ops.cmd_validate_phase_start(_no_args(
+            governance_repo=str(repo),
+            repo=str(repo),
+            feature_id="phase-start",
+            expected_base_branch="phase-start",
+        ))
+
+        assert code == 1
+        assert result["error"] == "missing_required_branch"
+
+    def test_phase_start_rejects_wrong_base_branch(self, repo):
+        write_feature_yaml(repo, "phase-base", phase="preplan")
+        make_branch(repo, "phase-base")
+        make_branch(repo, "phase-base-plan")
+        make_branch(repo, "phase-base-dev")
+        subprocess.run(["git", "-C", str(repo), "checkout", "main"], check=True, capture_output=True)
+
+        result, code = ops.cmd_validate_phase_start(_no_args(
+            governance_repo=str(repo),
+            repo=str(repo),
+            feature_id="phase-base",
+            expected_base_branch="phase-base",
+        ))
+
+        assert code == 1
+        assert result["error"] == "base_branch_mismatch"
+
+    def test_phase_start_accepts_express_track(self, repo):
+        write_feature_yaml(repo, "phase-express", phase="preplan", status="active")
+        feature_yaml = repo / "features" / "platform" / "api" / "phase-express" / "feature.yaml"
+        payload = yaml.safe_load(feature_yaml.read_text(encoding="utf-8"))
+        payload["track"] = "express"
+        feature_yaml.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+        make_branch(repo, "phase-express")
+        make_branch(repo, "phase-express-plan")
+        make_branch(repo, "phase-express-dev")
+        subprocess.run(["git", "-C", str(repo), "checkout", "phase-express"], check=True, capture_output=True)
+
+        result, code = ops.cmd_validate_phase_start(_no_args(
+            governance_repo=str(repo),
+            repo=str(repo),
+            feature_id="phase-express",
+            expected_base_branch="phase-express",
+        ))
+
+        assert code == 0
+        assert result["status"] == "pass"
+        assert result["track"] == "express"
+        assert result["track_canonical"] == "express"
+        assert result["constitution_gate"] == "pass"
+
+
+class TestCleanupBranch:
+    def test_cleanup_deletes_branch_switches_and_pulls(self, repo_pair):
+        local, remote = repo_pair
+        subprocess.run(["git", "-C", str(local), "checkout", "-b", "cleanup-step"], check=True, capture_output=True)
+        (local / "step.md").write_text("step")
+        subprocess.run(["git", "-C", str(local), "add", "."], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(local), "commit", "-m", "step"], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(local), "push", "--set-upstream", "origin", "cleanup-step"], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(local), "checkout", "main"], check=True, capture_output=True)
+
+        result, code = ops.cmd_cleanup_branch(_no_args(
+            repo=str(local),
+            branch="cleanup-step",
+            next_branch="main",
+            dry_run=False,
+        ))
+
+        assert code == 0
+        assert result["status"] == "pass"
+        assert result["local_deleted"] is True
+        assert result["remote_deleted"] is True
+        assert result["switched_and_pulled"] is True
+        assert ops.current_branch(str(local)) == "main"
+
+    def test_cleanup_is_idempotent(self, repo_pair):
+        local, remote = repo_pair
+        result, code = ops.cmd_cleanup_branch(_no_args(
+            repo=str(local),
+            branch="missing-step",
+            next_branch="main",
+            dry_run=False,
+        ))
+
+        assert code == 0
+        assert result["local_deleted"] is False
+        assert result["remote_deleted"] is False
+        assert result["working_tree_clean_verified"] is True
+        assert result["idempotent"] is True
+
+
+class TestExpressPublishMapping:
+    def test_express_publish_copies_full_bundle_and_reports_review_filename(self, tmp_path):
+        governance = tmp_path / "governance"
+        control = tmp_path / "control"
+        governance.mkdir()
+        control.mkdir()
+
+        write_feature_yaml(governance, "express-feat", domain="platform", service="identity", phase="expressplan")
+
+        control_docs = control / "docs" / "platform" / "identity" / "express-feat"
+        control_docs.mkdir(parents=True, exist_ok=True)
+        (control_docs / "business-plan.md").write_text("# Business Plan\n")
+        (control_docs / "tech-plan.md").write_text("# Tech Plan\n")
+        (control_docs / "sprint-plan.md").write_text("# Sprint Plan\n")
+        (control_docs / "expressplan-review.md").write_text("# Legacy Review\n")
+
+        result, code = ops.cmd_publish_to_governance(_no_args(
+            governance_repo=str(governance),
+            control_repo=str(control),
+            feature_id="express-feat",
+            phase="expressplan",
+            artifact=[],
+            dry_run=False,
+        ))
+
+        assert code == 0
+        target_root = governance / "features" / "platform" / "identity" / "express-feat" / "docs"
+        assert (target_root / "business-plan.md").exists()
+        assert (target_root / "tech-plan.md").exists()
+        assert (target_root / "sprint-plan.md").exists()
+        assert (target_root / "expressplan-review.md").exists()
+        assert result["matched_review_filename"] == "expressplan-review.md"
+        assert result["express_review_resolution_order"] == [
+            "expressplan-adversarial-review.md",
+            "expressplan-review.md",
+        ]
+
+    def test_express_publish_prefers_current_review_filename_when_both_exist(self, tmp_path):
+        governance = tmp_path / "governance"
+        control = tmp_path / "control"
+        governance.mkdir()
+        control.mkdir()
+
+        write_feature_yaml(governance, "express-pref", domain="platform", service="identity", phase="expressplan")
+
+        control_docs = control / "docs" / "platform" / "identity" / "express-pref"
+        control_docs.mkdir(parents=True, exist_ok=True)
+        (control_docs / "business-plan.md").write_text("# Business Plan\n")
+        (control_docs / "tech-plan.md").write_text("# Tech Plan\n")
+        (control_docs / "sprint-plan.md").write_text("# Sprint Plan\n")
+        (control_docs / "expressplan-adversarial-review.md").write_text("# Current\n")
+        (control_docs / "expressplan-review.md").write_text("# Legacy\n")
+
+        result, code = ops.cmd_publish_to_governance(_no_args(
+            governance_repo=str(governance),
+            control_repo=str(control),
+            feature_id="express-pref",
+            phase="expressplan",
+            artifact=[],
+            dry_run=False,
+        ))
+
+        assert code == 0
+        assert result["matched_review_filename"] == "expressplan-adversarial-review.md"
+        assert result["express_review_resolution_order"][0] == "expressplan-adversarial-review.md"
+
+
+
 class TestMergePlanDeleteAfterMerge:
     """TC-1: --delete-after-merge logic coverage."""
     def test_delete_after_merge_removes_plan_branch(self, repo_pair):
         local, remote = repo_pair
         make_branch(local, "del-feat")
+        make_branch(local, "del-feat-dev")
         subprocess.run(["git", "-C", str(local), "push", "--set-upstream", "origin", "del-feat"], check=True, capture_output=True)
         make_branch(local, "del-feat-plan")
         subprocess.run(["git", "-C", str(local), "checkout", "del-feat-plan"], check=True, capture_output=True)
@@ -1016,6 +1285,7 @@ class TestMergePlanDirtyTree:
     def test_dirty_tree_rejected(self, repo):
         make_branch(repo, "dirty-merge")
         make_branch(repo, "dirty-merge-plan")
+        make_branch(repo, "dirty-merge-dev")
         # Make working tree dirty
         (repo / "dirty.txt").write_text("uncommitted")
         result, code = ops.cmd_merge_plan(_no_args(
@@ -1035,6 +1305,7 @@ class TestMergePlanPRDryRun:
     def test_pr_dry_run_returns_placeholder_url(self, repo):
         make_branch(repo, "pr-dry-feat")
         make_branch(repo, "pr-dry-feat-plan")
+        make_branch(repo, "pr-dry-feat-dev")
         result, code = ops.cmd_merge_plan(_no_args(
             governance_repo=str(repo),
             feature_id="pr-dry-feat",

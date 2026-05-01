@@ -28,7 +28,21 @@ import yaml
 # Constants
 # ---------------------------------------------------------------------------
 
-VALID_TRACKS = {"quickplan", "full", "hotfix", "tech-change"}
+TRACK_NAMES = [
+    "standard",
+    "express",
+    "quickdev",
+    "hotfix-express",
+    "spike",
+    # Legacy governance names retained so older constitutions do not mask
+    # newer track permissions during additive resolution.
+    "quickplan",
+    "full",
+    "hotfix",
+    "tech-change",
+    "expressplan",
+]
+VALID_TRACKS = set(TRACK_NAMES)
 VALID_PHASES = {"planning", "dev", "complete"}
 VALID_GATE_MODES = {"informational", "hard"}
 KNOWN_CONSTITUTION_KEYS = frozenset({
@@ -44,7 +58,7 @@ _SLUG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 _FM_DELIM = re.compile(r"^---\s*$", re.MULTILINE)
 
 DEFAULTS: dict = {
-    "permitted_tracks": ["quickplan", "full", "hotfix", "tech-change"],
+    "permitted_tracks": list(TRACK_NAMES),
     "required_artifacts": {
         "planning": ["business-plan", "tech-plan"],
         "dev": ["stories"],
@@ -549,7 +563,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_display.add_argument("--service", required=True)
     p_display.add_argument("--repo", default=None)
     p_display.add_argument("--phase", choices=list(VALID_PHASES), default=None)
-    p_display.add_argument("--track", choices=list(VALID_TRACKS), default=None)
+    p_display.add_argument("--track", choices=TRACK_NAMES, default=None)
     p_display.add_argument("--dry-run", action="store_true")
 
     return parser

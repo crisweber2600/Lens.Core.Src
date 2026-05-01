@@ -64,6 +64,10 @@ def write_feature_yaml(path: Path, data: dict) -> None:
     path.write_text(yaml.dump(data), encoding="utf-8")
 
 
+def lens_dev_tracks() -> list[str]:
+    return ["quickplan", "full", "hotfix", "tech-change", "express", "expressplan"]
+
+
 @pytest.fixture
 def gov_repo(tmp_path: Path) -> Path:
     """Minimal governance repo with only an org constitution."""
@@ -160,7 +164,10 @@ class TestMergeConstitutions:
 
     def test_empty_levels_returns_defaults(self, ops) -> None:
         result, _ = self._merge(ops, [])
-        assert set(result["permitted_tracks"]) == {"quickplan", "full", "hotfix", "tech-change"}
+        assert set(result["permitted_tracks"]) == set(ops.TRACK_NAMES)
+        assert {"standard", "express", "quickdev", "hotfix-express", "spike"}.issubset(
+            set(result["permitted_tracks"])
+        )
 
     def test_tracks_intersection(self, ops) -> None:
         result, _ = self._merge(ops, [
@@ -263,7 +270,7 @@ class TestMergeConstitutions:
     def test_invalid_permitted_tracks_type_ignored(self, ops) -> None:
         result, _ = self._merge(ops, [{"permitted_tracks": "all"}])
         # String type — ignored, defaults preserved
-        assert set(result["permitted_tracks"]) == {"quickplan", "full", "hotfix", "tech-change"}
+        assert set(result["permitted_tracks"]) == set(ops.TRACK_NAMES)
 
     def test_invalid_artifacts_type_ignored(self, ops) -> None:
         result, _ = self._merge(ops, [{"required_artifacts": ["stories"]}])
@@ -423,6 +430,25 @@ class TestResolve:
         out = run(["resolve", "--governance-repo", str(tmp_path), "--domain", "x", "--service", "y"])
         warnings = out.get("warnings", [])
         assert any(w["type"] == "unknown_constitution_keys" for w in warnings)
+
+    def test_resolve_lens_dev_new_codebase_keeps_express_track(self, tmp_path: Path) -> None:
+        for constitution_path in (
+            tmp_path / "constitutions" / "org" / "constitution.md",
+            tmp_path / "constitutions" / "lens-dev" / "constitution.md",
+            tmp_path / "constitutions" / "lens-dev" / "new-codebase" / "constitution.md",
+        ):
+            write_constitution(constitution_path, {"permitted_tracks": lens_dev_tracks()})
+
+        out = run([
+            "resolve",
+            "--governance-repo", str(tmp_path),
+            "--domain", "lens-dev",
+            "--service", "new-codebase",
+        ])
+
+        assert out["levels_loaded"] == ["org", "domain", "service"]
+        assert "express" in out["resolved_constitution"]["permitted_tracks"]
+        assert not any(w["type"] == "unknown_tracks" for w in out.get("warnings", []))
 
 
 # ---------------------------------------------------------------------------
@@ -620,6 +646,33 @@ class TestCheckCompliance:
         if review_check:
             assert review_check["status"] == "PASS"
 
+    def test_compliance_permits_express_for_lens_dev_new_codebase(self, tmp_path: Path) -> None:
+        gov = tmp_path / "gov"
+        for constitution_path in (
+            gov / "constitutions" / "org" / "constitution.md",
+            gov / "constitutions" / "lens-dev" / "constitution.md",
+            gov / "constitutions" / "lens-dev" / "new-codebase" / "constitution.md",
+        ):
+            write_constitution(constitution_path, {"permitted_tracks": lens_dev_tracks()})
+        fy = self._make_feature_yaml(tmp_path, {
+            "domain": "lens-dev",
+            "service": "new-codebase",
+            "track": "express",
+        })
+
+        out = run([
+            "check-compliance",
+            "--governance-repo", str(gov),
+            "--feature-id", "lens-dev-new-codebase-dogfood",
+            "--feature-yaml", str(fy),
+            "--phase", "planning",
+        ], expect_code=0)
+
+        track_check = next(c for c in out["checks"] if c["requirement"] == "Track 'express' permitted")
+        assert track_check["status"] == "PASS"
+        assert out["track"] == "express"
+        assert "Track 'express' permitted" not in out["informational_failures"]
+
 
 # ---------------------------------------------------------------------------
 # Integration tests: progressive-display subcommand
@@ -704,6 +757,25 @@ class TestProgressiveDisplay:
         out = run(["progressive-display", "--governance-repo", str(gov_repo), "--domain", "x", "--service", "y"])
         assert "enforce_review" in out
         assert isinstance(out["enforce_review"], bool)
+
+    def test_display_express_track_for_lens_dev_new_codebase(self, tmp_path: Path) -> None:
+        for constitution_path in (
+            tmp_path / "constitutions" / "org" / "constitution.md",
+            tmp_path / "constitutions" / "lens-dev" / "constitution.md",
+            tmp_path / "constitutions" / "lens-dev" / "new-codebase" / "constitution.md",
+        ):
+            write_constitution(constitution_path, {"permitted_tracks": lens_dev_tracks()})
+
+        out = run([
+            "progressive-display",
+            "--governance-repo", str(tmp_path),
+            "--domain", "lens-dev",
+            "--service", "new-codebase",
+            "--track", "express",
+        ])
+
+        assert out["track_permitted"] is True
+        assert "express" in out["permitted_tracks"]
 
 
 if __name__ == "__main__":
