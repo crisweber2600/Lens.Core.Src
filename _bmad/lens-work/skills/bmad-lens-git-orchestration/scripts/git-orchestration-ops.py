@@ -4,15 +4,17 @@
 # dependencies = ["PyYAML>=6.0"]
 # ///
 """
-git-orchestration-ops.py — Lens git write operations for the 2-branch feature model.
+git-orchestration-ops.py — Lens git write operations for the 3-branch control feature model.
 
 Subcommands:
-  create-feature-branches  Create {featureId} + {featureId}-plan branches
+    create-feature-branches  Create {featureId} + {featureId}-plan + {featureId}-dev branches
   commit-artifacts         Stage and commit files with a structured message
   create-dev-branch        Create {featureId}-dev-{username} branch
     prepare-dev-branch       Prepare the target repo working branch for a dev cycle
   merge-plan               Merge {featureId}-plan into {featureId}
     publish-to-governance    Copy staged planning docs into governance docs path
+    validate-phase-start     Validate branch topology/base branch/track before phase writes
+    cleanup-branch           Delete merged step branch, switch to next branch, and pull
   push                     Push current (or named) branch to remote
 
 Exit codes:
@@ -25,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -48,17 +51,26 @@ PHASE_ARTIFACTS: dict[str, list[str]] = {
         "story-files",
     ],
     "expressplan": [
-        "product-brief",
-        "prd",
-        "architecture",
-        "epics",
-        "stories",
-        "sprint-status",
+        "business-plan",
+        "tech-plan",
+        "sprint-plan",
         "review-report",
     ],
 }
 
 DEV_BRANCH_MODES = ("direct-default", "feature-id", "feature-id-username")
+SUPPORTED_TRACKS = {
+    "quickplan",
+    "full",
+    "hotfix",
+    "tech-change",
+    "express",
+    "expressplan",
+    "standard",
+    "spike",
+}
+
+PHASE_ROUTE_TO_PLAN = {"preplan", "businessplan", "techplan", "expressplan"}
 
 
 # ---------------------------------------------------------------------------
@@ -146,6 +158,46 @@ def verify_clean(repo: str) -> str | None:
     return None
 
 
+def normalize_publish_path(path: Path) -> Path:
+    """Normalize mixed-separator paths safely across platforms before publish operations."""
+    return Path(os.path.normpath(str(path)))
+
+
+def required_control_branches(feature_id: str) -> list[str]:
+    """Return required control-branch topology for a feature."""
+    return [feature_id, f"{feature_id}-plan", f"{feature_id}-dev"]
+
+
+def missing_control_branches(repo: str, feature_id: str) -> list[str]:
+    """Return missing control branches in the repo, checking local and remote refs."""
+    missing: list[str] = []
+    for branch in required_control_branches(feature_id):
+        if not branch_exists(repo, branch, include_remote=True):
+            missing.append(branch)
+    return missing
+
+
+def branch_for_phase_write(feature_id: str, phase: str | None, phase_step: str | None) -> tuple[str | None, str | None]:
+    """Resolve the expected control-repo branch for a phase write."""
+    normalized_phase = str(phase or "").strip().lower()
+    normalized_step = str(phase_step or "").strip().lower()
+
+    if normalized_phase == "dev":
+        return None, "target_repo_only"
+
+    if normalized_phase in PHASE_ROUTE_TO_PLAN:
+        return f"{feature_id}-plan", "planning_or_express_to_plan"
+
+    if normalized_phase == "finalizeplan":
+        if normalized_step in {"step1", "step2", "1", "2", "finalizeplan-step1", "finalizeplan-step2"}:
+            return f"{feature_id}-plan", "finalizeplan_step_1_2_to_plan"
+        if normalized_step in {"step3", "3", "finalizeplan-step3"}:
+            return f"{feature_id}-dev", "finalizeplan_step_3_to_dev"
+        return f"{feature_id}-plan", "finalizeplan_default_to_plan"
+
+    return None, None
+
+
 # ---------------------------------------------------------------------------
 # feature.yaml helpers (shared with git-state-ops)
 # ---------------------------------------------------------------------------
@@ -189,7 +241,7 @@ def resolve_docs_roots(control_repo: str, governance_repo: str, feature_data: di
     return Path(control_repo) / control_rel, Path(governance_repo) / governance_rel
 
 
-def artifact_candidates(docs_root: Path, name: str) -> list[Path]:
+def artifact_candidates(docs_root: Path, name: str, phase: str | None = None) -> list[Path]:
     """Return candidate files for a named lifecycle artifact."""
     match name:
         case "product-brief":
@@ -208,6 +260,12 @@ def artifact_candidates(docs_root: Path, name: str) -> list[Path]:
         case "architecture":
             candidates = [docs_root / "architecture.md"]
             candidates += list(docs_root.glob("*architecture*.md"))
+        case "business-plan":
+            candidates = [docs_root / "business-plan.md"]
+        case "tech-plan":
+            candidates = [docs_root / "tech-plan.md"]
+        case "sprint-plan":
+            candidates = [docs_root / "sprint-plan.md"]
         case "epics":
             candidates = [docs_root / "epics.md"]
         case "stories":
@@ -219,15 +277,21 @@ def artifact_candidates(docs_root: Path, name: str) -> list[Path]:
         case "story-files":
             candidates = story_file_candidates(docs_root)
         case "review-report":
-            candidates = [
-                docs_root / "review-report.md",
-                docs_root / "adversarial-review.md",
-                docs_root / "preplan-adversarial-review.md",
-                docs_root / "businessplan-adversarial-review.md",
-                docs_root / "techplan-adversarial-review.md",
-                docs_root / "expressplan-adversarial-review.md",
-                docs_root / "finalizeplan-review.md",
-            ]
+            if (phase or "").strip().lower() == "expressplan":
+                candidates = [
+                    docs_root / "expressplan-adversarial-review.md",
+                    docs_root / "expressplan-review.md",
+                ]
+            else:
+                candidates = [
+                    docs_root / "review-report.md",
+                    docs_root / "adversarial-review.md",
+                    docs_root / "preplan-adversarial-review.md",
+                    docs_root / "businessplan-adversarial-review.md",
+                    docs_root / "techplan-adversarial-review.md",
+                    docs_root / "expressplan-adversarial-review.md",
+                    docs_root / "finalizeplan-review.md",
+                ]
         case _:
             candidates = [docs_root / f"{name}.md"]
     return candidates
@@ -255,9 +319,13 @@ def story_file_candidates(docs_root: Path) -> list[Path]:
     return candidates
 
 
-def existing_artifact_files(docs_root: Path, artifact_name: str) -> list[Path]:
+def existing_artifact_files(docs_root: Path, artifact_name: str, phase: str | None = None) -> list[Path]:
     """Return existing non-empty files for an artifact name."""
-    return [candidate for candidate in artifact_candidates(docs_root, artifact_name) if candidate.exists() and candidate.stat().st_size > 0]
+    return [
+        candidate
+        for candidate in artifact_candidates(docs_root, artifact_name, phase=phase)
+        if candidate.exists() and candidate.stat().st_size > 0
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -338,11 +406,14 @@ def cmd_create_feature_branches(args: argparse.Namespace) -> tuple[dict[str, Any
         return {"error": "feature_yaml_not_found", "feature_id": feature_id}, 1
 
     plan_branch = f"{feature_id}-plan"
+    dev_branch = f"{feature_id}-dev"
 
     if branch_exists(repo, feature_id, include_remote=True):
         return {"error": "branch_already_exists", "branch": feature_id}, 1
     if branch_exists(repo, plan_branch, include_remote=True):
         return {"error": "branch_already_exists", "branch": plan_branch}, 1
+    if branch_exists(repo, dev_branch, include_remote=True):
+        return {"error": "branch_already_exists", "branch": dev_branch}, 1
 
     # Precondition: working directory must be clean before switching branches
     if not args.dry_run:
@@ -362,6 +433,8 @@ def cmd_create_feature_branches(args: argparse.Namespace) -> tuple[dict[str, Any
         runner.run(["push", "--set-upstream", "origin", feature_id])
         runner.run(["checkout", "-b", plan_branch])
         runner.run(["push", "--set-upstream", "origin", plan_branch])
+        runner.run(["checkout", "-b", dev_branch])
+        runner.run(["push", "--set-upstream", "origin", dev_branch])
     except RuntimeError as exc:
         return {"error": "push_failed", "detail": str(exc)}, 1
     finally:
@@ -371,9 +444,12 @@ def cmd_create_feature_branches(args: argparse.Namespace) -> tuple[dict[str, Any
         "feature_id": feature_id,
         "base_branch": feature_id,
         "plan_branch": plan_branch,
+        "dev_branch": dev_branch,
         "base_remote": f"origin/{feature_id}",
         "plan_remote": f"origin/{plan_branch}",
+        "dev_remote": f"origin/{dev_branch}",
         "created_from": default_branch,
+        "target_repo_branch_modes": list(DEV_BRANCH_MODES),
         "dry_run": args.dry_run,
     }, 0
 
@@ -393,16 +469,57 @@ def cmd_commit_artifacts(args: argparse.Namespace) -> tuple[dict[str, Any], int]
         if not (root / f).exists():
             return {"error": "file_not_found", "path": f}, 1
 
+    # Guard: control topology must exist before phase writes begin.
+    if not args.dry_run:
+        missing = missing_control_branches(repo, feature_id)
+        if missing:
+            return {
+                "error": "missing_required_branch",
+                "feature_id": feature_id,
+                "missing_branches": missing,
+                "action": "init-feature",
+                "detail": "Required control branches are missing. Re-run init-feature/create-feature-branches.",
+            }, 1
+
     # Guard: must be on a branch belonging to this feature
     if not args.dry_run:
         cb = current_branch(repo)
-        allowed = {feature_id, f"{feature_id}-plan"}
+        allowed = {feature_id, f"{feature_id}-plan", f"{feature_id}-dev"}
         if cb not in allowed and not cb.startswith(f"{feature_id}-dev-"):
             return {
                 "error": "wrong_branch",
                 "current": cb,
-                "expected": [feature_id, f"{feature_id}-plan", f"{feature_id}-dev-<username>"],
+                "expected": [feature_id, f"{feature_id}-plan", f"{feature_id}-dev", f"{feature_id}-dev-<username>"],
             }, 1
+
+        expected_branch, routing_rule = branch_for_phase_write(feature_id, args.phase, getattr(args, "phase_step", None))
+        routing_decision: dict[str, Any] = {
+            "phase": args.phase,
+            "phase_step": getattr(args, "phase_step", None),
+            "current_branch": cb,
+            "expected_branch": expected_branch,
+            "routing_rule": routing_rule,
+        }
+        if routing_rule == "target_repo_only":
+            return {
+                "error": "target_repo_only_phase",
+                "detail": "Dev artifacts must be committed in the target repo, not control-repo branches.",
+                "routing": routing_decision,
+            }, 1
+        if expected_branch and cb != expected_branch:
+            return {
+                "error": "phase_branch_mismatch",
+                "detail": f"Phase '{args.phase}' (step '{getattr(args, 'phase_step', None) or ''}') must write on branch '{expected_branch}', found '{cb}'.",
+                "routing": routing_decision,
+            }, 1
+    else:
+        routing_decision = {
+            "phase": args.phase,
+            "phase_step": getattr(args, "phase_step", None),
+            "current_branch": "(dry-run)",
+            "expected_branch": branch_for_phase_write(feature_id, args.phase, getattr(args, "phase_step", None))[0],
+            "routing_rule": branch_for_phase_write(feature_id, args.phase, getattr(args, "phase_step", None))[1],
+        }
 
     # Resolve phase from feature.yaml if not provided
     phase = args.phase
@@ -469,6 +586,7 @@ def cmd_commit_artifacts(args: argparse.Namespace) -> tuple[dict[str, Any], int]
         "commit_sha": sha,
         "commit_message": commit_msg,
         "pushed": push and not args.dry_run,
+        "routing": routing_decision,
         "dry_run": args.dry_run,
     }
     if warnings:
@@ -790,6 +908,16 @@ def cmd_merge_plan(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     if not branch_exists(repo, plan_branch):
         return {"error": "plan_branch_not_found", "branch": plan_branch}, 1
 
+    missing = missing_control_branches(repo, feature_id)
+    if missing:
+        return {
+            "error": "missing_required_branch",
+            "feature_id": feature_id,
+            "missing_branches": missing,
+            "action": "init-feature",
+            "detail": "Required control branches are missing. Re-run init-feature/create-feature-branches.",
+        }, 1
+
     result_payload: dict[str, Any] = {
         "feature_id": feature_id,
         "strategy": strategy,
@@ -914,6 +1042,8 @@ def cmd_publish_to_governance(args: argparse.Namespace) -> tuple[dict[str, Any],
     control_docs_root, governance_docs_root = resolve_docs_roots(
         control_repo, governance_repo, feature_data, resolved_feature_id
     )
+    control_docs_root = normalize_publish_path(control_docs_root)
+    governance_docs_root = normalize_publish_path(governance_docs_root)
 
     if not control_docs_root.exists():
         return {
@@ -928,15 +1058,22 @@ def cmd_publish_to_governance(args: argparse.Namespace) -> tuple[dict[str, Any],
     published_files: list[str] = []
     missing_artifacts: list[str] = []
     copied_from: list[str] = []
+    matched_review_filename: str | None = None
 
     for artifact_name in requested_artifacts:
-        source_files = existing_artifact_files(control_docs_root, artifact_name)
+        source_files = existing_artifact_files(control_docs_root, artifact_name, phase=args.phase)
         if not source_files:
             missing_artifacts.append(artifact_name)
             continue
 
+        if args.phase == "expressplan" and artifact_name == "review-report":
+            # Enforce explicit fallback order and report which filename was matched.
+            source_files = [source_files[0]]
+            matched_review_filename = source_files[0].name
+
         for source_path in source_files:
-            destination_path = governance_docs_root / source_path.name
+            source_path = normalize_publish_path(source_path)
+            destination_path = normalize_publish_path(governance_docs_root / source_path.name)
             copied_from.append(str(source_path))
             published_files.append(str(destination_path))
             if not args.dry_run:
@@ -963,6 +1100,108 @@ def cmd_publish_to_governance(args: argparse.Namespace) -> tuple[dict[str, Any],
         "copied_from": copied_from,
         "published_files": published_files,
         "missing_artifacts": missing_artifacts,
+        "matched_review_filename": matched_review_filename,
+        "dry_run": args.dry_run,
+    }, 0
+
+
+def cmd_validate_phase_start(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    """Validate topology, base branch, and track before phase writes begin."""
+    feature_id = args.feature_id
+    repo = args.repo
+    governance_repo = args.governance_repo
+    expected_base = args.expected_base_branch or feature_id
+
+    missing = missing_control_branches(repo, feature_id)
+    if missing:
+        return {
+            "error": "missing_required_branch",
+            "feature_id": feature_id,
+            "missing_branches": missing,
+            "action": "init-feature",
+            "detail": "Required control branches are missing. Re-run init-feature/create-feature-branches.",
+        }, 1
+
+    cb = current_branch(repo)
+    if cb != expected_base:
+        return {
+            "error": "base_branch_mismatch",
+            "feature_id": feature_id,
+            "current_branch": cb,
+            "expected_base_branch": expected_base,
+            "detail": "Phase start must begin from the intended base branch.",
+        }, 1
+
+    yaml_path = find_feature_yaml(governance_repo, feature_id)
+    if yaml_path is None:
+        return {"error": "feature_yaml_not_found", "feature_id": feature_id}, 1
+    feature_data = load_feature_yaml(yaml_path)
+    if not feature_data:
+        return {"error": "invalid_feature_yaml", "path": str(yaml_path)}, 1
+    track = str(feature_data.get("track") or "").strip().lower()
+    if track not in SUPPORTED_TRACKS:
+        return {
+            "error": "constitution_track_not_permitted",
+            "feature_id": feature_id,
+            "track": track,
+            "detail": "Track failed phase-start constitution gate.",
+        }, 1
+
+    return {
+        "status": "pass",
+        "feature_id": feature_id,
+        "current_branch": cb,
+        "expected_base_branch": expected_base,
+        "track": track,
+        "required_branches": required_control_branches(feature_id),
+        "message": "Phase-start validation passed.",
+    }, 0
+
+
+def cmd_cleanup_branch(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    """Delete merged step branch, then switch/pull the next branch. Idempotent by design."""
+    repo = args.repo
+    branch = args.branch
+    next_branch = args.next_branch
+
+    dirty = verify_clean(repo)
+    if dirty:
+        return {"error": "dirty_working_tree", "detail": dirty}, 1
+
+    if not branch_exists(repo, next_branch, include_remote=True):
+        return {"error": "next_branch_not_found", "branch": next_branch}, 1
+
+    runner = Runner(args.dry_run, repo)
+    current = current_branch(repo)
+    local_deleted = False
+    remote_deleted = False
+
+    try:
+        if current == branch:
+            runner.run(["checkout", next_branch])
+
+        if branch_exists(repo, branch):
+            runner.run(["branch", "-D", branch])
+            local_deleted = True
+
+        if branch_exists(repo, branch, include_remote=True):
+            remote_exists = git(["branch", "-r", "--list", f"origin/{branch}"], cwd=repo).stdout.strip()
+            if remote_exists:
+                runner.run(["push", "origin", "--delete", branch])
+                remote_deleted = True
+
+        runner.run(["checkout", next_branch])
+        runner.run(["pull", "origin", next_branch])
+    except RuntimeError as exc:
+        return {"error": "cleanup_failed", "detail": str(exc)}, 1
+
+    return {
+        "status": "pass",
+        "branch": branch,
+        "next_branch": next_branch,
+        "local_deleted": local_deleted,
+        "remote_deleted": remote_deleted,
+        "idempotent": True,
         "dry_run": args.dry_run,
     }, 0
 
@@ -973,12 +1212,12 @@ def cmd_publish_to_governance(args: argparse.Namespace) -> tuple[dict[str, Any],
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        description="Lens git write operations for the 2-branch feature model"
+        description="Lens git write operations for the 3-branch control feature model"
     )
     sub = p.add_subparsers(dest="command", required=True)
 
     # create-feature-branches
-    cfb = sub.add_parser("create-feature-branches", help="Create {featureId} + {featureId}-plan branches")
+    cfb = sub.add_parser("create-feature-branches", help="Create {featureId} + {featureId}-plan + {featureId}-dev branches")
     cfb.add_argument("--governance-repo", required=True)
     cfb.add_argument("--feature-id", required=True)
     cfb.add_argument("--repo", default=None, help="Working repo path (defaults to governance-repo)")
@@ -993,6 +1232,7 @@ def build_parser() -> argparse.ArgumentParser:
     ca.add_argument("--files", nargs="+", required=True)
     ca.add_argument("--description", required=True)
     ca.add_argument("--phase", default=None, help="Phase token; auto-resolved from feature.yaml if omitted")
+    ca.add_argument("--phase-step", default=None, help="Optional phase step token for branch routing (for example: step1/step2/step3)")
     ca.add_argument("--push", action="store_true")
     ca.add_argument("--no-confirm", action="store_true")
     ca.add_argument("--dry-run", action="store_true")
@@ -1057,6 +1297,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ptg.add_argument("--dry-run", action="store_true")
 
+    # validate-phase-start
+    vps = sub.add_parser("validate-phase-start", help="Validate control branches/base branch/track before phase writes")
+    vps.add_argument("--governance-repo", required=True)
+    vps.add_argument("--repo", required=True)
+    vps.add_argument("--feature-id", required=True)
+    vps.add_argument("--expected-base-branch", default=None)
+
+    # cleanup-branch
+    cln = sub.add_parser("cleanup-branch", help="Delete merged branch, switch to next branch, and pull")
+    cln.add_argument("--repo", required=True)
+    cln.add_argument("--branch", required=True)
+    cln.add_argument("--next-branch", required=True)
+    cln.add_argument("--dry-run", action="store_true")
+
     return p
 
 
@@ -1077,6 +1331,8 @@ def main() -> int:
         "create-pr": cmd_create_pr,
         "merge-plan": cmd_merge_plan,
         "publish-to-governance": cmd_publish_to_governance,
+        "validate-phase-start": cmd_validate_phase_start,
+        "cleanup-branch": cmd_cleanup_branch,
         "push": cmd_push,
     }
 
