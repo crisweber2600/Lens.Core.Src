@@ -60,7 +60,7 @@ You are the Next conductor. Your only job is to ask `next-ops.py` what to do and
 Invoke the routing script:
 
 ```bash
-uv run {module_path}/skills/bmad-lens-next/scripts/next-ops.py suggest --feature-id {feature_id}
+uv run --script {module_path}/skills/bmad-lens-next/scripts/next-ops.py suggest --feature-id {feature_id} --governance-repo {governance_repo}
 ```
 
 Read the JSON result from stdout. The expected response schema:
@@ -153,7 +153,7 @@ This skill produces no output artifacts. All artifact authorship belongs to the 
 | `next-ops.py` | Sole source of routing decisions (status, recommendation, blockers). |
 | `bmad-lens-bmad-skill` | Receives the delegation call on `status=unblocked`. |
 | `bmad-lens-feature-yaml` | Not called directly; relied upon by the delegated skill. |
-| `bmad-lens-git-state` | Not called directly; relied upon by `next-ops.py`. |
+| `bmad-lens-git-state` | Not called directly; relied upon by the conductor shell (clean git state check in On Activation step). |
 
 ## Audit
 

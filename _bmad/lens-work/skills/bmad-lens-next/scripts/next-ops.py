@@ -14,7 +14,6 @@ Usage:
 """
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -43,19 +42,28 @@ def _find_workspace_root(start: Path) -> Path:
 
 
 def _load_bmadconfig(workspace_root: Path) -> dict:
-    config_path = workspace_root / "lens.core" / "_bmad" / "lens-work" / "bmadconfig.yaml"
-    if not config_path.exists():
-        return {}
-    with open(config_path, encoding="utf-8") as fh:
-        return yaml.safe_load(fh) or {}
+    candidates = [
+        workspace_root / "_bmad" / "lens-work" / "bmadconfig.yaml",
+        workspace_root / "lens.core" / "_bmad" / "lens-work" / "bmadconfig.yaml",
+    ]
+    for config_path in candidates:
+        if config_path.exists():
+            with open(config_path, encoding="utf-8") as fh:
+                return yaml.safe_load(fh) or {}
+    return {}
 
 
 def _resolve_governance_repo(workspace_root: Path, override: str | None) -> Path:
     if override:
         return Path(override).resolve()
     config = _load_bmadconfig(workspace_root)
-    raw = config.get("governance_repo_path", "")
-    raw = raw.replace("{project-root}", str(workspace_root))
+    raw = config.get("governance_repo_path")
+    if raw is None or not str(raw).strip():
+        raise ValueError(
+            "config_missing: governance_repo_path is not set in bmadconfig.yaml "
+            "and no --governance-repo override was provided"
+        )
+    raw = str(raw).replace("{project-root}", str(workspace_root))
     return Path(raw).resolve()
 
 
@@ -81,22 +89,34 @@ def _resolve_lifecycle_yaml(workspace_root: Path, override: str | None = None) -
     return lifecycle_path  # return even if missing; caller handles missing
 
 
+_FEATURE_YAML_INDEX_CACHE: dict[Path, dict[str, Path]] = {}
+
+
+def _build_feature_yaml_index(features_root: Path) -> dict[str, Path]:
+    """Build a feature_id → feature.yaml path index for a features root."""
+    index: dict[str, Path] = {}
+    for candidate in features_root.rglob("feature.yaml"):
+        index.setdefault(candidate.parent.name, candidate)
+    return index
+
+
 def _find_feature_yaml(feature_id: str, governance_repo: Path) -> Path | None:
     """Locate feature.yaml for a given feature_id inside the governance repo."""
-    features_root = governance_repo / "features"
+    features_root = (governance_repo / "features").resolve()
     if not features_root.is_dir():
         return None
-    # Fast path: feature-id typically encodes domain/service/slug as hyphen-separated
-    # Try to find by scanning recursively for matching directories
-    for candidate in features_root.rglob("feature.yaml"):
-        if candidate.parent.name == feature_id:
-            return candidate
-    return None
+    if features_root not in _FEATURE_YAML_INDEX_CACHE:
+        _FEATURE_YAML_INDEX_CACHE[features_root] = _build_feature_yaml_index(features_root)
+    return _FEATURE_YAML_INDEX_CACHE[features_root].get(feature_id)
 
 
 # ---------------------------------------------------------------------------
 # Routing logic
 # ---------------------------------------------------------------------------
+
+# Phases that indicate a dependency feature is sufficiently complete to unblock dependents.
+_DEPENDENCY_COMPLETE_PHASES = frozenset(("dev-complete", "complete", "finalizeplan-complete"))
+
 
 def _empty_result(phase: str = "", track: str = "") -> dict:
     return {
@@ -111,11 +131,18 @@ def _empty_result(phase: str = "", track: str = "") -> dict:
 
 
 def suggest(feature_id: str, governance_repo_override: str | None,
-            control_repo_override: str | None) -> dict:
+            control_repo_override: str | None,
+            lifecycle_path_override: str | None = None) -> dict:
     workspace_root = _find_workspace_root(Path(__file__).resolve().parent)
 
     # --- Resolve governance repo ---
-    governance_repo = _resolve_governance_repo(workspace_root, governance_repo_override)
+    try:
+        governance_repo = _resolve_governance_repo(workspace_root, governance_repo_override)
+    except ValueError as exc:
+        result = _empty_result()
+        result["status"] = "fail"
+        result["error"] = str(exc)
+        return result
 
     # --- Find feature.yaml ---
     feature_yaml_path = _find_feature_yaml(feature_id, governance_repo)
@@ -125,8 +152,16 @@ def suggest(feature_id: str, governance_repo_override: str | None,
         result["error"] = f"feature.yaml not found for feature: {feature_id}"
         return result
 
-    with open(feature_yaml_path, encoding="utf-8") as fh:
-        feature_data = yaml.safe_load(fh) or {}
+    try:
+        with open(feature_yaml_path, encoding="utf-8") as fh:
+            feature_data = yaml.safe_load(fh) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        result = _empty_result()
+        result["status"] = "fail"
+        result["error"] = (
+            f"failed to read or parse feature.yaml for feature {feature_id}: {exc}"
+        )
+        return result
 
     phase: str = feature_data.get("phase", "")
     track: str = feature_data.get("track", "full")
@@ -147,15 +182,21 @@ def suggest(feature_id: str, governance_repo_override: str | None,
         return result
 
     # --- Load lifecycle.yaml ---
-    lifecycle_path = _resolve_lifecycle_yaml(workspace_root)
+    lifecycle_path = _resolve_lifecycle_yaml(workspace_root, lifecycle_path_override)
     if not lifecycle_path.exists():
         result = _empty_result(phase, track)
         result["status"] = "fail"
         result["error"] = f"lifecycle.yaml not found at {lifecycle_path}"
         return result
 
-    with open(lifecycle_path, encoding="utf-8") as fh:
-        lifecycle: dict = yaml.safe_load(fh) or {}
+    try:
+        with open(lifecycle_path, encoding="utf-8") as fh:
+            lifecycle: dict = yaml.safe_load(fh) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        result = _empty_result(phase, track)
+        result["status"] = "fail"
+        result["error"] = f"Failed to read or parse lifecycle.yaml at {lifecycle_path}: {exc}"
+        return result
 
     phases: dict = lifecycle.get("phases", {})
     tracks: dict = lifecycle.get("tracks", {})
@@ -196,16 +237,12 @@ def suggest(feature_id: str, governance_repo_override: str | None,
     # --- Resolve auto_advance_to ---
     auto_advance: str | None = phase_def.get("auto_advance_to")
     if not auto_advance:
-        # If finalizeplan-complete → /dev is the standard next step for all tracks
-        if lookup_phase == "finalizeplan":
-            auto_advance = "/dev"
-        else:
-            result = _empty_result(phase, track)
-            result["status"] = "fail"
-            result["error"] = (
-                f"No auto_advance_to defined for phase '{lookup_phase}' in lifecycle.yaml"
-            )
-            return result
+        result = _empty_result(phase, track)
+        result["status"] = "fail"
+        result["error"] = (
+            f"No auto_advance_to defined for phase '{lookup_phase}' in lifecycle.yaml"
+        )
+        return result
 
     # --- Check blockers (feature.yaml dependencies field) ---
     blockers: list[str] = []
@@ -217,10 +254,20 @@ def suggest(feature_id: str, governance_repo_override: str | None,
     for dep in depends_on:
         dep_feature_yaml = _find_feature_yaml(dep, governance_repo)
         if dep_feature_yaml and dep_feature_yaml.exists():
-            with open(dep_feature_yaml, encoding="utf-8") as fh:
-                dep_data = yaml.safe_load(fh) or {}
+            try:
+                with open(dep_feature_yaml, encoding="utf-8") as fh:
+                    dep_data = yaml.safe_load(fh) or {}
+            except (OSError, yaml.YAMLError) as exc:
+                result = _empty_result(phase, track)
+                result["status"] = "fail"
+                result["warnings"] = warnings
+                result["error"] = (
+                    f"Invalid dependency feature.yaml for '{dep}' at "
+                    f"'{dep_feature_yaml}': {exc}"
+                )
+                return result
             dep_phase = dep_data.get("phase", "")
-            if dep_phase not in ("dev-complete", "complete", "archived", "finalizeplan-complete"):
+            if dep_phase not in _DEPENDENCY_COMPLETE_PHASES:
                 blockers.append(
                     f"Dependency '{dep}' is not yet complete (phase: {dep_phase})"
                 )
@@ -274,6 +321,11 @@ def main() -> None:
         default=None,
         help="Override path to control repo root (unused currently but accepted for compatibility)",
     )
+    suggest_parser.add_argument(
+        "--lifecycle-path",
+        default=None,
+        help="Override path to lifecycle.yaml (primarily for testing)",
+    )
 
     args = parser.parse_args()
 
@@ -282,6 +334,7 @@ def main() -> None:
             feature_id=args.feature_id,
             governance_repo_override=args.governance_repo,
             control_repo_override=args.control_repo,
+            lifecycle_path_override=args.lifecycle_path,
         )
         print(json.dumps(result, indent=2))
         if result["status"] == "fail":

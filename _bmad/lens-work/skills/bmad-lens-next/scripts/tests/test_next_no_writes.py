@@ -14,6 +14,7 @@ appear in the skill instructions.
 """
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -26,7 +27,6 @@ import yaml
 SCRIPT = Path(__file__).parent.parent / "next-ops.py"
 MODULE_ROOT = SCRIPT.parents[3]  # _bmad/lens-work
 SKILL_MD = MODULE_ROOT / "skills" / "bmad-lens-next" / "SKILL.md"
-LIFECYCLE_YAML = MODULE_ROOT / "lifecycle.yaml"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -35,10 +35,11 @@ LIFECYCLE_YAML = MODULE_ROOT / "lifecycle.yaml"
 def run_next(args: list[str]) -> tuple[dict, int]:
     """Invoke next-ops.py and return (parsed_json, exit_code)."""
     result = subprocess.run(
-        [sys.executable, str(SCRIPT), *args],
+        [sys.executable, "-B", str(SCRIPT), *args],
         capture_output=True,
         text=True,
         check=False,
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
     )
     try:
         payload = json.loads(result.stdout)
@@ -244,3 +245,209 @@ def test_skill_md_no_write_tool_calls():
         "SKILL.md contains write-capable tool call references:\n"
         + "\n".join(f"  L{ln}: {text!r} [matched: {pat}]" for ln, text, pat in violations)
     )
+
+
+# ---------------------------------------------------------------------------
+# Routing outcome fixtures and tests
+# ---------------------------------------------------------------------------
+
+MINIMAL_LIFECYCLE_YAML = {
+    "phases": {
+        "preplan": {"auto_advance_to": "/businessplan"},
+        "businessplan": {"auto_advance_to": "/techplan"},
+        "techplan": {"auto_advance_to": "/finalizeplan"},
+        "finalizeplan": {"auto_advance_to": "/dev"},
+        "expressplan": {"auto_advance_to": "/finalizeplan"},
+    },
+    "tracks": {
+        "full": {
+            "start_phase": "preplan",
+            "phases": ["preplan", "businessplan", "techplan", "finalizeplan"],
+        },
+        "express": {
+            "start_phase": "expressplan",
+            "phases": ["expressplan", "finalizeplan"],
+        },
+    },
+}
+
+
+@pytest.fixture()
+def lifecycle_yaml(tmp_path):
+    """Write a minimal lifecycle.yaml to tmp_path and return its path."""
+    path = tmp_path / "lifecycle.yaml"
+    path.write_text(yaml.safe_dump(MINIMAL_LIFECYCLE_YAML, sort_keys=False))
+    return path
+
+
+@pytest.mark.parametrize("phase,track,expected_recommendation", [
+    ("preplan", "full", "/businessplan"),
+    ("preplan-complete", "full", "/businessplan"),
+    ("businessplan", "full", "/techplan"),
+    ("businessplan-complete", "full", "/techplan"),
+    ("techplan", "full", "/finalizeplan"),
+    ("techplan-complete", "full", "/finalizeplan"),
+    ("finalizeplan", "full", "/dev"),
+    ("finalizeplan-complete", "full", "/dev"),
+    ("expressplan", "express", "/finalizeplan"),
+    ("expressplan-complete", "express", "/finalizeplan"),
+    ("finalizeplan", "express", "/dev"),
+    ("finalizeplan-complete", "express", "/dev"),
+])
+def test_routing_outcomes(tmp_path, lifecycle_yaml, phase, track, expected_recommendation):
+    """Verify deterministic routing outcomes (status/recommendation) across phases and tracks."""
+    repo = tmp_path / "governance"
+    repo.mkdir()
+    write_feature(repo, "test-routing-feature", {
+        "featureId": "test-routing-feature",
+        "domain": "test-domain",
+        "service": "test-service",
+        "phase": phase,
+        "track": track,
+    })
+
+    payload, exit_code = run_next([
+        "suggest",
+        "--feature-id", "test-routing-feature",
+        "--governance-repo", str(repo),
+        "--lifecycle-path", str(lifecycle_yaml),
+    ])
+
+    assert payload["status"] == "unblocked", (
+        f"Expected unblocked for phase={phase!r} track={track!r}, "
+        f"got status={payload['status']!r} error={payload.get('error', '')!r}"
+    )
+    assert payload["recommendation"] == expected_recommendation, (
+        f"Expected recommendation={expected_recommendation!r} for phase={phase!r} track={track!r}, "
+        f"got {payload['recommendation']!r}"
+    )
+    assert payload["blockers"] == []
+    assert exit_code == 0
+
+
+def test_routing_paused_state(tmp_path, lifecycle_yaml):
+    """Paused feature must return status=blocked with the standard pause message."""
+    repo = tmp_path / "governance"
+    repo.mkdir()
+    write_feature(repo, "test-paused", {
+        "featureId": "test-paused",
+        "domain": "test-domain",
+        "service": "test-service",
+        "phase": "paused",
+        "track": "full",
+    })
+
+    payload, _ = run_next([
+        "suggest",
+        "--feature-id", "test-paused",
+        "--governance-repo", str(repo),
+        "--lifecycle-path", str(lifecycle_yaml),
+    ])
+
+    assert payload["status"] == "blocked"
+    assert any("paused" in b for b in payload["blockers"])
+
+
+def test_routing_unknown_phase(tmp_path, lifecycle_yaml):
+    """Unknown phase must return status=fail with a descriptive error."""
+    repo = tmp_path / "governance"
+    repo.mkdir()
+    write_feature(repo, "test-unknown-phase", {
+        "featureId": "test-unknown-phase",
+        "domain": "test-domain",
+        "service": "test-service",
+        "phase": "nonexistent-phase-xyz",
+        "track": "full",
+    })
+
+    payload, exit_code = run_next([
+        "suggest",
+        "--feature-id", "test-unknown-phase",
+        "--governance-repo", str(repo),
+        "--lifecycle-path", str(lifecycle_yaml),
+    ])
+
+    assert payload["status"] == "fail"
+    assert "nonexistent-phase-xyz" in payload["error"] or "Unknown phase" in payload["error"]
+    assert exit_code != 0
+
+
+def test_routing_unknown_track(tmp_path, lifecycle_yaml):
+    """Unknown track must return status=fail with a descriptive error."""
+    repo = tmp_path / "governance"
+    repo.mkdir()
+    write_feature(repo, "test-unknown-track", {
+        "featureId": "test-unknown-track",
+        "domain": "test-domain",
+        "service": "test-service",
+        "phase": "preplan",
+        "track": "nonexistent-track-xyz",
+    })
+
+    payload, exit_code = run_next([
+        "suggest",
+        "--feature-id", "test-unknown-track",
+        "--governance-repo", str(repo),
+        "--lifecycle-path", str(lifecycle_yaml),
+    ])
+
+    assert payload["status"] == "fail"
+    assert "nonexistent-track-xyz" in payload["error"] or "Unknown track" in payload["error"]
+    assert exit_code != 0
+
+
+def test_routing_warnings_passthrough(tmp_path, lifecycle_yaml):
+    """Warnings in feature.yaml are surfaced in the unblocked result."""
+    repo = tmp_path / "governance"
+    repo.mkdir()
+    write_feature(repo, "test-with-warnings", {
+        "featureId": "test-with-warnings",
+        "domain": "test-domain",
+        "service": "test-service",
+        "phase": "preplan",
+        "track": "full",
+        "warnings": ["This feature has a pending architecture review"],
+    })
+
+    payload, exit_code = run_next([
+        "suggest",
+        "--feature-id", "test-with-warnings",
+        "--governance-repo", str(repo),
+        "--lifecycle-path", str(lifecycle_yaml),
+    ])
+
+    assert payload["status"] == "unblocked"
+    assert payload["warnings"] == ["This feature has a pending architecture review"]
+    assert payload["recommendation"] == "/businessplan"
+    assert exit_code == 0
+
+
+def test_routing_blocked_by_dependency(tmp_path, lifecycle_yaml):
+    """Feature with an incomplete dependency must return status=blocked."""
+    repo = tmp_path / "governance"
+    repo.mkdir()
+    write_feature(repo, "dep-feature-incomplete", {
+        "featureId": "dep-feature-incomplete",
+        "domain": "test-domain",
+        "service": "test-service",
+        "phase": "preplan",
+        "track": "full",
+    })
+    write_feature(repo, "test-blocked-feature", {
+        "featureId": "test-blocked-feature",
+        "domain": "test-domain",
+        "service": "test-service",
+        "phase": "finalizeplan",
+        "track": "full",
+        "dependencies": {"depends_on": ["dep-feature-incomplete"]},
+    })
+
+    payload, _ = run_next([
+        "suggest",
+        "--feature-id", "test-blocked-feature",
+        "--governance-repo", str(repo),
+        "--lifecycle-path", str(lifecycle_yaml),
+    ])
+
+    assert payload["status"] == "blocked"
+    assert any("dep-feature-incomplete" in b for b in payload["blockers"])
