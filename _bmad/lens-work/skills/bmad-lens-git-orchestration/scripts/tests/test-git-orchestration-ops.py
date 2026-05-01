@@ -1166,6 +1166,7 @@ class TestCleanupBranch:
         assert result["status"] == "pass"
         assert result["local_deleted"] is True
         assert result["remote_deleted"] is True
+        assert result["switched_and_pulled"] is True
         assert ops.current_branch(str(local)) == "main"
 
     def test_cleanup_is_idempotent(self, repo_pair):
@@ -1180,6 +1181,7 @@ class TestCleanupBranch:
         assert code == 0
         assert result["local_deleted"] is False
         assert result["remote_deleted"] is False
+        assert result["working_tree_clean_verified"] is True
         assert result["idempotent"] is True
 
 

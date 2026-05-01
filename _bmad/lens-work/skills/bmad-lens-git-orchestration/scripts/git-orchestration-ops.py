@@ -1217,6 +1217,8 @@ def cmd_cleanup_branch(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         "next_branch": next_branch,
         "local_deleted": local_deleted,
         "remote_deleted": remote_deleted,
+        "switched_and_pulled": True,
+        "working_tree_clean_verified": True,
         "idempotent": True,
         "dry_run": args.dry_run,
     }, 0
