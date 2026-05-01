@@ -570,5 +570,141 @@ def test_move_stories_rejects_invalid_identifiers(tmp_path: Path):
     assert payload["total_moved"] == 0
 
 
+def test_validate_split_fails_when_sprint_plan_file_missing(tmp_path: Path):
+    nonexistent = tmp_path / "no-such-file.yaml"
+
+    payload, code = run_script([
+        "validate-split",
+        "--sprint-plan-file",
+        str(nonexistent),
+        "--story-ids",
+        "story-1,story-2",
+    ])
+
+    assert code == 1
+    assert payload["error"] == "sprint_plan_missing"
+    assert payload["eligible"] == []
+    assert payload["blockers"] == []
+
+
+@pytest.mark.parametrize(
+    "story_id",
+    ["../outside", "sub/dir", "glob*id", "query?id", "[bracket]", "absolute"],
+)
+def test_validate_split_rejects_unsafe_story_ids(tmp_path: Path, story_id: str):
+    sprint_plan = make_sprint_plan(tmp_path / "sprint-plan.md", {"story-safe": "pending"})
+    # Inject an absolute path variant for the "absolute" parametrize value
+    if story_id == "absolute":
+        story_id = str(tmp_path / "some-story")
+
+    payload, code = run_script([
+        "validate-split",
+        "--sprint-plan-file",
+        str(sprint_plan),
+        "--story-ids",
+        story_id,
+    ])
+
+    assert code == 1
+    assert payload["error"] == "invalid_story_id"
+    assert payload["eligible"] == []
+
+
+def test_create_split_feature_rejects_nonexistent_governance_repo(tmp_path: Path):
+    nonexistent_repo = tmp_path / "does-not-exist"
+
+    payload, code = run_script([
+        "create-split-feature",
+        "--governance-repo",
+        str(nonexistent_repo),
+        "--source-feature-id",
+        "auth-login",
+        "--source-domain",
+        "platform",
+        "--source-service",
+        "identity",
+        "--new-feature-id",
+        "auth-mfa",
+        "--new-name",
+        "MFA Authentication",
+        "--track",
+        "quickplan",
+        "--username",
+        "cweber",
+    ])
+
+    assert code == 1
+    assert payload["error"] == "governance_repo_missing"
+
+
+@pytest.mark.parametrize(
+    "story_id",
+    ["../escape", "sub/story", "glob*"],
+)
+def test_move_stories_rejects_unsafe_story_ids(tmp_path: Path, story_id: str):
+    governance_repo = tmp_path / "governance"
+    make_feature_tree(governance_repo, "platform", "identity", "auth-login")
+    make_feature_tree(governance_repo, "platform", "identity", "auth-mfa")
+
+    payload, code = run_script([
+        "move-stories",
+        "--governance-repo",
+        str(governance_repo),
+        "--source-feature-id",
+        "auth-login",
+        "--source-domain",
+        "platform",
+        "--source-service",
+        "identity",
+        "--target-feature-id",
+        "auth-mfa",
+        "--target-domain",
+        "platform",
+        "--target-service",
+        "identity",
+        "--story-ids",
+        story_id,
+    ])
+
+    assert code == 1
+    assert payload["error"] == "invalid_story_id"
+    assert payload["total_moved"] == 0
+
+
+def test_move_stories_preflight_fails_on_destination_conflict(tmp_path: Path):
+    governance_repo = tmp_path / "governance"
+    source_dir = make_feature_tree(governance_repo, "platform", "identity", "auth-login")
+    target_dir = make_feature_tree(governance_repo, "platform", "identity", "auth-mfa")
+    make_story_file(source_dir / "stories", "story-1", "pending")
+    # Pre-create the destination so there is a conflict
+    make_story_file(target_dir / "stories", "story-1", "pending")
+
+    payload, code = run_script([
+        "move-stories",
+        "--governance-repo",
+        str(governance_repo),
+        "--source-feature-id",
+        "auth-login",
+        "--source-domain",
+        "platform",
+        "--source-service",
+        "identity",
+        "--target-feature-id",
+        "auth-mfa",
+        "--target-domain",
+        "platform",
+        "--target-service",
+        "identity",
+        "--story-ids",
+        "story-1",
+    ])
+
+    assert code == 1
+    assert payload["error"] == "destination_conflict"
+    assert payload["total_moved"] == 0
+    # Source file must remain untouched
+    assert (source_dir / "stories" / "story-1.md").exists()
+
+
 if __name__ == "__main__":  # pragma: no cover
     raise SystemExit(pytest.main([str(TEST_FILE)]))

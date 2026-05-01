@@ -21,6 +21,7 @@ import yaml
 
 
 SAFE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
+_UNSAFE_STORY_ID_RE = re.compile(r'[/\\*?\[\]]|\.\.')
 IN_PROGRESS_STATUS = "in-progress"
 
 
@@ -52,12 +53,30 @@ def validate_identifier(value: str, field_name: str) -> str | None:
     )
 
 
+def validate_story_id(story_id: str) -> str | None:
+    """Return an error message if story_id is unsafe for path construction, else None.
+
+    Rejects absolute paths, path-traversal segments (``..``), path separators,
+    and glob metacharacters so that story IDs cannot escape intended directories.
+    """
+    if not story_id:
+        return "Story ID cannot be empty."
+    if os.path.isabs(story_id):
+        return f"Invalid story ID '{story_id}': absolute paths are not allowed."
+    if _UNSAFE_STORY_ID_RE.search(story_id):
+        return (
+            f"Invalid story ID '{story_id}': must not contain path separators, "
+            "'..' segments, or glob metacharacters."
+        )
+    return None
+
+
 def atomic_write_yaml(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temp_path = tempfile.mkstemp(dir=str(path.parent), suffix=".yaml.tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            yaml.dump(data, handle, default_flow_style=False, sort_keys=False, allow_unicode=True)
+            yaml.safe_dump(data, handle, default_flow_style=False, sort_keys=False, allow_unicode=True)
         os.replace(temp_path, str(path))
     except Exception:
         try:
@@ -283,8 +302,32 @@ def cmd_validate_split(args: argparse.Namespace) -> dict:
     if not story_ids:
         return fail("story_ids_missing", "No story IDs provided.", eligible=[], blocked=[], blockers=[])
 
+    for story_id in story_ids:
+        err = validate_story_id(story_id)
+        if err:
+            return fail("invalid_story_id", err, eligible=[], blocked=[], blockers=[])
+
     sprint_plan_path = Path(args.sprint_plan_file)
-    sprint_statuses = parse_sprint_plan(args.sprint_plan_file)
+    if not sprint_plan_path.exists():
+        return fail(
+            "sprint_plan_missing",
+            f"Sprint plan/status file not found: {sprint_plan_path}",
+            eligible=[],
+            blocked=[],
+            blockers=[],
+        )
+
+    try:
+        sprint_statuses = parse_sprint_plan(args.sprint_plan_file)
+    except OSError as exc:
+        return fail(
+            "sprint_plan_unreadable",
+            f"Cannot read sprint plan/status file: {exc}",
+            eligible=[],
+            blocked=[],
+            blockers=[],
+        )
+
     eligible: list[str] = []
     blocked: list[dict[str, str]] = []
     for story_id in story_ids:
@@ -327,6 +370,16 @@ def cmd_create_split_feature(args: argparse.Namespace) -> dict:
             return fail("invalid_identifier", error)
 
     governance_repo = Path(args.governance_repo)
+    if not governance_repo.exists():
+        return fail(
+            "governance_repo_missing",
+            f"Governance repo path does not exist: {governance_repo}",
+        )
+    if not governance_repo.is_dir():
+        return fail(
+            "governance_repo_not_a_directory",
+            f"Governance repo path is not a directory: {governance_repo}",
+        )
     index_path = get_feature_index_path(str(governance_repo))
     try:
         duplicate_exists = feature_exists_in_index(index_path, args.new_feature_id)
@@ -408,6 +461,11 @@ def cmd_move_stories(args: argparse.Namespace) -> dict:
     if not story_ids:
         return fail("story_ids_missing", "No story IDs provided.", moved=[], total_moved=0)
 
+    for story_id in story_ids:
+        err = validate_story_id(story_id)
+        if err:
+            return fail("invalid_story_id", err, moved=[], total_moved=0)
+
     source_stories_dir = get_feature_dir(
         args.governance_repo,
         args.source_domain,
@@ -471,12 +529,38 @@ def cmd_move_stories(args: argparse.Namespace) -> dict:
     if args.dry_run:
         return {"status": "pass", "dry_run": True, "moved": planned_moves, "total_moved": len(planned_moves)}
 
+    # Preflight: ensure target directory is accessible and no destination already exists.
     try:
         target_stories_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        return fail("write_failed", f"Cannot create target directory: {exc}", moved=[], total_moved=0)
+
+    conflicts = [move["to"] for move in planned_moves if Path(move["to"]).exists()]
+    if conflicts:
+        return fail(
+            "destination_conflict",
+            f"Destination files already exist: {', '.join(conflicts)}",
+            moved=[],
+            total_moved=0,
+        )
+
+    # Execute moves with rollback on partial failure.
+    completed: list[dict] = []
+    try:
         for move in planned_moves:
             shutil.move(move["from"], move["to"])
+            completed.append(move)
     except OSError as exc:
-        return fail("move_failed", f"Failed to move stories: {exc}", moved=[], total_moved=0)
+        rollback_errors: list[str] = []
+        for done in reversed(completed):
+            try:
+                shutil.move(done["to"], done["from"])
+            except OSError as rb_exc:
+                rollback_errors.append(str(rb_exc))
+        err_msg = f"Failed to move stories: {exc}"
+        if rollback_errors:
+            err_msg += f" (rollback partially failed: {'; '.join(rollback_errors)})"
+        return fail("move_failed", err_msg, moved=[], total_moved=0)
 
     return {"status": "pass", "moved": planned_moves, "total_moved": len(planned_moves)}
 
