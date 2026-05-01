@@ -1,27 +1,69 @@
 ---
 name: bmad-lens-split-feature
-description: Feature splitting workflow. Use when carving stories into a new feature, validating a split boundary, or moving story files after a split.
+description: Split-feature thin conductor. Use when validating a split boundary, creating a split feature shell, or moving stories into the new feature.
 ---
 
-# Feature Splitter
+# Split Feature Thin Conductor
+
+## Identity
+
+You are the split-feature thin conductor. You validate first, create then move. You delegate all governance mutations to `split-feature-ops.py`.
 
 ## Overview
 
-This skill provides the minimum split-feature baseline for the new clean-room repo: validate whether selected stories are split-safe, create the new governance feature shell, and move story files into the new feature.
+This skill keeps split-feature execution thin and explicit: load config and source feature context, validate the requested split boundary, confirm user intent, run dry-runs, then delegate live execution to `split-feature-ops.py`. No governance files or story files are mutated inline from `SKILL.md`.
 
-The hard rule is simple: a story that is already in progress cannot be split. Validation runs first, creation runs second, and story moves stop if any selected story is in progress.
+## Principles
+
+- `validate-first` - `validate-split` must pass before any create or move work
+- `new-feature-first-class` - the new feature gets a complete governance setup before stories are moved
+- `atomic-split` - create the new feature shell before modifying the source feature
+- `user-decisions-required` - the split boundary, new feature id, and live execution must be explicitly confirmed
+- `dry-run-before-live` - show the dry-run plan before any live `create-split-feature` or `move-stories` execution
+
+## On Activation
+
+1. Load config from `{project-root}/lens.core/_bmad/bmadconfig.yaml`.
+2. Load optional user overrides from `{project-root}/lens.core/_bmad/config.user.yaml`.
+3. Resolve `{governance_repo}` and `{username}` from those config files. If `{username}` is not set in config, use the current git identity and surface that fallback before execution.
+4. Load source feature context via `bmad-lens-feature-yaml` so the split plan uses the current feature metadata, domain/service path, docs path, and story surface.
+5. Ask which split mode the user wants: `validate-only`, `scope`, or `stories`.
 
 ## Capabilities
 
 | Capability | Route |
 | ---------- | ----- |
-| Validate Split | Load ./references/validate-split.md |
-| Create Split Feature | Load ./references/split-scope.md |
-| Move Stories | Load ./references/split-stories.md |
+| Validate Split | Load `./references/validate-split.md` |
+| Split Scope | Load `./references/split-scope.md` |
+| Split Stories | Load `./references/split-stories.md` |
+
+## Execution Flow
+
+```text
+[entry]
+  -> Load config + feature context
+  -> Prompt: split mode? [validate-only | scope | stories]
+  -> Run validate-split (hard gate - blocks if any story is in-progress)
+      |- blocked -> hard-stop; list blocked story IDs; no workaround
+      |- pass -> show split plan (both sides); wait for user confirm
+      |- validate-only -> report validation result and stop
+  -> [if scope] dry-run create-split-feature -> confirm -> execute
+  -> [if stories] dry-run create-split-feature -> confirm -> execute
+                 dry-run move-stories -> confirm -> execute
+                 -> post-move scan: report any feature: frontmatter still pointing to source
+  -> Report: new feature path, modified files, moved stories (if any)
+[done]
+```
+
+Keep the conductor sequence explicit in every invocation: load config -> validate -> confirm -> dry-run -> execute -> report.
+
+## Post-Move Scan
+
+After `move-stories` completes, scan all moved story files and report any file whose `feature:` frontmatter still references the source feature ID. Do not rewrite those files automatically; surface them for manual resolution.
 
 ## Script Reference
 
-./scripts/split-feature-ops.py exposes three subcommands:
+`./scripts/split-feature-ops.py` exposes the runtime subcommands. Use dry-run before live execution for every mutating operation.
 
 ```bash
 uv run --script ./_bmad/lens-work/skills/bmad-lens-split-feature/scripts/split-feature-ops.py \
@@ -50,11 +92,46 @@ uv run --script ./_bmad/lens-work/skills/bmad-lens-split-feature/scripts/split-f
   --target-domain platform \
   --target-service identity \
   --story-ids "story-3,story-4"
+
+uv run --script ./_bmad/lens-work/skills/bmad-lens-split-feature/scripts/split-feature-ops.py \
+  create-split-feature \
+  --governance-repo /path/to/governance \
+  --source-feature-id auth-login \
+  --source-domain platform \
+  --source-service identity \
+  --new-feature-id auth-mfa \
+  --new-name "MFA Authentication" \
+  --track quickplan \
+  --username cweber \
+  --dry-run
+
+uv run --script ./_bmad/lens-work/skills/bmad-lens-split-feature/scripts/split-feature-ops.py \
+  move-stories \
+  --governance-repo /path/to/governance \
+  --source-feature-id auth-login \
+  --source-domain platform \
+  --source-service identity \
+  --target-feature-id auth-mfa \
+  --target-domain platform \
+  --target-service identity \
+  --story-ids "story-3,story-4" \
+  --dry-run
 ```
 
-## Guardrails
+## Integration Points
 
-- Normalize status values before checking whether a story is in progress.
-- Fail fast on duplicate feature ids already registered in feature-index.yaml.
-- Create the new feature shell before any story move is attempted.
-- Keep governance writes local to the supplied governance repo path.
+| Skill | How split-feature integrates |
+| ----- | ---------------------------- |
+| `bmad-lens-feature-yaml` | Loads source feature context and current governance metadata before delegation |
+| `bmad-lens-init-feature` | Keeps new-feature shell semantics aligned with first-class feature creation |
+| `bmad-lens-git-state` | Surfaces branch and worktree state for pre-execution awareness and reporting |
+
+## Behavioral Reference
+
+The old-codebase implementation is located at `TargetProjects/lens-dev/old-codebase/lens.core.src/` in the control repo workspace. The governance-registered source for old-codebase discovery artifacts is the `lens-dev-old-codebase-discovery` feature. Use those references for behavioral parity checks only.
+
+## Boundaries
+
+- Do not create or edit governance files inline from this skill.
+- Do not patch story frontmatter automatically after `move-stories`; only report stale `feature:` values.
+- Do not bypass the load -> validate -> confirm -> dry-run -> execute -> report flow.

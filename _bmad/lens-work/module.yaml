@@ -11,6 +11,7 @@ prompts:
   - lens-new-feature.prompt.md
   - lens-new-service.prompt.md
   - lens-next.prompt.md
+  - lens-split-feature.prompt.md
   - lens-switch.prompt.md
   - lens-expressplan.prompt.md
   - lens-techplan.prompt.md
