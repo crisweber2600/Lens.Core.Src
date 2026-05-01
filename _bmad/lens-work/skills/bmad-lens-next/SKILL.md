@@ -57,8 +57,6 @@ You are the Next conductor. Your only job is to ask `next-ops.py` what to do and
 
 ### Step 1 — Invoke next-ops.py
 
-> **Note:** `next-ops.py` is scaffolded in Epic 2 (E2-S1). Until E2 is merged, this invocation will return a stub result. The SKILL.md documents the invocation contract now; full integration completes in E2+.
-
 Invoke the routing script:
 
 ```bash
@@ -121,14 +119,22 @@ If `result.status == "unblocked"`:
 
 1. Derive `{phase}` by stripping any leading `/` from `result.recommendation`.
    - Example: `"/expressplan"` → `"expressplan"`.
-2. Emit `[next:delegate] skill=bmad-lens-{phase} feature={feature_id}`.
-3. Delegate immediately — **no second confirmation prompt**:
+2. If `result.warnings` is non-empty, surface each warning to the user before delegating:
+   ```
+   [next:warning] feature={feature_id}
+   Warnings (non-blocking):
+     1. {warnings[0]}
+     ...
+   Proceeding with delegation.
+   ```
+3. Emit `[next:delegate] skill=bmad-lens-{phase} feature={feature_id}`.
+4. Delegate immediately — **no second confirmation prompt**:
 
 ```bash
 bmad-lens-bmad-skill --skill bmad-lens-{phase} --feature-id {feature_id}
 ```
 
-4. After the handoff, stop conductor-side execution. The delegated skill owns all further workflow steps.
+5. After the handoff, stop conductor-side execution. The delegated skill owns all further workflow steps.
 
 ---
 
