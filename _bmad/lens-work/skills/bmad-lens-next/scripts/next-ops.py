@@ -209,7 +209,8 @@ def suggest(feature_id: str, governance_repo_override: str | None,
 
     # --- Check blockers (feature.yaml dependencies field) ---
     blockers: list[str] = []
-    warnings: list[str] = []
+    # Surface any explicit warnings recorded in feature.yaml
+    warnings: list[str] = list(feature_data.get("warnings", []))
 
     dependencies: dict = feature_data.get("dependencies", {})
     depends_on: list = dependencies.get("depends_on", [])
