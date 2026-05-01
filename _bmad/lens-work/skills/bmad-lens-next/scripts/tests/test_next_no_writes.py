@@ -396,6 +396,134 @@ def test_routing_unknown_track(tmp_path, lifecycle_yaml):
     assert exit_code != 0
 
 
+@pytest.mark.parametrize("field_name,field_value,expected_error", [
+    ("warnings", "review pending", "warnings"),
+    ("dependencies", ["dep-feature"], "dependencies"),
+    ("dependencies", {"depends_on": "dep-feature"}, "depends_on"),
+    ("dependencies", {"depends_on": [123]}, "depends_on"),
+])
+def test_malformed_feature_yaml_fields_fail_cleanly(
+    tmp_path, lifecycle_yaml, field_name, field_value, expected_error,
+):
+    """Malformed optional feature.yaml fields must fail cleanly without tracebacks."""
+    repo = tmp_path / "governance"
+    repo.mkdir()
+    feature = {
+        "featureId": "test-malformed-fields",
+        "domain": "test-domain",
+        "service": "test-service",
+        "phase": "preplan",
+        "track": "full",
+        field_name: field_value,
+    }
+    write_feature(repo, "test-malformed-fields", feature)
+
+    payload, exit_code = run_next([
+        "suggest",
+        "--feature-id", "test-malformed-fields",
+        "--governance-repo", str(repo),
+        "--lifecycle-path", str(lifecycle_yaml),
+    ])
+
+    assert payload["status"] == "fail"
+    assert expected_error in payload["error"]
+    assert exit_code != 0
+
+
+def test_missing_dependency_feature_blocks(tmp_path, lifecycle_yaml):
+    """A declared dependency with no feature.yaml must be surfaced as a blocker."""
+    repo = tmp_path / "governance"
+    repo.mkdir()
+    write_feature(repo, "test-missing-dep", {
+        "featureId": "test-missing-dep",
+        "domain": "test-domain",
+        "service": "test-service",
+        "phase": "finalizeplan",
+        "track": "full",
+        "dependencies": {"depends_on": ["dep-feature-missing"]},
+    })
+
+    payload, exit_code = run_next([
+        "suggest",
+        "--feature-id", "test-missing-dep",
+        "--governance-repo", str(repo),
+        "--lifecycle-path", str(lifecycle_yaml),
+    ])
+
+    assert payload["status"] == "blocked"
+    assert any("dep-feature-missing" in blocker for blocker in payload["blockers"])
+    assert exit_code == 0
+
+
+def test_invalid_feature_id_fails_before_lookup(governance_repo):
+    """feature-id input is constrained before path/index lookup."""
+    payload, exit_code = run_next([
+        "suggest",
+        "--feature-id", "../bad-feature",
+        "--governance-repo", str(governance_repo),
+    ])
+
+    assert payload["status"] == "fail"
+    assert "feature-id" in payload["error"]
+    assert exit_code != 0
+
+
+def test_feature_id_with_dots_and_underscores_passes_validation(governance_repo):
+    """feature-id containing dots and underscores must pass the regex and proceed to lookup."""
+    # The ID does not exist in the governance repo, so we expect a "not found" error,
+    # not a feature-id validation error — proving the pattern now accepts dots/underscores.
+    payload, exit_code = run_next([
+        "suggest",
+        "--feature-id", "my.feature_id",
+        "--governance-repo", str(governance_repo),
+    ])
+
+    assert payload["status"] == "fail"
+    # Must fail on lookup, not on ID validation
+    assert "feature-id" not in payload["error"]
+    assert exit_code != 0
+
+
+def test_feature_id_ending_with_hyphen_fails_validation(governance_repo):
+    """feature-id ending with a non-alphanumeric character must be rejected."""
+    payload, exit_code = run_next([
+        "suggest",
+        "--feature-id", "bad-feature-",
+        "--governance-repo", str(governance_repo),
+    ])
+
+    assert payload["status"] == "fail"
+    assert "feature-id" in payload["error"]
+    assert exit_code != 0
+
+
+def test_lifecycle_yaml_must_be_mapping(tmp_path):
+    """A YAML-valid but non-mapping lifecycle file must fail with a clear error."""
+    repo = tmp_path / "governance"
+    repo.mkdir()
+    write_feature(repo, "test-bad-lifecycle", {
+        "featureId": "test-bad-lifecycle",
+        "domain": "test-domain",
+        "service": "test-service",
+        "phase": "preplan",
+        "track": "full",
+    })
+    lifecycle_path = tmp_path / "lifecycle.yaml"
+    lifecycle_path.write_text("- not\n- a\n- mapping\n", encoding="utf-8")
+
+    payload, exit_code = run_next([
+        "suggest",
+        "--feature-id", "test-bad-lifecycle",
+        "--governance-repo", str(repo),
+        "--lifecycle-path", str(lifecycle_path),
+    ])
+
+    assert payload["status"] == "fail"
+    assert "lifecycle.yaml" in payload["error"]
+    assert "mapping" in payload["error"]
+    assert exit_code != 0
+
+
 def test_routing_warnings_passthrough(tmp_path, lifecycle_yaml):
     """Warnings in feature.yaml are surfaced in the unblocked result."""
     repo = tmp_path / "governance"
