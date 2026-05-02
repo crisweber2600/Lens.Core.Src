@@ -2,11 +2,13 @@
 mode: ask
 ---
 
-Run preflight gate first:
+FIRST, run the preflight gate from the workspace root:
 
 ```bash
-uv run _bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py
+uv run --script lens.core/_bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py
 ```
 
-If preflight exits 0, continue with `_bmad/lens-work/prompts/lens-new-domain.prompt.md`.
-If preflight fails, stop and show the error.
+If that command exits non-zero, stop and surface the failure. Do not proceed.
+
+ONLY AFTER a successful prompt-start sync, load and follow the module prompt at
+`lens.core/_bmad/lens-work/prompts/lens-new-domain.prompt.md`.
