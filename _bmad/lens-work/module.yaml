@@ -1,7 +1,7 @@
 code: "lens"
 name: "Lens Workbench"
 description: "LENS lifecycle workbench — feature context switching, initialization, planning, and governance."
-module_version: "5.4.30"
+module_version: "5.4.31"
 type: standalone
 prompts:
   - lens-preflight.prompt.md
@@ -44,6 +44,9 @@ skills:
   - bmad-lens-switch
   - bmad-lens-techplan
   - bmad-lens-upgrade
+  - bmad-lens-new-domain
+  - bmad-lens-new-service
+  - bmad-lens-new-feature
   # DEFERRED: bmad-lens-document-project — skill absent in new-codebase.
   # Full specification available in old-codebase: skills/bmad-lens-document-project/SKILL.md.
   # Scope: feature-aware output path routing, governance docs copy, prompt stub, module.yaml registration.

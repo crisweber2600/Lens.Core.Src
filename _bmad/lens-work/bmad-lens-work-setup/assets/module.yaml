@@ -3,7 +3,7 @@
 
 code: lens
 name: "LENS Workbench"
-module_version: "5.4.30"
+module_version: "5.4.31"
 description: "LENS lifecycle workbench — feature context switching, initialization, planning, and governance."
 type: standalone
 default_selected: false
