@@ -230,3 +230,24 @@ updated_by: "new-service"   # "new-domain" or "new-service"
 - `create-service` writes both `domain` and `service`
 - The file lives in `{personal_output_folder}/context.yaml` (default: `{project-root}/.lens/personal/context.yaml`) — local-only, never git-tracked
 - Use the `read-context` subcommand to retrieve the current context when not on a feature branch
+
+## Create Domain Intent UX
+
+When handling the `create-domain` intent, use this interaction flow:
+
+1. Ask for display name only: `What is the display name for the new domain?`
+2. Derive a slug from display name using these rules:
+  - trim leading and trailing whitespace
+  - lowercase the value
+  - replace spaces and non-alphanumeric characters with `-`
+  - collapse repeated `-`
+  - trim leading and trailing `-`
+3. Validate the derived slug against `SAFE_ID_PATTERN`.
+4. If valid, show: `Domain slug will be: {slug}. Proceed? [Y/n/edit]`
+5. On `Y`, invoke `create-domain` with `--domain {slug}` and `--name {display_name}` plus resolved config arguments.
+6. On `n`, cancel and report no changes were made.
+7. On `edit`, ask for a manual slug and validate it against `SAFE_ID_PATTERN` before showing confirmation again.
+8. If the derived slug is invalid, skip proceed prompt and ask for a valid manual slug.
+9. On success without auto-git, show `remaining_git_commands`.
+10. On success with auto-git, show `governance_commit_sha`.
+11. On failure, show the JSON `error` value verbatim.

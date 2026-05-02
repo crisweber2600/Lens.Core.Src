@@ -30,8 +30,17 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def validate_safe_id(value: str, field_name: str) -> str | None:
-    if not SAFE_ID_PATTERN.match(value):
+def validate_safe_id(domain: str) -> None:
+    if not SAFE_ID_PATTERN.match(domain) or domain.endswith("-"):
+        raise ValueError(
+            f"Invalid domain: '{domain}'. "
+            "Must match [a-z0-9][a-z0-9._-]{0,63} "
+            "(lowercase alphanumeric, dots, hyphens, underscores)."
+        )
+
+
+def validate_safe_id_field(value: str, field_name: str) -> str | None:
+    if not SAFE_ID_PATTERN.match(value) or value.endswith("-"):
         return (
             f"Invalid {field_name}: '{value}'. "
             "Must match [a-z0-9][a-z0-9._-]{0,63} "
@@ -141,10 +150,9 @@ def make_domain_yaml(domain: str, name: str, username: str, timestamp: str) -> d
 
 
 def make_domain_constitution_md(domain: str, name: str) -> str:
-    display = name or domain
     return (
         "---\n"
-        "permitted_tracks: [quickplan, full, hotfix, tech-change, express, expressplan]\n"
+        "permitted_tracks: [quickplan, full, hotfix, tech-change,express,expressplan]\n"
         "required_artifacts:\n"
         "  planning:\n"
         "    - business-plan\n"
@@ -157,35 +165,27 @@ def make_domain_constitution_md(domain: str, name: str) -> str:
         "enforce_review: true\n"
         "---\n"
         "\n"
-        f"# {display} Domain Constitution\n"
-        "\n"
-        f"This constitution defines governance rules for the **{display}** domain.\n"
+        f"# {domain} Domain Constitution\n"
         "\n"
         "## Scope\n"
         "\n"
-        f"Applies to all services and repositories within the `{domain}` domain.\n"
-        "Lower-level constitutions (service, repo) may add constraints but may not remove those defined here.\n"
+        f"This constitution governs all features under the `{domain}` domain.\n"
         "\n"
         "## Tracks\n"
         "\n"
-        "All standard tracks are permitted: `quickplan`, `full`, `hotfix`, `tech-change`.\n"
-        "Service-level constitutions may restrict this list further.\n"
+        "All tracks listed in `permitted_tracks` are available for features in this domain.\n"
         "\n"
         "## Artifacts\n"
         "\n"
-        "- **Planning phase:** a `business-plan` is required before promotion to dev.\n"
-        "- **Dev phase:** at least one story file must exist before dev work begins.\n"
+        "Planning artifacts and development artifacts listed in `required_artifacts` are required for features in this domain.\n"
         "\n"
         "## Review\n"
         "\n"
-        "Peer review is enforced for all features in this domain.\n"
-        "Additional participants may be named at the service or repo level.\n"
+        "Reviews are `informational`. Sensing is `informational`.\n"
         "\n"
         "## Notes\n"
         "\n"
-        "This constitution was initialized with domain defaults.\n"
-        "Update it to reflect the specific governance needs of the "
-        f"{display} domain.\n"
+        "This is an auto-generated default constitution. Edit this file to add domain-specific governance rules.\n"
     )
 
 
@@ -253,9 +253,10 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
     username = args.username if args.username else ""
     governance_repo = args.governance_repo
 
-    err = validate_safe_id(domain, "domain")
-    if err:
-        return {"status": "fail", "scope": "domain", "dry_run": bool(args.dry_run), "error": err}
+    try:
+        validate_safe_id(domain)
+    except ValueError as exc:
+        return {"status": "fail", "scope": "domain", "dry_run": bool(args.dry_run), "error": str(exc)}
 
     gov_path = Path(governance_repo)
     if not gov_path.is_dir():
@@ -530,11 +531,11 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
     username = args.username if args.username else ""
     governance_repo = args.governance_repo
 
-    err = validate_safe_id(domain, "domain")
+    err = validate_safe_id_field(domain, "domain")
     if err:
         return {"status": "fail", "scope": "service", "dry_run": bool(args.dry_run), "error": err}
 
-    err = validate_safe_id(service, "service")
+    err = validate_safe_id_field(service, "service")
     if err:
         return {"status": "fail", "scope": "service", "dry_run": bool(args.dry_run), "error": err}
 
