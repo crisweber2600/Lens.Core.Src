@@ -152,7 +152,7 @@ def make_domain_yaml(domain: str, name: str, username: str, timestamp: str) -> d
 def make_domain_constitution_md(domain: str, name: str) -> str:
     return (
         "---\n"
-        "permitted_tracks: [quickplan, full, hotfix, tech-change]\n"
+        "permitted_tracks: [quickplan, full, hotfix, tech-change,express,expressplan]\n"
         "required_artifacts:\n"
         "  planning:\n"
         "    - business-plan\n"
