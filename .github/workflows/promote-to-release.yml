@@ -73,6 +73,7 @@ jobs:
 
       # ── 3. Validate lens-work source ─────────────────────────────────
       - name: Validate declarative-only constraint
+        if: matrix.config.release_branch == 'alpha'
         run: |
           echo "Scanning for disallowed executable files..."
 
@@ -233,8 +234,48 @@ jobs:
           mkdir -p build-output
           echo "✅ build-output prepared as non-git install workspace"
 
+      - name: Bootstrap develop build-output from source
+        if: matrix.config.release_branch != 'alpha'
+        run: |
+          mkdir -p build-output/_bmad
+          cp -r _bmad/lens-work build-output/_bmad/lens-work
+
+          mkdir -p build-output/.github
+          cp -r .github/* build-output/.github/
+
+          mkdir -p build-output/_bmad/_config
+          if [ -d release-repo/_bmad/_config ]; then
+            cp -r release-repo/_bmad/_config/. build-output/_bmad/_config/
+          fi
+
+          if [ ! -f build-output/_bmad/_config/manifest.yaml ]; then
+            printf 'modules: []\n' > build-output/_bmad/_config/manifest.yaml
+          fi
+
+          echo "✅ Develop bootstrap complete (_bmad/lens-work + .github/* copied; _bmad/_config seeded)"
+
+      - name: Register lens-work module in develop config
+        if: matrix.config.release_branch != 'alpha'
+        run: |
+          python3 -m pip install --quiet pyyaml
+
+          python3 build-output/_bmad/lens-work/bmad-lens-work-setup/scripts/merge-config.py \
+            --module-yaml build-output/_bmad/lens-work/module.yaml \
+            --target-config build-output/_bmad/_config/manifest.yaml
+
+          python3 build-output/_bmad/lens-work/bmad-lens-work-setup/scripts/merge-help-csv.py \
+            --module-csv build-output/_bmad/lens-work/module-help.csv \
+            --target-csv build-output/_bmad/_config/bmad-help.csv
+
+      - name: Cleanup legacy lens-work artifacts for develop
+        if: matrix.config.release_branch != 'alpha'
+        run: |
+          python3 build-output/_bmad/lens-work/bmad-lens-work-setup/scripts/cleanup-legacy.py \
+            --module-dir build-output/_bmad/lens-work
+
       # ── 7. Install full BMAD framework ───────────────────────────────
       - name: Fetch BMB module source (no longer in external-official-modules.yaml)
+        if: matrix.config.release_branch == 'alpha'
         run: |
           # bmad-builder npm package contains the BMB module source at /src/
           # The BMAD installer needs --custom-content pointing to the dir with module.yaml
@@ -264,6 +305,7 @@ jobs:
 
       # ── 8. Overlay lens-work custom module ───────────────────────────
       - name: Overlay lens-work custom module
+        if: matrix.config.release_branch == 'alpha'
         run: |
           # Copy lens-work into _bmad/ as a custom module
           mkdir -p build-output/_bmad/
@@ -277,6 +319,7 @@ jobs:
 
       # ── 9. Run lens-work installer for IDE adapters ──────────────────
       - name: Install lens-work IDE adapters
+        if: matrix.config.release_branch == 'alpha'
         run: |
           node -e "
             const installer = require('./build-output/_bmad/lens-work/_module-installer/installer.js');
@@ -304,8 +347,9 @@ jobs:
             });
           "
 
-      # ── 10. Sync source .github agents into release payload ─────────
+      # ── 10. Sync source .github agents into release payload ──────────
       - name: Sync source .github agents
+        if: matrix.config.release_branch == 'alpha'
         run: |
           mkdir -p build-output/.github/agents
 
@@ -323,6 +367,7 @@ jobs:
       # skills into redirect stubs from skill-manifest.csv. Source .github/
       # skill stubs overlay the generated set so manual lens-work edits win.
       - name: Overlay source .github skill stubs
+        if: matrix.config.release_branch == 'alpha'
         run: |
           mkdir -p build-output/.github/skills
 
@@ -348,6 +393,7 @@ jobs:
       # stubs, but the canonical release payload lives in source .github/
       # so manual stub edits win and any deleted stubs are removed.
       - name: Overlay source .github prompt stubs
+        if: matrix.config.release_branch == 'alpha'
         run: |
           mkdir -p build-output/.github/prompts
 
@@ -364,6 +410,7 @@ jobs:
 
       # ── 10.7 Overlay source .github instructions into release payload ─
       - name: Overlay source .github instructions
+        if: matrix.config.release_branch == 'alpha'
         run: |
           mkdir -p build-output/.github/instructions
 
@@ -440,6 +487,7 @@ jobs:
 
       # ── 12. Fix copilot-instructions.md project name ─────────────────
       - name: Patch copilot-instructions.md
+        if: matrix.config.release_branch == 'alpha'
         run: |
           INSTRUCTIONS="build-output/.github/copilot-instructions.md"
           if [ -f "$INSTRUCTIONS" ]; then
@@ -451,6 +499,7 @@ jobs:
 
       # ── 13. Validate release .github payload ─────────────────────────
       - name: Validate embedded .github payload
+        if: matrix.config.release_branch == 'alpha'
         run: |
           REQUIRED=(
             "build-output/.github/agents/bmad-agent-lens-work-lens.agent.md"
@@ -733,6 +782,7 @@ jobs:
 
       # ── 14. Add manifest entry for lens-work ─────────────────────────
       - name: Update BMAD manifest with lens-work
+        if: matrix.config.release_branch == 'alpha'
         run: |
           MANIFEST="build-output/_bmad/_config/manifest.yaml"
           if [ -f "$MANIFEST" ]; then
