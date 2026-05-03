@@ -51,22 +51,22 @@ def _now_iso() -> str:
 def _parse_frontmatter(content: str) -> dict:
     """Parse YAML frontmatter from a markdown file content string.
 
-    Returns an empty dict if parsing fails or yaml is unavailable.
+    Raises ImportError if pyyaml is not available — the fallback line-parser
+    is too fragile (e.g., colon-embedded values like 'Login: Session expires'
+    would produce corrupt featureId writes). Fail fast rather than silently
+    corrupt frontmatter.
     """
+    if yaml is None:
+        raise ImportError(
+            "pyyaml is required but not installed. "
+            "Run via: uv run --script <script>.py"
+        )
     if not content.startswith("---"):
         return {}
     end = content.find("\n---", 3)
     if end == -1:
         return {}
     fm_text = content[3:end]
-    if yaml is None:
-        # Fallback: simple key: value parser
-        result: dict = {}
-        for line in fm_text.splitlines():
-            if ":" in line:
-                key, _, val = line.partition(":")
-                result[key.strip()] = val.strip().strip('"')
-        return result
     try:
         return yaml.safe_load(fm_text) or {}
     except yaml.YAMLError:

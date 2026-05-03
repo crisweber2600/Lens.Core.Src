@@ -30,24 +30,27 @@ except ImportError:
 
 
 def _parse_frontmatter_status(content: str) -> str:
-    """Extract the 'status' field from YAML frontmatter; return '' on failure."""
+    """Extract the 'status' field from YAML frontmatter; return '' on failure.
+
+    Raises ImportError if pyyaml is not available — the fallback line-parser
+    is fragile for values containing colon-space sequences. Fail fast.
+    """
+    if yaml is None:
+        raise ImportError(
+            "pyyaml is required but not installed. "
+            "Run via: uv run --script <script>.py"
+        )
     if not content.startswith("---"):
         return ""
     end = content.find("\n---", 3)
     if end == -1:
         return ""
     fm_text = content[3:end]
-    if yaml is not None:
-        try:
-            fm = yaml.safe_load(fm_text) or {}
-            return str(fm.get("status", "")).strip('"')
-        except yaml.YAMLError:
-            pass
-    # Fallback
-    for line in fm_text.splitlines():
-        if line.strip().startswith("status:"):
-            return line.split(":", 1)[1].strip().strip('"')
-    return ""
+    try:
+        fm = yaml.safe_load(fm_text) or {}
+        return str(fm.get("status", "")).strip('"')
+    except yaml.YAMLError:
+        return ""
 
 
 def _count_dir(directory: Path) -> int:
