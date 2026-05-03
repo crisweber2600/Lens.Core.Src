@@ -338,3 +338,175 @@ def test_create_domain_name_defaults_to_slug(tmp_path: Path):
 
     data = yaml.safe_load((gov / "features" / "ops" / "domain.yaml").read_text(encoding="utf-8"))
     assert data["name"] == "ops"
+
+
+# ---------------------------------------------------------------------------
+# TestCreate
+# ---------------------------------------------------------------------------
+class TestCreate:
+    def test_create_feature_writes_feature_yaml(self, tmp_path: Path):
+        gov = tmp_path / "gov"
+        gov.mkdir()
+        # pre-create domain and service markers so the test doesn't need git
+        (gov / "features" / "lens-dev" / "new-codebase").mkdir(parents=True)
+        (gov / "features" / "lens-dev" / "domain.yaml").write_text("{}", encoding="utf-8")
+        (gov / "features" / "lens-dev" / "new-codebase" / "service.yaml").write_text("{}", encoding="utf-8")
+
+        completed, payload = run_script([
+            "create",
+            "--governance-repo", str(gov),
+            "--feature-id", "lens-dev-new-codebase-auth-refresh",
+            "--domain", "lens-dev",
+            "--service", "new-codebase",
+            "--name", "Auth Refresh",
+            "--track", "express",
+            "--username", "testuser",
+        ])
+
+        assert completed.returncode == 0, payload.get("error")
+        assert payload["status"] == "pass"
+        assert payload["feature_id"] == "lens-dev-new-codebase-auth-refresh"
+        assert payload["feature_slug"] == "auth-refresh"
+        assert payload["starting_phase"] == "expressplan"
+        assert payload["index_updated"] is True
+
+        fy_path = gov / "features" / "lens-dev" / "new-codebase" / "lens-dev-new-codebase-auth-refresh" / "feature.yaml"
+        assert fy_path.exists()
+        data = yaml.safe_load(fy_path.read_text(encoding="utf-8"))
+        assert data["featureId"] == "lens-dev-new-codebase-auth-refresh"
+        assert data["featureSlug"] == "auth-refresh"
+        assert data["domain"] == "lens-dev"
+        assert data["service"] == "new-codebase"
+        assert data["track"] == "express"
+        assert data["phase"] == "expressplan"
+        assert data["team"] == [{"username": "testuser", "role": "lead"}]
+
+    def test_create_feature_writes_summary_md(self, tmp_path: Path):
+        gov = tmp_path / "gov"
+        gov.mkdir()
+        (gov / "features" / "lens-dev" / "new-codebase").mkdir(parents=True)
+        (gov / "features" / "lens-dev" / "domain.yaml").write_text("{}", encoding="utf-8")
+        (gov / "features" / "lens-dev" / "new-codebase" / "service.yaml").write_text("{}", encoding="utf-8")
+
+        completed, payload = run_script([
+            "create",
+            "--governance-repo", str(gov),
+            "--feature-id", "lens-dev-new-codebase-summary-test",
+            "--domain", "lens-dev",
+            "--service", "new-codebase",
+            "--name", "Summary Test",
+            "--track", "express",
+        ])
+
+        assert completed.returncode == 0
+        summary_path = gov / "features" / "lens-dev" / "new-codebase" / "lens-dev-new-codebase-summary-test" / "summary.md"
+        assert summary_path.exists()
+        content = summary_path.read_text(encoding="utf-8")
+        assert "featureId: lens-dev-new-codebase-summary-test" in content
+        assert "status: expressplan" in content
+        assert "track: express" in content
+
+    def test_create_feature_updates_feature_index(self, tmp_path: Path):
+        gov = tmp_path / "gov"
+        gov.mkdir()
+        (gov / "features" / "lens-dev" / "new-codebase").mkdir(parents=True)
+        (gov / "features" / "lens-dev" / "domain.yaml").write_text("{}", encoding="utf-8")
+        (gov / "features" / "lens-dev" / "new-codebase" / "service.yaml").write_text("{}", encoding="utf-8")
+
+        completed, payload = run_script([
+            "create",
+            "--governance-repo", str(gov),
+            "--feature-id", "lens-dev-new-codebase-index-test",
+            "--domain", "lens-dev",
+            "--service", "new-codebase",
+            "--name", "Index Test",
+            "--track", "quickplan",
+        ])
+
+        assert completed.returncode == 0
+        index_data = yaml.safe_load((gov / "feature-index.yaml").read_text(encoding="utf-8"))
+        ids = [e.get("featureId") for e in index_data["features"]]
+        assert "lens-dev-new-codebase-index-test" in ids
+
+        entry = next(e for e in index_data["features"] if e.get("featureId") == "lens-dev-new-codebase-index-test")
+        assert entry["featureSlug"] == "index-test"
+        assert entry["status"] == "preplan"  # quickplan track starts at preplan
+        assert entry["plan_branch"] == "lens-dev-new-codebase-index-test-plan"
+
+    def test_create_feature_dry_run_no_files_written(self, tmp_path: Path):
+        gov = tmp_path / "gov"
+        gov.mkdir()
+
+        completed, payload = run_script([
+            "create",
+            "--governance-repo", str(gov),
+            "--feature-id", "lens-dev-new-codebase-dryrun-test",
+            "--domain", "lens-dev",
+            "--service", "new-codebase",
+            "--name", "Dry Run Test",
+            "--track", "express",
+            "--dry-run",
+        ])
+
+        assert completed.returncode == 0
+        assert payload["status"] == "pass"
+        assert payload["dry_run"] is True
+        feature_yaml = gov / "features" / "lens-dev" / "new-codebase" / "lens-dev-new-codebase-dryrun-test" / "feature.yaml"
+        assert not feature_yaml.exists()
+        assert not (gov / "feature-index.yaml").exists()
+
+    def test_create_feature_rejects_duplicate(self, tmp_path: Path):
+        gov = tmp_path / "gov"
+        gov.mkdir()
+        (gov / "features" / "lens-dev" / "new-codebase").mkdir(parents=True)
+        (gov / "features" / "lens-dev" / "domain.yaml").write_text("{}", encoding="utf-8")
+        (gov / "features" / "lens-dev" / "new-codebase" / "service.yaml").write_text("{}", encoding="utf-8")
+
+        args_base = [
+            "create", "--governance-repo", str(gov),
+            "--feature-id", "lens-dev-new-codebase-dup-test",
+            "--domain", "lens-dev", "--service", "new-codebase",
+            "--name", "Dup Test", "--track", "express",
+        ]
+        run_script(args_base)
+        completed, payload = run_script(args_base)
+
+        assert completed.returncode == 1
+        assert payload["status"] == "fail"
+        assert "already exists" in payload["error"]
+
+    def test_create_feature_rejects_invalid_track(self, tmp_path: Path):
+        gov = tmp_path / "gov"
+        gov.mkdir()
+
+        completed, payload = run_script([
+            "create",
+            "--governance-repo", str(gov),
+            "--feature-id", "lens-dev-new-codebase-bad-track",
+            "--domain", "lens-dev",
+            "--service", "new-codebase",
+            "--track", "invalid-track",
+        ])
+
+        assert completed.returncode == 1
+        assert payload["status"] == "fail"
+        assert "Invalid track" in payload["error"]
+
+    def test_create_feature_auto_creates_parent_markers(self, tmp_path: Path):
+        gov = tmp_path / "gov"
+        gov.mkdir()
+        # No domain.yaml or service.yaml pre-created
+
+        completed, payload = run_script([
+            "create",
+            "--governance-repo", str(gov),
+            "--feature-id", "lens-dev-new-codebase-auto-parents",
+            "--domain", "lens-dev",
+            "--service", "new-codebase",
+            "--name", "Auto Parents Test",
+            "--track", "express",
+        ])
+
+        assert completed.returncode == 0
+        assert (gov / "features" / "lens-dev" / "domain.yaml").exists()
+        assert (gov / "features" / "lens-dev" / "new-codebase" / "service.yaml").exists()
