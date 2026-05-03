@@ -87,7 +87,7 @@ Load `{governance_repo}/users/{username}/user-profile.md` for user defaults. Loa
 
 ## Script Reference
 
-`./scripts/init-feature-ops.py` — Python script (uv-runnable) with two subcommands:
+`./scripts/init-feature-ops.py` — Python script with two subcommands:
 
 ```bash
 # Initialize a new feature (validates + writes files + returns manual follow-up commands)

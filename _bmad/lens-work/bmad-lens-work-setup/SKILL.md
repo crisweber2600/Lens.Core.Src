@@ -9,7 +9,7 @@ This skill registers the `lens` module into the host BMAD configuration. Run it 
 
 ## Prerequisites
 
-- [uv](https://docs.astral.sh/uv/) installed (scripts use PEP 723 inline metadata)
+- Python 3 (`python3` or `python`) installed and available in PATH
 - The target BMAD configuration directory (`{project-root}/_bmad/_config/`) must exist
 - The host `{project-root}/_bmad/_config/manifest.yaml` or equivalent config file must exist
 
@@ -60,6 +60,6 @@ This safely removes:
 
 | Issue | Resolution |
 |-------|-----------|
-| `uv` not found | Install uv: `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| `python3` not found | Install Python 3 (https://python.org) or use `python` if Python 3 is your default |
 | Config file not found | Verify `{project-root}/_bmad/_config/` exists and contains the expected files |
 | Permission denied | Check file permissions on the target config directory |

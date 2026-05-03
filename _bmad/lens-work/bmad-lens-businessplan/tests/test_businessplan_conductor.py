@@ -223,7 +223,7 @@ class TestGovernanceAudit:
         assert "publish-to-governance" in content, "Missing publish-to-governance subcommand"
         
         # Find the actual command invocation in the "On Activation" section (not the overview)
-        # Look for the full command line with uv run
+        # Look for the full command line with python3
         command_pattern = r"python3.*git-orchestration-ops\.py\s+publish-to-governance"
         match = re.search(command_pattern, content)
         assert match, "Missing git-orchestration-ops.py publish-to-governance command"
@@ -376,7 +376,7 @@ class TestPromptChain:
         # Should NOT contain inline businessplan logic in active instructions
         # (it's OK if these appear in comments or descriptions, but not as executable directives)
         forbidden_inline_patterns = [
-            r"\buv\s+run\s+.*?\bpublish-to-governance\b",
+            r"\bpython3?\s+.*?\bpublish-to-governance\b",
             r"\binvoke\s+.*?\bbmad-lens-bmad-skill\b",
             r"\bcall\s+.*?\bbmad-create-prd\b",
             r"\bexecute\s+.*?\bbmad-create-ux-design\b",

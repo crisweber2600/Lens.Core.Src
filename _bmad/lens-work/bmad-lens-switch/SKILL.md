@@ -82,7 +82,7 @@ Never infer a target feature from the current branch, open files, or recent path
 
 ## Script Reference
 
-`./scripts/switch-ops.py` — Python script (uv-runnable) with three subcommands:
+`./scripts/switch-ops.py` — Python script with three subcommands:
 
 ```bash
 # List available features (non-archived by default)
