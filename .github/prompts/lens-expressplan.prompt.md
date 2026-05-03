@@ -6,7 +6,7 @@ FIRST, cd to the project root, then run the preflight gate from the Lens module 
 
 ```bash
 cd "{project-root}"
-uv run --script _bmad/lens-work/lens-preflight/scripts/light-preflight.py
+uv run _bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py
 ```
 
 If that command exits non-zero, stop and surface the failure. Do not proceed.
