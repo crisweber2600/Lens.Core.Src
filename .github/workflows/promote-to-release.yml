@@ -233,6 +233,40 @@ jobs:
           mkdir -p build-output
           echo "✅ build-output prepared as non-git install workspace"
 
+      # ── 7. Install full BMAD framework ───────────────────────────────
+      - name: Fetch BMB module source (no longer in external-official-modules.yaml)
+        if: matrix.config.release_branch == 'alpha'
+        run: |
+          # bmad-builder npm package contains the BMB module source at /src/
+          # The BMAD installer needs --custom-content pointing to the dir with module.yaml
+          mkdir -p /tmp/bmb-src
+          npm pack bmad-builder@latest --pack-destination /tmp/bmb-src 2>/dev/null
+          tar xzf /tmp/bmb-src/bmad-builder-*.tgz -C /tmp/bmb-src
+          BMB_SRC="/tmp/bmb-src/package/src"
+          echo "BMB_SRC=$BMB_SRC" >> "$GITHUB_ENV"
+          echo "✅ BMB source at $BMB_SRC (code=$(grep '^code:' $BMB_SRC/module.yaml))"
+
+      - name: Install BMAD framework (all modules + IDEs)
+        working-directory: build-output
+        run: |
+          INSTALL_ARGS=(
+            --directory .
+            --modules "core,bmm,bmb,cis,gds,tea,wds"
+            --tools "github-copilot,cursor,claude-code"
+            --action install
+            --user-name "CrisWeber"
+            --communication-language "English"
+            --document-output-language "English"
+            --output-folder "docs"
+            --yes
+          )
+          if [ -n "$BMB_SRC" ]; then
+            INSTALL_ARGS+=(--custom-content "$BMB_SRC")
+          fi
+          npx ${{ matrix.config.bmad_spec }} install "${INSTALL_ARGS[@]}"
+
+          echo "✅ BMAD framework installed"
+
       - name: Bootstrap develop build-output from source
         if: matrix.config.release_branch != 'alpha'
         run: |
@@ -271,36 +305,6 @@ jobs:
         run: |
           python3 build-output/_bmad/lens-work/bmad-lens-work-setup/scripts/cleanup-legacy.py \
             --module-dir build-output/_bmad/lens-work
-
-      # ── 7. Install full BMAD framework ───────────────────────────────
-      - name: Fetch BMB module source (no longer in external-official-modules.yaml)
-        if: matrix.config.release_branch == 'alpha'
-        run: |
-          # bmad-builder npm package contains the BMB module source at /src/
-          # The BMAD installer needs --custom-content pointing to the dir with module.yaml
-          mkdir -p /tmp/bmb-src
-          npm pack bmad-builder@latest --pack-destination /tmp/bmb-src 2>/dev/null
-          tar xzf /tmp/bmb-src/bmad-builder-*.tgz -C /tmp/bmb-src
-          BMB_SRC="/tmp/bmb-src/package/src"
-          echo "BMB_SRC=$BMB_SRC" >> "$GITHUB_ENV"
-          echo "✅ BMB source at $BMB_SRC (code=$(grep '^code:' $BMB_SRC/module.yaml))"
-
-      - name: Install BMAD framework (all modules + IDEs)
-        working-directory: build-output
-        run: |
-          npx ${{ matrix.config.bmad_spec }} install \
-            --directory . \
-            --modules "core,bmm,bmb,cis,gds,tea,wds" \
-            --custom-content "$BMB_SRC" \
-            --tools "github-copilot,cursor,claude-code" \
-            --action install \
-            --user-name "CrisWeber" \
-            --communication-language "English" \
-            --document-output-language "English" \
-            --output-folder "docs" \
-            --yes
-
-          echo "✅ BMAD framework installed"
 
       # ── 8. Overlay lens-work custom module ───────────────────────────
       - name: Overlay lens-work custom module
