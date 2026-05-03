@@ -949,12 +949,12 @@ def cmd_create(args: argparse.Namespace) -> dict:
         (
             f"uv run --script {{project-root}}/lens.core/_bmad/lens-work/skills/lens-git-orchestration/"
             f"scripts/git-orchestration-ops.py create-feature-branches "
-            f"--governance-repo {shlex.quote(governance_repo)} --repo {shlex.quote(control_repo)} --feature-id {feature_id}"
+            f"--governance-repo {shlex.quote(governance_repo)} --repo {shlex.quote(control_repo)} --feature-id {shlex.quote(feature_id)}"
         ),
         (
             f"uv run --script {{project-root}}/lens.core/_bmad/lens-work/skills/lens-switch/"
             f"scripts/switch-ops.py switch "
-            f"--governance-repo {shlex.quote(governance_repo)} --feature-id {feature_id} --control-repo {shlex.quote(control_repo)}"
+            f"--governance-repo {shlex.quote(governance_repo)} --feature-id {shlex.quote(feature_id)} --control-repo {shlex.quote(control_repo)}"
         ),
     ]
 
@@ -1098,7 +1098,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
         gh_commands = [
             (
                 f"gh pr create --repo {shlex.quote(control_repo)} "
-                f"--head {feature_id}-plan --base {feature_id} "
+                f"--head {shlex.quote(f'{feature_id}-plan')} --base {shlex.quote(feature_id)} "
                 f"--title {shlex.quote(f'[plan] {feature_id} — planning artifacts')} "
                 f"--body {shlex.quote('Auto-created by lens-init-feature')}"
             )
