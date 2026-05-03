@@ -26,20 +26,16 @@ from bugbash_scope_guard import assert_governance_repo_exists
 try:
     import yaml
 except ImportError:
-    yaml = None  # type: ignore[assignment]
+    print(
+        "ERROR: pyyaml is required but not installed. "
+        "Run via: uv run --script bugbash-ops.py",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 
 def _parse_frontmatter_status(content: str) -> str:
-    """Extract the 'status' field from YAML frontmatter; return '' on failure.
-
-    Raises ImportError if pyyaml is not available — the fallback line-parser
-    is fragile for values containing colon-space sequences. Fail fast.
-    """
-    if yaml is None:
-        raise ImportError(
-            "pyyaml is required but not installed. "
-            "Run via: uv run --script <script>.py"
-        )
+    """Extract the 'status' field from YAML frontmatter; return '' on failure."""
     if not content.startswith("---"):
         return ""
     end = content.find("\n---", 3)

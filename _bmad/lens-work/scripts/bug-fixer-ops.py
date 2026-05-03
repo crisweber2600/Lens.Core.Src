@@ -41,7 +41,12 @@ from bugbash_schema import (
 try:
     import yaml
 except ImportError:
-    yaml = None  # type: ignore[assignment]
+    print(
+        "ERROR: pyyaml is required but not installed. "
+        "Run via: uv run --script bug-fixer-ops.py",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 
 def _now_iso() -> str:
@@ -49,18 +54,7 @@ def _now_iso() -> str:
 
 
 def _parse_frontmatter(content: str) -> dict:
-    """Parse YAML frontmatter from a markdown file content string.
-
-    Raises ImportError if pyyaml is not available — the fallback line-parser
-    is too fragile (e.g., colon-embedded values like 'Login: Session expires'
-    would produce corrupt featureId writes). Fail fast rather than silently
-    corrupt frontmatter.
-    """
-    if yaml is None:
-        raise ImportError(
-            "pyyaml is required but not installed. "
-            "Run via: uv run --script <script>.py"
-        )
+    """Parse YAML frontmatter from a markdown file content string."""
     if not content.startswith("---"):
         return {}
     end = content.find("\n---", 3)
