@@ -466,3 +466,112 @@ def test_prerequisite_missing_degradation(capsys: pytest.CaptureFixture, gov_pas
     )
     assert exit_code == 0
     assert result["status"] == "complete"
+
+
+def test_finalize_auto_branch_ops_requires_repo_paths(
+    capsys: pytest.CaptureFixture,
+    gov_pass: Path,
+) -> None:
+    """auto branch ops require both --control-repo and --target-repo."""
+    exit_code, result = _run(
+        [
+            "finalize",
+            "--governance-repo",
+            str(gov_pass),
+            "--feature-id",
+            "lens-dev-test-feature",
+            "--confirm",
+            "--auto-branch-ops",
+        ],
+        capsys,
+    )
+    assert exit_code != 0
+    assert result["error"] == "branch_config_missing"
+
+
+def test_finalize_auto_branch_ops_dry_run_plans_branch_steps(
+    capsys: pytest.CaptureFixture,
+    gov_pass: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """dry-run includes planned branch operations and does not run git commands."""
+    control_repo = tmp_path / "control"
+    target_repo = tmp_path / "target"
+    control_repo.mkdir()
+    target_repo.mkdir()
+
+    def _should_not_run(*args: Any, **kwargs: Any) -> Any:
+        raise AssertionError("subprocess.run should not be called in dry-run mode")
+
+    monkeypatch.setattr("subprocess.run", _should_not_run)
+
+    exit_code, result = _run(
+        [
+            "finalize",
+            "--governance-repo",
+            str(gov_pass),
+            "--feature-id",
+            "lens-dev-test-feature",
+            "--dry-run",
+            "--auto-branch-ops",
+            "--control-repo",
+            str(control_repo),
+            "--target-repo",
+            str(target_repo),
+        ],
+        capsys,
+    )
+    assert exit_code == 0
+    assert result["status"] == "dry_run"
+    assert "planned_branch_operations" in result
+    assert len(result["planned_branch_operations"]) >= 16
+
+
+def test_finalize_auto_branch_ops_executes_git_flow(
+    capsys: pytest.CaptureFixture,
+    gov_pass: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """confirm mode executes push/merge/delete flow for both repos."""
+    control_repo = tmp_path / "control"
+    target_repo = tmp_path / "target"
+    control_repo.mkdir()
+    target_repo.mkdir()
+
+    calls: list[list[str]] = []
+
+    class _DummyCompleted:
+        def __init__(self) -> None:
+            self.stdout = ""
+            self.stderr = ""
+
+    def _fake_run(cmd: list[str], check: bool, capture_output: bool, text: bool) -> _DummyCompleted:
+        calls.append(cmd)
+        return _DummyCompleted()
+
+    monkeypatch.setattr("subprocess.run", _fake_run)
+
+    exit_code, result = _run(
+        [
+            "finalize",
+            "--governance-repo",
+            str(gov_pass),
+            "--feature-id",
+            "lens-dev-test-feature",
+            "--confirm",
+            "--auto-branch-ops",
+            "--control-repo",
+            str(control_repo),
+            "--target-repo",
+            str(target_repo),
+        ],
+        capsys,
+    )
+
+    assert exit_code == 0
+    assert result["status"] == "complete"
+    assert len(result["branch_operations"]) == 2
+    assert len(calls) >= 16
+    assert any("merge" in part for cmd in calls for part in cmd)

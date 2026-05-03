@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
@@ -360,6 +361,7 @@ def cmd_finalize(args: argparse.Namespace) -> int:
     feature_id = str(getattr(args, "feature_id", "") or "").strip()
     dry_run: bool = bool(getattr(args, "dry_run", False))
     confirm: bool = bool(getattr(args, "confirm", False))
+    auto_branch_ops: bool = bool(getattr(args, "auto_branch_ops", False))
 
     if not feature_id:
         _out(_fail("feature_id_missing", "Provide --feature-id."))
@@ -437,6 +439,37 @@ def cmd_finalize(args: argparse.Namespace) -> int:
         {"path": str(summary_path.relative_to(governance_repo)), "change": "write archive summary section"},
     ]
 
+    branch_plan: list[dict[str, str]] = []
+    branch_settings: dict[str, Any] | None = None
+    if auto_branch_ops:
+        try:
+            branch_settings = _resolve_branch_settings(args, feature_id)
+        except ValueError as exc:
+            _out(_fail("branch_config_missing", str(exc), feature_id=feature_id))
+            return 1
+
+        control = branch_settings["control"]
+        target = branch_settings["target"]
+        remote = branch_settings["remote"]
+        branch_plan.extend(
+            _branch_ops_plan(
+                repo=control["repo"],
+                source_branch=control["source_branch"],
+                target_branch=control["target_branch"],
+                remote=remote,
+                cleanup_branches=control["cleanup_branches"],
+            )
+        )
+        branch_plan.extend(
+            _branch_ops_plan(
+                repo=target["repo"],
+                source_branch=target["source_branch"],
+                target_branch=target["target_branch"],
+                remote=remote,
+                cleanup_branches=target["cleanup_branches"],
+            )
+        )
+
     doc_check = _check_document_project(feature_dir)
     warnings = []
     if doc_check["status"] == "warn":
@@ -448,6 +481,7 @@ def cmd_finalize(args: argparse.Namespace) -> int:
                 "status": "dry_run",
                 "feature_id": feature_id,
                 "planned_changes": planned_changes,
+                "planned_branch_operations": branch_plan,
                 "warnings": warnings,
             }
         )
@@ -500,12 +534,49 @@ def cmd_finalize(args: argparse.Namespace) -> int:
         {"path": str(summary_path.relative_to(governance_repo)), "change": "archive summary written"},
     ]
 
+    branch_results: list[dict[str, Any]] = []
+    if auto_branch_ops:
+        assert branch_settings is not None
+        remote = branch_settings["remote"]
+        control = branch_settings["control"]
+        target = branch_settings["target"]
+        try:
+            branch_results.append(
+                _run_branch_ops(
+                    repo=control["repo"],
+                    source_branch=control["source_branch"],
+                    target_branch=control["target_branch"],
+                    remote=remote,
+                    cleanup_branches=control["cleanup_branches"],
+                )
+            )
+            branch_results.append(
+                _run_branch_ops(
+                    repo=target["repo"],
+                    source_branch=target["source_branch"],
+                    target_branch=target["target_branch"],
+                    remote=remote,
+                    cleanup_branches=target["cleanup_branches"],
+                )
+            )
+        except RuntimeError as exc:
+            _out(
+                _fail(
+                    "branch_orchestration_failed",
+                    str(exc),
+                    feature_id=feature_id,
+                    governance_changes_applied=changes_applied,
+                )
+            )
+            return 1
+
     _out(
         {
             "status": "complete",
             "feature_id": feature_id,
             "archived_at": now_ts,
             "changes_applied": changes_applied,
+            "branch_operations": branch_results,
             "retrospective_skipped": False,
             "document_project_skipped": bool(warnings),
             "warnings": warnings,
@@ -542,6 +613,142 @@ def _build_summary(feature_data: dict[str, Any], feature_id: str, archived_at: s
         f"Feature archived via `lens-complete`. "
         f"See `feature.yaml` for full lifecycle history.\n"
     )
+
+
+# ---------------------------------------------------------------------------
+# Git branch orchestration helpers
+# ---------------------------------------------------------------------------
+
+def _run_git(repo: Path, *args: str) -> None:
+    """Run a git command in repo and raise RuntimeError with stderr on failure."""
+    try:
+        subprocess.run(
+            ["git", "-C", str(repo), *args],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        stderr = (exc.stderr or "").strip()
+        stdout = (exc.stdout or "").strip()
+        detail = stderr or stdout or str(exc)
+        raise RuntimeError(f"git {' '.join(args)} failed in {repo}: {detail}") from exc
+
+
+def _try_git(repo: Path, *args: str) -> bool:
+    """Run a git command and return False instead of raising when it fails."""
+    try:
+        _run_git(repo, *args)
+        return True
+    except RuntimeError:
+        return False
+
+
+def _branch_ops_plan(
+    *,
+    repo: Path,
+    source_branch: str,
+    target_branch: str,
+    remote: str,
+    cleanup_branches: list[str],
+) -> list[dict[str, str]]:
+    plan = [
+        {"repo": str(repo), "action": f"git checkout {source_branch}"},
+        {"repo": str(repo), "action": f"git push {remote} {source_branch}"},
+        {"repo": str(repo), "action": f"git checkout {target_branch}"},
+        {"repo": str(repo), "action": f"git pull {remote} {target_branch}"},
+        {"repo": str(repo), "action": f"git merge --no-ff {source_branch}"},
+        {"repo": str(repo), "action": f"git push {remote} {target_branch}"},
+        {"repo": str(repo), "action": f"git push {remote} --delete {source_branch}"},
+        {"repo": str(repo), "action": f"git branch -D {source_branch}"},
+    ]
+    for branch in cleanup_branches:
+        if branch and branch != source_branch and branch != target_branch:
+            plan.append({"repo": str(repo), "action": f"git push {remote} --delete {branch} (best-effort)"})
+            plan.append({"repo": str(repo), "action": f"git branch -D {branch} (best-effort)"})
+    return plan
+
+
+def _run_branch_ops(
+    *,
+    repo: Path,
+    source_branch: str,
+    target_branch: str,
+    remote: str,
+    cleanup_branches: list[str],
+) -> dict[str, Any]:
+    """Push, merge, and delete branches for a single repository."""
+    if not repo.exists() or not repo.is_dir():
+        raise RuntimeError(f"Repository path not found: {repo}")
+
+    _run_git(repo, "checkout", source_branch)
+    _run_git(repo, "push", remote, source_branch)
+    _run_git(repo, "checkout", target_branch)
+    _run_git(repo, "pull", remote, target_branch)
+    _run_git(repo, "merge", "--no-ff", source_branch)
+    _run_git(repo, "push", remote, target_branch)
+    _run_git(repo, "push", remote, "--delete", source_branch)
+    _run_git(repo, "branch", "-D", source_branch)
+
+    cleanup_results: list[dict[str, Any]] = []
+    for branch in cleanup_branches:
+        if not branch or branch == source_branch or branch == target_branch:
+            continue
+        remote_deleted = _try_git(repo, "push", remote, "--delete", branch)
+        local_deleted = _try_git(repo, "branch", "-D", branch)
+        cleanup_results.append(
+            {
+                "branch": branch,
+                "remote_deleted": remote_deleted,
+                "local_deleted": local_deleted,
+            }
+        )
+
+    return {
+        "repo": str(repo),
+        "source_branch": source_branch,
+        "target_branch": target_branch,
+        "remote": remote,
+        "cleanup_results": cleanup_results,
+    }
+
+
+def _resolve_branch_settings(args: argparse.Namespace, feature_id: str) -> dict[str, Any]:
+    remote = str(getattr(args, "git_remote", "origin") or "origin").strip()
+
+    control_repo_raw = str(getattr(args, "control_repo", "") or "").strip()
+    target_repo_raw = str(getattr(args, "target_repo", "") or "").strip()
+    if not control_repo_raw or not target_repo_raw:
+        raise ValueError("--control-repo and --target-repo are required when --auto-branch-ops is enabled.")
+
+    control_repo = Path(control_repo_raw).resolve()
+    target_repo = Path(target_repo_raw).resolve()
+
+    control_source = str(getattr(args, "control_source_branch", "") or f"{feature_id}-dev").strip()
+    control_target = str(getattr(args, "control_target_branch", "") or feature_id).strip()
+    target_source = str(getattr(args, "target_source_branch", "") or f"feature/{feature_id}").strip()
+    target_target = str(getattr(args, "target_target_branch", "") or "develop").strip()
+
+    control_cleanup_raw = str(getattr(args, "control_cleanup_branches", "") or f"{feature_id}-plan").strip()
+    target_cleanup_raw = str(getattr(args, "target_cleanup_branches", "") or "").strip()
+    control_cleanup = [item.strip() for item in control_cleanup_raw.split(",") if item.strip()]
+    target_cleanup = [item.strip() for item in target_cleanup_raw.split(",") if item.strip()]
+
+    return {
+        "remote": remote,
+        "control": {
+            "repo": control_repo,
+            "source_branch": control_source,
+            "target_branch": control_target,
+            "cleanup_branches": control_cleanup,
+        },
+        "target": {
+            "repo": target_repo,
+            "source_branch": target_source,
+            "target_branch": target_target,
+            "cleanup_branches": target_cleanup,
+        },
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -625,6 +832,26 @@ def _build_parser() -> argparse.ArgumentParser:
                        help="Preview changes without writing")
     p_fin.add_argument("--confirm", dest="confirm", action="store_true",
                        help="Required for non-dry-run execution")
+    p_fin.add_argument("--auto-branch-ops", dest="auto_branch_ops", action="store_true",
+                       help="Also push/merge/delete related branches in control and target repos")
+    p_fin.add_argument("--control-repo", dest="control_repo", default=None,
+                       help="Control repo root path (required with --auto-branch-ops)")
+    p_fin.add_argument("--target-repo", dest="target_repo", default=None,
+                       help="Target repo root path (required with --auto-branch-ops)")
+    p_fin.add_argument("--control-source-branch", dest="control_source_branch", default=None,
+                       help="Control source branch (default: {feature_id}-dev)")
+    p_fin.add_argument("--control-target-branch", dest="control_target_branch", default=None,
+                       help="Control merge target branch (default: {feature_id})")
+    p_fin.add_argument("--target-source-branch", dest="target_source_branch", default=None,
+                       help="Target source branch (default: feature/{feature_id})")
+    p_fin.add_argument("--target-target-branch", dest="target_target_branch", default="develop",
+                       help="Target merge branch (default: develop)")
+    p_fin.add_argument("--control-cleanup-branches", dest="control_cleanup_branches", default=None,
+                       help="Comma-separated extra control branches to delete best-effort (default: {feature_id}-plan)")
+    p_fin.add_argument("--target-cleanup-branches", dest="target_cleanup_branches", default=None,
+                       help="Comma-separated extra target branches to delete best-effort")
+    p_fin.add_argument("--git-remote", dest="git_remote", default="origin",
+                       help="Git remote name for branch operations (default: origin)")
 
     # archive-status
     sub.add_parser("archive-status", parents=[shared],
