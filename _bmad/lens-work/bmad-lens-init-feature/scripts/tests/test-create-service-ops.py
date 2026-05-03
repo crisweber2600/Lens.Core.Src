@@ -369,7 +369,7 @@ def test_create_service_with_existing_domain_is_idempotent(tmp_path):
 # ---------------------------------------------------------------------------
 
 SCRIPT_ROOT = Path(__file__).resolve().parents[2]  # skills/bmad-lens-init-feature
-MODULE_ROOT = SCRIPT_ROOT.parents[1]               # {project-root}/lens.core/_bmad/lens-work  (parents[0]=skills, parents[1]=lens-work)
+MODULE_ROOT = SCRIPT_ROOT.parents[1]               # _bmad/lens-work  (parents[0]=skills, parents[1]=lens-work)
 
 
 def test_release_prompt_exists():

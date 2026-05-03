@@ -31,7 +31,7 @@ def test_public_wrappers_use_normalized_module_relative_paths():
 
 
 def test_public_wrappers_use_standard_preflight_command():
-    expected = "uv run {project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py"
+    expected = "uv run _bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py"
     for prompt in sorted(GITHUB_PROMPTS.glob("lens-*.prompt.md")):
         text = _read(prompt)
         assert expected in text, f"{prompt.name} missing normalized preflight command"
