@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["pyyaml>=6.0"]
-# ///
 """
 dev-session-compat.py — Read-time compatibility layer for dev-session.yaml.
 

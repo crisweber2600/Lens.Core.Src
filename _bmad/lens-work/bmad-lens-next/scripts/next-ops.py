@@ -1,8 +1,4 @@
-#!/usr/bin/env -S uv run --script
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["pyyaml>=6.0"]
-# ///
+#!/usr/bin/env python3
 """
 next-ops.py — Deterministic routing engine for the bmad-lens-next skill.
 
@@ -10,7 +6,7 @@ Reads feature.yaml and lifecycle.yaml to produce a structured JSON routing
 recommendation. Produces no side effects: no file writes, no git operations.
 
 Usage:
-    uv run next-ops.py suggest --feature-id <id> [--governance-repo <path>] [--control-repo <path>]
+    python3 next-ops.py suggest --feature-id <id> [--governance-repo <path>] [--control-repo <path>]
 """
 import argparse
 import json

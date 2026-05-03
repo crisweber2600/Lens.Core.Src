@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["pytest>=8.0", "pyyaml>=6.0"]
-# ///
 """Focused contract checks for Epic 3 skill-surface restoration."""
 
 from __future__ import annotations

@@ -37,7 +37,7 @@ You are the domain registration conductor. You collect the domain name from the 
 6. Run the domain creation script:
 
 ```bash
-uv run {project-root}/_bmad/lens-work/skills/bmad-lens-init-feature/scripts/init-feature-ops.py \
+python3 {project-root}/_bmad/lens-work/skills/bmad-lens-init-feature/scripts/init-feature-ops.py \
   create-domain \
   --governance-repo {governance_repo} \
   --domain {domain_slug} \

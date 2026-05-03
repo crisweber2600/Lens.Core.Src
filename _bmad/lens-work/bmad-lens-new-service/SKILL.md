@@ -42,7 +42,7 @@ You are the service registration conductor. You resolve the parent domain, colle
 8. Run the service creation script:
 
 ```bash
-uv run {project-root}/_bmad/lens-work/skills/bmad-lens-init-feature/scripts/init-feature-ops.py \
+python3 {project-root}/_bmad/lens-work/skills/bmad-lens-init-feature/scripts/init-feature-ops.py \
   create-service \
   --governance-repo {governance_repo} \
   --domain {domain_slug} \

@@ -86,18 +86,18 @@ Never infer a target feature from the current branch, open files, or recent path
 
 ```bash
 # List available features (non-archived by default)
-uv run --script {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
+python3 {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
   list \
   --governance-repo {governance_repo}
 
 # List all features including archived
-uv run --script {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
+python3 {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
   list \
   --governance-repo {governance_repo} \
   --status-filter all
 
 # Validate and prepare context for switching to a feature
-uv run --script {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
+python3 {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
   switch \
   --governance-repo {governance_repo} \
   --feature-id auth-login \
@@ -105,7 +105,7 @@ uv run --script {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-l
   --personal-folder {personal_output_folder}
 
 # Get file paths for cross-feature context
-uv run --script {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
+python3 {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
   context-paths \
   --governance-repo {governance_repo} \
   --feature-id auth-login \
@@ -234,7 +234,7 @@ Known error codes: `invalid_feature_id`, `invalid_domain`, `invalid_service`, `c
 Run from the target source repo root:
 
 ```bash
-uv run --with pytest _bmad/lens-work/skills/bmad-lens-switch/scripts/tests/test-switch-ops.py -q
+python3 -m pytest _bmad/lens-work/skills/bmad-lens-switch/scripts/tests/test-switch-ops.py -q
 ```
 
 ## Integration Points

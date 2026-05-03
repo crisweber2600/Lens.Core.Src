@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["pytest>=8.0", "pyyaml>=6.0"]
-# ///
 """Focused regression tests for bmad-lens-expressplan command surface.
 
 Run:
     cd TargetProjects/lens-dev/new-codebase/lens.core.src
-    uv run --with pytest --with pyyaml pytest _bmad/lens-work/skills/bmad-lens-expressplan/scripts/tests/test-expressplan-ops.py -q
+    python3 -m pytest _bmad/lens-work/skills/bmad-lens-expressplan/scripts/tests/test-expressplan-ops.py -q
 """
 
 from __future__ import annotations

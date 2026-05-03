@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["pytest>=8.0", "pyyaml>=6.0"]
-# ///
 """Split-feature regression tests covering the approved clean-room contract."""
 
 from __future__ import annotations

@@ -1,7 +1,3 @@
-# /// script
-# requires-python = ">=3.9"
-# dependencies = ["pytest>=8.0", "pyyaml>=6.0"]
-# ///
 """Tests for merge-config.py — anti-zombie config merge logic."""
 
 import importlib.util

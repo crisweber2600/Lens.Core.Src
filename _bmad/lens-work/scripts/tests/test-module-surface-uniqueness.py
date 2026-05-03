@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["pytest>=8.0", "pyyaml>=6.0"]
-# ///
 """Regression tests for unique Lens command/prompt registrations."""
 
 from __future__ import annotations

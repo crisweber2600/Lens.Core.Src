@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.9"
-# dependencies = []
-# ///
 """Merge module help entries into shared _bmad/module-help.csv.
 
 Reads a source CSV with module help entries and merges them into a target CSV.

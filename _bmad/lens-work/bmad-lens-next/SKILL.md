@@ -60,7 +60,7 @@ You are the Next conductor. Your only job is to ask `next-ops.py` what to do and
 Invoke the routing script:
 
 ```bash
-uv run --script {module_path}/skills/bmad-lens-next/scripts/next-ops.py suggest --feature-id {feature_id} --governance-repo {governance_repo}
+python3 {module_path}/skills/bmad-lens-next/scripts/next-ops.py suggest --feature-id {feature_id} --governance-repo {governance_repo}
 ```
 
 Read the JSON result from stdout. The expected response schema:

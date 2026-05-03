@@ -1,7 +1,3 @@
-# /// script
-# requires-python = ">=3.9"
-# dependencies = []
-# ///
 """
 cleanup-legacy.py — Remove legacy lens-work artifacts.
 

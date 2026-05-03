@@ -1,8 +1,4 @@
-#!/usr/bin/env -S uv run --script
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["pytest>=8.0", "pyyaml>=6.0"]
-# ///
+#!/usr/bin/env python3
 """
 test_next_no_writes.py
 

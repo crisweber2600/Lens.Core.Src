@@ -42,7 +42,7 @@ You are the FinalizePlan phase conductor. You coordinate final planning gates, b
 5. Validate the predecessor phase gate:
    - Accept `techplan-complete`.
    - Accept `expressplan-complete`.
-   - If phase wording is active `techplan` or active `expressplan`, continue only when `uv run {project-root}/_bmad/lens-work/scripts/validate-phase-artifacts.py --phase {phase} --contract review-ready --lifecycle-path {project-root}/_bmad/lens-work/lifecycle.yaml --docs-root {staged_docs_path} --json` passes and the user is resuming a phase-complete handoff.
+   - If phase wording is active `techplan` or active `expressplan`, continue only when `python3 {project-root}/_bmad/lens-work/scripts/validate-phase-artifacts.py --phase {phase} --contract review-ready --lifecycle-path {project-root}/_bmad/lens-work/lifecycle.yaml --docs-root {staged_docs_path} --json` passes and the user is resuming a phase-complete handoff.
    - Otherwise stop with: "FinalizePlan requires TechPlan or ExpressPlan completion before it can begin."
 6. Resolve staged docs path from `feature.yaml.docs.path` with fallback `docs/{domain}/{service}/{featureId}` in `{control_repo}`.
 7. Load domain constitution through `bmad-lens-constitution` for final cross-feature and governance context.
@@ -68,7 +68,7 @@ bmad-lens-adversarial-review --phase finalizeplan --source phase-complete
 4. Publish reviewed upstream planning artifacts to the governance mirror through the CLI-backed boundary:
 
 ```bash
-uv run _bmad/lens-work/skills/bmad-lens-git-orchestration/scripts/git-orchestration-ops.py \
+python3 _bmad/lens-work/skills/bmad-lens-git-orchestration/scripts/git-orchestration-ops.py \
   publish-to-governance \
   --governance-repo {governance_repo} \
   --control-repo {control_repo} \

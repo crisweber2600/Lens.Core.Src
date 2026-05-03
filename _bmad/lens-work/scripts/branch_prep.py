@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["pyyaml>=6.0"]
-# ///
 """
 branch_prep.py — Target-repo branch preparation for the Lens Dev conductor.
 
@@ -18,7 +14,7 @@ Strategies:
   feature-user      → feature/{featureStub}-{username}
 
 Usage:
-  uv run --script branch_prep.py \\
+  python3 branch_prep.py \\
     --target-repo <path> \\
     --feature-id <id> \\
     --strategy <flat|feature-stub|feature-user> \\

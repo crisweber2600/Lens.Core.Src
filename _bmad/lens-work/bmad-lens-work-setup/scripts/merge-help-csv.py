@@ -1,7 +1,3 @@
-# /// script
-# requires-python = ">=3.9"
-# dependencies = []
-# ///
 """
 merge-help-csv.py — Anti-zombie CSV merge for the lens module.
 

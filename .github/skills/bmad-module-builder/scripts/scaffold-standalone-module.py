@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.10"
-# ///
 """Scaffold standalone module infrastructure into an existing skill.
 
 Copies template files (module-setup.md, merge scripts) into the skill directory

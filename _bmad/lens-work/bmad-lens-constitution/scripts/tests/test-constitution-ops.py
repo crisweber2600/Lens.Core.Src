@@ -1,8 +1,4 @@
-#!/usr/bin/env -S uv run --script
-# /// script
-# requires-python = ">=3.11"
-# dependencies = ["pyyaml", "pytest"]
-# ///
+#!/usr/bin/env python3
 """
 Tests for constitution-ops.py — resolve, check-compliance, progressive-display.
 All tests operate on real temp-directory governance repo structures.

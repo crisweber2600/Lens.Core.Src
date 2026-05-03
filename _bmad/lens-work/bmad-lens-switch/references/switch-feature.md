@@ -22,7 +22,7 @@ If the feature is not found in `feature-index.yaml`, return an error immediately
 Run the switch operation:
 
 ```bash
-uv run --script {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
+python3 {project-root}/{release_repo_root}/_bmad/lens-work/skills/bmad-lens-switch/scripts/switch-ops.py \
   switch \
   --governance-repo {governance_repo} \
   --feature-id {target_feature_id} \

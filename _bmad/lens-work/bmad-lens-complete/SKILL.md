@@ -92,7 +92,7 @@ Failure shape when retrospective exists but is not approved:
 Invocation:
 
 ```bash
-uv run ./scripts/complete-ops.py check-preconditions \
+python3 ./scripts/complete-ops.py check-preconditions \
   --governance-repo {governance_repo} \
   --feature-id {feature_id}
 ```
@@ -151,12 +151,12 @@ Execute return shape:
 Invocations:
 
 ```bash
-uv run ./scripts/complete-ops.py finalize \
+python3 ./scripts/complete-ops.py finalize \
   --governance-repo {governance_repo} \
   --feature-id {feature_id} \
   --dry-run
 
-uv run ./scripts/complete-ops.py finalize \
+python3 ./scripts/complete-ops.py finalize \
   --governance-repo {governance_repo} \
   --feature-id {feature_id} \
   --confirm
@@ -187,7 +187,7 @@ Return shape:
 Invocation:
 
 ```bash
-uv run ./scripts/complete-ops.py archive-status \
+python3 ./scripts/complete-ops.py archive-status \
   --governance-repo {governance_repo} \
   --feature-id {feature_id}
 ```
@@ -252,7 +252,7 @@ The scaffolded tests in `scripts/tests/test-complete-ops.py` define the red-phas
 Focused validation for the scaffold:
 
 ```bash
-uv run --with pytest pytest _bmad/lens-work/skills/bmad-lens-complete/scripts/tests/test-complete-ops.py -q
+python3 -m pytest _bmad/lens-work/skills/bmad-lens-complete/scripts/tests/test-complete-ops.py -q
 ```
 
 ## References

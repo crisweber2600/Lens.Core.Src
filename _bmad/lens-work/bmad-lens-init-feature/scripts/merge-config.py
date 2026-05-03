@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.9"
-# dependencies = ["pyyaml"]
-# ///
 """Merge module configuration into shared _bmad/config.yaml and config.user.yaml.
 
 Reads a module.yaml definition and a JSON answers file, then writes or updates
