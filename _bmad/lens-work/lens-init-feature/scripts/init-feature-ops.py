@@ -949,12 +949,12 @@ def cmd_create(args: argparse.Namespace) -> dict:
         (
             f"uv run --script {{project-root}}/lens.core/_bmad/lens-work/skills/lens-git-orchestration/"
             f"scripts/git-orchestration-ops.py create-feature-branches "
-            f"--governance-repo {governance_repo} --repo {control_repo} --feature-id {feature_id}"
+            f"--governance-repo {shlex.quote(governance_repo)} --repo {shlex.quote(control_repo)} --feature-id {shlex.quote(feature_id)}"
         ),
         (
             f"uv run --script {{project-root}}/lens.core/_bmad/lens-work/skills/lens-switch/"
             f"scripts/switch-ops.py switch "
-            f"--governance-repo {governance_repo} --feature-id {feature_id} --control-repo {control_repo}"
+            f"--governance-repo {shlex.quote(governance_repo)} --feature-id {shlex.quote(feature_id)} --control-repo {shlex.quote(control_repo)}"
         ),
     ]
 
@@ -998,7 +998,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
             "remaining_commands": remaining_commands,
         }
 
-    if args.execute_governance_git:
+    if args.execute_governance_git and not args.dry_run:
         try:
             sync_governance_main(governance_repo)
         except RuntimeError as exc:
@@ -1030,11 +1030,14 @@ def cmd_create(args: argparse.Namespace) -> dict:
             return {"status": "fail", "scope": "feature", "dry_run": False,
                     "error": f"Failed to create service marker: {exc}"}
 
+    files_written: list[Path] = []
+
     try:
         atomic_write_yaml(
             feature_yaml_path,
             make_feature_yaml(feature_id, feature_slug, domain, service, name, track, username, timestamp, description),
         )
+        files_written.append(feature_yaml_path)
     except OSError as exc:
         return {"status": "fail", "scope": "feature", "dry_run": False,
                 "error": f"Failed to write feature.yaml: {exc}"}
@@ -1044,6 +1047,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
         summary_md_path.write_text(
             make_summary_md(feature_id, name, starting_phase, track, timestamp), encoding="utf-8"
         )
+        files_written.append(summary_md_path)
     except OSError as exc:
         return {"status": "fail", "scope": "feature", "dry_run": False,
                 "error": f"Failed to write summary.md: {exc}"}
@@ -1057,12 +1061,18 @@ def cmd_create(args: argparse.Namespace) -> dict:
     try:
         atomic_write_yaml(index_path, index_data)
     except OSError as exc:
+        # Rollback: remove already-written feature files to avoid partial state
+        for written_path in files_written:
+            try:
+                written_path.unlink()
+            except OSError:
+                pass
         return {"status": "fail", "scope": "feature", "dry_run": False,
                 "error": f"Failed to update feature-index.yaml: {exc}"}
 
     governance_commit_sha: str | None = None
     governance_git_executed = False
-    if args.execute_governance_git:
+    if args.execute_governance_git and not args.dry_run:
         try:
             for step in gov_steps[2:]:
                 run_git(governance_repo, step)
@@ -1082,6 +1092,18 @@ def cmd_create(args: argparse.Namespace) -> dict:
                 ),
             }
 
+    is_express = track in ("express", "expressplan")
+    gh_commands: list[str] = []
+    if not is_express:
+        gh_commands = [
+            (
+                f"gh pr create --repo {shlex.quote(control_repo)} "
+                f"--head {shlex.quote(f'{feature_id}-plan')} --base {shlex.quote(feature_id)} "
+                f"--title {shlex.quote(f'[plan] {feature_id} — planning artifacts')} "
+                f"--body {shlex.quote('Auto-created by lens-init-feature')}"
+            )
+        ]
+
     return {
         "status": "pass",
         "dry_run": False,
@@ -1094,7 +1116,8 @@ def cmd_create(args: argparse.Namespace) -> dict:
         "starting_phase": starting_phase,
         "recommended_command": "/next",
         "router_command": "/next",
-        "planning_pr_created": False,
+        "planning_pr_created": not is_express,
+        "gh_commands": gh_commands,
         "path": str(feature_yaml_path),
         "summary_path": str(summary_md_path),
         "index_path": str(index_path),

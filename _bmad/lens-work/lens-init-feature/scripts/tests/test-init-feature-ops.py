@@ -363,12 +363,15 @@ class TestCreate:
             "--username", "testuser",
         ])
 
-        assert completed.returncode == 0, payload.get("error")
+        assert completed.returncode == 0
         assert payload["status"] == "pass"
         assert payload["feature_id"] == "lens-dev-new-codebase-auth-refresh"
         assert payload["feature_slug"] == "auth-refresh"
         assert payload["starting_phase"] == "expressplan"
         assert payload["index_updated"] is True
+        # express track defers the planning PR
+        assert payload["planning_pr_created"] is False
+        assert payload["gh_commands"] == []
 
         fy_path = gov / "features" / "lens-dev" / "new-codebase" / "lens-dev-new-codebase-auth-refresh" / "feature.yaml"
         assert fy_path.exists()
@@ -432,6 +435,12 @@ class TestCreate:
         assert entry["featureSlug"] == "index-test"
         assert entry["status"] == "preplan"  # quickplan track starts at preplan
         assert entry["plan_branch"] == "lens-dev-new-codebase-index-test-plan"
+
+        # non-express track creates an immediate planning PR
+        assert payload["planning_pr_created"] is True
+        assert len(payload["gh_commands"]) == 1
+        assert "gh pr create" in payload["gh_commands"][0]
+        assert "lens-dev-new-codebase-index-test-plan" in payload["gh_commands"][0]
 
     def test_create_feature_dry_run_no_files_written(self, tmp_path: Path):
         gov = tmp_path / "gov"
@@ -510,3 +519,85 @@ class TestCreate:
         assert completed.returncode == 0
         assert (gov / "features" / "lens-dev" / "domain.yaml").exists()
         assert (gov / "features" / "lens-dev" / "new-codebase" / "service.yaml").exists()
+
+    def test_create_feature_express_defers_planning_pr(self, tmp_path: Path):
+        gov = tmp_path / "gov"
+        gov.mkdir()
+        (gov / "features" / "lens-dev" / "new-codebase").mkdir(parents=True)
+        (gov / "features" / "lens-dev" / "domain.yaml").write_text("{}", encoding="utf-8")
+        (gov / "features" / "lens-dev" / "new-codebase" / "service.yaml").write_text("{}", encoding="utf-8")
+
+        completed, payload = run_script([
+            "create",
+            "--governance-repo", str(gov),
+            "--feature-id", "lens-dev-new-codebase-express-pr",
+            "--domain", "lens-dev",
+            "--service", "new-codebase",
+            "--name", "Express PR Test",
+            "--track", "express",
+        ])
+
+        assert completed.returncode == 0
+        assert payload["planning_pr_created"] is False
+        assert payload["gh_commands"] == []
+
+    def test_create_feature_non_express_emits_planning_pr_command(self, tmp_path: Path):
+        gov = tmp_path / "gov"
+        gov.mkdir()
+        (gov / "features" / "lens-dev" / "new-codebase").mkdir(parents=True)
+        (gov / "features" / "lens-dev" / "domain.yaml").write_text("{}", encoding="utf-8")
+        (gov / "features" / "lens-dev" / "new-codebase" / "service.yaml").write_text("{}", encoding="utf-8")
+
+        for non_express_track in ("quickplan", "full", "hotfix", "tech-change"):
+            fid = f"lens-dev-new-codebase-pr-{non_express_track}"
+            completed, payload = run_script([
+                "create",
+                "--governance-repo", str(gov),
+                "--feature-id", fid,
+                "--domain", "lens-dev",
+                "--service", "new-codebase",
+                "--name", f"PR test {non_express_track}",
+                "--track", non_express_track,
+            ])
+
+            assert completed.returncode == 0, f"track={non_express_track}: {payload.get('error')}"
+            assert payload["planning_pr_created"] is True, f"track={non_express_track}"
+            assert len(payload["gh_commands"]) == 1, f"track={non_express_track}"
+            cmd = payload["gh_commands"][0]
+            assert "gh pr create" in cmd, f"track={non_express_track}"
+            assert f"{fid}-plan" in cmd, f"track={non_express_track}"
+
+    def test_create_feature_index_failure_rolls_back_files(self, tmp_path: Path):
+        """If feature-index.yaml write fails, written feature.yaml/summary.md are removed."""
+        gov = tmp_path / "gov"
+        gov.mkdir()
+        # Pre-create all sub-directories the script needs so their writes succeed
+        (gov / "features" / "lens-dev" / "new-codebase").mkdir(parents=True)
+        (gov / "features" / "lens-dev" / "domain.yaml").write_text("{}", encoding="utf-8")
+        (gov / "features" / "lens-dev" / "new-codebase" / "service.yaml").write_text("{}", encoding="utf-8")
+
+        # Make gov/ read-only: atomic_write_yaml for feature-index.yaml creates a temp file
+        # in gov/ and then renames it — both operations fail when gov/ is not writable.
+        # Sub-directories (features/…) retain their default writable permissions so
+        # feature.yaml and summary.md are written first, then the rollback code removes them.
+        gov.chmod(0o555)
+        try:
+            completed, payload = run_script([
+                "create",
+                "--governance-repo", str(gov),
+                "--feature-id", "lens-dev-new-codebase-rollback-test",
+                "--domain", "lens-dev",
+                "--service", "new-codebase",
+                "--name", "Rollback Test",
+                "--track", "express",
+            ])
+
+            assert completed.returncode == 1
+            assert payload["status"] == "fail"
+            assert "feature-index.yaml" in payload["error"]
+            # feature.yaml and summary.md must have been rolled back
+            feature_dir = gov / "features" / "lens-dev" / "new-codebase" / "lens-dev-new-codebase-rollback-test"
+            assert not (feature_dir / "feature.yaml").exists()
+            assert not (feature_dir / "summary.md").exists()
+        finally:
+            gov.chmod(0o755)  # Restore write permission for tmp_path cleanup

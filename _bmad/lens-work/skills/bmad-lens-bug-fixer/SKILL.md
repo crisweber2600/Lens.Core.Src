@@ -83,7 +83,7 @@ delegate to `bmad-lens-expressplan` for planning execution. You own the outcome 
     - E.g. `["preflight-failed", "reporter-bug"]` → `"Bugbash: Preflight Failed; Reporter Bug"`
 11. Delegate to `lens-new-feature` via `init-feature-ops.py create`:
     ```bash
-    uv run _bmad/lens-work/lens-init-feature/scripts/init-feature-ops.py create \
+    uv run --script _bmad/lens-work/lens-init-feature/scripts/init-feature-ops.py create \
       --governance-repo {governance_repo} \
       --control-repo {control_repo} \
       --feature-id {featureId} \
