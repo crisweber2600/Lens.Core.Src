@@ -25,7 +25,7 @@ import yaml
 
 
 SCRIPT = Path(__file__).parent.parent / "next-ops.py"
-MODULE_ROOT = SCRIPT.parents[3]  # _bmad/lens-work
+MODULE_ROOT = SCRIPT.parents[3]  # {project-root}/lens.core/_bmad/lens-work
 SKILL_MD = MODULE_ROOT / "skills" / "bmad-lens-next" / "SKILL.md"
 
 # ---------------------------------------------------------------------------

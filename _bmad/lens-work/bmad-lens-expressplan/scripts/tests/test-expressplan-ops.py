@@ -7,7 +7,7 @@
 
 Run:
     cd TargetProjects/lens-dev/new-codebase/lens.core.src
-    uv run --with pytest --with pyyaml pytest _bmad/lens-work/skills/bmad-lens-expressplan/scripts/tests/test-expressplan-ops.py -q
+    uv run --with pytest --with pyyaml pytest {project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-expressplan/scripts/tests/test-expressplan-ops.py -q
 """
 
 from __future__ import annotations
@@ -21,13 +21,13 @@ import yaml
 
 # ---------------------------------------------------------------------------
 # Path resolution - anchored to this file's location
-#   test file: _bmad/lens-work/skills/bmad-lens-expressplan/scripts/tests/test-expressplan-ops.py
+#   test file: {project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-expressplan/scripts/tests/test-expressplan-ops.py
 #   parents[0] = tests/
 #   parents[1] = scripts/
 #   parents[2] = bmad-lens-expressplan/  <- SKILL_ROOT
 #   parents[3] = skills/
 #   parents[4] = lens-work/              <- MODULE_ROOT
-#   MODULE_ROOT.parents[0] = _bmad/
+#   MODULE_ROOT.parents[0] = {project-root}/lens.core/_bmad/
 #   MODULE_ROOT.parents[1] = lens.core.src/  <- REPO_ROOT
 # ---------------------------------------------------------------------------
 TEST_FILE = Path(__file__).resolve()
