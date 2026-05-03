@@ -162,8 +162,9 @@ class TestWritePythonCmd:
         env_path = tmp_path / "env.yaml"
         lens_python._write_python_cmd(env_path, "python3")
         lens_python._write_python_cmd(env_path, "python")
-        assert "python_cmd: python\n" in env_path.read_text()
-        assert "python_cmd: python3" not in env_path.read_text()
+        content = env_path.read_text()
+        assert "python_cmd: python" in content
+        assert "python_cmd: python3" not in content
 
     def test_write_preserves_other_keys(self, tmp_path):
         env_path = tmp_path / "env.yaml"

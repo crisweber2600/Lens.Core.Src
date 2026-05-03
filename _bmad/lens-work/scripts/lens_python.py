@@ -60,7 +60,7 @@ def _write_python_cmd(env_path: Path, cmd: str) -> None:
         replaced = False
         updated: list[str] = []
         for line in lines:
-            if line.strip().startswith("python_cmd:"):
+            if line.lstrip().startswith("python_cmd:"):
                 updated.append(new_line)
                 replaced = True
             else:
