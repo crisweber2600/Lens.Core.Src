@@ -112,14 +112,29 @@ class TestDeriveFeatureId:
     def test_single_slug_is_deterministic(self):
         result = _run([
             "derive-feature-id",
+            "--slugs", "reporter-fixed-bug",
+        ])
+        assert result.returncode == 0
+        data = json.loads(result.stdout.strip())
+        assert data["stub"] == "reporter-fixed-bug"
+        assert data["feature_id"] == (
+            "lens-dev-new-codebase-bugfix-reporter-fixed-bug"
+        )
+
+    def test_long_slug_truncated_to_safe_id_limit(self):
+        # slug with 40 chars gets capped to 35 to keep total feature_id <= 64 chars
+        result = _run([
+            "derive-feature-id",
             "--slugs", "preflight-failed-and-reporter-fixed-bug",
         ])
         assert result.returncode == 0
         data = json.loads(result.stdout.strip())
-        assert data["stub"] == "preflight-failed-and-reporter-fixed-bug"
+        # stub is trimmed to 35 chars (64 - len("lens-dev-new-codebase-bugfix-"))
+        assert data["stub"] == "preflight-failed-and-reporter-fixed"
         assert data["feature_id"] == (
-            "lens-dev-new-codebase-bugfix-preflight-failed-and-reporter-fixed-bug"
+            "lens-dev-new-codebase-bugfix-preflight-failed-and-reporter-fixed"
         )
+        assert len(data["feature_id"]) <= 64
 
     def test_multiple_slugs_is_order_independent(self):
         result_a = _run([

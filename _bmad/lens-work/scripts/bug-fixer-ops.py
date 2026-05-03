@@ -80,8 +80,9 @@ def derive_feature_id_from_slugs(slugs: list[str]) -> tuple[str, str]:
     else:
         stub = f"{normalized[0]}-batch-{len(normalized)}"
 
-    # Keep final featureId filename-safe and reasonably bounded.
-    stub = stub[:96].strip("-")
+    # Keep final featureId filename-safe and within SAFE_ID_PATTERN max (64 chars total).
+    _max_stub = 64 - len(FEATURE_ID_PREFIX)
+    stub = stub[:_max_stub].strip("-")
     feature_id = f"{FEATURE_ID_PREFIX}{stub}"
     return feature_id, stub
 
