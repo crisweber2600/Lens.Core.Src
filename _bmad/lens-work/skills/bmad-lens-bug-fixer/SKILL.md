@@ -166,3 +166,23 @@ updated_at: ...
 | `lens-init-feature/scripts/init-feature-ops.py create` | Express-track feature creation |
 | `bmad-lens-expressplan` | Expressplan execution delegation |
 | `scripts/light-preflight.py` | Entry gate |
+
+## Error Recovery
+
+### Interrupted --fix-all-new Session
+
+If `--fix-all-new` is interrupted between Phase 3 (Inprogress commit) and Phase 4 (expressplan delegation), bugs are stranded in `governance_repo/bugs/Inprogress/` with a featureId bound but no expressplan started. The next `--fix-all-new` run will NOT pick them up (it scans `bugs/New/` only).
+
+**Recovery steps:**
+1. Run `bugbash-ops.py status-summary` to detect the orphaned state (non-zero Inprogress, no corresponding Fixed).
+2. Run `resolve-bugs --feature-id {featureId}` to confirm which slugs are affected.
+3. Delegate expressplan manually: load `bmad-lens-expressplan` with the Inprogress bug descriptions as context.
+4. After expressplan completes, run `--complete {featureId}` to move bugs to Fixed.
+
+### Phase 2 Failure (Feature Creation)
+
+If `init-feature-ops.py create` fails, ALL bugs remain in `bugs/New/`. No commit is made. Re-run `--fix-all-new` after resolving the feature creation failure.
+
+### Phase 4 Failure (Expressplan Delegation)
+
+If expressplan delegation fails, bugs are in `bugs/Inprogress/` with a featureId. The outcome report will show missing ✅ lines (not ❌ lines) because the failure is at the SKILL.md coordination level, not the script level. Run `bugbash-ops.py status-summary` to confirm Inprogress count, then follow the interrupted-session recovery steps above.

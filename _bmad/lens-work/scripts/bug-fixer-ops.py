@@ -164,6 +164,13 @@ def cmd_move_to_inprogress(args: argparse.Namespace) -> int:
     assert_governance_repo_exists(governance_repo)
 
     feature_id: str = args.feature_id
+    if not feature_id.strip():
+        print(
+            "ERROR: --feature-id is required and must not be empty.",
+            file=sys.stderr,
+        )
+        return 1
+
     slugs: list[str] = args.slugs or []
 
     moved: list[str] = []

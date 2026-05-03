@@ -159,6 +159,17 @@ class TestMoveToInprogress:
         ])
         assert result.returncode == 1
 
+    def test_exits_1_when_feature_id_empty(self, tmp_path):
+        governance_repo = tmp_path / "gov"
+        governance_repo.mkdir()
+        result = _run([
+            "move-to-inprogress",
+            "--governance-repo", str(governance_repo),
+            "--feature-id", "",
+            "--slugs", "any-slug",
+        ])
+        assert result.returncode == 1
+
 
 # ---------------------------------------------------------------------------
 # move-to-fixed
