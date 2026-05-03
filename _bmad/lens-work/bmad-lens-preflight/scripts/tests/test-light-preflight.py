@@ -19,13 +19,13 @@ spec.loader.exec_module(preflight)  # type: ignore[union-attr]
 
 
 class TestDetectPythonCmd:
-    def test_returns_python3_when_it_resolves_to_current_interpreter(self, tmp_path):
+    def test_returns_python3_when_it_resolves_to_current_interpreter(self):
         """python3 alias pointing at sys.executable → returns 'python3'."""
         exe = Path(sys.executable).resolve()
         with mock.patch("shutil.which", side_effect=lambda c: str(exe) if c == "python3" else None):
             assert preflight.detect_python_cmd() == "python3"
 
-    def test_falls_back_to_python_when_python3_absent(self, tmp_path):
+    def test_falls_back_to_python_when_python3_absent(self):
         """No python3 alias but python resolves to sys.executable → returns 'python'."""
         exe = Path(sys.executable).resolve()
         with mock.patch("shutil.which", side_effect=lambda c: str(exe) if c == "python" else None):
@@ -48,7 +48,7 @@ class TestDetectPythonCmd:
         with mock.patch("shutil.which", return_value=None):
             result = preflight.detect_python_cmd()
         assert isinstance(result, str)
-        assert result  # non-empty
+        assert len(result) > 0  # non-empty string
 
 
 class TestReadWritePythonCmd:
@@ -119,7 +119,7 @@ class TestEnsurePythonCmdCached:
         with mock.patch.object(preflight, "detect_python_cmd", return_value=sys.executable):
             cmd, was_detected = preflight.ensure_python_cmd_cached(folder)
         assert isinstance(cmd, str)
-        assert cmd
+        assert len(cmd) > 0  # non-empty string
 
 
 class TestMainPythonCaching:
