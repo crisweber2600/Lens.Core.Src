@@ -43,13 +43,41 @@ class TestGetPythonCmd:
 
         assert result == "python3"
 
-    def test_falls_back_to_sys_executable_when_no_env_yaml(self, tmp_path):
-        with mock.patch.object(lens_python, "_find_project_root", return_value=tmp_path):
+    def test_detects_and_caches_when_no_env_yaml(self, tmp_path):
+        """When no cache exists, get_python_cmd detects and writes env.yaml."""
+        (tmp_path / "_bmad").mkdir()
+        exe = Path(sys.executable).resolve()
+        env_path = tmp_path / ".lens" / "personal" / "env.yaml"
+
+        with (
+            mock.patch.object(lens_python, "_find_project_root", return_value=tmp_path),
+            mock.patch("shutil.which", side_effect=lambda c: str(exe) if c == "python3" else None),
+        ):
             result = lens_python.get_python_cmd()
-        assert result == sys.executable
+
+        assert result == "python3"
+        # Should have been written to cache
+        assert env_path.exists()
+        assert "python_cmd: python3" in env_path.read_text()
+
+    def test_detects_python_when_python3_absent(self, tmp_path):
+        """Falls back to 'python' when 'python3' doesn't resolve."""
+        (tmp_path / "_bmad").mkdir()
+        exe = Path(sys.executable).resolve()
+
+        with (
+            mock.patch.object(lens_python, "_find_project_root", return_value=tmp_path),
+            mock.patch("shutil.which", side_effect=lambda c: str(exe) if c == "python" else None),
+        ):
+            result = lens_python.get_python_cmd()
+
+        assert result == "python"
 
     def test_falls_back_to_sys_executable_when_project_root_not_found(self):
-        with mock.patch.object(lens_python, "_find_project_root", return_value=None):
+        with (
+            mock.patch.object(lens_python, "_find_project_root", return_value=None),
+            mock.patch.object(lens_python, "_detect_python_cmd", return_value=sys.executable),
+        ):
             result = lens_python.get_python_cmd()
         assert result == sys.executable
 
@@ -80,3 +108,75 @@ class TestGetPythonCmd:
         (folder / "env.yaml").write_text('python_cmd: "python3"\n', encoding="utf-8")
         result = lens_python._read_python_cmd(folder / "env.yaml")
         assert result == "python3"
+
+    def test_skips_detection_on_second_call(self, tmp_path):
+        """Cache hit: detection is not called again."""
+        (tmp_path / "_bmad").mkdir()
+        _make_env_yaml(tmp_path / ".lens" / "personal", "python3")
+
+        with (
+            mock.patch.object(lens_python, "_find_project_root", return_value=tmp_path),
+            mock.patch.object(lens_python, "_detect_python_cmd") as mock_detect,
+        ):
+            result = lens_python.get_python_cmd()
+
+        assert result == "python3"
+        mock_detect.assert_not_called()
+
+
+class TestDetectPythonCmd:
+    def test_returns_python3_when_it_resolves_to_current_interpreter(self):
+        exe = Path(sys.executable).resolve()
+        with mock.patch("shutil.which", side_effect=lambda c: str(exe) if c == "python3" else None):
+            assert lens_python._detect_python_cmd() == "python3"
+
+    def test_falls_back_to_python_when_python3_absent(self):
+        exe = Path(sys.executable).resolve()
+        with mock.patch("shutil.which", side_effect=lambda c: str(exe) if c == "python" else None):
+            assert lens_python._detect_python_cmd() == "python"
+
+    def test_falls_back_to_sys_executable_when_no_alias_matches(self):
+        with mock.patch("shutil.which", return_value=None):
+            result = lens_python._detect_python_cmd()
+        assert result == sys.executable
+
+    def test_prefers_python3_over_python(self):
+        exe = Path(sys.executable).resolve()
+        with mock.patch("shutil.which", return_value=str(exe)):
+            assert lens_python._detect_python_cmd() == "python3"
+
+    def test_always_returns_a_string(self):
+        with mock.patch("shutil.which", return_value=None):
+            result = lens_python._detect_python_cmd()
+        assert isinstance(result, str) and len(result) > 0
+
+
+class TestWritePythonCmd:
+    def test_write_creates_env_yaml(self, tmp_path):
+        env_path = tmp_path / "env.yaml"
+        lens_python._write_python_cmd(env_path, "python3")
+        assert env_path.exists()
+        assert "python_cmd: python3" in env_path.read_text()
+
+    def test_write_overwrites_existing_python_cmd(self, tmp_path):
+        env_path = tmp_path / "env.yaml"
+        lens_python._write_python_cmd(env_path, "python3")
+        lens_python._write_python_cmd(env_path, "python")
+        assert "python_cmd: python\n" in env_path.read_text()
+        assert "python_cmd: python3" not in env_path.read_text()
+
+    def test_write_preserves_other_keys(self, tmp_path):
+        env_path = tmp_path / "env.yaml"
+        env_path.write_text("other_key: some_value\npython_cmd: python3\n")
+        lens_python._write_python_cmd(env_path, "python")
+        content = env_path.read_text()
+        assert "other_key: some_value" in content
+        assert "python_cmd: python\n" in content
+
+    def test_write_appends_when_not_present(self, tmp_path):
+        env_path = tmp_path / "env.yaml"
+        env_path.write_text("other_key: some_value\n")
+        lens_python._write_python_cmd(env_path, "python3")
+        content = env_path.read_text()
+        assert "other_key: some_value" in content
+        assert "python_cmd: python3" in content

@@ -19,6 +19,10 @@ from pathlib import Path
 import pytest
 import yaml
 
+_SCRIPTS_DIR = str(Path(__file__).resolve().parents[3] / "scripts")
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+from lens_python import get_python_cmd
 
 SCRIPT = Path(__file__).parent.parent / "next-ops.py"
 MODULE_ROOT = SCRIPT.parents[3]  # _bmad/lens-work
@@ -31,7 +35,7 @@ SKILL_MD = MODULE_ROOT / "skills" / "bmad-lens-next" / "SKILL.md"
 def run_next(args: list[str]) -> tuple[dict, int]:
     """Invoke next-ops.py and return (parsed_json, exit_code)."""
     result = subprocess.run(
-        [sys.executable, "-B", str(SCRIPT), *args],
+        [get_python_cmd(), "-B", str(SCRIPT), *args],
         capture_output=True,
         text=True,
         check=False,

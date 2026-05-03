@@ -9,6 +9,10 @@ from pathlib import Path
 import pytest
 import yaml
 
+_SCRIPTS_DIR = str(Path(__file__).resolve().parents[3] / "scripts")
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+from lens_python import get_python_cmd
 
 SCRIPT = Path(__file__).parent.parent / "switch-ops.py"
 MODULE_ROOT = SCRIPT.parents[3]
@@ -52,7 +56,7 @@ def read_text(path: Path) -> str:
 def run_switch(args: list[str], cwd: Path | None = None) -> tuple[dict, int]:
     """Run switch-ops.py and return parsed JSON plus exit code."""
     result = subprocess.run(
-        [sys.executable, str(SCRIPT), *args],
+        [get_python_cmd(), str(SCRIPT), *args],
         cwd=cwd,
         capture_output=True,
         text=True,
