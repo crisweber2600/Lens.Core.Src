@@ -8,9 +8,10 @@ Usage::
     subprocess.run([cmd, "script.py", ...])
 
 The value is read from ``<project-root>/.lens/personal/env.yaml`` (written by
-``light-preflight.py`` during preflight).  If the file is absent or contains no
-``python_cmd`` entry, ``sys.executable`` is returned as a safe fallback so that
-callers always use the same interpreter that is already running.
+the preflight skill agent during the Python command detection step).  If the
+file is absent or contains no ``python_cmd`` entry, ``sys.executable`` is
+returned as a safe fallback so that callers always use the same interpreter
+that is already running.
 """
 
 from __future__ import annotations
