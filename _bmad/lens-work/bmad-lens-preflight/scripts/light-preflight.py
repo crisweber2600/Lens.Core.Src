@@ -18,8 +18,8 @@ import sys
 from pathlib import Path
 
 
-ENV_YAML_NAME = "env.yaml"
-PERSONAL_SUBDIR = Path(".lens") / "personal"
+_ENV_YAML_NAME = "env.yaml"
+_PERSONAL_SUBDIR = Path(".lens") / "personal"
 
 
 def find_project_root() -> Path | None:
@@ -71,7 +71,7 @@ def read_python_cmd_from_env(personal_folder: Path) -> str | None:
     Uses a simple line scan so no third-party YAML library is needed inside
     this lean preflight script.
     """
-    env_path = personal_folder / ENV_YAML_NAME
+    env_path = personal_folder / _ENV_YAML_NAME
     if not env_path.exists():
         return None
     try:
@@ -92,7 +92,7 @@ def write_python_cmd_to_env(personal_folder: Path, cmd: str) -> None:
     ``python_cmd`` line (or appends it if absent).
     """
     personal_folder.mkdir(parents=True, exist_ok=True)
-    env_path = personal_folder / ENV_YAML_NAME
+    env_path = personal_folder / _ENV_YAML_NAME
 
     new_line = f"python_cmd: {cmd}\n"
     if env_path.exists():
@@ -147,7 +147,7 @@ def main() -> int:
         print(f"[LENS:PREFLIGHT] FAIL — {msg}", file=sys.stderr)
         return 1
 
-    personal_folder = root / PERSONAL_SUBDIR
+    personal_folder = root / _PERSONAL_SUBDIR
     python_cmd, was_detected = ensure_python_cmd_cached(personal_folder)
     if python_cmd is None:
         print(
@@ -156,7 +156,7 @@ def main() -> int:
             file=sys.stderr,
         )
     elif was_detected:
-        print(f"[LENS:PREFLIGHT] INFO — python_cmd={python_cmd!r} cached in {personal_folder / ENV_YAML_NAME}")
+        print(f"[LENS:PREFLIGHT] INFO — python_cmd={python_cmd!r} cached in {personal_folder / _ENV_YAML_NAME}")
 
     return 0
 
