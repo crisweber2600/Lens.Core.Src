@@ -15,7 +15,7 @@ This map inventories the 17 retained public Lens commands in `lens.core.src` on 
 The inventory is based on the live target repo file tree only:
 
 - Public stub path: `.github/prompts/lens-{command}.prompt.md`
-- Release prompt path: `_bmad/lens-work/prompts/lens-{command}.prompt.md`
+- Release prompt path: `{project-root}/lens.core/_bmad/lens-work/prompts/lens-{command}.prompt.md`
 - Owner path: command owner `SKILL.md`, except `preflight`, which uses its live fallback script because this target tree has no `bmad-lens-preflight/SKILL.md`
 
 ## Clean-Room Traceability
@@ -36,23 +36,23 @@ Target status is derived from the three artifact states:
 
 | command | public_stub_path | public_stub_state | release_prompt_path | release_prompt_state | owner_path | owner_state | target_status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| preflight | `.github/prompts/lens-preflight.prompt.md` | missing | `_bmad/lens-work/prompts/lens-preflight.prompt.md` | missing | `_bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py` | present | partial |
-| new-domain | `.github/prompts/lens-new-domain.prompt.md` | present | `_bmad/lens-work/prompts/lens-new-domain.prompt.md` | present | `_bmad/lens-work/skills/bmad-lens-init-feature/SKILL.md` | present | present |
-| new-service | `.github/prompts/lens-new-service.prompt.md` | present | `_bmad/lens-work/prompts/lens-new-service.prompt.md` | present | `_bmad/lens-work/skills/bmad-lens-init-feature/SKILL.md` | present | present |
-| new-feature | `.github/prompts/lens-new-feature.prompt.md` | missing | `_bmad/lens-work/prompts/lens-new-feature.prompt.md` | present | `_bmad/lens-work/skills/bmad-lens-init-feature/SKILL.md` | present | partial |
-| switch | `.github/prompts/lens-switch.prompt.md` | present | `_bmad/lens-work/prompts/lens-switch.prompt.md` | present | `_bmad/lens-work/skills/bmad-lens-switch/SKILL.md` | present | present |
-| next | `.github/prompts/lens-next.prompt.md` | present | `_bmad/lens-work/prompts/lens-next.prompt.md` | present | `_bmad/lens-work/skills/bmad-lens-next/SKILL.md` | present | present |
-| preplan | `.github/prompts/lens-preplan.prompt.md` | present | `_bmad/lens-work/prompts/lens-preplan.prompt.md` | present | `_bmad/lens-work/skills/bmad-lens-preplan/SKILL.md` | present | present |
-| businessplan | `.github/prompts/lens-businessplan.prompt.md` | present | `_bmad/lens-work/prompts/lens-businessplan.prompt.md` | present | `_bmad/lens-work/skills/bmad-lens-businessplan/SKILL.md` | present | present |
-| techplan | `.github/prompts/lens-techplan.prompt.md` | present | `_bmad/lens-work/prompts/lens-techplan.prompt.md` | present | `_bmad/lens-work/skills/bmad-lens-techplan/SKILL.md` | present | present |
-| finalizeplan | `.github/prompts/lens-finalizeplan.prompt.md` | present | `_bmad/lens-work/prompts/lens-finalizeplan.prompt.md` | present | `_bmad/lens-work/skills/bmad-lens-finalizeplan/SKILL.md` | present | present |
-| expressplan | `.github/prompts/lens-expressplan.prompt.md` | present | `_bmad/lens-work/prompts/lens-expressplan.prompt.md` | present | `_bmad/lens-work/skills/bmad-lens-expressplan/SKILL.md` | present | present |
-| dev | `.github/prompts/lens-dev.prompt.md` | missing | `_bmad/lens-work/prompts/lens-dev.prompt.md` | missing | `_bmad/lens-work/skills/bmad-lens-dev/SKILL.md` | missing | missing |
-| complete | `.github/prompts/lens-complete.prompt.md` | missing | `_bmad/lens-work/prompts/lens-complete.prompt.md` | present | `_bmad/lens-work/skills/bmad-lens-complete/SKILL.md` | present | partial |
-| split-feature | `.github/prompts/lens-split-feature.prompt.md` | missing | `_bmad/lens-work/prompts/lens-split-feature.prompt.md` | missing | `_bmad/lens-work/skills/bmad-lens-split-feature/SKILL.md` | missing | missing |
-| constitution | `.github/prompts/lens-constitution.prompt.md` | missing | `_bmad/lens-work/prompts/lens-constitution.prompt.md` | missing | `_bmad/lens-work/skills/bmad-lens-constitution/SKILL.md` | present | partial |
-| discover | `.github/prompts/lens-discover.prompt.md` | present | `_bmad/lens-work/prompts/lens-discover.prompt.md` | present | `_bmad/lens-work/skills/bmad-lens-discover/SKILL.md` | present | present |
-| upgrade | `.github/prompts/lens-upgrade.prompt.md` | missing | `_bmad/lens-work/prompts/lens-upgrade.prompt.md` | missing | `_bmad/lens-work/skills/bmad-lens-upgrade/SKILL.md` | missing | missing |
+| preflight | `.github/prompts/lens-preflight.prompt.md` | missing | `{project-root}/lens.core/_bmad/lens-work/prompts/lens-preflight.prompt.md` | missing | `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py` | present | partial |
+| new-domain | `.github/prompts/lens-new-domain.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/prompts/lens-new-domain.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-init-feature/SKILL.md` | present | present |
+| new-service | `.github/prompts/lens-new-service.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/prompts/lens-new-service.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-init-feature/SKILL.md` | present | present |
+| new-feature | `.github/prompts/lens-new-feature.prompt.md` | missing | `{project-root}/lens.core/_bmad/lens-work/prompts/lens-new-feature.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-init-feature/SKILL.md` | present | partial |
+| switch | `.github/prompts/lens-switch.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/prompts/lens-switch.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-switch/SKILL.md` | present | present |
+| next | `.github/prompts/lens-next.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/prompts/lens-next.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-next/SKILL.md` | present | present |
+| preplan | `.github/prompts/lens-preplan.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/prompts/lens-preplan.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-preplan/SKILL.md` | present | present |
+| businessplan | `.github/prompts/lens-businessplan.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/prompts/lens-businessplan.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-businessplan/SKILL.md` | present | present |
+| techplan | `.github/prompts/lens-techplan.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/prompts/lens-techplan.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-techplan/SKILL.md` | present | present |
+| finalizeplan | `.github/prompts/lens-finalizeplan.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/prompts/lens-finalizeplan.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-finalizeplan/SKILL.md` | present | present |
+| expressplan | `.github/prompts/lens-expressplan.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/prompts/lens-expressplan.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-expressplan/SKILL.md` | present | present |
+| dev | `.github/prompts/lens-dev.prompt.md` | missing | `{project-root}/lens.core/_bmad/lens-work/prompts/lens-dev.prompt.md` | missing | `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-dev/SKILL.md` | missing | missing |
+| complete | `.github/prompts/lens-complete.prompt.md` | missing | `{project-root}/lens.core/_bmad/lens-work/prompts/lens-complete.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-complete/SKILL.md` | present | partial |
+| split-feature | `.github/prompts/lens-split-feature.prompt.md` | missing | `{project-root}/lens.core/_bmad/lens-work/prompts/lens-split-feature.prompt.md` | missing | `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-split-feature/SKILL.md` | missing | missing |
+| constitution | `.github/prompts/lens-constitution.prompt.md` | missing | `{project-root}/lens.core/_bmad/lens-work/prompts/lens-constitution.prompt.md` | missing | `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-constitution/SKILL.md` | present | partial |
+| discover | `.github/prompts/lens-discover.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/prompts/lens-discover.prompt.md` | present | `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-discover/SKILL.md` | present | present |
+| upgrade | `.github/prompts/lens-upgrade.prompt.md` | missing | `{project-root}/lens.core/_bmad/lens-work/prompts/lens-upgrade.prompt.md` | missing | `{project-root}/lens.core/_bmad/lens-work/skills/bmad-lens-upgrade/SKILL.md` | missing | missing |
 
 ## Summary
 
