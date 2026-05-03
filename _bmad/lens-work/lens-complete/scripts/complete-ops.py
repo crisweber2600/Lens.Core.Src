@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import tempfile
 from datetime import datetime, timezone
@@ -37,8 +38,22 @@ PLANNING_PHASES = {
     "techplan-complete", "businessplan-complete",
 }
 
+SAFE_ID_PATTERN = re.compile(r"^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$")
+
 # Governance keys that must never appear after finalize that weren't there before
 ALLOWED_WRITE_FILES = {"feature.yaml", "feature-index.yaml", "summary.md"}
+
+
+# ---------------------------------------------------------------------------
+# Custom config exceptions
+# ---------------------------------------------------------------------------
+
+class _ConfigMissingError(ValueError):
+    """Raised when governance repo config is not found in any expected location."""
+
+
+class _ConfigMalformedError(ValueError):
+    """Raised when a config file exists but cannot be parsed."""
 
 
 # ---------------------------------------------------------------------------
@@ -115,11 +130,11 @@ def _resolve_governance_repo(args: argparse.Namespace) -> Path:
     if override.exists():
         try:
             data = _read_yaml(override)
-            val = str(data.get("governance_repo_path") or "").strip()
-            if val:
-                return Path(val.replace("{project-root}", str(workspace_root))).resolve()
-        except ValueError:
-            pass
+        except ValueError as exc:
+            raise _ConfigMalformedError(f"Could not parse {override}: {exc}") from exc
+        val = str(data.get("governance_repo_path") or "").strip()
+        if val:
+            return Path(val.replace("{project-root}", str(workspace_root))).resolve()
 
     for candidate in [
         workspace_root / "_bmad" / "lens-work" / "bmadconfig.yaml",
@@ -128,34 +143,40 @@ def _resolve_governance_repo(args: argparse.Namespace) -> Path:
         if candidate.exists():
             try:
                 data = _read_yaml(candidate)
-                val = str(data.get("governance_repo_path") or "").strip()
-                if val:
-                    return Path(val.replace("{project-root}", str(workspace_root))).resolve()
-            except ValueError:
-                pass
+            except ValueError as exc:
+                raise _ConfigMalformedError(f"Could not parse {candidate}: {exc}") from exc
+            val = str(data.get("governance_repo_path") or "").strip()
+            if val:
+                return Path(val.replace("{project-root}", str(workspace_root))).resolve()
 
-    raise ValueError("governance_repo_path not found in any config. Run /lens-onboard first.")
+    raise _ConfigMissingError("governance_repo_path not found in any config. Run /lens-onboard first.")
 
 
 def _discover_feature_dir(governance_repo: Path, feature_id: str) -> Path | None:
-    """Find the feature directory by scanning features/{domain}/{service}/{featureId}/."""
+    """Find the feature directory by scanning features/{domain}/{service}/{featureId}/.
+
+    Returns None if feature_id is invalid, the features root does not exist,
+    or no matching directory is found.
+    """
+    if not SAFE_ID_PATTERN.match(feature_id):
+        return None
     features_root = governance_repo / "features"
     if not features_root.is_dir():
         return None
-    # Try direct path derivation from featureId segments first
-    candidate = features_root
-    for entry in features_root.rglob(f"{feature_id}"):
-        if entry.is_dir() and (entry / "feature.yaml").exists():
-            return entry
+    for feature_yaml in features_root.rglob("feature.yaml"):
+        if feature_yaml.parent.name == feature_id:
+            return feature_yaml.parent
     return None
 
 
-def _find_feature_yaml(governance_repo: Path, feature_id: str) -> Path | None:
-    """Return path to feature.yaml for feature_id, or None if not found."""
+def _find_feature_yaml(governance_repo: Path, feature_id: str) -> tuple[Path | None, str | None]:
+    """Return (path to feature.yaml, None) or (None, error_code) if not found or ID invalid."""
+    if not SAFE_ID_PATTERN.match(feature_id):
+        return None, "feature_id_invalid"
     feature_dir = _discover_feature_dir(governance_repo, feature_id)
     if feature_dir:
-        return feature_dir / "feature.yaml"
-    return None
+        return feature_dir / "feature.yaml", None
+    return None, "feature_not_found"
 
 
 # ---------------------------------------------------------------------------
@@ -175,40 +196,10 @@ def _check_retrospective(feature_dir: Path) -> dict[str, Any] | None:
                 "Run 'lens-retrospective' to create it, then set status: approved."
             ),
         }
-    # Check frontmatter status
+
     text = retro_path.read_text(encoding="utf-8")
-    if text.startswith("---"):
-        parts = text.split("---", 2)
-        if len(parts) >= 3:
-            try:
-                fm = yaml.safe_load(parts[1])
-                if isinstance(fm, dict):
-                    retro_status = str(fm.get("status") or "").strip()
-                    if retro_status != "approved":
-                        return {
-                            "name": "retrospective",
-                            "status": "fail",
-                            "blocker": "retrospective_not_approved",
-                            "retrospective_status": retro_status,
-                            "message": (
-                                f"retrospective.md exists but status is '{retro_status}', not 'approved'. "
-                                "Update the file and set status: approved before completing."
-                            ),
-                        }
-            except yaml.YAMLError:
-                return {
-                    "name": "retrospective",
-                    "status": "fail",
-                    "blocker": "retrospective_not_approved",
-                    "retrospective_status": "malformed_frontmatter",
-                    "message": (
-                        "retrospective.md frontmatter could not be parsed. "
-                        "Fix the YAML and set status: approved before completing."
-                    ),
-                }
-    # No frontmatter or missing status — treat as not approved
-    text_stripped = text.strip()
-    if not text_stripped.startswith("---"):
+
+    if not text.startswith("---"):
         return {
             "name": "retrospective",
             "status": "fail",
@@ -219,6 +210,59 @@ def _check_retrospective(feature_dir: Path) -> dict[str, Any] | None:
                 "Add frontmatter with status: approved before completing."
             ),
         }
+
+    parts = text.split("---", 2)
+    if len(parts) < 3:
+        return {
+            "name": "retrospective",
+            "status": "fail",
+            "blocker": "retrospective_not_approved",
+            "retrospective_status": "malformed_frontmatter",
+            "message": (
+                "retrospective.md has an unterminated frontmatter block. "
+                "Fix the YAML and set status: approved before completing."
+            ),
+        }
+
+    try:
+        fm = yaml.safe_load(parts[1])
+    except yaml.YAMLError:
+        return {
+            "name": "retrospective",
+            "status": "fail",
+            "blocker": "retrospective_not_approved",
+            "retrospective_status": "malformed_frontmatter",
+            "message": (
+                "retrospective.md frontmatter could not be parsed. "
+                "Fix the YAML and set status: approved before completing."
+            ),
+        }
+
+    if not isinstance(fm, dict):
+        return {
+            "name": "retrospective",
+            "status": "fail",
+            "blocker": "retrospective_not_approved",
+            "retrospective_status": "malformed_frontmatter",
+            "message": (
+                "retrospective.md frontmatter is not a YAML mapping. "
+                "Fix the YAML and set status: approved before completing."
+            ),
+        }
+
+    retro_status = str(fm.get("status") or "").strip()
+    if retro_status != "approved":
+        return {
+            "name": "retrospective",
+            "status": "fail",
+            "blocker": "retrospective_not_approved",
+            "retrospective_status": retro_status,
+            "message": (
+                f"retrospective.md exists but status is '{retro_status}', not 'approved'. "
+                "Update the file and set status: approved before completing."
+            ),
+        }
+
     return None
 
 
@@ -255,13 +299,19 @@ def cmd_check_preconditions(args: argparse.Namespace) -> int:
 
     try:
         governance_repo = _resolve_governance_repo(args)
+    except _ConfigMalformedError as exc:
+        _out(_fail("config_malformed", str(exc)))
+        return 1
     except ValueError as exc:
         _out(_fail("config_missing", str(exc)))
         return 1
 
-    feature_yaml_path = _find_feature_yaml(governance_repo, feature_id)
+    feature_yaml_path, lookup_error = _find_feature_yaml(governance_repo, feature_id)
     if feature_yaml_path is None:
-        _out(_fail("feature_not_found", f"feature.yaml not found for '{feature_id}' in {governance_repo}/features/."))
+        if lookup_error == "feature_id_invalid":
+            _out(_fail("feature_id_invalid", f"Feature ID '{feature_id}' contains invalid characters. Use lowercase alphanumeric, hyphens, underscores, or dots."))
+        else:
+            _out(_fail("feature_not_found", f"feature.yaml not found for '{feature_id}' in {governance_repo}/features/."))
         return 1
 
     try:
@@ -281,28 +331,31 @@ def cmd_check_preconditions(args: argparse.Namespace) -> int:
         phase_check = {
             "name": "phase",
             "status": "fail",
+            "blocker": "already_terminal",
             "message": f"Feature phase is '{phase}'; feature is already terminal and cannot be re-completed.",
         }
-        blockers.append("phase")
+        blockers.append("already_terminal")
     elif phase in PLANNING_PHASES:
         phase_check = {
             "name": "phase",
             "status": "fail",
+            "blocker": "wrong_phase",
             "message": (
                 f"Feature phase is '{phase}'; expected dev or dev-complete to complete. "
                 "Advance through all planning phases first."
             ),
         }
-        blockers.append("phase")
+        blockers.append("wrong_phase")
     elif phase in COMPLETABLE_PHASES:
         phase_check = {"name": "phase", "status": "pass", "message": f"Feature phase '{phase}' is completable."}
     else:
         phase_check = {
             "name": "phase",
             "status": "fail",
+            "blocker": "phase_unrecognized",
             "message": f"Feature phase '{phase}' is unrecognized. Expected dev or dev-complete.",
         }
-        blockers.append("phase")
+        blockers.append("phase_unrecognized")
     checks.append(phase_check)
 
     # Retrospective check (blocking)
@@ -376,13 +429,19 @@ def cmd_finalize(args: argparse.Namespace) -> int:
 
     try:
         governance_repo = _resolve_governance_repo(args)
+    except _ConfigMalformedError as exc:
+        _out(_fail("config_malformed", str(exc)))
+        return 1
     except ValueError as exc:
         _out(_fail("config_missing", str(exc)))
         return 1
 
-    feature_yaml_path = _find_feature_yaml(governance_repo, feature_id)
+    feature_yaml_path, lookup_error = _find_feature_yaml(governance_repo, feature_id)
     if feature_yaml_path is None:
-        _out(_fail("feature_not_found", f"feature.yaml not found for '{feature_id}'."))
+        if lookup_error == "feature_id_invalid":
+            _out(_fail("feature_id_invalid", f"Feature ID '{feature_id}' contains invalid characters. Use lowercase alphanumeric, hyphens, underscores, or dots."))
+        else:
+            _out(_fail("feature_not_found", f"feature.yaml not found for '{feature_id}'."))
         return 1
 
     try:
@@ -428,12 +487,25 @@ def cmd_finalize(args: argparse.Namespace) -> int:
         _out(_fail("feature_index_malformed", str(exc)))
         return 1
 
+    # Validate feature-index.yaml structure: must have a features list with the entry
+    entries = index_data.get("features")
+    if not isinstance(entries, list):
+        _out(_fail("index_malformed", "feature-index.yaml 'features' key is not a list or is missing."))
+        return 1
+    feature_index_entry = next(
+        (e for e in entries if isinstance(e, dict) and (e.get("id") == feature_id or e.get("featureId") == feature_id)),
+        None,
+    )
+    if feature_index_entry is None:
+        _out(_fail("feature_not_indexed", f"Feature '{feature_id}' not found in feature-index.yaml features list."))
+        return 1
+
     summary_path = feature_dir / "summary.md"
     now_ts = datetime.now(timezone.utc).isoformat()
 
     planned_changes = [
         {"path": str(feature_yaml_path.relative_to(governance_repo)), "change": f"phase: {phase} → complete, completed_at: {now_ts}"},
-        {"path": str(index_path.relative_to(governance_repo)), "change": f"status for '{feature_id}': {_index_status(index_data, feature_id)} → archived"},
+        {"path": str(index_path.relative_to(governance_repo)), "change": f"status for '{feature_id}': {feature_index_entry.get('status', 'unknown')} → archived"},
         {"path": str(summary_path.relative_to(governance_repo)), "change": "write archive summary section"},
     ]
 
@@ -453,6 +525,10 @@ def cmd_finalize(args: argparse.Namespace) -> int:
         )
         return 0
 
+    # Capture original content before any writes to enable rollback
+    original_feature_text = feature_yaml_path.read_text(encoding="utf-8")
+    original_index_text = index_path.read_text(encoding="utf-8")
+
     # --- Execute atomic writes ---
     # 1. Update feature.yaml
     feature_data["phase"] = "complete"
@@ -471,19 +547,20 @@ def cmd_finalize(args: argparse.Namespace) -> int:
         return 1
 
     # 2. Update feature-index.yaml
-    entries = index_data.get("features")
-    if isinstance(entries, list):
-        for entry in entries:
-            if isinstance(entry, dict) and (entry.get("id") == feature_id or entry.get("featureId") == feature_id):
-                entry["status"] = "archived"
-                entry["updated_at"] = now_ts
-                break
+    feature_index_entry["status"] = "archived"
+    feature_index_entry["updated_at"] = now_ts
 
     try:
         _atomic_write_yaml(index_path, index_data)
     except Exception as exc:
-        # Partial write — attempt to rollback feature.yaml
-        _out(_fail("write_failed", f"Failed to write feature-index.yaml: {exc}. feature.yaml may be partially updated."))
+        # Rollback feature.yaml to its original content
+        rollback_note = ""
+        try:
+            _atomic_write_text(feature_yaml_path, original_feature_text)
+            rollback_note = " Rolled back feature.yaml."
+        except Exception as rb_exc:
+            rollback_note = f" feature.yaml rollback also failed ({rb_exc}); manual intervention required."
+        _out(_fail("write_failed", f"Failed to write feature-index.yaml: {exc}.{rollback_note}"))
         return 1
 
     # 3. Write summary.md
@@ -491,7 +568,20 @@ def cmd_finalize(args: argparse.Namespace) -> int:
     try:
         _atomic_write_text(summary_path, summary_content)
     except Exception as exc:
-        _out(_fail("write_failed", f"Failed to write summary.md: {exc}. feature.yaml and feature-index.yaml have been updated."))
+        # Rollback both feature.yaml and feature-index.yaml
+        rollback_notes = []
+        try:
+            _atomic_write_text(feature_yaml_path, original_feature_text)
+            rollback_notes.append("feature.yaml rolled back")
+        except Exception as rb_exc:
+            rollback_notes.append(f"feature.yaml rollback failed ({rb_exc})")
+        try:
+            _atomic_write_text(index_path, original_index_text)
+            rollback_notes.append("feature-index.yaml rolled back")
+        except Exception as rb_exc:
+            rollback_notes.append(f"feature-index.yaml rollback failed ({rb_exc})")
+        rollback_summary = "; ".join(rollback_notes)
+        _out(_fail("write_failed", f"Failed to write summary.md: {exc}. {rollback_summary}. Manual intervention may be required."))
         return 1
 
     changes_applied = [
@@ -556,13 +646,19 @@ def cmd_archive_status(args: argparse.Namespace) -> int:
 
     try:
         governance_repo = _resolve_governance_repo(args)
+    except _ConfigMalformedError as exc:
+        _out(_fail("config_malformed", str(exc)))
+        return 1
     except ValueError as exc:
         _out(_fail("config_missing", str(exc)))
         return 1
 
-    feature_yaml_path = _find_feature_yaml(governance_repo, feature_id)
+    feature_yaml_path, lookup_error = _find_feature_yaml(governance_repo, feature_id)
     if feature_yaml_path is None:
-        _out(_fail("feature_not_found", f"feature.yaml not found for '{feature_id}'."))
+        if lookup_error == "feature_id_invalid":
+            _out(_fail("feature_id_invalid", f"Feature ID '{feature_id}' contains invalid characters. Use lowercase alphanumeric, hyphens, underscores, or dots."))
+        else:
+            _out(_fail("feature_not_found", f"feature.yaml not found for '{feature_id}'."))
         return 1
 
     try:
@@ -581,7 +677,7 @@ def cmd_archive_status(args: argparse.Namespace) -> int:
             index_status = "malformed"
 
     phase = str(feature_data.get("phase") or "").strip()
-    archived = phase == "complete"
+    archived = phase in TERMINAL_PHASES
     completed_at = feature_data.get("completed_at")
 
     _out(

@@ -311,7 +311,7 @@ def test_finalize_only_writes_allowed_files(capsys: pytest.CaptureFixture, gov_p
     )
     after = _all_files(gov_pass)
     new_files = after - before
-    unexpected = {f for f in new_files if not any(a in f for a in ALLOWED_WRITE_FILES)}
+    unexpected = {f for f in new_files if Path(f).name not in ALLOWED_WRITE_FILES}
     assert not unexpected, f"finalize wrote unexpected files: {unexpected}"
 
 
@@ -459,10 +459,18 @@ def test_archive_status_terminal_state_recognized(
 
 def test_prerequisite_missing_degradation(capsys: pytest.CaptureFixture, gov_pass: Path) -> None:
     """finalize proceeds with warnings when optional document-project artifact is absent."""
-    # gov_pass has no project-documentation.md — advisory, not a hard failure
+    # Remove the optional document-project artifact to exercise the warn/degradation path
+    doc_path = (
+        gov_pass / "features" / "lens-dev" / "new-codebase" / "lens-dev-test-feature" / "project-documentation.md"
+    )
+    doc_path.unlink()
+
     exit_code, result = _run(
         ["finalize", "--governance-repo", str(gov_pass), "--feature-id", "lens-dev-test-feature", "--confirm"],
         capsys,
     )
     assert exit_code == 0
     assert result["status"] == "complete"
+    assert "document_project_skipped" in result.get("warnings", []), (
+        "Expected 'document_project_skipped' warning when project-documentation.md is absent"
+    )
