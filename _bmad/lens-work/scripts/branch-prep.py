@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["pyyaml>=6.0"]
-# ///
 """
 branch-prep.py — Thin entry-point wrapper for branch_prep.py.
 
 All implementation lives in branch_prep.py (underscore form).  This hyphenated
-alias exists so the script can be invoked via ``uv run --script branch-prep.py``
+alias exists so the script can be invoked via ``python3 branch-prep.py``
 from the command line.
 """
 

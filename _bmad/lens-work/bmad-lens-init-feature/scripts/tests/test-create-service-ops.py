@@ -12,6 +12,11 @@ from pathlib import Path
 
 import yaml
 
+_SCRIPTS_DIR = str(Path(__file__).resolve().parents[3] / "scripts")
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+from lens_python import get_python_cmd
+
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "init-feature-ops.py"
 
 EXPECTED_SUCCESS_FIELDS = {
@@ -39,7 +44,7 @@ EXPECTED_SUCCESS_FIELDS = {
 
 def run_script(args, cwd=None, env=None):
     completed = subprocess.run(
-        [sys.executable, str(SCRIPT_PATH), *args],
+        [get_python_cmd(), str(SCRIPT_PATH), *args],
         cwd=str(cwd) if cwd else None,
         env=env,
         capture_output=True,

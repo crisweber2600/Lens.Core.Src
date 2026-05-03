@@ -1,7 +1,3 @@
-# /// script
-# requires-python = ">=3.9"
-# dependencies = ["pytest>=8.0"]
-# ///
 """Tests for merge-help-csv.py — anti-zombie CSV merge logic."""
 
 import importlib.util

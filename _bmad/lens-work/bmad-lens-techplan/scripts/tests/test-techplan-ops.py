@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["pytest>=8.0", "pyyaml>=6.0"]
-# ///
 """Focused regression tests for bmad-lens-techplan command surface.
 
 Run:
     cd TargetProjects/lens-dev/new-codebase/lens.core.src
-    uv run --with pytest pytest _bmad/lens-work/skills/bmad-lens-techplan/scripts/tests/test-techplan-ops.py -q
+    python3 -m pytest _bmad/lens-work/skills/bmad-lens-techplan/scripts/tests/test-techplan-ops.py -q
 """
 
 from pathlib import Path
@@ -57,7 +53,7 @@ def test_stub_exists():
 def test_stub_preflight_then_release_prompt():
     """Stub must run preflight before loading the release prompt, and must stop on failure."""
     text = read_text(STUB_PROMPT)
-    preflight = "uv run _bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py"
+    preflight = "python3 _bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py"
     release = "_bmad/lens-work/prompts/lens-techplan.prompt.md"
     assert preflight in text, f"Stub missing preflight command: {preflight!r}"
     assert release in text, f"Stub missing release prompt reference: {release!r}"

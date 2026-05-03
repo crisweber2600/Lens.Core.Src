@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["pytest>=8.0", "pyyaml>=6.0"]
-# ///
 """Tests for bmad-lens-complete SKILL.md retrospective-first discipline (E4-S4)."""
 
 from __future__ import annotations

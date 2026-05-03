@@ -1,15 +1,20 @@
 import hashlib
 import json
 import subprocess
+import sys
 from pathlib import Path
 
+_SCRIPTS_DIR = str(Path(__file__).resolve().parents[3] / "scripts")
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+from lens_python import get_python_cmd
 
 SCRIPT = Path(__file__).resolve().parents[1] / "discover-ops.py"
 
 
 def run_discover(args: list[str]) -> tuple[dict, int]:
     completed = subprocess.run(
-        ["uv", "run", "--script", str(SCRIPT), *args, "--json"],
+        [get_python_cmd(), str(SCRIPT), *args, "--json"],
         capture_output=True,
         text=True,
         check=False,

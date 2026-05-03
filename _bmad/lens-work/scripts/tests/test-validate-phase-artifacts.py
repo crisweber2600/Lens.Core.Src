@@ -4,8 +4,13 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 
+_SCRIPTS_DIR = str(Path(__file__).resolve().parents[1])
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+from lens_python import get_python_cmd
 
 SCRIPT = Path(__file__).parent.parent / "validate-phase-artifacts.py"
 LIFECYCLE = Path(__file__).parent.parent.parent / "lifecycle.yaml"
@@ -13,7 +18,7 @@ LIFECYCLE = Path(__file__).parent.parent.parent / "lifecycle.yaml"
 
 def _run(*args: str):
     return subprocess.run(
-        ["uv", "run", "--script", str(SCRIPT), *args],
+        [get_python_cmd(), str(SCRIPT), *args],
         capture_output=True,
         text=True,
     )

@@ -2,6 +2,13 @@
 
 LENS lifecycle workbench — feature context switching, initialization, planning, and governance.
 
+## Prerequisites
+
+- **Python 3.10+** — Scripts are invoked directly with the Python 3 interpreter.
+  - On most Linux/macOS systems the command is `python3`.
+  - On Windows or systems where Python 3 is the default, use `python` instead.
+  - Integration tests use `sys.executable` automatically.
+
 ## Commands
 
 | Command | Code | Description |

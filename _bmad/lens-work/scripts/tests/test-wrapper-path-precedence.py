@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["pytest>=8.0"]
-# ///
 """Focused regressions for wrapper path normalization and precedence rules."""
 
 from __future__ import annotations
@@ -31,7 +27,7 @@ def test_public_wrappers_use_normalized_module_relative_paths():
 
 
 def test_public_wrappers_use_standard_preflight_command():
-    expected = "uv run _bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py"
+    expected = "python3 _bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py"
     for prompt in sorted(GITHUB_PROMPTS.glob("lens-*.prompt.md")):
         text = _read(prompt)
         assert expected in text, f"{prompt.name} missing normalized preflight command"

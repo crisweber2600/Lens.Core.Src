@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["pytest>=8.0", "pyyaml>=6.0"]
-# ///
 """Tests that QuickPlan classification in module.yaml is consistent with SKILL.md and the skill registry."""
 
 from __future__ import annotations

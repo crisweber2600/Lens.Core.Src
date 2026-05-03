@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["pytest>=8.0", "pyyaml>=6.0"]
-# ///
 """Split-feature regression tests covering the approved clean-room contract."""
 
 from __future__ import annotations
@@ -17,6 +13,10 @@ from pathlib import Path
 import pytest
 import yaml
 
+_SCRIPTS_DIR = str(Path(__file__).resolve().parents[3] / "scripts")
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+from lens_python import get_python_cmd
 
 TEST_FILE = Path(__file__).resolve()
 SKILL_ROOT = TEST_FILE.parents[2]
@@ -36,7 +36,7 @@ split_feature_ops = load_module()
 
 def run_script(args: list[str]) -> tuple[dict, int]:
     result = subprocess.run(
-        [sys.executable, str(SCRIPT), *args],
+        [get_python_cmd(), str(SCRIPT), *args],
         capture_output=True,
         text=True,
         check=False,

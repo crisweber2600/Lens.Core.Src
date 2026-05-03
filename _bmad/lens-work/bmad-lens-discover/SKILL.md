@@ -79,12 +79,12 @@ No `add-entry` calls are made and no governance commit is attempted. If the pre/
 
 ## Script Subcommands
 
-Run script commands with `uv run --script` from the source repo root.
+Run script commands with `python3` from the source repo root.
 
 ### scan
 
 ```bash
-uv run --script _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py scan \
+python3 _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py scan \
   --inventory-path {inventory_path} \
   --target-root {target_root} \
   --json
@@ -95,7 +95,7 @@ uv run --script _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.p
 ### add-entry
 
 ```bash
-uv run --script _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py add-entry \
+python3 _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py add-entry \
   --inventory-path {inventory_path} \
   --name {repo_name} \
   --remote-url {remote_url} \
@@ -108,7 +108,7 @@ uv run --script _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.p
 ### validate
 
 ```bash
-uv run --script _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py validate \
+python3 _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py validate \
   --inventory-path {inventory_path} \
   --json
 ```
@@ -162,6 +162,6 @@ No empty commit is allowed on a no-op run. The commit message must be exactly `[
 Run from the target source repo root:
 
 ```bash
-uv run --with pytest pytest _bmad/lens-work/skills/bmad-lens-discover/scripts/tests/ -q
-uv run --script _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py --help
+python3 -m pytest _bmad/lens-work/skills/bmad-lens-discover/scripts/tests/ -q
+python3 _bmad/lens-work/skills/bmad-lens-discover/scripts/discover-ops.py --help
 ```

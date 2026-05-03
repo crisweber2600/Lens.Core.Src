@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.12"
-# ///
 """Frozen preflight gate for prompt stubs.
 
 Exit 0 -> proceed.
 Exit 1 -> halt.
+
+Python command detection and caching is handled by the preflight skill
+(SKILL.md) *before* this script is invoked — the agent probes ``python3``
+and ``python`` at the agent level and writes the result to
+``<project-root>/.lens/personal/env.yaml``.  This script only validates
+that the Python version meets requirements and that the project root is
+reachable.
 """
 
 from __future__ import annotations

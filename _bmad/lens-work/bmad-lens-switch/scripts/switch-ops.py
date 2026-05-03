@@ -1,8 +1,4 @@
-#!/usr/bin/env -S uv run --script
-# /// script
-# requires-python = ">=3.10"
-# dependencies = ["pyyaml>=6.0"]
-# ///
+#!/usr/bin/env python3
 """Switch operations — manage active feature context for Lens agent sessions.
 
 Reads feature-index.yaml and feature.yaml files to validate targets, writes the

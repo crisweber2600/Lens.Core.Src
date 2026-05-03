@@ -1,7 +1,3 @@
-# /// script
-# requires-python = ">=3.9"
-# dependencies = ["pyyaml"]
-# ///
 """
 merge-config.py — Anti-zombie config merge for the lens module.
 
