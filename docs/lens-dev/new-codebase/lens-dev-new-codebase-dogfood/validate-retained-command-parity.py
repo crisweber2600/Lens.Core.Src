@@ -55,10 +55,10 @@ class ParityMapError(Exception):
 
 def expected_owner_path(command: str) -> str:
     if command in {"new-domain", "new-service", "new-feature"}:
-        return "_bmad/lens-work/skills/bmad-lens-init-feature/SKILL.md"
+        return "_bmad/lens-work/skills/lens-init-feature/SKILL.md"
     if command == "preflight":
-        return "_bmad/lens-work/skills/bmad-lens-preflight/scripts/light-preflight.py"
-    return f"_bmad/lens-work/skills/bmad-lens-{command}/SKILL.md"
+        return "_bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py"
+    return f"_bmad/lens-work/skills/lens-{command}/SKILL.md"
 
 
 EXPECTED_PATHS: dict[str, Callable[[str], str]] = {
