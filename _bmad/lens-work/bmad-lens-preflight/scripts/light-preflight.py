@@ -4,16 +4,21 @@
 Exit 0 -> proceed.
 Exit 1 -> halt.
 
-Also detects and caches the Python 3 command name (`python3` or `python`) in
+Also detects and caches the Python 3 command name in
 `<project-root>/.lens/personal/env.yaml` so that all subsequent Lens tooling
 invocations can use the correct command without re-probing.  If `python_cmd` is
 already recorded in the file the detection step is skipped entirely.
+
+Detection is purely path-based (no subprocess): since this script is already
+running under Python, ``sys.executable`` is the authoritative answer — we
+simply try to find a short alias (``python3`` or ``python``) that resolves to
+the same binary.  No subprocess is required, so there is no chicken-and-egg
+problem.
 """
 
 from __future__ import annotations
 
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -41,28 +46,24 @@ def check_python_version() -> tuple[bool, str]:
 # Python command detection + caching
 # ---------------------------------------------------------------------------
 
-def _probe_cmd(cmd: str) -> bool:
-    """Return True if ``cmd --version`` exits 0 and reports Python 3."""
-    if not shutil.which(cmd):
-        return False
-    try:
-        result = subprocess.run(
-            [cmd, "--version"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        return result.returncode == 0 and "Python 3" in (result.stdout + result.stderr)
-    except (OSError, subprocess.TimeoutExpired):
-        return False
+def detect_python_cmd() -> str:
+    """Return the Python command that launched this script.
 
+    Since this script is already executing under Python, ``sys.executable``
+    is definitively correct — there is no subprocess probing and therefore
+    no chicken-and-egg problem.
 
-def detect_python_cmd() -> str | None:
-    """Return the first available Python 3 command name, or None."""
+    Tries to return a short portable name (``python3`` or ``python``) when
+    one of those names resolves via ``shutil.which`` to the same binary as
+    ``sys.executable``.  Falls back to the full absolute path of
+    ``sys.executable`` if neither alias matches.
+    """
+    executable = Path(sys.executable).resolve()
     for candidate in ("python3", "python"):
-        if _probe_cmd(candidate):
+        found = shutil.which(candidate)
+        if found and Path(found).resolve() == executable:
             return candidate
-    return None
+    return sys.executable
 
 
 def read_python_cmd_from_env(personal_folder: Path) -> str | None:
@@ -115,20 +116,18 @@ def write_python_cmd_to_env(personal_folder: Path, cmd: str) -> None:
         env_path.write_text(new_line, encoding="utf-8")
 
 
-def ensure_python_cmd_cached(personal_folder: Path) -> tuple[str | None, bool]:
+def ensure_python_cmd_cached(personal_folder: Path) -> tuple[str, bool]:
     """Return the python command to use and whether it was freshly detected.
 
     Returns ``(cmd, was_detected)`` where *was_detected* is True if detection
-    was run this call (i.e. the cache was empty).  Returns ``(None, True)`` if
-    detection found no usable Python 3.
+    was run this call (i.e. the cache was empty).
     """
     cached = read_python_cmd_from_env(personal_folder)
     if cached:
         return cached, False
 
     cmd = detect_python_cmd()
-    if cmd:
-        write_python_cmd_to_env(personal_folder, cmd)
+    write_python_cmd_to_env(personal_folder, cmd)
     return cmd, True
 
 
@@ -149,13 +148,7 @@ def main() -> int:
 
     personal_folder = root / _PERSONAL_SUBDIR
     python_cmd, was_detected = ensure_python_cmd_cached(personal_folder)
-    if python_cmd is None:
-        print(
-            "[LENS:PREFLIGHT] WARN — neither `python3` nor `python` found in PATH; "
-            "install Python 3 and re-run preflight",
-            file=sys.stderr,
-        )
-    elif was_detected:
+    if was_detected:
         print(f"[LENS:PREFLIGHT] INFO — python_cmd={python_cmd!r} cached in {personal_folder / _ENV_YAML_NAME}")
 
     return 0

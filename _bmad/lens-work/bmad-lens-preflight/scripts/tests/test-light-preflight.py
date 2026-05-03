@@ -19,21 +19,36 @@ spec.loader.exec_module(preflight)  # type: ignore[union-attr]
 
 
 class TestDetectPythonCmd:
-    def test_detects_python3_when_available(self):
-        with mock.patch.object(preflight, "_probe_cmd", side_effect=lambda c: c == "python3"):
+    def test_returns_python3_when_it_resolves_to_current_interpreter(self, tmp_path):
+        """python3 alias pointing at sys.executable → returns 'python3'."""
+        exe = Path(sys.executable).resolve()
+        with mock.patch("shutil.which", side_effect=lambda c: str(exe) if c == "python3" else None):
             assert preflight.detect_python_cmd() == "python3"
 
-    def test_falls_back_to_python_when_python3_absent(self):
-        with mock.patch.object(preflight, "_probe_cmd", side_effect=lambda c: c == "python"):
+    def test_falls_back_to_python_when_python3_absent(self, tmp_path):
+        """No python3 alias but python resolves to sys.executable → returns 'python'."""
+        exe = Path(sys.executable).resolve()
+        with mock.patch("shutil.which", side_effect=lambda c: str(exe) if c == "python" else None):
             assert preflight.detect_python_cmd() == "python"
 
-    def test_returns_none_when_neither_available(self):
-        with mock.patch.object(preflight, "_probe_cmd", return_value=False):
-            assert preflight.detect_python_cmd() is None
+    def test_falls_back_to_sys_executable_when_no_alias_matches(self):
+        """Neither alias resolves to sys.executable → returns sys.executable."""
+        with mock.patch("shutil.which", return_value=None):
+            result = preflight.detect_python_cmd()
+        assert result == sys.executable
 
     def test_prefers_python3_over_python(self):
-        with mock.patch.object(preflight, "_probe_cmd", return_value=True):
+        """Both aliases resolve to sys.executable → returns 'python3' (checked first)."""
+        exe = Path(sys.executable).resolve()
+        with mock.patch("shutil.which", return_value=str(exe)):
             assert preflight.detect_python_cmd() == "python3"
+
+    def test_always_returns_a_string(self):
+        """detect_python_cmd always returns a non-empty string."""
+        with mock.patch("shutil.which", return_value=None):
+            result = preflight.detect_python_cmd()
+        assert isinstance(result, str)
+        assert result  # non-empty
 
 
 class TestReadWritePythonCmd:
@@ -98,12 +113,13 @@ class TestEnsurePythonCmdCached:
         assert was_detected is True
         assert preflight.read_python_cmd_from_env(folder) == "python3"
 
-    def test_returns_none_when_detection_fails(self, tmp_path):
+    def test_always_returns_a_string(self, tmp_path):
+        """ensure_python_cmd_cached always returns a non-empty string."""
         folder = tmp_path / "personal"
-        with mock.patch.object(preflight, "detect_python_cmd", return_value=None):
+        with mock.patch.object(preflight, "detect_python_cmd", return_value=sys.executable):
             cmd, was_detected = preflight.ensure_python_cmd_cached(folder)
-        assert cmd is None
-        assert was_detected is True
+        assert isinstance(cmd, str)
+        assert cmd
 
 
 class TestMainPythonCaching:
@@ -111,11 +127,12 @@ class TestMainPythonCaching:
         # Create a fake project root with _bmad dir
         (tmp_path / "_bmad").mkdir()
         personal_folder = tmp_path / ".lens" / "personal"
+        exe = Path(sys.executable).resolve()
 
         with (
             mock.patch.object(preflight, "find_project_root", return_value=tmp_path),
             mock.patch.object(preflight, "check_python_version", return_value=(True, "Python 3.12")),
-            mock.patch.object(preflight, "_probe_cmd", side_effect=lambda c: c == "python3"),
+            mock.patch("shutil.which", side_effect=lambda c: str(exe) if c == "python3" else None),
         ):
             result = preflight.main()
 
@@ -138,17 +155,21 @@ class TestMainPythonCaching:
         mock_detect.assert_not_called()
         assert preflight.read_python_cmd_from_env(personal_folder) == "python"
 
-    def test_main_returns_0_even_when_python_not_found(self, tmp_path):
+    def test_main_caches_sys_executable_when_no_alias(self, tmp_path):
+        """When no short alias matches, falls back to sys.executable."""
         (tmp_path / "_bmad").mkdir()
+        personal_folder = tmp_path / ".lens" / "personal"
 
         with (
             mock.patch.object(preflight, "find_project_root", return_value=tmp_path),
             mock.patch.object(preflight, "check_python_version", return_value=(True, "Python 3.12")),
-            mock.patch.object(preflight, "detect_python_cmd", return_value=None),
+            mock.patch("shutil.which", return_value=None),
         ):
             result = preflight.main()
 
         assert result == 0
+        cached = preflight.read_python_cmd_from_env(personal_folder)
+        assert cached == sys.executable
 
     def test_main_fails_when_project_root_not_found(self):
         with mock.patch.object(preflight, "find_project_root", return_value=None):
@@ -161,3 +182,4 @@ class TestMainPythonCaching:
             mock.patch.object(preflight, "check_python_version", return_value=(False, "Python 3.11 — requires >= 3.12")),
         ):
             assert preflight.main() == 1
+

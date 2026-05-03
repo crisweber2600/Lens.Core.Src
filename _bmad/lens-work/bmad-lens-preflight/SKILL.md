@@ -30,7 +30,12 @@ python3 ./_bmad/lens-work/bmad-lens-preflight/scripts/light-preflight.py [--call
 
 ## Python Command Detection and Caching
 
-On first run, the preflight script probes `python3` then `python` to determine which command resolves to Python 3, and writes the result to:
+On first run, the preflight script determines the Python command by inspecting
+`sys.executable` — the interpreter that is **already running the script**.  It
+then tries to find a short portable alias (`python3` or `python`) that resolves
+to the same binary via `shutil.which`.  No subprocess is spawned and no
+chicken-and-egg problem exists: since this script is already executing under
+Python, Python is already known.  The result is written to:
 
 ```
 <project-root>/.lens/personal/env.yaml
