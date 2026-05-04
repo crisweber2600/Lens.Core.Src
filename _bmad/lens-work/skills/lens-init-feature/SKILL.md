@@ -98,7 +98,7 @@ uv run scripts/init-feature-ops.py create \
   --domain platform \
   --service identity \
   --name "Auth Token Refresh" \
-  --track standard \
+  --track full \
   --username cweber
 
 # Initialize a new feature and push governance artifacts automatically
@@ -108,7 +108,7 @@ uv run scripts/init-feature-ops.py create \
   --domain platform \
   --service identity \
   --name "Auth Token Refresh" \
-  --track standard \
+  --track full \
   --username cweber \
   --execute-governance-git
 
@@ -130,7 +130,7 @@ uv run scripts/init-feature-ops.py create \
   --domain platform \
   --service identity \
   --name "Auth Token Refresh" \
-  --track standard \
+  --track full \
   --username cweber \
   --dry-run
 
