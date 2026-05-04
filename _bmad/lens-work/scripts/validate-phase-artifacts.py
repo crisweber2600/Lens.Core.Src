@@ -131,21 +131,25 @@ def artifact_exists(docs_root: Path, name: str) -> bool:
     return bool(existing_artifact_files(docs_root, name))
 
 
-def yaml_metadata_from_file(path: Path) -> dict:
-    if path.suffix.lower() in {".yaml", ".yml"}:
-        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-        return data if isinstance(data, dict) else {}
-
-    lines = path.read_text(encoding="utf-8").splitlines()
-    if not lines or lines[0].strip() != "---":
-        return {}
-
-    for index, line in enumerate(lines[1:], start=1):
-        if line.strip() == "---":
-            data = yaml.safe_load("\n".join(lines[1:index])) or {}
+def yaml_metadata_from_file(path: Path) -> dict | None:
+    """Return parsed YAML metadata as a dict, {} if absent, or None on yaml.YAMLError."""
+    try:
+        if path.suffix.lower() in {".yaml", ".yml"}:
+            data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
             return data if isinstance(data, dict) else {}
 
-    return {}
+        lines = path.read_text(encoding="utf-8").splitlines()
+        if not lines or lines[0].strip() != "---":
+            return {}
+
+        for index, line in enumerate(lines[1:], start=1):
+            if line.strip() == "---":
+                data = yaml.safe_load("\n".join(lines[1:index])) or {}
+                return data if isinstance(data, dict) else {}
+
+        return {}
+    except yaml.YAMLError:
+        return None
 
 
 def metadata_field_missing(metadata: dict, field: str) -> bool:
@@ -163,6 +167,11 @@ def strict_metadata_errors(phase: str, contract: str, docs_root: Path) -> list[s
 
     for story_file in existing_artifact_files(docs_root, "story-files"):
         metadata = yaml_metadata_from_file(story_file)
+        if metadata is None:
+            errors.append(
+                f"{story_file.relative_to(docs_root)} has malformed YAML frontmatter (parse error)"
+            )
+            continue
         missing = [
             field
             for field in REQUIRED_STORY_FRONTMATTER
@@ -180,12 +189,15 @@ def strict_metadata_errors(phase: str, contract: str, docs_root: Path) -> list[s
     sprint_plan = docs_root / "sprint-plan.md"
     if sprint_plan.exists() and sprint_plan.stat().st_size > 0:
         metadata = yaml_metadata_from_file(sprint_plan)
-        status = metadata.get("status")
-        if status == "draft":
-            errors.append("sprint-plan.md status is draft; expected approved or another dev-ready status")
-        open_questions = metadata.get("open_questions")
-        if open_questions:
-            errors.append("sprint-plan.md has unresolved open_questions")
+        if metadata is None:
+            errors.append("sprint-plan.md has malformed YAML frontmatter (parse error)")
+        else:
+            status = metadata.get("status")
+            if status == "draft":
+                errors.append("sprint-plan.md status is draft; expected approved or another dev-ready status")
+            open_questions = metadata.get("open_questions")
+            if open_questions:
+                errors.append("sprint-plan.md has unresolved open_questions")
 
     return errors
 

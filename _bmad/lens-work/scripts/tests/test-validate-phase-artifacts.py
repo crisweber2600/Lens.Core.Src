@@ -181,6 +181,51 @@ open_questions:
         assert any(error.startswith("sprint-plan.md status is draft") for error in payload["metadata_errors"])
         assert "sprint-plan.md has unresolved open_questions" in payload["metadata_errors"]
 
+    def test_strict_metadata_rejects_malformed_story_yaml(self, tmp_path):
+        docs_root = _make_docs(tmp_path)
+        stories_dir = docs_root / "stories"
+        stories_dir.mkdir()
+        (stories_dir / "story-PF-1.1.md").write_text(
+            "---\nbad: [unclosed bracket\n---\n# Story\n", encoding="utf-8"
+        )
+
+        result = _run(
+            "--phase", "finalizeplan",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--strict-metadata",
+            "--json",
+        )
+
+        assert result.returncode == 1, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["status"] == "fail"
+        assert payload["failure_reason"] == "metadata_errors"
+        assert any("malformed YAML frontmatter" in e for e in payload["metadata_errors"])
+
+    def test_strict_metadata_rejects_malformed_sprint_plan_yaml(self, tmp_path):
+        docs_root = _make_docs(tmp_path)
+        stories_dir = docs_root / "stories"
+        stories_dir.mkdir()
+        (stories_dir / "story-PF-1.1.md").write_text(_story_frontmatter(), encoding="utf-8")
+        (docs_root / "sprint-plan.md").write_text(
+            "---\nbad: [unclosed bracket\n---\n# Sprint Plan\n", encoding="utf-8"
+        )
+
+        result = _run(
+            "--phase", "finalizeplan",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--strict-metadata",
+            "--json",
+        )
+
+        assert result.returncode == 1, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["status"] == "fail"
+        assert payload["failure_reason"] == "metadata_errors"
+        assert "sprint-plan.md has malformed YAML frontmatter (parse error)" in payload["metadata_errors"]
+
     def test_completion_review_contract_checks_only_review_inputs(self, tmp_path):
         docs_root = tmp_path / "docs"
         docs_root.mkdir()
