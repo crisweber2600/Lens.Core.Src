@@ -464,7 +464,7 @@ def cmd_create_domain(args: argparse.Namespace) -> dict:
     try:
         constitution_path.parent.mkdir(parents=True, exist_ok=True)
         constitution_path.write_text(make_domain_constitution_md(domain, name), encoding="utf-8")
-    except OSError as exc:
+    except (OSError, RuntimeError) as exc:
         return {
             "status": "fail",
             "scope": "domain",
@@ -784,7 +784,7 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
             domain_const_path.parent.mkdir(parents=True, exist_ok=True)
             domain_const_path.write_text(make_domain_constitution_md(domain, domain_name), encoding="utf-8")
             created_domain_constitution = True
-        except OSError as exc:
+        except (OSError, RuntimeError) as exc:
             return {"status": "fail", "scope": "service", "dry_run": False,
                     "error": f"Failed to write parent domain constitution: {exc}"}
 
@@ -799,7 +799,7 @@ def cmd_create_service(args: argparse.Namespace) -> dict:
     try:
         service_const_path.parent.mkdir(parents=True, exist_ok=True)
         service_const_path.write_text(make_service_constitution_md(domain, service, name), encoding="utf-8")
-    except OSError as exc:
+    except (OSError, RuntimeError) as exc:
         return {"status": "fail", "scope": "service", "dry_run": False,
                 "error": f"Failed to write service constitution: {exc}"}
 
@@ -1019,14 +1019,16 @@ def cmd_create(args: argparse.Namespace) -> dict:
     description = args.description if args.description else ""
 
     if not track:
+        try:
+            available = ", ".join(lifecycle_track_names())
+            track_msg = f"Available tracks from lifecycle.yaml: {available}."
+        except RuntimeError as exc:
+            track_msg = f"Could not read available tracks from lifecycle.yaml: {exc}"
         return {
             "status": "fail",
             "scope": "feature",
             "dry_run": bool(args.dry_run),
-            "error": (
-                "Track must be selected explicitly. "
-                f"Available tracks from lifecycle.yaml: {', '.join(lifecycle_track_names())}."
-            ),
+            "error": f"Track must be selected explicitly. {track_msg}",
         }
 
     try:
