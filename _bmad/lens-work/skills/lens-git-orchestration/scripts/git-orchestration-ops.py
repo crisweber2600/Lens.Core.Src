@@ -768,12 +768,31 @@ def _gh_auth_error(detail: str) -> bool:
 
 
 def resolve_git_ref(repo: str, branch: str) -> str | None:
-    """Resolve a branch name to a local or origin ref for git plumbing calls."""
+    """Resolve a branch name to a local or origin ref for git plumbing calls, preferring origin/ when available.
+
+    The remote check (``git branch -r``) is intentionally separate from the
+    local check via ``branch_exists()`` so that the remote ref is returned
+    whenever possible, ensuring merge-base computations use the most current
+    authoritative state rather than a potentially stale local copy.
+    """
+    remote_result = git(["branch", "-r", "--list", f"origin/{branch}"], cwd=repo, check=False)
+    if remote_result.stdout.strip():
+        return f"origin/{branch}"
     if branch_exists(repo, branch):
         return branch
-    if branch_exists(repo, branch, include_remote=True):
-        return f"origin/{branch}"
     return None
+
+
+def _default_base_candidates(repo: str) -> tuple[str, ...]:
+    """Return a deduplicated ordered tuple of base-branch candidates for *repo*.
+
+    The list begins with the branch detected via ``resolve_default_branch``
+    (which probes ``origin/HEAD``) so repos whose primary branch is named
+    anything other than ``main`` / ``develop`` are handled correctly.  The
+    remaining well-known names are appended as fall-back entries.
+    """
+    detected = resolve_default_branch(repo)
+    return tuple(dict.fromkeys([detected, "main", "master", "develop", "trunk"]))
 
 
 def merge_base_sha(repo: str, head_ref: str, base_ref: str) -> str | None:
@@ -796,8 +815,17 @@ def merge_base_timestamp(repo: str, merge_base: str) -> int:
         return -1
 
 
-def pick_base_branch(repo: str, head_branch: str, candidates: tuple[str, ...] = ("main", "develop")) -> str | None:
-    """Return the candidate branch whose merge-base with head is most recent."""
+def pick_base_branch(repo: str, head_branch: str, candidates: tuple[str, ...] | None = None) -> str | None:
+    """Return the candidate branch whose merge-base with head is most recent.
+
+    When *candidates* is omitted the function uses :func:`_default_base_candidates`
+    to build a deduplicated list starting with the repo's detected default branch
+    so that repos using any naming convention (main, master, develop, trunk) are
+    covered.
+    """
+    if candidates is None:
+        candidates = _default_base_candidates(repo)
+
     head_ref = resolve_git_ref(repo, head_branch)
     if head_ref is None:
         return None
@@ -946,12 +974,15 @@ def cmd_create_pr(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         return {"error": "base_branch_not_found", "branch": explicit_base}, 1
 
     if auto_detect_base or not explicit_base:
-        resolved_base = pick_base_branch(repo, head_branch)
+        auto_candidates = _default_base_candidates(repo)
+        resolved_base = pick_base_branch(repo, head_branch, candidates=auto_candidates)
         if resolved_base is None:
             return {
                 "status": "error",
                 "error": "no_common_ancestor",
-                "detail": "No shared history found with any candidate base branch.",
+                "detail": f"No shared history found between '{head_branch}' and any candidate base branch.",
+                "head_branch": head_branch,
+                "candidates_checked": list(auto_candidates),
             }, 1
         base_branch = resolved_base
     else:

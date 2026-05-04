@@ -817,7 +817,8 @@ class TestCreatePr:
             "branch_exists",
             lambda repo, branch, include_remote=True: branch == "feature-auto",
         )
-        monkeypatch.setattr(ops, "pick_base_branch", lambda repo, head_branch: "develop")
+        monkeypatch.setattr(ops, "resolve_default_branch", lambda repo: "main")
+        monkeypatch.setattr(ops, "pick_base_branch", lambda repo, head_branch, candidates=None: "develop")
         monkeypatch.setattr(
             ops,
             "_ensure_pull_request",
@@ -838,6 +839,30 @@ class TestCreatePr:
 
         assert code == 0
         assert result["base_branch"] == "develop"
+
+    def test_create_pr_auto_detect_failure_includes_candidates(self, monkeypatch):
+        monkeypatch.setattr(ops, "branch_exists", lambda repo, branch, include_remote=True: branch == "feature-orphan")
+        monkeypatch.setattr(ops, "resolve_default_branch", lambda repo: "main")
+        monkeypatch.setattr(ops, "pick_base_branch", lambda repo, head_branch, candidates=None: None)
+
+        result, code = ops.cmd_create_pr(_no_args(
+            governance_repo=".",
+            repo=".",
+            base=None,
+            head="feature-orphan",
+            title="Orphan PR",
+            body="No history",
+            auto_merge=False,
+            auto_detect_base=True,
+            dry_run=False,
+        ))
+
+        assert code == 1
+        assert result["status"] == "error"
+        assert result["error"] == "no_common_ancestor"
+        assert result["head_branch"] == "feature-orphan"
+        assert "candidates_checked" in result
+        assert "main" in result["candidates_checked"]
 
     def test_create_pr_explicit_base_requires_shared_history(self, monkeypatch):
         monkeypatch.setattr(ops, "branch_exists", lambda repo, branch, include_remote=True: True)
