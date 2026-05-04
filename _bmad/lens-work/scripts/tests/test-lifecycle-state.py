@@ -114,3 +114,19 @@ def test_resolve_governance_repo_governance_setup_placeholder(tmp_path: Path):
     )
 
     assert ops.resolve_governance_repo(args) == gov_repo.resolve()
+
+
+def test_resolve_governance_repo_raises_on_malformed_governance_setup(tmp_path: Path):
+    ops = load_state_module()
+    override = tmp_path / ".lens" / "governance-setup.yaml"
+    override.parent.mkdir(parents=True)
+    override.write_text(": invalid: yaml: [", encoding="utf-8")
+    args = Namespace(
+        governance_repo=None,
+        workspace_root=str(tmp_path),
+        module_config=None,
+    )
+
+    import pytest
+    with pytest.raises(ops.ConfigError):
+        ops.resolve_governance_repo(args)

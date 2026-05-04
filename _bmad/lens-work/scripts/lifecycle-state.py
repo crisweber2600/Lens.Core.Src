@@ -48,8 +48,8 @@ def resolve_governance_repo(args: argparse.Namespace) -> Path:
     if override_path.is_file():
         try:
             data: dict[str, Any] = yaml.safe_load(override_path.read_text(encoding="utf-8")) or {}
-        except (OSError, yaml.YAMLError):
-            data = {}
+        except (OSError, yaml.YAMLError) as exc:
+            raise ConfigError(f"Could not read {override_path}: {exc}") from exc
         if isinstance(data, dict):
             value = str(data.get("governance_repo_path") or "").strip()
             if value:
