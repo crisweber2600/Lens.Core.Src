@@ -30,109 +30,6 @@ CONTROL_AUTO_SYNC_COMMIT_MESSAGE = "chore(control): auto-sync local changes"
 GOVERNANCE_AUTO_SYNC_COMMIT_MESSAGE = "chore(governance): auto-sync local changes"
 
 
-def auto_commit_local_changes(repo: Path, commit_message: str) -> tuple[bool, str]:
-    add_result = repo_git_repo(repo, ["add", "-A"])
-    if add_result.returncode != 0:
-        return False, f"failed to stage local changes: {repo_git_error(add_result)}"
-
-    staged_result = repo_git_repo(repo, ["diff", "--cached", "--quiet"])
-    if staged_result.returncode == 0:
-        return False, "local changes were detected but none could be staged for commit"
-    if staged_result.returncode != 1:
-        return False, f"failed to inspect staged changes: {repo_git_error(staged_result)}"
-
-    commit_result = repo_git_repo(repo, ["commit", "-m", commit_message])
-    if commit_result.returncode != 0:
-        return False, f"failed to commit local changes: {repo_git_error(commit_result)}"
-
-    sha_result = repo_git_repo(repo, ["rev-parse", "--short", "HEAD"])
-    sha = sha_result.stdout.strip() if sha_result.returncode == 0 else ""
-    detail = "committed local changes"
-    if sha:
-        detail = f"{detail} ({sha})"
-    return True, detail
-
-
-def sync_managed_repo(
-    repo: Path,
-    repo_label: str,
-    commit_message: str,
-    *,
-    preferred_branch: str | None = None,
-    preferred_remote: str | None = None,
-) -> tuple[bool, str]:
-    worktree_check = repo_git_repo(repo, ["rev-parse", "--is-inside-work-tree"])
-    if worktree_check.returncode != 0 or worktree_check.stdout.strip() != "true":
-        return False, f"not a git worktree ({repo_git_error(worktree_check)})"
-
-    interrupted = repo_detect_interrupted_state(repo)
-    if interrupted is not None:
-        return False, interrupted
-
-    active_branch = repo_current_branch(repo) or "HEAD"
-    branch = preferred_branch or active_branch
-    if not branch or branch == "HEAD":
-        return False, "detached HEAD; check out a branch before automatic sync"
-
-    if preferred_branch and active_branch != preferred_branch:
-        clean, clean_detail = repo_git_has_clean_worktree(repo)
-        if not clean:
-            if clean_detail == "local changes present":
-                return False, (
-                    f"local changes present on {active_branch}; switch to {preferred_branch} or clean the repo "
-                    f"before automatic {repo_label} sync"
-                )
-            return False, clean_detail or "unable to inspect worktree"
-
-        checked_out, checkout_detail = repo_ensure_local_branch(repo, preferred_branch)
-        if not checked_out:
-            return False, f"failed to checkout {preferred_branch}: {checkout_detail}"
-        branch = preferred_branch
-
-    remote, local_branch, remote_branch_or_error = repo_resolve_sync_target(repo, branch, preferred_remote)
-    if remote is None or local_branch is None:
-        return False, remote_branch_or_error
-
-    remote_branch = remote_branch_or_error
-    clean, clean_detail = repo_git_has_clean_worktree(repo)
-    sync_notes = [f"synced {local_branch}"]
-    if not clean:
-        if clean_detail != "local changes present":
-            return False, clean_detail or "unable to inspect worktree"
-
-        committed, commit_detail = auto_commit_local_changes(repo, commit_message)
-        if not committed:
-            return False, commit_detail
-        sync_notes.append(commit_detail)
-
-    has_remote_branch, remote_branch_error = repo_remote_branch_exists(repo, remote, remote_branch)
-    if remote_branch_error is not None:
-        return False, remote_branch_error
-
-    if has_remote_branch:
-        pull_result = repo_git_repo(repo, ["pull", "--rebase", "--autostash", remote, remote_branch])
-        if pull_result.returncode != 0:
-            return False, f"pull failed on {remote}/{remote_branch}: {repo_git_error(pull_result)}"
-        sync_notes.append(f"pulled {remote}/{remote_branch}")
-
-        ahead, ahead_detail = repo_commits_ahead_of_remote(repo, remote, remote_branch)
-        if ahead_detail:
-            return False, ahead_detail
-
-        if ahead > 0:
-            push_result = repo_git_repo(repo, ["push", remote, f"HEAD:{remote_branch}"])
-            if push_result.returncode != 0:
-                return False, f"push failed on {remote}/{remote_branch}: {repo_git_error(push_result)}"
-            sync_notes.append(f"pushed {ahead} local commit(s)")
-    else:
-        push_result = repo_git_repo(repo, ["push", "-u", remote, f"HEAD:{remote_branch}"])
-        if push_result.returncode != 0:
-            return False, f"push failed on {remote}/{remote_branch}: {repo_git_error(push_result)}"
-        sync_notes.append(f"created {remote}/{remote_branch}")
-
-    return True, "; ".join(sync_notes)
-
-
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as fh:
@@ -602,6 +499,109 @@ repo_commits_ahead_of_remote = _REPO_SYNC.commits_ahead_of_remote
 repo_git_repo = _REPO_SYNC.git_repo
 repo_git_error = _REPO_SYNC.git_error
 shared_sync_release_repo = _REPO_SYNC.sync_release_repo
+
+
+def auto_commit_local_changes(repo: Path, commit_message: str) -> tuple[bool, str]:
+    add_result = repo_git_repo(repo, ["add", "-A"])
+    if add_result.returncode != 0:
+        return False, f"failed to stage local changes: {repo_git_error(add_result)}"
+
+    staged_result = repo_git_repo(repo, ["diff", "--cached", "--quiet"])
+    if staged_result.returncode == 0:
+        return False, "local changes were detected but none could be staged for commit"
+    if staged_result.returncode != 1:
+        return False, f"failed to inspect staged changes: {repo_git_error(staged_result)}"
+
+    commit_result = repo_git_repo(repo, ["commit", "-m", commit_message])
+    if commit_result.returncode != 0:
+        return False, f"failed to commit local changes: {repo_git_error(commit_result)}"
+
+    sha_result = repo_git_repo(repo, ["rev-parse", "--short", "HEAD"])
+    sha = sha_result.stdout.strip() if sha_result.returncode == 0 else ""
+    detail = "committed local changes"
+    if sha:
+        detail = f"{detail} ({sha})"
+    return True, detail
+
+
+def sync_managed_repo(
+    repo: Path,
+    repo_label: str,
+    commit_message: str,
+    *,
+    preferred_branch: str | None = None,
+    preferred_remote: str | None = None,
+) -> tuple[bool, str]:
+    worktree_check = repo_git_repo(repo, ["rev-parse", "--is-inside-work-tree"])
+    if worktree_check.returncode != 0 or worktree_check.stdout.strip() != "true":
+        return False, f"not a git worktree ({repo_git_error(worktree_check)})"
+
+    interrupted = repo_detect_interrupted_state(repo)
+    if interrupted is not None:
+        return False, interrupted
+
+    active_branch = repo_current_branch(repo) or "HEAD"
+    branch = preferred_branch or active_branch
+    if not branch or branch == "HEAD":
+        return False, "detached HEAD; check out a branch before automatic sync"
+
+    if preferred_branch and active_branch != preferred_branch:
+        clean, clean_detail = repo_git_has_clean_worktree(repo)
+        if not clean:
+            if clean_detail == "local changes present":
+                return False, (
+                    f"local changes present on {active_branch}; switch to {preferred_branch} or clean the repo "
+                    f"before automatic {repo_label} sync"
+                )
+            return False, clean_detail or "unable to inspect worktree"
+
+        checked_out, checkout_detail = repo_ensure_local_branch(repo, preferred_branch)
+        if not checked_out:
+            return False, f"failed to checkout {preferred_branch}: {checkout_detail}"
+        branch = preferred_branch
+
+    remote, local_branch, remote_branch_or_error = repo_resolve_sync_target(repo, branch, preferred_remote)
+    if remote is None or local_branch is None:
+        return False, remote_branch_or_error
+
+    remote_branch = remote_branch_or_error
+    clean, clean_detail = repo_git_has_clean_worktree(repo)
+    sync_notes = [f"synced {local_branch}"]
+    if not clean:
+        if clean_detail != "local changes present":
+            return False, clean_detail or "unable to inspect worktree"
+
+        committed, commit_detail = auto_commit_local_changes(repo, commit_message)
+        if not committed:
+            return False, commit_detail
+        sync_notes.append(commit_detail)
+
+    has_remote_branch, remote_branch_error = repo_remote_branch_exists(repo, remote, remote_branch)
+    if remote_branch_error is not None:
+        return False, remote_branch_error
+
+    if has_remote_branch:
+        pull_result = repo_git_repo(repo, ["pull", "--rebase", "--autostash", remote, remote_branch])
+        if pull_result.returncode != 0:
+            return False, f"pull failed on {remote}/{remote_branch}: {repo_git_error(pull_result)}"
+        sync_notes.append(f"pulled {remote}/{remote_branch}")
+
+        ahead, ahead_detail = repo_commits_ahead_of_remote(repo, remote, remote_branch)
+        if ahead_detail:
+            return False, ahead_detail
+
+        if ahead > 0:
+            push_result = repo_git_repo(repo, ["push", remote, f"HEAD:{remote_branch}"])
+            if push_result.returncode != 0:
+                return False, f"push failed on {remote}/{remote_branch}: {repo_git_error(push_result)}"
+            sync_notes.append(f"pushed {ahead} local commit(s)")
+    else:
+        push_result = repo_git_repo(repo, ["push", "-u", remote, f"HEAD:{remote_branch}"])
+        if push_result.returncode != 0:
+            return False, f"push failed on {remote}/{remote_branch}: {repo_git_error(push_result)}"
+        sync_notes.append(f"created {remote}/{remote_branch}")
+
+    return True, "; ".join(sync_notes)
 
 REQUEST_CLASS_CHOICES = ("read-only", "control-write", "governance-write", "mixed")
 READ_ONLY_CALLERS = {
