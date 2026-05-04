@@ -9,11 +9,13 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import re
 import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import NamedTuple
 
 
 # ---------------------------------------------------------------------------
@@ -777,6 +779,270 @@ def pull_window_seconds(branch: str) -> int:
     return 86400
 
 
+def _load_repo_sync_module():
+    helper_path = Path(__file__).resolve().parents[2] / "lens-git-orchestration" / "scripts" / "repo_sync.py"
+    spec = importlib.util.spec_from_file_location("lens_repo_sync", helper_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load repo sync helper from {helper_path}")
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_REPO_SYNC = _load_repo_sync_module()
+repo_current_branch = _REPO_SYNC.current_branch
+repo_detect_interrupted_state = _REPO_SYNC.detect_interrupted_state
+repo_git_has_clean_worktree = _REPO_SYNC.git_has_clean_worktree
+repo_resolve_governance_branch = _REPO_SYNC.resolve_governance_branch
+repo_ensure_local_branch = _REPO_SYNC.ensure_local_branch
+repo_resolve_sync_target = _REPO_SYNC.resolve_sync_target
+repo_remote_branch_exists = _REPO_SYNC.remote_branch_exists
+repo_commits_ahead_of_remote = _REPO_SYNC.commits_ahead_of_remote
+repo_git_repo = _REPO_SYNC.git_repo
+repo_git_error = _REPO_SYNC.git_error
+shared_sync_release_repo = _REPO_SYNC.sync_release_repo
+
+REQUEST_CLASS_CHOICES = ("read-only", "control-write", "governance-write", "mixed")
+READ_ONLY_CALLERS = {
+    "",
+    "lens-constitution",
+    "lens-help",
+    "lens-next",
+    "lens-preflight",
+    "lens-switch",
+    "onboard",
+}
+MIXED_CALLERS = {
+    "lens-businessplan",
+    "lens-complete",
+    "lens-dev",
+    "lens-discover",
+    "lens-expressplan",
+    "lens-finalizeplan",
+    "lens-new-domain",
+    "lens-new-feature",
+    "lens-new-service",
+    "lens-preplan",
+    "lens-split-feature",
+    "lens-techplan",
+    "lens-upgrade",
+}
+
+
+class RepoSyncDecision(NamedTuple):
+    repo_label: str
+    outcome: str
+    detail: str
+    required: bool
+    branch: str | None = None
+
+
+def normalize_request_class(value: str) -> str:
+    normalized = str(value or "").strip().lower()
+    if not normalized:
+        return ""
+    if normalized not in REQUEST_CLASS_CHOICES:
+        raise ValueError(f"Unsupported request class: {value}")
+    return normalized
+
+
+def classify_request(caller: str, explicit_request_class: str = "") -> str:
+    normalized_explicit = normalize_request_class(explicit_request_class)
+    if normalized_explicit:
+        return normalized_explicit
+
+    normalized_caller = str(caller or "").strip().lower()
+    if normalized_caller in READ_ONLY_CALLERS:
+        return "read-only"
+    if normalized_caller in MIXED_CALLERS:
+        return "mixed"
+    return "mixed"
+
+
+def release_branch_name(release_dir: Path) -> str:
+    branch = repo_current_branch(release_dir)
+    return branch or "unknown"
+
+
+def request_requires_repo(request_class: str, repo_label: str) -> bool:
+    if request_class == "mixed":
+        return True
+    if request_class == "control-write":
+        return repo_label == "control"
+    if request_class == "governance-write":
+        return repo_label == "governance"
+    return False
+
+
+def pre_request_sync(
+    repo: Path,
+    repo_label: str,
+    request_class: str,
+    *,
+    preferred_branch: str | None = None,
+) -> RepoSyncDecision:
+    required = request_requires_repo(request_class, repo_label)
+
+    if not repo.is_dir():
+        if required:
+            return RepoSyncDecision(repo_label, "block", "missing required repo context", True)
+        if repo_label == "governance" and request_class == "read-only":
+            return RepoSyncDecision(repo_label, "warn", "governance freshness deferred for read-only request", False)
+        return RepoSyncDecision(repo_label, "no-op", f"{repo_label} repo not required for {request_class} request", False)
+
+    interrupted = repo_detect_interrupted_state(repo)
+    clean, clean_detail = repo_git_has_clean_worktree(repo)
+
+    if not required:
+        if repo_label == "governance" and request_class == "read-only":
+            return RepoSyncDecision(repo_label, "warn", "governance freshness deferred for read-only request", False)
+        if interrupted is not None:
+            return RepoSyncDecision(
+                repo_label,
+                "warn",
+                f"{interrupted}; skipping mutable {repo_label} sync for {request_class} request",
+                False,
+            )
+        if not clean and clean_detail == "local changes present":
+            return RepoSyncDecision(
+                repo_label,
+                "warn",
+                f"local changes present; skipping mutable {repo_label} sync for {request_class} request",
+                False,
+            )
+        return RepoSyncDecision(repo_label, "no-op", f"mutable {repo_label} sync not required for {request_class} request", False)
+
+    if interrupted is not None:
+        return RepoSyncDecision(repo_label, "block", interrupted, True)
+
+    if preferred_branch:
+        active_branch = repo_current_branch(repo)
+        if active_branch != preferred_branch:
+            if not clean:
+                return RepoSyncDecision(
+                    repo_label,
+                    "block",
+                    f"local changes present on {active_branch}; switch to {preferred_branch} before mutable sync",
+                    True,
+                    active_branch or None,
+                )
+            checked_out, checkout_detail = repo_ensure_local_branch(repo, preferred_branch)
+            if not checked_out:
+                return RepoSyncDecision(
+                    repo_label,
+                    "block",
+                    f"failed to checkout {preferred_branch}: {checkout_detail}",
+                    True,
+                    active_branch or None,
+                )
+
+    clean, clean_detail = repo_git_has_clean_worktree(repo)
+    if not clean:
+        if clean_detail == "local changes present":
+            return RepoSyncDecision(repo_label, "block", "policy-blocked sync: local changes present", True)
+        return RepoSyncDecision(repo_label, "block", clean_detail or "unable to inspect worktree", True)
+
+    branch = preferred_branch or repo_current_branch(repo)
+    if not branch or branch == "HEAD":
+        return RepoSyncDecision(repo_label, "block", "detached HEAD; check out a branch before mutable sync", True)
+
+    remote, local_branch, remote_branch_or_error = repo_resolve_sync_target(repo, branch, preferred_remote="origin")
+    if remote is None or local_branch is None:
+        return RepoSyncDecision(repo_label, "block", remote_branch_or_error, True, branch)
+
+    remote_branch = remote_branch_or_error
+    has_remote_branch, remote_branch_error = repo_remote_branch_exists(repo, remote, remote_branch)
+    if remote_branch_error is not None:
+        return RepoSyncDecision(repo_label, "block", remote_branch_error, True, local_branch)
+    if not has_remote_branch:
+        return RepoSyncDecision(
+            repo_label,
+            "block",
+            f"required remote branch {remote}/{remote_branch} not found",
+            True,
+            local_branch,
+        )
+
+    pull_result = repo_git_repo(repo, ["pull", "--rebase", "--autostash", remote, remote_branch])
+    if pull_result.returncode != 0:
+        return RepoSyncDecision(
+            repo_label,
+            "block",
+            f"pull failed on {remote}/{remote_branch}: {repo_git_error(pull_result)}",
+            True,
+            local_branch,
+        )
+
+    ahead, ahead_detail = repo_commits_ahead_of_remote(repo, remote, remote_branch)
+    if ahead_detail:
+        return RepoSyncDecision(repo_label, "block", ahead_detail, True, local_branch)
+    if ahead > 0:
+        return RepoSyncDecision(
+            repo_label,
+            "warn",
+            f"pulled {remote}/{remote_branch}; local branch remains {ahead} commit(s) ahead and publish is deferred",
+            True,
+            local_branch,
+        )
+
+    return RepoSyncDecision(repo_label, "pull-only", f"pulled {remote}/{remote_branch}", True, local_branch)
+
+
+def post_request_sync_decision(repo_label: str, *, touched: bool, request_class: str) -> RepoSyncDecision:
+    if not touched:
+        return RepoSyncDecision(repo_label, "no-op", f"{repo_label} repo untouched by this request", False)
+    if repo_label == "governance":
+        return RepoSyncDecision(repo_label, "publish", "qualifying governance changes default to publish", True)
+    return RepoSyncDecision(repo_label, "commit-push", f"qualifying {repo_label} changes default to commit and push", True)
+
+
+def publish_touched_repo(repo: Path, repo_label: str) -> tuple[bool, str]:
+    if repo_label == "governance":
+        branch = repo_resolve_governance_branch(repo)
+        return sync_managed_repo(
+            repo,
+            "governance repo",
+            GOVERNANCE_AUTO_SYNC_COMMIT_MESSAGE,
+            preferred_branch=branch,
+            preferred_remote="origin",
+        )
+
+    return sync_managed_repo(
+        repo,
+        "control repo",
+        CONTROL_AUTO_SYNC_COMMIT_MESSAGE,
+        preferred_remote="origin",
+    )
+
+
+def log_repo_sync_decision(decision: RepoSyncDecision) -> None:
+    if decision.outcome in {"no-op", "pull-only", "commit-push", "publish"}:
+        icon = "✓"
+    else:
+        icon = "⚠"
+    echo(f"  {icon} {decision.repo_label.capitalize()} repo [{decision.outcome}] {decision.detail}")
+
+
+def sync_release_repo(release_repo: Path) -> tuple[bool, str]:
+    return shared_sync_release_repo(release_repo)
+
+
+def sync_control_repo(control_repo: Path, *, request_class: str = "mixed") -> tuple[bool, str]:
+    decision = pre_request_sync(control_repo, "control", request_class)
+    return decision.outcome != "block", f"{decision.outcome}: {decision.detail}"
+
+
+def sync_governance_repo(governance_repo: Path, *, request_class: str = "mixed") -> tuple[bool, str]:
+    decision = pre_request_sync(
+        governance_repo,
+        "governance",
+        request_class,
+        preferred_branch=repo_resolve_governance_branch(governance_repo),
+    )
+    return decision.outcome != "block", f"{decision.outcome}: {decision.detail}"
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -788,6 +1054,7 @@ def main() -> int:
     parser.add_argument("--skip-constitution", action="store_true")
     parser.add_argument("--caller", default="")
     parser.add_argument("--governance-path", default="")
+    parser.add_argument("--request-class", choices=REQUEST_CLASS_CHOICES, default="")
     args = parse_compat_args(parser)
 
     script_dir = Path(__file__).resolve().parent
@@ -810,29 +1077,63 @@ def main() -> int:
     import os
     os.chdir(project_root)
 
+    request_class = classify_request(args.caller, args.request_class)
+    echo(f"[preflight] Request class: {request_class}")
+
     # ------------------------------------------------------------------
-    # Step 1: Check release dir
+    # Layer 1: Every-request gates
     # ------------------------------------------------------------------
-    echo("[preflight] Checking release branch...")
+    echo("[preflight] Layer 1: validating release workspace and repo requirements...")
     if not release_dir.is_dir():
         echo(f"ERROR: lens.core directory not found at {release_dir}")
         return 1
 
-    echo("[preflight] Pulling release repo...")
-    release_sync_ok, release_detail = sync_release_repo(release_dir)
-    if release_sync_ok:
-        echo(f"  ✓ Release repo {release_detail}")
-    else:
-        echo(f"  ⚠ Release repo sync failed: {release_detail}")
+    requires_governance = request_requires_repo(request_class, "governance")
+    if requires_governance and governance_path is None and args.caller != "onboard":
+        echo("ERROR: governance repo path is required for this request class")
         return 1
 
-    echo("[preflight] Syncing control repo...")
-    control_sync_ok, control_detail = sync_control_repo(project_root)
-    if control_sync_ok:
-        echo(f"  ✓ Control repo {control_detail}")
+    last_time: datetime | None = None
+    now = datetime.now(tz=timezone.utc)
+    if timestamp_file.is_file():
+        raw = timestamp_file.read_text(encoding="utf-8").strip()
+        last_time = parse_timestamp(raw)
+
+    release_branch = release_branch_name(release_dir)
+    cadence_window = pull_window_seconds(release_branch)
+    elapsed_seconds: float | None = None
+    daily_due = True
+    weekly_due = True
+    if last_time is not None:
+        elapsed_seconds = (now - last_time).total_seconds()
+        daily_due = elapsed_seconds >= cadence_window
+        weekly_due = elapsed_seconds >= 7 * 86400
+
+    force_release_refresh = release_branch == "develop"
+    release_refresh_required = force_release_refresh or daily_due
+
+    if force_release_refresh:
+        echo("[preflight] Release repo is on develop; forcing every-request release refresh")
+    elif elapsed_seconds is not None and not daily_due:
+        echo(
+            f"[preflight] Timestamp fresh ({int(elapsed_seconds)}s < {cadence_window}s) on {release_branch}; "
+            "cadence-managed release refresh is skipped"
+        )
+
+    # ------------------------------------------------------------------
+    # Layer 2: Branch-sensitive release refresh
+    # ------------------------------------------------------------------
+    release_sync_ok = True
+    if release_refresh_required:
+        echo("[preflight] Layer 2: refreshing release repo...")
+        release_sync_ok, release_detail = sync_release_repo(release_dir)
+        if release_sync_ok:
+            echo(f"  ✓ Release repo {release_detail}")
+        else:
+            echo(f"  ⚠ Release repo sync failed: {release_detail}")
+            return 1
     else:
-        echo(f"  ⚠ Control repo sync failed: {control_detail}")
-        return 1
+        echo("[preflight] Layer 2: release refresh skipped")
 
     # ------------------------------------------------------------------
     # Step 1a: Enforce LENS_VERSION compatibility
@@ -862,144 +1163,145 @@ def main() -> int:
     echo(f"  ✓ LENS_VERSION v{control_version} matches module schema")
 
     # ------------------------------------------------------------------
-    # Step 2: Determine pull strategy
+    # Layer 3: Daily hygiene
     # ------------------------------------------------------------------
-    needs_pull = True
-    last_time: datetime | None = None
-    control_sync_ok = True
-    release_sync_ok = True
+    control_publish_ok = True
     governance_sync_ok = True
-
-    if timestamp_file.is_file():
-        raw = timestamp_file.read_text(encoding="utf-8").strip()
-        last_time = parse_timestamp(raw)
-
-    if last_time is not None:
-        elapsed = (datetime.now(tz=timezone.utc) - last_time).total_seconds()
-        window = pull_window_seconds(current_branch())
-        if elapsed < window:
-            needs_pull = False
-            echo(f"[preflight] Timestamp fresh ({int(elapsed)}s < {window}s) — keeping existing timestamp")
-
-    if governance_path and governance_path.is_dir():
-        governance_sync_ok, governance_detail = sync_governance_repo(governance_path)
-        if governance_sync_ok:
-            echo(f"  ✓ Governance repo {governance_detail}")
-        else:
-            echo(f"  ⚠ Governance repo sync failed: {governance_detail}")
-            return 1
-
-    # ------------------------------------------------------------------
-    # Step 3: Sync .github/ from release repo (hash-based)
-    # ------------------------------------------------------------------
-    echo("[preflight] Syncing .github/ from release repo...")
     release_github = release_dir / ".github"
-    if not release_github.is_dir():
-        echo(f"ERROR: Missing authority folder: {release_github}")
-        return 1
-
     local_github = project_root / ".github"
     local_github.mkdir(parents=True, exist_ok=True)
-
-    stored_hashes = load_hash_manifest(hash_file)
+    stored_hashes: dict[str, str] = {}
     new_hashes: dict[str, str] = {}
     updated_count = 0
-
-    for src_file in sorted(release_github.rglob("*")):
-        if not src_file.is_file():
-            continue
-        rel = ".github/" + src_file.relative_to(release_github).as_posix()
-        r_hash = sha256_file(src_file)
-        s_hash = stored_hashes.get(rel, "")
-        local_file = project_root / rel
-        l_hash = sha256_file(local_file) if local_file.is_file() else ""
-
-        if r_hash != s_hash or l_hash != r_hash:
-            local_file.parent.mkdir(parents=True, exist_ok=True)
-            import shutil
-            shutil.copy2(src_file, local_file)
-            updated_count += 1
-
-        new_hashes[rel] = r_hash
-
-    stale_removed = prune_stale_synced_github_files(project_root, stored_hashes, new_hashes)
-
-    # Write hash manifest
-    hash_file.parent.mkdir(parents=True, exist_ok=True)
-    hash_file.write_text(
-        "\n".join(f"{v}  {k}" for k, v in sorted(new_hashes.items())) + "\n",
-        encoding="utf-8",
-    )
-    echo(f"  ✓ .github/ synced ({updated_count} file(s) updated)")
-    if stale_removed:
-        echo(f"  ✓ Removed {stale_removed} stale synced .github file(s)")
-
-    # Prompt hygiene
-    prompts_dir = project_root / ".github/prompts"
-    if prompts_dir.is_dir():
-        release_prompts = release_github / "prompts"
-        for pf in list(prompts_dir.iterdir()):
-            name = pf.name
-            if re.match(r"^(?:lens|len)-.*\.prompt\.md$", name):
-                if not (release_prompts / name).exists():
-                    pf.unlink()
-            elif name.endswith(".prompt.md"):
-                pf.unlink()
-
-        # Profile-aware prompt filtering
-        profile = _load_user_profile(project_root)
-        experience = profile.get("experience_mode", "full")
-        role = profile.get("primary_role", "both")
-        profile_removed = 0
-        for pf in list(prompts_dir.iterdir()):
-            name = pf.name
-            if not re.match(r"^(?:lens|len)-.*\.prompt\.md$", name):
-                continue
-            stem = name[: -len(".prompt.md")]
-            if not _should_include_prompt(stem, experience, role):
-                pf.unlink()
-                profile_removed += 1
-        if profile_removed:
-            echo(f"  ✓ Removed {profile_removed} prompt(s) excluded by profile (experience={experience}, role={role})")
-
-    # Managed stale file hygiene (.github/**/lens-* and .github/**/len-*)
+    stale_removed = 0
     managed_stale_removed = 0
-    for local_file in sorted(local_github.rglob("*")):
-        if not local_file.is_file():
-            continue
+    profile_removed = 0
+    synced_entry_points = 0
 
-        rel_path = local_file.relative_to(local_github)
-        if (release_github / rel_path).is_file():
-            continue
+    if release_refresh_required:
+        echo("[preflight] Layer 3: syncing release-derived assets...")
+        if not release_github.is_dir():
+            echo(f"ERROR: Missing authority folder: {release_github}")
+            return 1
 
-        if re.match(r"^(?:lens|len)-", local_file.name):
-            local_file.unlink()
-            managed_stale_removed += 1
-            remove_empty_parent_dirs(local_file.parent, local_github)
+        stored_hashes = load_hash_manifest(hash_file)
+        for src_file in sorted(release_github.rglob("*")):
+            if not src_file.is_file():
+                continue
+            rel = ".github/" + src_file.relative_to(release_github).as_posix()
+            r_hash = sha256_file(src_file)
+            s_hash = stored_hashes.get(rel, "")
+            local_file = project_root / rel
+            l_hash = sha256_file(local_file) if local_file.is_file() else ""
 
-    if managed_stale_removed:
-        echo(f"  ✓ Removed {managed_stale_removed} stale managed .github file(s)")
-
-    # ------------------------------------------------------------------
-    # Step 3b: Sync agent entry points
-    # ------------------------------------------------------------------
-    for entry in ["CLAUDE.md"]:
-        src = release_dir / entry
-        if src.is_file():
-            local = project_root / entry
-            if not local.is_file():
+            if r_hash != s_hash or l_hash != r_hash:
+                local_file.parent.mkdir(parents=True, exist_ok=True)
                 import shutil
-                shutil.copy2(src, local)
-                echo(f"  ✓ Synced {entry}")
-            else:
-                result = subprocess.run(
-                    ["git", "-C", str(release_dir), "diff", "--name-only", "HEAD@{1}", "HEAD", "--", entry],
-                    capture_output=True, text=True,
+                shutil.copy2(src_file, local_file)
+                updated_count += 1
+
+            new_hashes[rel] = r_hash
+
+        hash_file.parent.mkdir(parents=True, exist_ok=True)
+        hash_file.write_text(
+            "\n".join(f"{v}  {k}" for k, v in sorted(new_hashes.items())) + "\n",
+            encoding="utf-8",
+        )
+        echo(f"  ✓ .github/ synced ({updated_count} file(s) updated)")
+
+        prompts_dir = project_root / ".github/prompts"
+        if prompts_dir.is_dir():
+            release_prompts = release_github / "prompts"
+            for pf in list(prompts_dir.iterdir()):
+                name = pf.name
+                if re.match(r"^(?:lens|len)-.*\.prompt\.md$", name):
+                    if not (release_prompts / name).exists():
+                        pf.unlink()
+                        profile_removed += 1
+                elif name.endswith(".prompt.md"):
+                    pf.unlink()
+                    profile_removed += 1
+
+            profile = _load_user_profile(project_root)
+            experience = profile.get("experience_mode", "full")
+            role = profile.get("primary_role", "both")
+            for pf in list(prompts_dir.iterdir()):
+                name = pf.name
+                if not re.match(r"^(?:lens|len)-.*\.prompt\.md$", name):
+                    continue
+                stem = name[: -len(".prompt.md")]
+                if not _should_include_prompt(stem, experience, role):
+                    pf.unlink()
+                    profile_removed += 1
+
+            if profile_removed:
+                echo(
+                    f"  ✓ Prompt hygiene removed {profile_removed} file(s) "
+                    f"(experience={experience}, role={role})"
                 )
-                if result.stdout.strip():
+
+        for entry in ["CLAUDE.md"]:
+            src = release_dir / entry
+            if src.is_file():
+                local = project_root / entry
+                if not local.is_file():
                     import shutil
                     shutil.copy2(src, local)
+                    synced_entry_points += 1
                     echo(f"  ✓ Synced {entry}")
+                elif release_refresh_required:
+                    result = subprocess.run(
+                        ["git", "-C", str(release_dir), "diff", "--name-only", "HEAD@{1}", "HEAD", "--", entry],
+                        capture_output=True, text=True,
+                    )
+                    if result.stdout.strip():
+                        import shutil
+                        shutil.copy2(src, local)
+                        synced_entry_points += 1
+                        echo(f"  ✓ Synced {entry}")
+    else:
+        echo("[preflight] Layer 3: daily hygiene skipped")
+
+    # ------------------------------------------------------------------
+    # Layer 4: Weekly hygiene
+    # ------------------------------------------------------------------
+    if release_refresh_required and weekly_due:
+        echo("[preflight] Layer 4: pruning stale managed files...")
+        stale_removed = prune_stale_synced_github_files(project_root, stored_hashes, new_hashes)
+        if stale_removed:
+            echo(f"  ✓ Removed {stale_removed} stale synced .github file(s)")
+
+        for local_file in sorted(local_github.rglob("*")):
+            if not local_file.is_file():
+                continue
+
+            rel_path = local_file.relative_to(local_github)
+            if (release_github / rel_path).is_file():
+                continue
+
+            if re.match(r"^(?:lens|len)-", local_file.name):
+                local_file.unlink()
+                managed_stale_removed += 1
+                remove_empty_parent_dirs(local_file.parent, local_github)
+
+        if managed_stale_removed:
+            echo(f"  ✓ Removed {managed_stale_removed} stale managed .github file(s)")
+    else:
+        echo("[preflight] Layer 4: weekly hygiene skipped")
+
+    control_repo_touched = any(
+        count > 0 for count in (updated_count, stale_removed, managed_stale_removed, profile_removed, synced_entry_points)
+    )
+
+    if control_repo_touched:
+        control_post_decision = post_request_sync_decision("control", touched=True, request_class=request_class)
+        log_repo_sync_decision(control_post_decision)
+        control_publish_ok, control_publish_detail = publish_touched_repo(project_root, "control")
+        if control_publish_ok:
+            echo(f"  ✓ Control repo {control_publish_detail}")
+        else:
+            echo(f"  ⚠ Control repo publish failed: {control_publish_detail}")
+            return 1
 
     # ------------------------------------------------------------------
     # Step 4: Verify authority repos
@@ -1022,26 +1324,39 @@ def main() -> int:
             return 1
 
     # ------------------------------------------------------------------
+    # Step 5: Pre-request mutable sync policy
+    # ------------------------------------------------------------------
+    echo("[preflight] Applying pre-request repo sync policy...")
+    control_decision = pre_request_sync(project_root, "control", request_class)
+    log_repo_sync_decision(control_decision)
+    if control_decision.outcome == "block":
+        return 1
+
+    if governance_path:
+        governance_decision = pre_request_sync(
+            governance_path,
+            "governance",
+            request_class,
+            preferred_branch=repo_resolve_governance_branch(governance_path) if governance_path.is_dir() else None,
+        )
+        log_repo_sync_decision(governance_decision)
+        governance_sync_ok = governance_decision.outcome != "block"
+        if governance_decision.outcome == "block":
+            return 1
+    elif request_requires_repo(request_class, "governance") and args.caller != "onboard":
+        echo("ERROR: governance repo path is required for this request class")
+        return 1
+
+    # ------------------------------------------------------------------
     # Step 6: Update timestamp
     # ------------------------------------------------------------------
-    if needs_pull:
-        if control_sync_ok and release_sync_ok and governance_sync_ok:
+    if release_refresh_required or weekly_due:
+        if control_publish_ok and release_sync_ok and governance_sync_ok:
             timestamp_file.parent.mkdir(parents=True, exist_ok=True)
-            timestamp_file.write_text(
-                datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                encoding="utf-8",
-            )
+            timestamp_file.write_text(now.strftime("%Y-%m-%dT%H:%M:%SZ"), encoding="utf-8")
             echo("[preflight] Timestamp updated")
         else:
-            echo("[preflight] Timestamp not updated because authority repo sync did not complete cleanly")
-
-    echo("[preflight] Finalizing control repo sync...")
-    control_sync_ok, control_detail = sync_control_repo(project_root)
-    if control_sync_ok:
-        echo(f"  ✓ Control repo {control_detail}")
-    else:
-        echo(f"  ⚠ Control repo sync failed: {control_detail}")
-        return 1
+            echo("[preflight] Timestamp not updated because cadence-owned repo work did not complete cleanly")
 
     echo("[preflight] Preflight complete ✓")
     if args.caller == "onboard":
