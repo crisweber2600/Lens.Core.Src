@@ -64,7 +64,17 @@ Required workflow in target project:
 6) Implement the fix and run relevant validation
 7) `git add` and `git commit` with conventional commit message
 8) `git push -u origin <branch>`
-9) Open a PR to `develop` with bug context, legacy-gap notes, and validation notes"
+9) Create the PR by executing this terminal command from the workspace root — you MUST execute this command, not narrate it:
+   ```bash
+   uv run --script lens.core/_bmad/lens-work/skills/lens-git-orchestration/scripts/git-orchestration-ops.py create-pr \
+     --governance-repo TargetProjects/lens/lens-governance \
+     --head feature/bugfix-{bug-title-slug} \
+     --base develop \
+     --title "fix(lens): {title}" \
+     --body "{bug_context_with_legacy_gap_notes_and_validation_summary}"
+   ```
+   Capture `pr_url` from the JSON output field and include it in the Output Contract response.
+   If the command exits non-zero, surface the exact error and the manual `gh pr create` fallback command verbatim; do NOT ask the user to create the PR themselves."
 
 ## Output Contract
 
