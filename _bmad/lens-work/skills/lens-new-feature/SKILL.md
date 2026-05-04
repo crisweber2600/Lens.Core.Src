@@ -9,7 +9,7 @@ description: Feature initializer entry controller — runs preflight, resolves c
 
 Entry controller for feature initialization. Runs the shared workspace preflight check first, resolves config paths, runs the discover workflow in headless mode to sync repo inventory, then loads `lens-init-feature` and executes the `create` intent with full progressive disclosure — name, domain, and service upfront; track selection explicit before any write; featureId and featureSlug displayed as read-only identity before execution. All governance writes are delegated to `init-feature-ops.py`. Does not create files inline.
 
-**Args:** Feature name (prompted if not supplied). Optional: `--domain`, `--service`, `--track`, `--feature-id`.
+**Args:** Feature name (prompted if not supplied). Optional: `--domain`, `--service`, `--track`.
 
 ## Identity
 

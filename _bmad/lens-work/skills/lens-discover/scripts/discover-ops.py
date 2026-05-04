@@ -251,22 +251,34 @@ def add_inventory_entry(inventory_path: Path, name: str, remote_url: str, local_
         for entry in entries
         if isinstance(entry, dict) and str(entry.get("remote_url") or "").strip() == normalized_remote_url
     ]
-    candidate_path = normalized_local_path or default_local_path(normalized_name)
-    for entry in matching_entries:
-        existing_keys = {normalized_local_path_key(path) for path in entry_local_paths(entry)}
-        if normalized_local_path_key(candidate_path) in existing_keys:
-            return {"added": False, "reason": "already_exists"}
 
     if matching_entries:
         target_entry = matching_entries[0]
-        existing_paths = entry_local_paths(target_entry)
-        if "local_path" not in target_entry or not str(target_entry.get("local_path") or "").strip():
-            target_entry["local_path"] = existing_paths[0] if existing_paths else default_local_path(normalized_name)
-        target_entry["local_paths"] = unique_local_paths([*existing_paths, candidate_path])
+
+        # Nothing new to record if no path was supplied for an already-registered remote
+        if not normalized_local_path:
+            return {"added": False, "reason": "already_exists"}
+
+        # Collect only paths that were explicitly recorded — no phantom default_local_path fallback
+        existing_explicit: list[str] = []
+        explicit_primary = str(target_entry.get("local_path") or "").strip()
+        if explicit_primary:
+            existing_explicit.append(explicit_primary)
+        extra = target_entry.get("local_paths")
+        if isinstance(extra, list):
+            existing_explicit.extend(str(p).strip() for p in extra if str(p).strip())
+        existing_explicit = unique_local_paths(existing_explicit)
+
+        existing_keys = {normalized_local_path_key(p) for p in existing_explicit}
+        if normalized_local_path_key(normalized_local_path) in existing_keys:
+            return {"added": False, "reason": "already_exists"}
+
+        # Record the new path in local_paths without forging a primary local_path
+        target_entry["local_paths"] = unique_local_paths([*existing_explicit, normalized_local_path])
 
         output = dict(data)
         output.pop("repos", None)
-        output["repositories"] = [entry for entry in entries]
+        output["repositories"] = list(entries)
         atomic_write_yaml(inventory_path, output)
         return {"added": True, "reason": "additional_local_path", "entry": target_entry}
 
