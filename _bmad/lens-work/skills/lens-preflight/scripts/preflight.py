@@ -26,203 +26,31 @@ def echo(msg: str) -> None:
     print(msg)
 
 
-def git_repo(repo: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["git", "-C", str(repo), *args],
-        capture_output=True,
-        text=True,
-    )
-
-
-def git_error(result: subprocess.CompletedProcess[str]) -> str:
-    return (result.stderr or result.stdout).strip() or f"exit code {result.returncode}"
-
-
 CONTROL_AUTO_SYNC_COMMIT_MESSAGE = "chore(control): auto-sync local changes"
 GOVERNANCE_AUTO_SYNC_COMMIT_MESSAGE = "chore(governance): auto-sync local changes"
-INTERRUPTED_STATE_MARKERS: tuple[tuple[str, str], ...] = (
-    ("MERGE_HEAD", "merge in progress"),
-    ("CHERRY_PICK_HEAD", "cherry-pick in progress"),
-    ("REVERT_HEAD", "revert in progress"),
-    ("BISECT_LOG", "bisect in progress"),
-    ("rebase-merge", "rebase in progress"),
-    ("rebase-apply", "rebase in progress"),
-)
-
-
-def sync_release_repo(release_repo: Path) -> tuple[bool, str]:
-    pull_result = git_repo(release_repo, ["pull", "origin"])
-    if pull_result.returncode == 0:
-        return True, "pulled origin"
-
-    pull_error = git_error(pull_result)
-    reset_result = git_repo(release_repo, ["reset", "--hard"])
-    if reset_result.returncode != 0:
-        return False, f"pull failed: {pull_error}; reset --hard failed: {git_error(reset_result)}"
-
-    retry_result = git_repo(release_repo, ["pull", "origin"])
-    if retry_result.returncode != 0:
-        return False, (
-            f"pull failed: {pull_error}; reset --hard succeeded; "
-            f"retry pull failed: {git_error(retry_result)}"
-        )
-
-    return True, "pull blocked; reset --hard; pulled origin"
-
-
-def git_current_branch(repo: Path) -> str:
-    result = git_repo(repo, ["rev-parse", "--abbrev-ref", "HEAD"])
-    return result.stdout.strip()
-
-
-def git_remotes(repo: Path) -> tuple[list[str], str | None]:
-    result = git_repo(repo, ["remote"])
-    if result.returncode != 0:
-        return [], git_error(result)
-
-    remotes = [line.strip() for line in result.stdout.splitlines() if line.strip()]
-    if not remotes:
-        return [], "no git remotes configured"
-    return remotes, None
-
-
-def git_upstream(repo: Path) -> tuple[str, str] | None:
-    result = git_repo(repo, ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"])
-    if result.returncode != 0:
-        return None
-
-    upstream = result.stdout.strip()
-    if not upstream or "/" not in upstream:
-        return None
-
-    remote, branch = upstream.split("/", 1)
-    if not remote or not branch:
-        return None
-    return remote, branch
-
-
-def git_branch_exists(repo: Path, branch: str, *, remote: bool = False) -> bool:
-    ref = f"refs/remotes/origin/{branch}" if remote else f"refs/heads/{branch}"
-    return git_repo(repo, ["show-ref", "--verify", "--quiet", ref]).returncode == 0
-
-
-def git_path_exists(repo: Path, marker: str) -> bool:
-    result = git_repo(repo, ["rev-parse", "--git-path", marker])
-    if result.returncode != 0:
-        return False
-
-    candidate = Path(result.stdout.strip())
-    if not candidate.is_absolute():
-        candidate = repo / candidate
-    return candidate.exists()
-
-
-def detect_interrupted_state(repo: Path) -> str | None:
-    for marker, detail in INTERRUPTED_STATE_MARKERS:
-        if git_path_exists(repo, marker):
-            return detail
-    return None
-
-
-def git_has_clean_worktree(repo: Path) -> tuple[bool, str | None]:
-    result = git_repo(repo, ["status", "--short"])
-    if result.returncode != 0:
-        return False, git_error(result)
-    if result.stdout.strip():
-        return False, "local changes present"
-    return True, None
 
 
 def auto_commit_local_changes(repo: Path, commit_message: str) -> tuple[bool, str]:
-    add_result = git_repo(repo, ["add", "-A"])
+    add_result = repo_git_repo(repo, ["add", "-A"])
     if add_result.returncode != 0:
-        return False, f"failed to stage local changes: {git_error(add_result)}"
+        return False, f"failed to stage local changes: {repo_git_error(add_result)}"
 
-    staged_result = git_repo(repo, ["diff", "--cached", "--quiet"])
+    staged_result = repo_git_repo(repo, ["diff", "--cached", "--quiet"])
     if staged_result.returncode == 0:
         return False, "local changes were detected but none could be staged for commit"
     if staged_result.returncode != 1:
-        return False, f"failed to inspect staged changes: {git_error(staged_result)}"
+        return False, f"failed to inspect staged changes: {repo_git_error(staged_result)}"
 
-    commit_result = git_repo(repo, ["commit", "-m", commit_message])
+    commit_result = repo_git_repo(repo, ["commit", "-m", commit_message])
     if commit_result.returncode != 0:
-        return False, f"failed to commit local changes: {git_error(commit_result)}"
+        return False, f"failed to commit local changes: {repo_git_error(commit_result)}"
 
-    sha_result = git_repo(repo, ["rev-parse", "--short", "HEAD"])
+    sha_result = repo_git_repo(repo, ["rev-parse", "--short", "HEAD"])
     sha = sha_result.stdout.strip() if sha_result.returncode == 0 else ""
     detail = "committed local changes"
     if sha:
         detail = f"{detail} ({sha})"
     return True, detail
-
-
-def resolve_governance_branch(repo: Path) -> str:
-    if git_branch_exists(repo, "main") or git_branch_exists(repo, "main", remote=True):
-        return "main"
-
-    result = git_repo(repo, ["symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"])
-    if result.returncode == 0:
-        ref = result.stdout.strip()
-        if ref.startswith("origin/"):
-            return ref.removeprefix("origin/")
-
-    branch = git_current_branch(repo)
-    return branch if branch and branch != "HEAD" else "main"
-
-
-def ensure_local_branch(repo: Path, branch: str) -> tuple[bool, str | None]:
-    if git_current_branch(repo) == branch:
-        return True, None
-
-    result = git_repo(repo, ["checkout", branch])
-    if result.returncode == 0:
-        return True, None
-
-    if git_branch_exists(repo, branch, remote=True):
-        result = git_repo(repo, ["checkout", "-B", branch, f"origin/{branch}"])
-        if result.returncode == 0:
-            return True, None
-
-    return False, git_error(result)
-
-
-def resolve_sync_target(
-    repo: Path,
-    branch: str,
-    preferred_remote: str | None = None,
-) -> tuple[str, str, str] | tuple[None, None, str]:
-    upstream = git_upstream(repo)
-    if upstream is not None:
-        upstream_remote, upstream_branch = upstream
-        if preferred_remote is None or preferred_remote == upstream_remote:
-            return upstream_remote, branch, upstream_branch
-
-    remotes, remote_error = git_remotes(repo)
-    if remote_error:
-        return None, None, remote_error
-
-    remote = preferred_remote if preferred_remote in remotes else ("origin" if "origin" in remotes else remotes[0])
-    return remote, branch, branch
-
-
-def remote_branch_exists(repo: Path, remote: str, branch: str) -> tuple[bool, str | None]:
-    result = git_repo(repo, ["ls-remote", "--exit-code", "--heads", remote, branch])
-    if result.returncode == 0:
-        return True, None
-    if result.returncode == 2:
-        return False, None
-    return False, git_error(result)
-
-
-def commits_ahead_of_remote(repo: Path, remote: str, branch: str) -> tuple[int, str | None]:
-    result = git_repo(repo, ["rev-list", "--count", f"{remote}/{branch}..HEAD"])
-    if result.returncode != 0:
-        return 0, git_error(result)
-
-    try:
-        return int(result.stdout.strip() or "0"), None
-    except ValueError:
-        return 0, f"unable to parse ahead count: {result.stdout.strip()}"
 
 
 def sync_managed_repo(
@@ -233,21 +61,21 @@ def sync_managed_repo(
     preferred_branch: str | None = None,
     preferred_remote: str | None = None,
 ) -> tuple[bool, str]:
-    worktree_check = git_repo(repo, ["rev-parse", "--is-inside-work-tree"])
+    worktree_check = repo_git_repo(repo, ["rev-parse", "--is-inside-work-tree"])
     if worktree_check.returncode != 0 or worktree_check.stdout.strip() != "true":
-        return False, f"not a git worktree ({git_error(worktree_check)})"
+        return False, f"not a git worktree ({repo_git_error(worktree_check)})"
 
-    interrupted = detect_interrupted_state(repo)
+    interrupted = repo_detect_interrupted_state(repo)
     if interrupted is not None:
         return False, interrupted
 
-    active_branch = git_current_branch(repo) or "HEAD"
+    active_branch = repo_current_branch(repo) or "HEAD"
     branch = preferred_branch or active_branch
     if not branch or branch == "HEAD":
         return False, "detached HEAD; check out a branch before automatic sync"
 
     if preferred_branch and active_branch != preferred_branch:
-        clean, clean_detail = git_has_clean_worktree(repo)
+        clean, clean_detail = repo_git_has_clean_worktree(repo)
         if not clean:
             if clean_detail == "local changes present":
                 return False, (
@@ -256,17 +84,17 @@ def sync_managed_repo(
                 )
             return False, clean_detail or "unable to inspect worktree"
 
-        checked_out, checkout_detail = ensure_local_branch(repo, preferred_branch)
+        checked_out, checkout_detail = repo_ensure_local_branch(repo, preferred_branch)
         if not checked_out:
             return False, f"failed to checkout {preferred_branch}: {checkout_detail}"
         branch = preferred_branch
 
-    remote, local_branch, remote_branch_or_error = resolve_sync_target(repo, branch, preferred_remote)
+    remote, local_branch, remote_branch_or_error = repo_resolve_sync_target(repo, branch, preferred_remote)
     if remote is None or local_branch is None:
         return False, remote_branch_or_error
 
     remote_branch = remote_branch_or_error
-    clean, clean_detail = git_has_clean_worktree(repo)
+    clean, clean_detail = repo_git_has_clean_worktree(repo)
     sync_notes = [f"synced {local_branch}"]
     if not clean:
         if clean_detail != "local changes present":
@@ -277,60 +105,32 @@ def sync_managed_repo(
             return False, commit_detail
         sync_notes.append(commit_detail)
 
-    has_remote_branch, remote_branch_error = remote_branch_exists(repo, remote, remote_branch)
+    has_remote_branch, remote_branch_error = repo_remote_branch_exists(repo, remote, remote_branch)
     if remote_branch_error is not None:
         return False, remote_branch_error
 
     if has_remote_branch:
-        pull_result = git_repo(repo, ["pull", "--rebase", "--autostash", remote, remote_branch])
+        pull_result = repo_git_repo(repo, ["pull", "--rebase", "--autostash", remote, remote_branch])
         if pull_result.returncode != 0:
-            return False, f"pull failed on {remote}/{remote_branch}: {git_error(pull_result)}"
+            return False, f"pull failed on {remote}/{remote_branch}: {repo_git_error(pull_result)}"
         sync_notes.append(f"pulled {remote}/{remote_branch}")
 
-        ahead, ahead_detail = commits_ahead_of_remote(repo, remote, remote_branch)
+        ahead, ahead_detail = repo_commits_ahead_of_remote(repo, remote, remote_branch)
         if ahead_detail:
             return False, ahead_detail
 
         if ahead > 0:
-            push_result = git_repo(repo, ["push", remote, f"HEAD:{remote_branch}"])
+            push_result = repo_git_repo(repo, ["push", remote, f"HEAD:{remote_branch}"])
             if push_result.returncode != 0:
-                return False, f"push failed on {remote}/{remote_branch}: {git_error(push_result)}"
+                return False, f"push failed on {remote}/{remote_branch}: {repo_git_error(push_result)}"
             sync_notes.append(f"pushed {ahead} local commit(s)")
     else:
-        push_result = git_repo(repo, ["push", "-u", remote, f"HEAD:{remote_branch}"])
+        push_result = repo_git_repo(repo, ["push", "-u", remote, f"HEAD:{remote_branch}"])
         if push_result.returncode != 0:
-            return False, f"push failed on {remote}/{remote_branch}: {git_error(push_result)}"
+            return False, f"push failed on {remote}/{remote_branch}: {repo_git_error(push_result)}"
         sync_notes.append(f"created {remote}/{remote_branch}")
 
     return True, "; ".join(sync_notes)
-
-
-def sync_control_repo(control_repo: Path) -> tuple[bool, str]:
-    return sync_managed_repo(
-        control_repo,
-        "control repo",
-        CONTROL_AUTO_SYNC_COMMIT_MESSAGE,
-        preferred_remote="origin",
-    )
-
-
-def sync_governance_repo(governance_repo: Path) -> tuple[bool, str]:
-    branch = resolve_governance_branch(governance_repo)
-    return sync_managed_repo(
-        governance_repo,
-        "governance repo",
-        GOVERNANCE_AUTO_SYNC_COMMIT_MESSAGE,
-        preferred_branch=branch,
-        preferred_remote="origin",
-    )
-
-
-def current_branch() -> str:
-    result = subprocess.run(
-        ["git", "branch", "--show-current"],
-        capture_output=True, text=True,
-    )
-    return result.stdout.strip()
 
 
 def sha256_file(path: Path) -> str:
@@ -814,6 +614,10 @@ READ_ONLY_CALLERS = {
     "onboard",
 }
 MIXED_CALLERS = {
+    "lens-bug-fixer",
+    "lens-bug-quickdev",
+    "lens-bug-reporter",
+    "lens-bugbash",
     "lens-businessplan",
     "lens-complete",
     "lens-dev",
@@ -1202,11 +1006,6 @@ def main() -> int:
 
             new_hashes[rel] = r_hash
 
-        hash_file.parent.mkdir(parents=True, exist_ok=True)
-        hash_file.write_text(
-            "\n".join(f"{v}  {k}" for k, v in sorted(new_hashes.items())) + "\n",
-            encoding="utf-8",
-        )
         echo(f"  ✓ .github/ synced ({updated_count} file(s) updated)")
 
         prompts_dir = project_root / ".github/prompts"
@@ -1262,14 +1061,25 @@ def main() -> int:
     else:
         echo("[preflight] Layer 3: daily hygiene skipped")
 
-    # ------------------------------------------------------------------
-    # Layer 4: Weekly hygiene
-    # ------------------------------------------------------------------
-    if release_refresh_required and weekly_due:
-        echo("[preflight] Layer 4: pruning stale managed files...")
+    # Always prune hash-tracked deletions and persist the updated manifest
+    # whenever a release refresh ran, not just on the weekly cadence.  This
+    # prevents deleted release files from accumulating in the local .github/
+    # directory between weekly runs.
+    if release_refresh_required:
         stale_removed = prune_stale_synced_github_files(project_root, stored_hashes, new_hashes)
         if stale_removed:
             echo(f"  ✓ Removed {stale_removed} stale synced .github file(s)")
+        hash_file.parent.mkdir(parents=True, exist_ok=True)
+        hash_file.write_text(
+            "\n".join(f"{v}  {k}" for k, v in sorted(new_hashes.items())) + "\n",
+            encoding="utf-8",
+        )
+
+    # ------------------------------------------------------------------
+    # Layer 4: Weekly hygiene (heavy name-pattern stale removal)
+    # ------------------------------------------------------------------
+    if release_refresh_required and weekly_due:
+        echo("[preflight] Layer 4: pruning stale managed files...")
 
         for local_file in sorted(local_github.rglob("*")):
             if not local_file.is_file():
@@ -1293,26 +1103,28 @@ def main() -> int:
         count > 0 for count in (updated_count, stale_removed, managed_stale_removed, profile_removed, synced_entry_points)
     )
 
-    if control_repo_touched:
-        control_post_decision = post_request_sync_decision("control", touched=True, request_class=request_class)
-        log_repo_sync_decision(control_post_decision)
-        control_publish_ok, control_publish_detail = publish_touched_repo(project_root, "control")
-        if control_publish_ok:
-            echo(f"  ✓ Control repo {control_publish_detail}")
-        else:
-            echo(f"  ⚠ Control repo publish failed: {control_publish_detail}")
-            return 1
-
     # ------------------------------------------------------------------
     # Step 4: Verify authority repos
+    # (checked before publishing cadence changes so that a missing
+    # governance clone is caught before any auto-commit/push occurs)
     # ------------------------------------------------------------------
-    missing_repos = not release_dir.is_dir()
-    if governance_path and not governance_path.is_dir():
-        missing_repos = True
+    missing_release = not release_dir.is_dir()
+    governance_missing = governance_path is not None and not governance_path.is_dir()
 
-    if missing_repos:
+    if missing_release or governance_missing:
         if args.caller == "onboard":
             echo("[preflight] Authority repos incomplete — continuing so /onboard can show next steps")
+        elif missing_release:
+            echo("")
+            echo("⚠️  Missing authority repos — this workspace needs onboarding first.")
+            echo("")
+            echo("  Re-run setup-control-repo.py if the governance clone is missing.")
+            echo("  It takes about 2 minutes and only needs to run once.")
+            echo("")
+            echo("  Then run /new-project (or /new-domain for step-by-step setup) and retry this command.")
+            return 1
+        elif request_class == "read-only":
+            echo("⚠ Governance repo not found; freshness deferred for read-only request")
         else:
             echo("")
             echo("⚠️  Missing authority repos — this workspace needs onboarding first.")
@@ -1321,6 +1133,16 @@ def main() -> int:
             echo("  It takes about 2 minutes and only needs to run once.")
             echo("")
             echo("  Then run /new-project (or /new-domain for step-by-step setup) and retry this command.")
+            return 1
+
+    if control_repo_touched:
+        control_post_decision = post_request_sync_decision("control", touched=True, request_class=request_class)
+        log_repo_sync_decision(control_post_decision)
+        control_publish_ok, control_publish_detail = publish_touched_repo(project_root, "control")
+        if control_publish_ok:
+            echo(f"  ✓ Control repo {control_publish_detail}")
+        else:
+            echo(f"  ⚠ Control repo publish failed: {control_publish_detail}")
             return 1
 
     # ------------------------------------------------------------------
