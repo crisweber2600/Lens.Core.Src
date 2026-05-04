@@ -47,11 +47,11 @@ def resolve_governance_repo(args: argparse.Namespace) -> Path:
     override_path = workspace_root / ".lens" / "governance-setup.yaml"
     if override_path.is_file():
         try:
-            data: dict[str, Any] = yaml.safe_load(override_path.read_text(encoding="utf-8")) or {}
+            raw = yaml.safe_load(override_path.read_text(encoding="utf-8"))
         except (OSError, yaml.YAMLError) as exc:
             raise ConfigError(f"Could not read {override_path}: {exc}") from exc
-        if isinstance(data, dict):
-            value = str(data.get("governance_repo_path") or "").strip()
+        if isinstance(raw, dict):
+            value = str(raw.get("governance_repo_path") or "").strip()
             if value:
                 value = value.replace("{project-root}", str(workspace_root))
                 return normalize_absolute_path(value)
