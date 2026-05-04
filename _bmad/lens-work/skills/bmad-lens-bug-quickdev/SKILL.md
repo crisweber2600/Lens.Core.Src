@@ -67,14 +67,23 @@ Required workflow in target project:
 9) Create the PR by executing this terminal command from the workspace root — you MUST execute this command, not narrate it:
    ```bash
    uv run --script lens.core/_bmad/lens-work/skills/lens-git-orchestration/scripts/git-orchestration-ops.py create-pr \
-     --governance-repo TargetProjects/lens/lens-governance \
+     --repo {target_project} \
+     --governance-repo {governance_repo} \
      --head feature/bugfix-{bug-title-slug} \
      --base develop \
      --title "fix(lens): {title}" \
      --body "{bug_context_with_legacy_gap_notes_and_validation_summary}"
    ```
    Capture `pr_url` from the JSON output field and include it in the Output Contract response.
-   If the command exits non-zero, surface the exact error and the manual `gh pr create` fallback command verbatim; do NOT ask the user to create the PR themselves."
+   If the command exits non-zero, surface the exact error and run this fallback from the `{target_project}` directory:
+   ```bash
+   gh pr create \
+     --base develop \
+     --head feature/bugfix-{bug-title-slug} \
+     --title "fix(lens): {title}" \
+     --body "{bug_context_with_legacy_gap_notes_and_validation_summary}"
+   ```
+   Capture the PR URL from the `gh pr create` output. Do NOT ask the user to create the PR themselves."
 
 7. After quick-dev delegation returns, run this conductor completion gate before responding to the user. This gate is mandatory even if the delegate claims the work is complete:
    - Verify the target project is still on `feature/bugfix-{bug-title-slug}`.

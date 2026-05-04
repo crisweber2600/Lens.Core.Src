@@ -24,6 +24,15 @@ def _skill_text() -> str:
     return SKILL_MD.read_text(encoding="utf-8")
 
 
+def _create_pr_command_block(text: str) -> str:
+    """Extract the fenced bash block containing the create-pr invocation from Step 9."""
+    match = re.search(r"(```bash\s*\n[\s\S]*?create-pr[\s\S]*?```)", text, re.DOTALL)
+    assert match is not None, (
+        "SKILL.md must contain a fenced bash block with the create-pr command in Step 9"
+    )
+    return match.group(1)
+
+
 # ---------------------------------------------------------------------------
 # PR creation enforcement tests
 # ---------------------------------------------------------------------------
@@ -31,18 +40,31 @@ def _skill_text() -> str:
 
 def test_pr_step_uses_git_orchestration_create_pr():
     """Step 9 must invoke git-orchestration-ops.py create-pr as a terminal command."""
-    text = _skill_text()
-    assert "git-orchestration-ops.py create-pr" in text, (
-        "SKILL.md step 9 must call git-orchestration-ops.py create-pr, "
+    block = _create_pr_command_block(_skill_text())
+    assert "git-orchestration-ops.py create-pr" in block, (
+        "Step 9 fenced bash block must call git-orchestration-ops.py create-pr, "
         "not use narrative 'Open a PR' language"
     )
 
 
 def test_pr_step_specifies_base_develop():
     """Step 9 must pass --base develop to the create-pr command."""
-    text = _skill_text()
-    assert "--base develop" in text, (
-        "SKILL.md step 9 must specify --base develop in the create-pr invocation"
+    block = _create_pr_command_block(_skill_text())
+    assert "--base develop" in block, (
+        "Step 9 create-pr invocation must specify --base develop"
+    )
+
+
+def test_pr_step_specifies_target_repo():
+    """Step 9 create-pr command must pass --repo pointing at the target project."""
+    block = _create_pr_command_block(_skill_text())
+    assert "--repo" in block, (
+        "Step 9 create-pr command must pass --repo to target the correct repository, "
+        "not the governance repo"
+    )
+    assert "{target_project}" in block, (
+        "Step 9 create-pr --repo must use {target_project} placeholder, "
+        "not a hardcoded path"
     )
 
 
