@@ -421,12 +421,19 @@ def resolve_project_root(script_dir: Path) -> Path:
     current = Path.cwd().resolve()
     script_dir = script_dir.resolve()
 
+    candidates: list[Path] = []
     for start in (current, script_dir):
         for candidate in (start, *start.parents):
-            if (candidate / "lens.core" / "_bmad" / "lens-work" / "lifecycle.yaml").is_file():
-                return candidate
-            if (candidate / "_bmad" / "lens-work" / "lifecycle.yaml").is_file():
-                return candidate
+            if candidate not in candidates:
+                candidates.append(candidate)
+
+    for candidate in candidates:
+        if (candidate / "lens.core" / "_bmad" / "lens-work" / "lifecycle.yaml").is_file():
+            return candidate
+
+    for candidate in candidates:
+        if (candidate / "_bmad" / "lens-work" / "lifecycle.yaml").is_file():
+            return candidate
 
     raise RuntimeError(
         "Unable to resolve project root: could not find "
