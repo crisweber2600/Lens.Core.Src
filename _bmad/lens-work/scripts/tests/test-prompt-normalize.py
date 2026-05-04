@@ -54,3 +54,19 @@ def test_iter_prompt_files_scans_prompt_markdown_only(tmp_path: Path):
     skip.write_text("skip", encoding="utf-8")
 
     assert ops.iter_prompt_files([prompts]) == [keep]
+
+
+def test_iter_prompt_files_skips_non_prompt_explicit_file(tmp_path: Path):
+    ops = load_prompt_module()
+    non_prompt = tmp_path / "notes.md"
+    non_prompt.write_text("content", encoding="utf-8")
+
+    assert ops.iter_prompt_files([non_prompt]) == []
+
+
+def test_iter_prompt_files_accepts_explicit_prompt_file(tmp_path: Path):
+    ops = load_prompt_module()
+    prompt = tmp_path / "lens-demo.prompt.md"
+    prompt.write_text("content", encoding="utf-8")
+
+    assert ops.iter_prompt_files([prompt]) == [prompt]

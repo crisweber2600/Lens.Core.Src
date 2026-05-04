@@ -22,7 +22,7 @@ def iter_prompt_files(paths: list[Path]) -> list[Path]:
         if path.is_dir():
             candidates = sorted(path.rglob("*.prompt.md"))
         else:
-            candidates = [path]
+            candidates = [path] if path.name.endswith(".prompt.md") else []
         for candidate in candidates:
             resolved = candidate.resolve(strict=False)
             if resolved not in seen:

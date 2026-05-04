@@ -414,9 +414,12 @@ def parse_compat_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
 def resolve_project_root(script_dir: Path) -> Path:
     """Locate the workspace/control-repo root.
 
-    Checks two sentinels in priority order:
-    1. lens.core/_bmad/lens-work/lifecycle.yaml — control-repo layout (workspace root)
-    2. _bmad/lens-work/lifecycle.yaml           — standalone source-repo layout
+    Requires the workspace layout: a directory that contains
+    lens.core/_bmad/lens-work/lifecycle.yaml.
+
+    This function does not support standalone source-repo roots because
+    preflight.py depends on the lens.core/ checkout for syncing operations.
+    Invoke via light-preflight.py from a workspace root instead.
     """
     current = Path.cwd().resolve()
     script_dir = script_dir.resolve()
@@ -431,13 +434,10 @@ def resolve_project_root(script_dir: Path) -> Path:
         if (candidate / "lens.core" / "_bmad" / "lens-work" / "lifecycle.yaml").is_file():
             return candidate
 
-    for candidate in candidates:
-        if (candidate / "_bmad" / "lens-work" / "lifecycle.yaml").is_file():
-            return candidate
-
     raise RuntimeError(
         "Unable to resolve project root: could not find "
-        "lens.core/_bmad/lens-work/lifecycle.yaml or _bmad/lens-work/lifecycle.yaml"
+        "lens.core/_bmad/lens-work/lifecycle.yaml. "
+        "Run preflight from a workspace root that contains a lens.core/ checkout."
     )
 
 

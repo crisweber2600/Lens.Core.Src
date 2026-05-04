@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import importlib.util
+from argparse import Namespace
 from pathlib import Path
 
 import yaml
@@ -62,3 +63,54 @@ def test_build_state_prints_lifecycle_fields(tmp_path: Path):
     assert state["governance_docs_path"] == "features/lens-dev/new-codebase/demo/docs"
     assert state["pull_request"] == "https://github.com/example/repo/pull/1"
     assert state["issues"] == ["bug-1"]
+
+
+def test_resolve_governance_repo_prefers_cli_override(tmp_path: Path):
+    ops = load_state_module()
+    explicit = tmp_path / "explicit-governance"
+    explicit.mkdir()
+    args = Namespace(
+        governance_repo=str(explicit),
+        workspace_root=str(tmp_path),
+        module_config=None,
+    )
+
+    assert ops.resolve_governance_repo(args) == explicit.resolve()
+
+
+def test_resolve_governance_repo_uses_governance_setup_yaml(tmp_path: Path):
+    ops = load_state_module()
+    gov_repo = tmp_path / "governance"
+    gov_repo.mkdir()
+    override = tmp_path / ".lens" / "governance-setup.yaml"
+    override.parent.mkdir(parents=True)
+    override.write_text(
+        yaml.safe_dump({"governance_repo_path": str(gov_repo)}),
+        encoding="utf-8",
+    )
+    args = Namespace(
+        governance_repo=None,
+        workspace_root=str(tmp_path),
+        module_config=None,
+    )
+
+    assert ops.resolve_governance_repo(args) == gov_repo.resolve()
+
+
+def test_resolve_governance_repo_governance_setup_placeholder(tmp_path: Path):
+    ops = load_state_module()
+    gov_repo = tmp_path / "gov"
+    gov_repo.mkdir()
+    override = tmp_path / ".lens" / "governance-setup.yaml"
+    override.parent.mkdir(parents=True)
+    override.write_text(
+        yaml.safe_dump({"governance_repo_path": "{project-root}/gov"}),
+        encoding="utf-8",
+    )
+    args = Namespace(
+        governance_repo=None,
+        workspace_root=str(tmp_path),
+        module_config=None,
+    )
+
+    assert ops.resolve_governance_repo(args) == gov_repo.resolve()

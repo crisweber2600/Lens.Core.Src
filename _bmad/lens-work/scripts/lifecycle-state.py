@@ -31,9 +31,33 @@ def load_yaml_mapping(path: Path) -> dict[str, Any]:
 
 
 def resolve_governance_repo(args: argparse.Namespace) -> Path:
+    """Resolve governance repo following the standard order.
+
+    Order:
+      1. Explicit --governance-repo CLI argument
+      2. <workspace-root>/.lens/governance-setup.yaml  governance_repo_path
+      3. Module bmadconfig.yaml governance_repo_path
+    """
     if args.governance_repo:
         return normalize_absolute_path(args.governance_repo)
-    config = load_lens_config(args.module_config, start=args.workspace_root or Path.cwd())
+
+    workspace_root = normalize_absolute_path(args.workspace_root or Path.cwd())
+
+    # Step 2: per-user .lens/governance-setup.yaml override
+    override_path = workspace_root / ".lens" / "governance-setup.yaml"
+    if override_path.is_file():
+        try:
+            data: dict[str, Any] = yaml.safe_load(override_path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError):
+            data = {}
+        if isinstance(data, dict):
+            value = str(data.get("governance_repo_path") or "").strip()
+            if value:
+                value = value.replace("{project-root}", str(workspace_root))
+                return normalize_absolute_path(value)
+
+    # Step 3: bmadconfig.yaml via lens_config
+    config = load_lens_config(args.module_config, start=workspace_root)
     return Path(config.data["governance_repo_path"])
 
 
