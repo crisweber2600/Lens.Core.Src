@@ -65,6 +65,47 @@ def test_pr_step_has_failure_fallback():
     )
 
 
+def test_completion_gate_verifies_commit_push_and_pr_before_returning():
+    """The conductor must verify commit, push, and PR URL after delegation."""
+    text = _skill_text()
+
+    assert "conductor completion gate" in text.lower(), (
+        "SKILL.md must define a conductor completion gate after quick-dev returns"
+    )
+    for required in (
+        "git status --short",
+        "git rev-parse --short HEAD",
+        "git push -u origin feature/bugfix-{bug-title-slug}",
+        "commit hash",
+        "PR URL",
+        "pr_url",
+    ):
+        assert required in text, f"Completion gate missing required check: {required}"
+
+
+def test_completion_gate_forbids_uncommitted_or_manual_handoff_response():
+    """The conductor must not return while work is uncommitted or PR creation is delegated."""
+    text = _skill_text()
+
+    assert "Do not answer with the Output Contract" in text, (
+        "Completion gate must block final response until commit hash and PR URL exist"
+    )
+    assert "Never say \"left uncommitted\"" in text, (
+        "Completion gate must forbid returning uncommitted-change handoff language"
+    )
+    assert "you can create the PR" in text, (
+        "Completion gate must explicitly forbid manual PR handoff language"
+    )
+
+
+def test_quick_dev_skill_path_is_project_root_relative():
+    """The delegated quick-dev skill path must not be hard-coded to a local workspace copy."""
+    text = _skill_text()
+
+    assert "{project-root}/.github/skills/bmad-quick-dev/SKILL.md" in text
+    assert "d:/lensTrees/Lens.Core.control copy/.github/skills" not in text
+
+
 def test_pr_step_does_not_use_open_a_pr_language():
     """Step 9 must not use ambiguous 'Open a PR' narrative without a command."""
     text = _skill_text()
