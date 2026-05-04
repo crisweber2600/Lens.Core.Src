@@ -8,6 +8,7 @@ Covers Story 1.1 acceptance criteria and Story 1.3 scope guard integration.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -244,7 +245,6 @@ class TestCreateBugEndToEnd(unittest.TestCase):
         data = json.loads(result.stdout)
         slug = data["slug"]
         # Must start with 'bug-' prefix and end with 8-char hex hash
-        import re
         self.assertRegex(slug, r'^[a-z0-9][a-z0-9-]*-[0-9a-f]{8}$', f"Invalid slug: {slug}")
         self.assertTrue(slug.startswith("bug-"), f"Expected 'bug-' prefix, got: {slug}")
 
