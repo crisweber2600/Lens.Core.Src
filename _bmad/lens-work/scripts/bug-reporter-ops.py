@@ -60,9 +60,16 @@ def _content_hash(title: str, description: str) -> str:
 
 
 def _make_slug(title: str, description: str) -> str:
-    """Generate the canonical bug slug: {title-slug}-{content-hash}."""
+    """Generate the canonical bug slug: {title-slug}-{content-hash}.
+
+    When the title contains no ASCII letters or digits (e.g. only emoji or
+    punctuation), the slug base is empty; in that case a ``bug-`` prefix is
+    used so the result still satisfies SLUG_PATTERN.
+    """
     base = _title_to_slug_base(title)
     content_hash = _content_hash(title, description)
+    if not base:
+        return f"bug-{content_hash}"
     return f"{base}-{content_hash}"
 
 
@@ -244,6 +251,22 @@ def cmd_record_quickdev_pr(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 1
+
+    # Guard: artifacts in bugs/New must carry the QuickDev marker to avoid
+    # accidentally corrupting normal bug records.
+    if source_path.parent.name == "New":
+        try:
+            new_content_check = source_path.read_text(encoding="utf-8")
+        except OSError as exc:
+            print(f"ERROR: Could not read artifact {source_path}: {exc}", file=sys.stderr)
+            return 1
+        if QUICKDEV_MARKER not in new_content_check:
+            print(
+                f"ERROR: Bug artifact {source_path.name} in bugs/New was not created by "
+                "/lens-bug-quickdev; cannot record a QuickDev PR for it.",
+                file=sys.stderr,
+            )
+            return 1
 
     recorded_at = _now_iso()
     dest_path = governance_repo / "bugs" / "QuickDev" / source_path.name

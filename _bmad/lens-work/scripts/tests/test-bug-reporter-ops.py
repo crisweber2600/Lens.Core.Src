@@ -237,6 +237,46 @@ class TestCreateBugEndToEnd(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0)
 
+    def test_emoji_only_title_creates_valid_slug(self) -> None:
+        """Title with no ASCII letters/digits (e.g. emoji) uses 'bug-{hash}' fallback slug."""
+        result = run_create_bug(self.governance_repo, title="🐛🔥", description="pure emoji title")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        data = json.loads(result.stdout)
+        slug = data["slug"]
+        # Must start with 'bug-' prefix and end with 8-char hex hash
+        import re
+        self.assertRegex(slug, r'^[a-z0-9][a-z0-9-]*-[0-9a-f]{8}$', f"Invalid slug: {slug}")
+        self.assertTrue(slug.startswith("bug-"), f"Expected 'bug-' prefix, got: {slug}")
+
+    def test_record_quickdev_pr_emoji_slug_accepted(self) -> None:
+        """record-quickdev-pr succeeds for a bug whose slug came from an emoji-only title."""
+        result = run_create_bug(
+            self.governance_repo,
+            title="🐛🔥",
+            description="pure emoji title",
+            chat_log=QUICKDEV_MARKER,
+            queue="QuickDev",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        slug = json.loads(result.stdout)["slug"]
+        record = run_record_quickdev_pr(self.governance_repo, slug, "https://github.com/org/repo/pull/99")
+        self.assertEqual(record.returncode, 0, record.stderr)
+
+    def test_record_quickdev_pr_rejects_non_quickdev_new_bug(self) -> None:
+        """record-quickdev-pr rejects a New bug that was not created by /lens-bug-quickdev."""
+        result = run_create_bug(
+            self.governance_repo,
+            title="Normal bug",
+            description="Created via normal reporter",
+            chat_log="Bug report submitted via /lens-bug-reporter.",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        slug = json.loads(result.stdout)["slug"]
+
+        record = run_record_quickdev_pr(self.governance_repo, slug, "https://github.com/org/repo/pull/55")
+        self.assertEqual(record.returncode, 1)
+        self.assertIn("not created by /lens-bug-quickdev", record.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
