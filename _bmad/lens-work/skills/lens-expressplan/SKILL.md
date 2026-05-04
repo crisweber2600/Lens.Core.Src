@@ -121,7 +121,7 @@ If the review verdict is `fail`, stop, leave `feature.yaml.phase` unchanged, do 
 
 1. Update `feature.yaml` phase to `expressplan-complete` through `lens-feature-yaml`.
 2. Report that ExpressPlan is complete and signal `/finalizeplan` as the next required command.
-3. FinalizePlan owns downstream bundle generation, governance publication, and PR topology. Do not generate, repair, publish, or open PRs for `epics.md`, `stories.md`, `implementation-readiness.md`, `sprint-status.yaml`, story files, governance publication, or PR topology from this conductor. No FinalizePlan bundle artifact is an ExpressPlan completion artifact.
+3. Apply the `lens-adversarial-review` Post-Review Command Contract to the command after the review. FinalizePlan owns downstream bundle generation, governance publication, and PR topology, so this conductor must not generate, repair, publish, or open PRs for `epics.md`, `stories.md`, `implementation-readiness.md`, `sprint-status.yaml`, story files, governance publication, or PR topology. No FinalizePlan bundle artifact is an ExpressPlan completion artifact.
 
 ## Output Artifacts
 
