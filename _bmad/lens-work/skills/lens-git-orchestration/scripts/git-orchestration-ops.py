@@ -16,6 +16,7 @@ Subcommands:
     validate-phase-start     Validate branch topology/base branch/track before phase writes
     cleanup-branch           Delete merged step branch, switch to next branch, and pull
   push                     Push current (or named) branch to remote
+    set-feature-base-branch  Set feature_base_branch in governance repo-inventory.yaml and commit+push
 
 Exit codes:
   0 — success
@@ -373,8 +374,9 @@ def feature_base_branch_missing_payload(repo: str, entry: dict[str, Any]) -> dic
         "detail": "TargetProjects PRs must use repo-inventory.yaml feature_base_branch.",
         "repo": repo,
         "inventory_entry": entry.get("name") or entry.get("local_path") or "(unnamed)",
-        "question": "What branch should PRs for this TargetProjects repo merge into? Add it as feature_base_branch in repo-inventory.yaml, then retry.",
+        "question": "What branch should PRs for this TargetProjects repo merge into?",
         "action": "ask_user_for_feature_base_branch",
+        "next_step": "Call set-feature-base-branch --governance-repo <governance_repo> --repo <repo> --branch <answer> to persist the branch in repo-inventory.yaml, then retry.",
     }
 
 
@@ -405,6 +407,200 @@ def resolve_target_feature_base_branch(
             "inventory_entry": inventory_entry.get("name") or inventory_entry.get("local_path") or "(unnamed)",
         }, None
     return feature_base_branch, None, "repo-inventory.feature_base_branch"
+
+
+def set_feature_base_branch_in_inventory(
+    *,
+    repo: str,
+    governance_repo: str | None,
+    branch: str,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Write feature_base_branch into the repo-inventory.yaml entry for repo.
+
+    Returns ``(result_info, None)`` on success or ``(None, error_payload)`` on failure.
+    The caller is responsible for committing and pushing the governance repo.
+    """
+    repo_path = Path(repo).expanduser().resolve()
+    project_root = find_project_root_from_path(repo_path)
+    if project_root is None:
+        return None, {
+            "status": "error",
+            "error": "project_root_not_found",
+            "detail": "Cannot find TargetProjects workspace root from repo path.",
+            "repo": str(repo_path),
+        }
+
+    target_root = project_root / "TargetProjects"
+    if not is_relative_to_path(repo_path, target_root):
+        return None, {
+            "status": "error",
+            "error": "not_a_target_projects_repo",
+            "detail": "Repo is not under TargetProjects — feature_base_branch is only tracked for TargetProjects repos.",
+            "repo": str(repo_path),
+        }
+
+    governance_path = Path(governance_repo).expanduser().resolve() if governance_repo else None
+    if governance_path is None:
+        inferred_governance = project_root / "TargetProjects" / "lens" / "lens-governance"
+        if inferred_governance.exists():
+            governance_path = inferred_governance.resolve()
+        else:
+            return None, {
+                "status": "error",
+                "error": "governance_repo_required",
+                "detail": "TargetProjects repo branch policy requires --governance-repo so repo-inventory.yaml can be written.",
+                "repo": str(repo_path),
+                "action": "provide_governance_repo",
+            }
+
+    inventory_path = governance_path / "repo-inventory.yaml"
+    if not inventory_path.exists():
+        return None, {
+            "status": "error",
+            "error": "repo_inventory_not_found",
+            "detail": "Governance repo-inventory.yaml not found.",
+            "repo": str(repo_path),
+            "inventory_path": str(inventory_path),
+        }
+
+    try:
+        inventory_data = yaml.safe_load(inventory_path.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError as exc:
+        return None, {
+            "status": "error",
+            "error": "repo_inventory_malformed",
+            "detail": str(exc),
+            "inventory_path": str(inventory_path),
+        }
+
+    data_key = "repositories" if "repositories" in inventory_data else "repos"
+    repositories = inventory_data.get(data_key) or []
+    if not isinstance(repositories, list):
+        return None, {
+            "status": "error",
+            "error": "repo_inventory_malformed",
+            "detail": "repo-inventory.yaml repositories must be a list.",
+            "inventory_path": str(inventory_path),
+        }
+
+    repo_path_key = path_key(repo_path)
+    entry_index: int | None = None
+    for i, entry in enumerate(repositories):
+        if not isinstance(entry, dict):
+            continue
+        local_path = str(entry.get("local_path") or "").strip()
+        if not local_path:
+            continue
+        resolved_local_path = resolve_inventory_local_path(
+            local_path,
+            project_root=project_root,
+            governance_repo=governance_path,
+        )
+        if path_key(resolved_local_path) == repo_path_key:
+            entry_index = i
+            break
+
+    if entry_index is None:
+        return None, {
+            "status": "error",
+            "error": "repo_inventory_entry_not_found",
+            "detail": "TargetProjects repo is not registered in governance repo-inventory.yaml.",
+            "repo": str(repo_path),
+            "inventory_path": str(inventory_path),
+            "action": "register_repo_inventory_entry",
+        }
+
+    entry_name = repositories[entry_index].get("name") or repositories[entry_index].get("local_path") or "(unnamed)"
+    repositories[entry_index]["feature_base_branch"] = branch
+    inventory_data[data_key] = repositories
+    inventory_path.write_text(yaml.safe_dump(inventory_data, sort_keys=False), encoding="utf-8")
+
+    return {
+        "inventory_path": str(inventory_path),
+        "governance_repo": str(governance_path),
+        "repo": str(repo_path),
+        "entry_name": entry_name,
+        "feature_base_branch": branch,
+    }, None
+
+
+def cmd_set_feature_base_branch(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    """Set feature_base_branch in repo-inventory.yaml, then commit and push from governance repo."""
+    repo = args.repo
+    governance_repo = args.governance_repo
+    branch = (args.branch or "").strip()
+
+    if not branch:
+        return {"status": "error", "error": "branch_required", "detail": "--branch is required."}, 1
+
+    write_result, write_error = set_feature_base_branch_in_inventory(
+        repo=repo,
+        governance_repo=governance_repo,
+        branch=branch,
+    )
+    if write_error:
+        return write_error, 1
+
+    inventory_path = write_result["inventory_path"]
+    governance_path = write_result["governance_repo"]
+    entry_name = write_result["entry_name"]
+    commit_msg = f"chore(repo-inventory): set feature_base_branch={branch} for {entry_name}"
+
+    runner = Runner(args.dry_run, governance_path)
+    try:
+        runner.run(["add", inventory_path])
+    except RuntimeError as exc:
+        return {"status": "error", "error": "stage_failed", "detail": str(exc)}, 1
+
+    if not args.dry_run:
+        staged_check = git(["diff", "--cached", "--quiet"], cwd=governance_path, check=False)
+        if staged_check.returncode == 0:
+            return {
+                "status": "pass",
+                "repo": repo,
+                "entry_name": entry_name,
+                "feature_base_branch": branch,
+                "inventory_path": inventory_path,
+                "committed": False,
+                "pushed": False,
+                "note": "feature_base_branch already set to this value — nothing to commit",
+                "dry_run": args.dry_run,
+            }, 0
+
+    try:
+        runner.run(["commit", "-m", commit_msg])
+    except RuntimeError as exc:
+        return {"status": "error", "error": "commit_failed", "detail": str(exc)}, 1
+
+    try:
+        if args.dry_run:
+            runner.run(["push"])
+        elif has_tracking_ref(governance_path):
+            runner.run(["push"])
+        else:
+            current = current_branch(governance_path)
+            runner.run(["push", "--set-upstream", "origin", current])
+    except RuntimeError as exc:
+        detail = str(exc)
+        if "rejected" in detail:
+            return {"status": "error", "error": "push_rejected", "detail": detail}, 1
+        if "authentication" in detail.lower() or "403" in detail:
+            return {"status": "error", "error": "auth_failed", "detail": detail}, 1
+        return {"status": "error", "error": "push_failed", "detail": detail}, 1
+
+    sha = head_sha(governance_path) if not args.dry_run else "dry-run"
+    return {
+        "status": "pass",
+        "repo": repo,
+        "entry_name": entry_name,
+        "feature_base_branch": branch,
+        "inventory_path": inventory_path,
+        "commit_message": commit_msg,
+        "commit_sha": sha,
+        "committed": True,
+        "pushed": not args.dry_run,
+        "dry_run": args.dry_run,
+    }, 0
 
 
 def resolve_docs_roots(control_repo: str, governance_repo: str, feature_data: dict, feature_id: str) -> tuple[Path, Path]:
@@ -1671,6 +1867,16 @@ def build_parser() -> argparse.ArgumentParser:
     cln.add_argument("--next-branch", required=True)
     cln.add_argument("--dry-run", action="store_true")
 
+    # set-feature-base-branch
+    sfbb = sub.add_parser(
+        "set-feature-base-branch",
+        help="Set feature_base_branch in governance repo-inventory.yaml and commit+push",
+    )
+    sfbb.add_argument("--governance-repo", required=True)
+    sfbb.add_argument("--repo", required=True)
+    sfbb.add_argument("--branch", required=True, help="Branch name to set as feature_base_branch")
+    sfbb.add_argument("--dry-run", action="store_true")
+
     return p
 
 
@@ -1694,6 +1900,7 @@ def main() -> int:
         "validate-phase-start": cmd_validate_phase_start,
         "cleanup-branch": cmd_cleanup_branch,
         "push": cmd_push,
+        "set-feature-base-branch": cmd_set_feature_base_branch,
     }
 
     fn = dispatch.get(args.command)

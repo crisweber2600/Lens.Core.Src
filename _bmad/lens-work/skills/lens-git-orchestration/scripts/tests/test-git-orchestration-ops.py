@@ -1677,5 +1677,194 @@ class TestCreateFeatureBranchesPlanAlreadyExists:
         assert result["branch"] == "plan-exists-feat-plan"
 
 
+# ---------------------------------------------------------------------------
+# cmd_set_feature_base_branch
+# ---------------------------------------------------------------------------
+
+def _init_governance_repo_pair(tmp_path: Path, default_branch: str = "main"):
+    """Create a bare remote + local clone for use as a governance repo."""
+    remote_path = tmp_path / "governance.git"
+    local_path = tmp_path / "governance"
+    subprocess.run(
+        ["git", "-c", f"init.defaultBranch={default_branch}", "init", "--bare", str(remote_path)],
+        check=True, capture_output=True,
+    )
+    subprocess.run(["git", "clone", str(remote_path), str(local_path)], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(local_path), "config", "user.email", "test@example.com"], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(local_path), "config", "user.name", "Test User"], check=True, capture_output=True)
+    readme = local_path / "README.md"
+    readme.write_text("# Governance\n")
+    subprocess.run(["git", "-C", str(local_path), "add", "."], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(local_path), "commit", "-m", "init"], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(local_path), "push", "-u", "origin", default_branch], check=True, capture_output=True)
+    return local_path, remote_path
+
+
+class TestSetFeatureBaseBranch:
+    def test_dry_run_reports_what_would_be_set(self, tmp_path):
+        project_root = tmp_path
+        repo = project_root / "TargetProjects" / "lens-dev" / "source"
+        repo.mkdir(parents=True)
+        governance_repo = write_repo_inventory(project_root, repo, feature_base_branch=None)
+
+        result, code = ops.cmd_set_feature_base_branch(_no_args(
+            governance_repo=str(governance_repo),
+            repo=str(repo),
+            branch="develop",
+            dry_run=True,
+        ))
+
+        assert code == 0
+        assert result["status"] == "pass"
+        assert result["feature_base_branch"] == "develop"
+        assert result["dry_run"] is True
+
+    def test_writes_branch_to_inventory_and_commits_and_pushes(self, tmp_path):
+        project_root = tmp_path / "workspace"
+        project_root.mkdir()
+        target_root = project_root / "TargetProjects" / "lens-dev"
+        target_root.mkdir(parents=True)
+        target_local, _target_remote = init_repo_pair(target_root, default_branch="main")
+
+        # Governance repo with a push-capable remote
+        gov_local, _gov_remote = _init_governance_repo_pair(project_root / "gov_pair")
+        gov_target = project_root / "TargetProjects" / "lens" / "lens-governance"
+        gov_target.mkdir(parents=True, exist_ok=True)
+        # Copy the governance local to the expected path
+        import shutil
+        if gov_target.exists():
+            shutil.rmtree(gov_target)
+        subprocess.run(["git", "clone", str(_gov_remote), str(gov_target)], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(gov_target), "config", "user.email", "test@example.com"], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(gov_target), "config", "user.name", "Test User"], check=True, capture_output=True)
+
+        # Write inventory (no feature_base_branch)
+        entry = {
+            "name": target_local.name,
+            "remote_url": "https://example.test/org/repo.git",
+            "local_path": str(target_local.resolve().relative_to(project_root.resolve()).as_posix()),
+            "dev_branch_mode": "feature-id",
+        }
+        (gov_target / "repo-inventory.yaml").write_text(yaml.safe_dump({"repositories": [entry]}, sort_keys=False))
+        subprocess.run(["git", "-C", str(gov_target), "add", "."], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(gov_target), "commit", "-m", "add inventory"], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(gov_target), "push"], check=True, capture_output=True)
+
+        result, code = ops.cmd_set_feature_base_branch(_no_args(
+            governance_repo=str(gov_target),
+            repo=str(target_local),
+            branch="develop",
+            dry_run=False,
+        ))
+
+        assert code == 0
+        assert result["status"] == "pass"
+        assert result["feature_base_branch"] == "develop"
+        assert result["committed"] is True
+        assert result["pushed"] is True
+
+        # Verify the YAML was updated
+        updated = yaml.safe_load((gov_target / "repo-inventory.yaml").read_text())
+        assert updated["repositories"][0]["feature_base_branch"] == "develop"
+
+    def test_non_target_projects_repo_rejected(self, tmp_path):
+        project_root = tmp_path
+        regular_repo = project_root / "regular-repo"
+        regular_repo.mkdir(parents=True)
+        governance_repo = project_root / "governance"
+        governance_repo.mkdir(parents=True)
+
+        result, code = ops.cmd_set_feature_base_branch(_no_args(
+            governance_repo=str(governance_repo),
+            repo=str(regular_repo),
+            branch="develop",
+            dry_run=True,
+        ))
+
+        assert code == 1
+        assert result["status"] == "error"
+        assert result["error"] in ("not_a_target_projects_repo", "project_root_not_found")
+
+    def test_empty_branch_rejected(self, tmp_path):
+        result, code = ops.cmd_set_feature_base_branch(_no_args(
+            governance_repo=str(tmp_path),
+            repo=str(tmp_path),
+            branch="",
+            dry_run=True,
+        ))
+        assert code == 1
+        assert result["error"] == "branch_required"
+
+    def test_missing_inventory_entry_rejected(self, tmp_path):
+        project_root = tmp_path
+        repo = project_root / "TargetProjects" / "lens-dev" / "other-repo"
+        repo.mkdir(parents=True)
+        # Write inventory for a DIFFERENT repo — not the one we request
+        other_repo = project_root / "TargetProjects" / "lens-dev" / "source"
+        other_repo.mkdir(parents=True)
+        governance_repo = write_repo_inventory(project_root, other_repo, feature_base_branch=None)
+
+        result, code = ops.cmd_set_feature_base_branch(_no_args(
+            governance_repo=str(governance_repo),
+            repo=str(repo),
+            branch="develop",
+            dry_run=True,
+        ))
+
+        assert code == 1
+        assert result["error"] == "repo_inventory_entry_not_found"
+
+    def test_idempotent_when_already_set(self, tmp_path):
+        project_root = tmp_path
+        repo = project_root / "TargetProjects" / "lens-dev" / "source"
+        repo.mkdir(parents=True)
+        # Write inventory with feature_base_branch already set to "develop"
+        governance_repo = write_repo_inventory(project_root, repo, feature_base_branch="develop")
+        # Write & commit so the tree is clean
+        subprocess.run(["git", "-c", "init.defaultBranch=main", "init", str(governance_repo)], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(governance_repo), "config", "user.email", "test@example.com"], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(governance_repo), "config", "user.name", "Test User"], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(governance_repo), "add", "."], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(governance_repo), "commit", "-m", "init inventory"], check=True, capture_output=True)
+
+        result, code = ops.cmd_set_feature_base_branch(_no_args(
+            governance_repo=str(governance_repo),
+            repo=str(repo),
+            branch="develop",
+            dry_run=False,
+        ))
+
+        # Already set — nothing to commit; should return pass with note
+        assert code == 0
+        assert result["status"] == "pass"
+        assert result.get("committed") is False
+        assert "note" in result
+
+    def test_feature_base_branch_missing_payload_includes_next_step(self, tmp_path):
+        project_root = tmp_path
+        repo = project_root / "TargetProjects" / "lens-dev" / "source"
+        repo.mkdir(parents=True)
+        governance_repo = write_repo_inventory(project_root, repo, feature_base_branch=None)
+
+        result, code = ops.cmd_create_pr(_no_args(
+            governance_repo=str(governance_repo),
+            repo=str(repo),
+            base=None,
+            target_branch=None,
+            head="feature/missing-base",
+            source_branch=None,
+            title="Missing Base",
+            body="Missing Base",
+            auto_merge=False,
+            auto_detect_base=True,
+            dry_run=True,
+        ))
+
+        assert code == 1
+        assert result["error"] == "feature_base_branch_missing"
+        assert "next_step" in result
+        assert "set-feature-base-branch" in result["next_step"]
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))
