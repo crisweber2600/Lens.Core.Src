@@ -102,6 +102,23 @@ def make_branch(repo_path: Path, branch: str) -> None:
     subprocess.run(["git", "-C", str(repo_path), "checkout", current], check=True, capture_output=True)
 
 
+def write_repo_inventory(project_root: Path, repo_path: Path, *, feature_base_branch: str | None = None) -> Path:
+    """Write a governance repo-inventory.yaml entry for repo_path."""
+    governance_repo = project_root / "TargetProjects" / "lens" / "lens-governance"
+    governance_repo.mkdir(parents=True, exist_ok=True)
+    local_path = repo_path.resolve().relative_to(project_root.resolve()).as_posix()
+    entry = {
+        "name": repo_path.name,
+        "remote_url": "https://example.test/org/repo.git",
+        "local_path": local_path,
+        "dev_branch_mode": "feature-id",
+    }
+    if feature_base_branch is not None:
+        entry["feature_base_branch"] = feature_base_branch
+    (governance_repo / "repo-inventory.yaml").write_text(yaml.safe_dump({"repositories": [entry]}, sort_keys=False))
+    return governance_repo
+
+
 def _no_args(**kwargs):
     """Build a simple namespace object."""
     class A:
@@ -458,7 +475,7 @@ class TestBuildDevBranchName:
 
 
 class TestPrepareDevBranch:
-    def _args(self, repo, feature_id, mode, username=None, feature_slug=None, base_branch=None, dry_run=False):
+    def _args(self, repo, feature_id, mode, username=None, feature_slug=None, base_branch=None, governance_repo=None, dry_run=False):
         return _no_args(
             repo=str(repo),
             feature_id=feature_id,
@@ -466,6 +483,7 @@ class TestPrepareDevBranch:
             username=username,
             feature_slug=feature_slug,
             base_branch=base_branch,
+            governance_repo=str(governance_repo) if governance_repo else None,
             dry_run=dry_run,
         )
 
@@ -530,6 +548,49 @@ class TestPrepareDevBranch:
         assert result["created"] is False
         assert result["reused"] is True
         assert ops.current_branch(str(local)) == branch
+
+    def test_targetprojects_prepare_uses_inventory_feature_base_branch(self, tmp_path):
+        project_root = tmp_path
+        target_root = project_root / "TargetProjects" / "lens-dev"
+        target_root.mkdir(parents=True)
+        local, remote = init_repo_pair(target_root, default_branch="main")
+        subprocess.run(["git", "-C", str(local), "checkout", "-b", "develop"], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(local), "push", "--set-upstream", "origin", "develop"], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(local), "checkout", "main"], check=True, capture_output=True)
+        governance_repo = write_repo_inventory(project_root, local, feature_base_branch="develop")
+
+        result, code = ops.cmd_prepare_dev_branch(self._args(
+            local,
+            "payments-auth",
+            "feature-id",
+            governance_repo=governance_repo,
+            dry_run=False,
+        ))
+
+        assert code == 0
+        assert result["base_branch"] == "develop"
+        assert result["base_branch_source"] == "repo-inventory.feature_base_branch"
+        assert result["working_branch"] == "feature/payments-auth"
+        assert ops.current_branch(str(local)) == "feature/payments-auth"
+
+    def test_targetprojects_prepare_requires_feature_base_branch(self, tmp_path):
+        project_root = tmp_path
+        target_root = project_root / "TargetProjects" / "lens-dev"
+        target_root.mkdir(parents=True)
+        local, remote = init_repo_pair(target_root, default_branch="main")
+        governance_repo = write_repo_inventory(project_root, local, feature_base_branch=None)
+
+        result, code = ops.cmd_prepare_dev_branch(self._args(
+            local,
+            "payments-auth",
+            "feature-id",
+            governance_repo=governance_repo,
+            dry_run=True,
+        ))
+
+        assert code == 1
+        assert result["error"] == "feature_base_branch_missing"
+        assert result["action"] == "ask_user_for_feature_base_branch"
 
 
 # ---------------------------------------------------------------------------
@@ -855,7 +916,7 @@ class TestCreatePr:
         assert result["pr_url"] == "https://example.test/pr/8"
         assert any(call[:3] == ["gh", "pr", "create"] for call in gh_calls)
 
-    def test_create_pr_accepts_branch_aliases_and_forwards_body(self, monkeypatch):
+    def test_create_pr_accepts_branch_aliases_and_forwards_body(self, tmp_path, monkeypatch):
         captured: dict[str, str] = {}
 
         monkeypatch.setattr(ops, "branch_exists", lambda repo, branch, include_remote=True: True)
@@ -869,8 +930,8 @@ class TestCreatePr:
         monkeypatch.setattr(ops, "_ensure_pull_request", fake_ensure_pull_request)
 
         result, code = ops.cmd_create_pr(_no_args(
-            governance_repo=".",
-            repo=".",
+            governance_repo=str(tmp_path),
+            repo=str(tmp_path),
             base=None,
             target_branch="develop",
             head=None,
@@ -922,7 +983,7 @@ class TestCreatePr:
         assert code == 1
         assert result["error"] == "conflicting_branch_aliases"
 
-    def test_create_pr_auto_detects_base_when_base_omitted(self, monkeypatch):
+    def test_create_pr_auto_detects_base_when_base_omitted(self, tmp_path, monkeypatch):
         monkeypatch.setattr(
             ops,
             "branch_exists",
@@ -937,8 +998,8 @@ class TestCreatePr:
         )
 
         result, code = ops.cmd_create_pr(_no_args(
-            governance_repo=".",
-            repo=".",
+            governance_repo=str(tmp_path),
+            repo=str(tmp_path),
             base=None,
             head="feature-auto",
             title="Auto Base",
@@ -951,14 +1012,103 @@ class TestCreatePr:
         assert code == 0
         assert result["base_branch"] == "develop"
 
-    def test_create_pr_auto_detect_failure_includes_candidates(self, monkeypatch):
+    def test_targetprojects_create_pr_uses_inventory_feature_base_branch(self, tmp_path, monkeypatch):
+        project_root = tmp_path
+        repo = project_root / "TargetProjects" / "lens-dev" / "source"
+        repo.mkdir(parents=True)
+        governance_repo = write_repo_inventory(project_root, repo, feature_base_branch="develop")
+        captured: dict[str, str] = {}
+
+        monkeypatch.setattr(ops, "branch_exists", lambda repo, branch, include_remote=True: True)
+        monkeypatch.setattr(ops, "resolve_git_ref", lambda repo, branch: branch)
+        monkeypatch.setattr(ops, "merge_base_sha", lambda repo, head_ref, base_ref: "abc123")
+        monkeypatch.setattr(ops, "pick_base_branch", lambda repo, head_branch, candidates=None: "main")
+
+        def fake_ensure_pull_request(repo, *, base_branch, head_branch, title, body, auto_merge, dry_run):
+            captured.update({"base": base_branch, "head": head_branch})
+            return {"pr_url": "https://example.test/pr/11", "created": True, "auto_merge_enabled": False}, 0
+
+        monkeypatch.setattr(ops, "_ensure_pull_request", fake_ensure_pull_request)
+
+        result, code = ops.cmd_create_pr(_no_args(
+            governance_repo=str(governance_repo),
+            repo=str(repo),
+            base=None,
+            target_branch=None,
+            head="feature/inventory-base",
+            source_branch=None,
+            title="Inventory Base",
+            body="Inventory Base",
+            auto_merge=False,
+            auto_detect_base=True,
+            dry_run=False,
+        ))
+
+        assert code == 0
+        assert result["base_branch"] == "develop"
+        assert result["base_branch_source"] == "repo-inventory.feature_base_branch"
+        assert captured == {"base": "develop", "head": "feature/inventory-base"}
+
+    def test_targetprojects_create_pr_requires_feature_base_branch(self, tmp_path, monkeypatch):
+        project_root = tmp_path
+        repo = project_root / "TargetProjects" / "lens-dev" / "source"
+        repo.mkdir(parents=True)
+        governance_repo = write_repo_inventory(project_root, repo, feature_base_branch=None)
+
+        monkeypatch.setattr(ops, "branch_exists", lambda repo, branch, include_remote=True: True)
+
+        result, code = ops.cmd_create_pr(_no_args(
+            governance_repo=str(governance_repo),
+            repo=str(repo),
+            base=None,
+            target_branch=None,
+            head="feature/missing-base",
+            source_branch=None,
+            title="Missing Base",
+            body="Missing Base",
+            auto_merge=False,
+            auto_detect_base=True,
+            dry_run=True,
+        ))
+
+        assert code == 1
+        assert result["error"] == "feature_base_branch_missing"
+        assert result["action"] == "ask_user_for_feature_base_branch"
+
+    def test_targetprojects_create_pr_rejects_base_mismatch(self, tmp_path, monkeypatch):
+        project_root = tmp_path
+        repo = project_root / "TargetProjects" / "lens-dev" / "source"
+        repo.mkdir(parents=True)
+        governance_repo = write_repo_inventory(project_root, repo, feature_base_branch="develop")
+
+        monkeypatch.setattr(ops, "branch_exists", lambda repo, branch, include_remote=True: True)
+
+        result, code = ops.cmd_create_pr(_no_args(
+            governance_repo=str(governance_repo),
+            repo=str(repo),
+            base="main",
+            target_branch=None,
+            head="feature/wrong-base",
+            source_branch=None,
+            title="Wrong Base",
+            body="Wrong Base",
+            auto_merge=False,
+            auto_detect_base=False,
+            dry_run=True,
+        ))
+
+        assert code == 1
+        assert result["error"] == "feature_base_branch_mismatch"
+        assert result["feature_base_branch"] == "develop"
+
+    def test_create_pr_auto_detect_failure_includes_candidates(self, tmp_path, monkeypatch):
         monkeypatch.setattr(ops, "branch_exists", lambda repo, branch, include_remote=True: branch == "feature-orphan")
         monkeypatch.setattr(ops, "resolve_default_branch", lambda repo: "main")
         monkeypatch.setattr(ops, "pick_base_branch", lambda repo, head_branch, candidates=None: None)
 
         result, code = ops.cmd_create_pr(_no_args(
-            governance_repo=".",
-            repo=".",
+            governance_repo=str(tmp_path),
+            repo=str(tmp_path),
             base=None,
             head="feature-orphan",
             title="Orphan PR",
@@ -975,14 +1125,14 @@ class TestCreatePr:
         assert "candidates_checked" in result
         assert "main" in result["candidates_checked"]
 
-    def test_create_pr_explicit_base_requires_shared_history(self, monkeypatch):
+    def test_create_pr_explicit_base_requires_shared_history(self, tmp_path, monkeypatch):
         monkeypatch.setattr(ops, "branch_exists", lambda repo, branch, include_remote=True: True)
         monkeypatch.setattr(ops, "resolve_git_ref", lambda repo, branch: branch)
         monkeypatch.setattr(ops, "merge_base_sha", lambda repo, head_ref, base_ref: None)
 
         result, code = ops.cmd_create_pr(_no_args(
-            governance_repo=".",
-            repo=".",
+            governance_repo=str(tmp_path),
+            repo=str(tmp_path),
             base="main",
             head="feature-explicit",
             title="Explicit Base",
