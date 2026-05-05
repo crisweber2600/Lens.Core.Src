@@ -14,13 +14,17 @@ import tempfile
 from pathlib import Path
 
 import pytest
-_LENS_WORK_ROOT = next(
-    (parent for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+_LENS_YAML_PATH = next(
+    (parent / "scripts" / "lens_yaml.py" for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
     None,
 )
-if _LENS_WORK_ROOT is not None:
-    sys.path.insert(0, str(_LENS_WORK_ROOT / "scripts"))
-import lens_yaml as yaml
+if _LENS_YAML_PATH is None:
+    raise ModuleNotFoundError("lens_yaml")
+_LENS_YAML_SPEC = importlib.util.spec_from_file_location("lens_yaml", _LENS_YAML_PATH)
+if _LENS_YAML_SPEC is None or _LENS_YAML_SPEC.loader is None:
+    raise ModuleNotFoundError("lens_yaml")
+yaml = importlib.util.module_from_spec(_LENS_YAML_SPEC)
+_LENS_YAML_SPEC.loader.exec_module(yaml)
 
 # Ensure the script under test is importable (hyphenated filename requires importlib)
 _script_path = Path(__file__).parent.parent / "git-orchestration-ops.py"
