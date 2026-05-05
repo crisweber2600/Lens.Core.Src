@@ -327,6 +327,7 @@ def _split_inline(text: str) -> list[str]:
 
 
 def _fold_block_scalar(lines: list[str]) -> str:
+    """Fold YAML block-scalar lines while preserving blank-line paragraph breaks."""
     paragraphs: list[str] = []
     current: list[str] = []
     for line in lines:
@@ -416,4 +417,5 @@ def _format_scalar(value: Any) -> str:
 
 
 def _quote_scalar(text: str) -> str:
+    """Return a YAML single-quoted scalar, escaping internal apostrophes by doubling."""
     return "'" + text.replace("'", "''") + "'"
