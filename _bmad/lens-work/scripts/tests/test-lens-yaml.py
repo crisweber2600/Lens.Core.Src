@@ -45,7 +45,7 @@ def test_safe_load_rejects_malformed_inline_list() -> None:
         lens_yaml.safe_load("bad: [unclosed\n")
 
 
-def test_safe_dump_allow_unicode_false_escapes_non_ascii_scalars() -> None:
+def test_safe_load_allow_unicode_false_escapes_non_ascii_scalars() -> None:
     payload = {"name": "café", "description": "naïve path"}
 
     dumped = lens_yaml.safe_dump(payload, sort_keys=False, allow_unicode=False)
@@ -55,3 +55,27 @@ def test_safe_dump_allow_unicode_false_escapes_non_ascii_scalars() -> None:
     assert '"caf\\u00e9"' in dumped
     assert '"na\\u00efve path"' in dumped
     assert lens_yaml.safe_load(dumped) == payload
+
+
+def test_safe_load_handles_dq_fold_continuation() -> None:
+    """lens_yaml must parse PyYAML-style double-quoted multi-line strings."""
+    # Replicates the format PyYAML uses for long strings with Unicode escapes:
+    #   description: "LENS lifecycle workbench \u2014 feature context switching, initialization,\
+    #     \ planning, and governance."
+    text = (
+        'modules:\n'
+        '- code: lens\n'
+        '  description: "LENS lifecycle workbench \\u2014 feature context switching, initialization,\\\n'
+        '    \\ planning, and governance."\n'
+    )
+
+    result = lens_yaml.safe_load(text)
+
+    assert result == {
+        "modules": [
+            {
+                "code": "lens",
+                "description": "LENS lifecycle workbench \u2014 feature context switching, initialization, planning, and governance.",
+            }
+        ]
+    }
