@@ -417,5 +417,5 @@ def _format_scalar(value: Any) -> str:
 
 
 def _quote_scalar(text: str) -> str:
-    """Return a YAML single-quoted scalar, escaping internal apostrophes by doubling."""
+    """Return a YAML single-quoted scalar, escaping internal single quotes by doubling them."""
     return "'" + text.replace("'", "''") + "'"
