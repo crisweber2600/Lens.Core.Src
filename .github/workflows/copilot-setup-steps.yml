@@ -1,0 +1,32 @@
+name: "Copilot Setup Steps"
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+      - requirements-dev.txt
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+      - requirements-dev.txt
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: |
+          PYTHON=python3
+          $PYTHON -m pip install -r requirements-dev.txt

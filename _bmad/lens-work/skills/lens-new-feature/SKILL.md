@@ -33,7 +33,7 @@ You are the feature initialization entry controller. You enforce the preflight g
 Run the preflight check from the workspace root:
 
 ```bash
-uv run {project-root}/lens.core/_bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py
+$PYTHON {project-root}/lens.core/_bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py
 ```
 
 If this exits non-zero, stop and surface the failure. Do not proceed until preflight passes.
@@ -77,7 +77,7 @@ The prompt is published but the runtime create implementation must be restored b
 The underlying script (owned by `lens-init-feature`):
 
 ```bash
-uv run {project-root}/{release_repo_root}/_bmad/lens-work/skills/lens-init-feature/scripts/init-feature-ops.py \
+$PYTHON {project-root}/{release_repo_root}/_bmad/lens-work/skills/lens-init-feature/scripts/init-feature-ops.py \
   create \
   --governance-repo {governance_repo} \
   --control-repo {control_repo} \

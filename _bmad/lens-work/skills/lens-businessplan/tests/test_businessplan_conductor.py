@@ -223,8 +223,8 @@ class TestGovernanceAudit:
         assert "publish-to-governance" in content, "Missing publish-to-governance subcommand"
         
         # Find the actual command invocation in the "On Activation" section (not the overview)
-        # Look for the full command line with uv run
-        command_pattern = r"uv run.*git-orchestration-ops\.py\s+publish-to-governance"
+        # Look for the full command line with PYTHON
+        command_pattern = r"\$PYTHON.*git-orchestration-ops\.py\s+publish-to-governance"
         match = re.search(command_pattern, content)
         assert match, "Missing git-orchestration-ops.py publish-to-governance command"
         
@@ -338,7 +338,7 @@ class TestPromptChain:
         assert "light-preflight.py" in content, "Missing light-preflight.py invocation"
         
         # Should have preflight check logic
-        assert "uv run" in content or "Run preflight" in content, \
+        assert "$PYTHON" in content or "Run preflight" in content, \
             "Missing preflight execution command"
 
     def test_github_prompt_continues_to_release_prompt(self):

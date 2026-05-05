@@ -49,7 +49,7 @@ summary, and entry-gate validation.
 ### Status Summary Mode (`--status` or "what is the bugbash status?")
 4. Invoke:
    ```bash
-   uv run --script _bmad/lens-work/scripts/bugbash-ops.py status-summary \
+   $PYTHON _bmad/lens-work/scripts/bugbash-ops.py status-summary \
      --governance-repo {governance_repo}
    ```
 5. Parse JSON and present as a formatted table:

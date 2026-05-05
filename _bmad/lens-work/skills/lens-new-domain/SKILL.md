@@ -33,7 +33,7 @@ You are the domain registration entry controller. You enforce preflight, resolve
 Run the preflight check from the workspace root:
 
 ```bash
-uv run {project-root}/lens.core/_bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py
+$PYTHON {project-root}/lens.core/_bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py
 ```
 
 If this exits non-zero, stop and surface the failure. Do not proceed until preflight passes.
@@ -64,7 +64,7 @@ If this exits non-zero, stop and surface the failure. Do not proceed until prefl
 Run the domain creation script:
 
 ```bash
-uv run {project-root}/{release_repo_root}/_bmad/lens-work/skills/lens-init-feature/scripts/init-feature-ops.py \
+$PYTHON {project-root}/{release_repo_root}/_bmad/lens-work/skills/lens-init-feature/scripts/init-feature-ops.py \
   create-domain \
   --governance-repo {governance_repo} \
   --domain {domain_slug} \

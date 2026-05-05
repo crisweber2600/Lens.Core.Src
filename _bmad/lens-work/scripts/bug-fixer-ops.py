@@ -46,7 +46,7 @@ try:
 except ImportError:
     print(
         "ERROR: pyyaml is required but not installed. "
-        "Run via: uv run --script bug-fixer-ops.py",
+        "Run via: PYTHON bug-fixer-ops.py",
         file=sys.stderr,
     )
     sys.exit(1)

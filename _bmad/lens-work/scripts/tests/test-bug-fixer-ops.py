@@ -23,7 +23,7 @@ def test_pyyaml_is_importable():
     """FINDING-PD04: pyyaml must be available; script raises ImportError otherwise."""
     import importlib
     assert importlib.util.find_spec("yaml") is not None, (
-        "pyyaml is not installed — run via `uv run --script bug-fixer-ops.py` "
+        "pyyaml is not installed — run via `$PYTHON bug-fixer-ops.py` "
         "or install pyyaml>=6.0 in the active environment"
     )
 

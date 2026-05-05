@@ -35,7 +35,7 @@ If any field is missing, ask only for missing fields and stop until complete.
 3. Create bug intake artifact:
 
 ```bash
-uv run --script lens.core/_bmad/lens-work/scripts/bug-reporter-ops.py create-bug \
+$PYTHON lens.core/_bmad/lens-work/scripts/bug-reporter-ops.py create-bug \
   --title "{title}" \
   --description "{description}\n\nRepro Steps:\n{repro_steps}\n\nExpected:\n{expected}\n\nActual:\n{actual}" \
   --chat-log "Bug report submitted via /lens-bug-quickdev." \
@@ -68,7 +68,7 @@ Required workflow in target project:
 8) `git push -u origin <branch>`
 9) Create the PR by executing this terminal command from the workspace root — you MUST execute this command, not narrate it:
    ```bash
-   uv run --script lens.core/_bmad/lens-work/skills/lens-git-orchestration/scripts/git-orchestration-ops.py create-pr \
+   $PYTHON lens.core/_bmad/lens-work/skills/lens-git-orchestration/scripts/git-orchestration-ops.py create-pr \
      --repo {target_project} \
      --governance-repo {governance_repo} \
      --head feature/bugfix-{bug-title-slug} \
@@ -78,7 +78,7 @@ Required workflow in target project:
    ```
     Capture `pr_url` from the JSON output field. Immediately record it back to the bug artifact by executing this terminal command from the workspace root:
     ```bash
-    uv run --script lens.core/_bmad/lens-work/scripts/bug-reporter-ops.py record-quickdev-pr \
+    $PYTHON lens.core/_bmad/lens-work/scripts/bug-reporter-ops.py record-quickdev-pr \
        --governance-repo {governance_repo} \
        --slug {bug_slug} \
        --pr-url "{pr_url}"

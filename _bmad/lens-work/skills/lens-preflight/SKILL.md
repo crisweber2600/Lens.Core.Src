@@ -24,7 +24,7 @@ Invoke this skill via the Lens preflight command flow.
 ## Usage
 
 ```bash
-uv run --script lens.core/_bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py [--caller <name>] [--governance-path <path>] [--request-class <class>]
+$PYTHON lens.core/_bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py [--caller <name>] [--governance-path <path>] [--request-class <class>]
 ```
 
 From inside a source-repo (e.g. `TargetProjects/lens-dev/new-codebase/lens.core.src`) that is nested
@@ -32,7 +32,7 @@ within a workspace root which has a `lens.core/` checkout, `light-preflight.py` 
 workspace root automatically:
 
 ```bash
-uv run --script _bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py [--caller <name>] [--governance-path <path>] [--request-class <class>]
+$PYTHON _bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py [--caller <name>] [--governance-path <path>] [--request-class <class>]
 ```
 
 > **Note**: A standalone source-repo root (no enclosing workspace with a `lens.core/` checkout) is not
