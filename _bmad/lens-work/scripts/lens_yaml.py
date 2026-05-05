@@ -409,7 +409,7 @@ def _format_scalar(value: Any, allow_unicode: bool) -> str:
         return str(value)
     text = str(value)
     if not allow_unicode and not text.isascii():
-        return json.dumps(text, ensure_ascii=True)
+        return _escape_ascii(text)
     if "\n" in text:
         return "|\n" + "\n".join(f"  {line}" for line in text.splitlines())
     if text == "" or text.strip() != text or text.lower() in {"true", "false", "null", "none", "~"}:
@@ -422,7 +422,7 @@ def _format_scalar(value: Any, allow_unicode: bool) -> str:
 def _format_key(key: Any, allow_unicode: bool) -> str:
     text = str(key)
     if not allow_unicode and not text.isascii():
-        return json.dumps(text, ensure_ascii=True)
+        return _escape_ascii(text)
     if (
         text == ""
         or text.strip() != text
@@ -436,3 +436,7 @@ def _format_key(key: Any, allow_unicode: bool) -> str:
 def _quote_scalar(text: str) -> str:
     """Return a YAML 1.2 single-quoted scalar, escaping internal single quotes by doubling them."""
     return "'" + text.replace("'", "''") + "'"
+
+
+def _escape_ascii(text: str) -> str:
+    return json.dumps(text, ensure_ascii=True)
