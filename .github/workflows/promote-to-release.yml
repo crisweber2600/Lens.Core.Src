@@ -270,6 +270,14 @@ jobs:
       - name: Bootstrap develop build-output from source
         if: matrix.config.release_branch != 'alpha'
         run: |
+          # Save the BMAD-installed manifest before the release-repo copy overwrites it.
+          # The release-repo manifest may have been written by an older/external tool
+          # (e.g. PyYAML) in a format that lens_yaml.py cannot parse.  Restoring the
+          # BMAD-generated manifest ensures merge-config.py always gets a clean input.
+          if [ -f build-output/_bmad/_config/manifest.yaml ]; then
+            cp build-output/_bmad/_config/manifest.yaml /tmp/bmad-config-manifest.yaml
+          fi
+
           mkdir -p build-output/_bmad
           cp -r _bmad/lens-work build-output/_bmad/lens-work
 
@@ -281,7 +289,10 @@ jobs:
             cp -r release-repo/_bmad/_config/. build-output/_bmad/_config/
           fi
 
-          if [ ! -f build-output/_bmad/_config/manifest.yaml ]; then
+          # Restore the BMAD-installed manifest (takes precedence over the release-repo copy)
+          if [ -f /tmp/bmad-config-manifest.yaml ]; then
+            cp /tmp/bmad-config-manifest.yaml build-output/_bmad/_config/manifest.yaml
+          elif [ ! -f build-output/_bmad/_config/manifest.yaml ]; then
             printf 'modules: []\n' > build-output/_bmad/_config/manifest.yaml
           fi
 

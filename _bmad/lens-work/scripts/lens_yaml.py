@@ -75,15 +75,48 @@ class _Parser:
 
     def _prepare(self, raw_lines: list[str]) -> list[tuple[int, str, str, int]]:
         prepared: list[tuple[int, str, str, int]] = []
-        for raw_index, raw in enumerate(raw_lines):
-            raw = raw.rstrip("\r\n")
+        raw_index = 0
+        while raw_index < len(raw_lines):
+            raw = raw_lines[raw_index].rstrip("\r\n")
+            start_index = raw_index
+            raw_index += 1
             if not raw.strip() or raw.lstrip().startswith("#"):
                 continue
             indent = len(raw) - len(raw.lstrip(" "))
             content = _strip_inline_comment(raw[indent:]).rstrip()
-            if content:
-                prepared.append((indent, content, raw, raw_index))
+            if not content:
+                continue
+            content, raw_index = self._join_dq_continuations(content, raw_lines, raw_index)
+            prepared.append((indent, content, raw, start_index))
         return prepared
+
+    @staticmethod
+    def _join_dq_continuations(content: str, raw_lines: list[str], raw_index: int) -> tuple[str, int]:
+        """Join double-quoted fold-continuation lines (YAML ``\\<newline>`` line folding).
+
+        PyYAML and js-yaml write long double-quoted strings across multiple lines
+        using a trailing ``\\`` (fold indicator) on each non-final line and an
+        optional ``\\ `` prefix on continuation lines to preserve a space at the
+        join point.  This method consumes those continuation lines and returns the
+        fully joined content together with the updated raw-line index.
+        """
+        while _is_dq_fold_line(content):
+            content = content[:-1]  # strip trailing fold-indicator backslash
+            while raw_index < len(raw_lines):
+                next_raw = raw_lines[raw_index].rstrip("\r\n")
+                raw_index += 1
+                if next_raw.strip():
+                    cont = next_raw.strip()
+                    # YAML fold "\ " prefix preserves a space at the join point
+                    if cont.startswith("\\ "):
+                        cont = " " + cont[2:]
+                    elif cont.startswith("\\"):
+                        cont = cont[1:]
+                    content = content + cont
+                    break
+            else:
+                break
+        return content, raw_index
 
     def _parse_block(self, indent: int) -> Any:
         if self.index >= len(self.lines):
@@ -180,6 +213,35 @@ class _Parser:
         if folded:
             return _fold_block_scalar(stripped)
         return "\n".join(stripped)
+
+
+def _is_dq_fold_line(text: str) -> bool:
+    """Return True when *text* is inside an unclosed double-quoted string ending with a fold backslash.
+
+    YAML double-quoted scalars can span multiple lines using a trailing ``\\``
+    (fold indicator) at the end of each non-final line.  When this helper
+    returns ``True``, ``_prepare`` will join the next non-blank line as a
+    continuation of the current scalar.
+    """
+    in_double = False
+    in_single = False
+    escaped = False
+    last_was_fold = False
+    for char in text:
+        if escaped:
+            escaped = False
+            last_was_fold = False
+            continue
+        if char == "\\" and in_double:
+            escaped = True
+            last_was_fold = True
+            continue
+        last_was_fold = False
+        if char == "'" and not in_double:
+            in_single = not in_single
+        elif char == '"' and not in_single:
+            in_double = not in_double
+    return in_double and last_was_fold
 
 
 def _strip_inline_comment(text: str) -> str:
