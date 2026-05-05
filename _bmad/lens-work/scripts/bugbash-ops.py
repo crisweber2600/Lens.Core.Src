@@ -28,7 +28,7 @@ try:
 except ImportError:
     print(
         "ERROR: pyyaml is required but not installed. "
-        "Run via: PYTHON bugbash-ops.py",
+        "Run via: $PYTHON bugbash-ops.py",
         file=sys.stderr,
     )
     sys.exit(1)

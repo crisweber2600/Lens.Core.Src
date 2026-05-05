@@ -79,7 +79,7 @@ No `add-entry` calls are made and no governance commit is attempted. If the pre/
 
 ## Script Subcommands
 
-Run script commands with `PYTHON` from the source repo root.
+Run script commands with `$PYTHON` from the source repo root.
 
 ### scan
 
