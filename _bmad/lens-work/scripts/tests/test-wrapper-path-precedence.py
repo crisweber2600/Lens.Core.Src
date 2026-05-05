@@ -22,11 +22,16 @@ def _read(path: Path) -> str:
 
 
 def test_public_wrappers_use_normalized_module_relative_paths():
-    """Prompt wrappers must not route through lens.core-prefixed paths."""
+    """Preflight command in wrappers must not use lens.core-prefixed skill paths.
+
+    Module prompt references are expected to use the lens.core/ prefix to route
+    to the installed module; only the preflight *command* (skills path) must stay
+    workspace-relative.
+    """
     for prompt in sorted(GITHUB_PROMPTS.glob("lens-*.prompt.md")):
         text = _read(prompt)
-        assert "lens.core/_bmad/lens-work" not in text, (
-            f"{prompt.name} still uses lens.core-prefixed path"
+        assert "lens.core/_bmad/lens-work/skills" not in text, (
+            f"{prompt.name} still uses lens.core-prefixed path for preflight command"
         )
 
 
