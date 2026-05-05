@@ -63,7 +63,8 @@ def dump(data: Any, stream: Any | None = None, **kwargs: Any) -> str | None:
 
 class _Parser:
     def __init__(self, text: str) -> None:
-        self.lines = self._prepare(text)
+        self.raw_lines = text.splitlines()
+        self.lines = self._prepare(self.raw_lines)
         self.index = 0
 
     def parse(self) -> Any:
@@ -72,22 +73,22 @@ class _Parser:
         value = self._parse_block(self.lines[self.index][0])
         return value
 
-    def _prepare(self, text: str) -> list[tuple[int, str, str]]:
-        prepared: list[tuple[int, str, str]] = []
-        for raw in text.splitlines():
+    def _prepare(self, raw_lines: list[str]) -> list[tuple[int, str, str, int]]:
+        prepared: list[tuple[int, str, str, int]] = []
+        for raw_index, raw in enumerate(raw_lines):
             raw = raw.rstrip("\r\n")
             if not raw.strip() or raw.lstrip().startswith("#"):
                 continue
             indent = len(raw) - len(raw.lstrip(" "))
             content = _strip_inline_comment(raw[indent:]).rstrip()
             if content:
-                prepared.append((indent, content, raw))
+                prepared.append((indent, content, raw, raw_index))
         return prepared
 
     def _parse_block(self, indent: int) -> Any:
         if self.index >= len(self.lines):
             return None
-        line_indent, content, _ = self.lines[self.index]
+        line_indent, content, _, _ = self.lines[self.index]
         if line_indent < indent:
             return None
         if line_indent != indent:
@@ -99,7 +100,7 @@ class _Parser:
     def _parse_mapping(self, indent: int) -> dict[str, Any]:
         result: dict[str, Any] = {}
         while self.index < len(self.lines):
-            line_indent, content, _ = self.lines[self.index]
+            line_indent, content, _, raw_index = self.lines[self.index]
             if line_indent < indent:
                 break
             if line_indent > indent:
@@ -108,13 +109,13 @@ class _Parser:
                 break
             key, raw_value = _split_key_value(content)
             self.index += 1
-            result[key] = self._parse_value(raw_value, indent)
+            result[key] = self._parse_value(raw_value, indent, raw_index)
         return result
 
     def _parse_list(self, indent: int) -> list[Any]:
         result: list[Any] = []
         while self.index < len(self.lines):
-            line_indent, content, _ = self.lines[self.index]
+            line_indent, content, _, raw_index = self.lines[self.index]
             if line_indent < indent:
                 break
             if line_indent != indent or not (content.startswith("- ") or content == "-"):
@@ -126,7 +127,7 @@ class _Parser:
                 continue
             if _looks_like_key_value(item_text):
                 key, raw_value = _split_key_value(item_text)
-                item: dict[str, Any] = {key: self._parse_value(raw_value, indent)}
+                item: dict[str, Any] = {key: self._parse_value(raw_value, indent, raw_index)}
                 if self.index < len(self.lines) and self.lines[self.index][0] > indent:
                     child = self._parse_block(self.lines[self.index][0])
                     if isinstance(child, dict):
@@ -138,10 +139,10 @@ class _Parser:
                 result.append(_parse_scalar(item_text))
         return result
 
-    def _parse_value(self, raw_value: str, indent: int) -> Any:
+    def _parse_value(self, raw_value: str, indent: int, raw_index: int) -> Any:
         raw_value = raw_value.strip()
         if raw_value in {"|", ">"}:
-            return self._parse_block_scalar(indent, folded=raw_value == ">")
+            return self._parse_block_scalar(indent, folded=raw_value == ">", raw_index=raw_index)
         if raw_value == "":
             return self._parse_child(indent)
         return _parse_scalar(raw_value)
@@ -149,27 +150,35 @@ class _Parser:
     def _parse_child(self, indent: int) -> Any:
         if self.index >= len(self.lines):
             return {}
-        next_indent, next_content, _ = self.lines[self.index]
+        next_indent, next_content, _, _ = self.lines[self.index]
         if next_indent == indent and (next_content.startswith("- ") or next_content == "-"):
             return self._parse_block(next_indent)
         if next_indent <= indent:
             return {}
         return self._parse_block(self.lines[self.index][0])
 
-    def _parse_block_scalar(self, indent: int, folded: bool) -> str:
+    def _parse_block_scalar(self, indent: int, folded: bool, raw_index: int) -> str:
         parts: list[str] = []
-        min_indent: int | None = None
-        start = self.index
-        while self.index < len(self.lines) and self.lines[self.index][0] > indent:
-            line_indent, _, raw = self.lines[self.index]
-            min_indent = line_indent if min_indent is None else min(min_indent, line_indent)
+        cursor = raw_index + 1
+        while cursor < len(self.raw_lines):
+            raw = self.raw_lines[cursor].rstrip("\r\n")
+            stripped = raw.lstrip(" ")
+            line_indent = len(raw) - len(stripped)
+            if stripped and line_indent <= indent:
+                break
             parts.append(raw)
+            cursor += 1
+
+        while self.index < len(self.lines) and self.lines[self.index][3] < cursor:
             self.index += 1
-        if min_indent is None:
+
+        nonempty_indents = [len(line) - len(line.lstrip(" ")) for line in parts if line.strip()]
+        if not nonempty_indents:
             return ""
-        stripped = [part[min_indent:] if len(part) >= min_indent else "" for part in parts]
+        min_indent = min(nonempty_indents)
+        stripped = [part[min_indent:] if part.strip() else "" for part in parts]
         if folded:
-            return " ".join(part.strip() for part in stripped).strip()
+            return _fold_block_scalar(stripped)
         return "\n".join(stripped)
 
 
@@ -317,6 +326,22 @@ def _split_inline(text: str) -> list[str]:
     return parts
 
 
+def _fold_block_scalar(lines: list[str]) -> str:
+    paragraphs: list[str] = []
+    current: list[str] = []
+    for line in lines:
+        if line == "":
+            if current:
+                paragraphs.append(" ".join(part.strip() for part in current))
+                current = []
+            paragraphs.append("")
+            continue
+        current.append(line)
+    if current:
+        paragraphs.append(" ".join(part.strip() for part in current))
+    return "\n".join(paragraphs)
+
+
 def _dump_value(value: Any, indent: int, sort_keys: bool) -> str:
     if isinstance(value, dict):
         return _dump_mapping(value, indent, sort_keys)
@@ -384,7 +409,11 @@ def _format_scalar(value: Any) -> str:
     if "\n" in text:
         return "|\n" + "\n".join(f"  {line}" for line in text.splitlines())
     if text == "" or text.strip() != text or text.lower() in {"true", "false", "null", "none", "~"}:
-        return repr(text)
+        return _quote_scalar(text)
     if any(char in text for char in [": ", "#", "[", "]", "{", "}", ","]):
-        return repr(text)
+        return _quote_scalar(text)
     return text
+
+
+def _quote_scalar(text: str) -> str:
+    return "'" + text.replace("'", "''") + "'"

@@ -100,7 +100,7 @@ def test_review_ready_delegates_to_shared_validator():
     assert "validate-phase-artifacts.py --phase preplan --contract review-ready" in text
     assert "--lifecycle-path {lifecycle_contract}" in text
     assert "--docs-root {docs_path}" in text
-    assert "$PYTHON _bmad/lens-work/skills/lens-validate-phase-artifacts/scripts/validate-phase-artifacts.py" in text
+    assert "$PYTHON _bmad/lens-work/scripts/validate-phase-artifacts.py" in text
     assert "--phase preplan" in text
     assert "--contract review-ready" in text
     assert "--lifecycle-path" in text
