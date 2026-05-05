@@ -5,7 +5,7 @@
 # ///
 """Tests for git-orchestration-ops.py — uses real temporary git repos."""
 
-import importlib.util
+from importlib import util as importlib_util
 import json
 import os
 import subprocess
@@ -20,21 +20,21 @@ _LENS_YAML_PATH = next(
 )
 if _LENS_YAML_PATH is None:
     raise ModuleNotFoundError("lens_yaml")
-_LENS_YAML_SPEC = importlib.util.spec_from_file_location("lens_yaml", _LENS_YAML_PATH)
+_LENS_YAML_SPEC = importlib_util.spec_from_file_location("lens_yaml", _LENS_YAML_PATH)
 if _LENS_YAML_SPEC is None or _LENS_YAML_SPEC.loader is None:
     raise ModuleNotFoundError("lens_yaml")
-yaml = importlib.util.module_from_spec(_LENS_YAML_SPEC)
+yaml = importlib_util.module_from_spec(_LENS_YAML_SPEC)
 _LENS_YAML_SPEC.loader.exec_module(yaml)
 
 # Ensure the script under test is importable (hyphenated filename requires importlib)
 _script_path = Path(__file__).parent.parent / "git-orchestration-ops.py"
-_spec = importlib.util.spec_from_file_location("git_orchestration_ops", _script_path)
-ops = importlib.util.module_from_spec(_spec)
+_spec = importlib_util.spec_from_file_location("git_orchestration_ops", _script_path)
+ops = importlib_util.module_from_spec(_spec)
 _spec.loader.exec_module(ops)
 
 _sync_helper_path = Path(__file__).parent.parent / "repo_sync.py"
-_sync_spec = importlib.util.spec_from_file_location("lens_repo_sync", _sync_helper_path)
-sync_helpers = importlib.util.module_from_spec(_sync_spec)
+_sync_spec = importlib_util.spec_from_file_location("lens_repo_sync", _sync_helper_path)
+sync_helpers = importlib_util.module_from_spec(_sync_spec)
 _sync_spec.loader.exec_module(sync_helpers)
 
 

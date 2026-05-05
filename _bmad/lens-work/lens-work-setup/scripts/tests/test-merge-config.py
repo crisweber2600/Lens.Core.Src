@@ -4,7 +4,7 @@
 # ///
 """Tests for merge-config.py — anti-zombie config merge logic."""
 
-import importlib.util
+from importlib import util as importlib_util
 import sys
 from pathlib import Path
 
@@ -15,10 +15,10 @@ _LENS_YAML_PATH = next(
 )
 if _LENS_YAML_PATH is None:
     raise ModuleNotFoundError("lens_yaml")
-_LENS_YAML_SPEC = importlib.util.spec_from_file_location("lens_yaml", _LENS_YAML_PATH)
+_LENS_YAML_SPEC = importlib_util.spec_from_file_location("lens_yaml", _LENS_YAML_PATH)
 if _LENS_YAML_SPEC is None or _LENS_YAML_SPEC.loader is None:
     raise ModuleNotFoundError("lens_yaml")
-yaml = importlib.util.module_from_spec(_LENS_YAML_SPEC)
+yaml = importlib_util.module_from_spec(_LENS_YAML_SPEC)
 _LENS_YAML_SPEC.loader.exec_module(yaml)
 
 
@@ -26,8 +26,8 @@ SCRIPT = Path(__file__).resolve().parents[1] / "merge-config.py"
 
 
 def _load_merge_config():
-    spec = importlib.util.spec_from_file_location("merge_config", str(SCRIPT))
-    mod = importlib.util.module_from_spec(spec)
+    spec = importlib_util.spec_from_file_location("merge_config", str(SCRIPT))
+    mod = importlib_util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
 

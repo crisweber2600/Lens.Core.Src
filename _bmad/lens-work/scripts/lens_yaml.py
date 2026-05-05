@@ -14,7 +14,12 @@ from typing import Any, Iterable
 
 
 class YAMLError(ValueError):
-    """Raised when the Lens YAML subset cannot be parsed."""
+    """Raised when input falls outside the supported Lens YAML subset.
+
+    Examples include malformed inline lists such as ``[unclosed``, malformed
+    inline mappings such as ``{missing-close``, missing key/value separators,
+    and unexpected indentation while reading nested mappings or sequences.
+    """
 
 
 def safe_load(stream: Any) -> Any:

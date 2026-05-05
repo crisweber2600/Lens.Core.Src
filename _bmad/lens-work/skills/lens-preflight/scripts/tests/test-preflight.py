@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-import importlib.util
+from importlib import util as importlib_util
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -18,8 +18,8 @@ SCRIPT = Path(__file__).parent.parent / "preflight.py"
 
 
 def load_preflight_module():
-    spec = importlib.util.spec_from_file_location("preflight", SCRIPT)
-    module = importlib.util.module_from_spec(spec)
+    spec = importlib_util.spec_from_file_location("preflight", SCRIPT)
+    module = importlib_util.module_from_spec(spec)
     assert spec and spec.loader
     spec.loader.exec_module(module)
     return module

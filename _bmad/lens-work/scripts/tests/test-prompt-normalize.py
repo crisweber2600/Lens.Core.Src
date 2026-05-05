@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-import importlib.util
+from importlib import util as importlib_util
 from pathlib import Path
 
 
@@ -15,8 +15,8 @@ SCRIPT = Path(__file__).parent.parent / "prompt-normalize.py"
 
 
 def load_prompt_module():
-    spec = importlib.util.spec_from_file_location("prompt_normalize", SCRIPT)
-    module = importlib.util.module_from_spec(spec)
+    spec = importlib_util.spec_from_file_location("prompt_normalize", SCRIPT)
+    module = importlib_util.module_from_spec(spec)
     assert spec and spec.loader
     spec.loader.exec_module(module)
     return module
