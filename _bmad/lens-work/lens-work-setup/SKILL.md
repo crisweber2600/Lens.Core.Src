@@ -60,6 +60,6 @@ This safely removes:
 
 | Issue | Resolution |
 |-------|-----------|
-| Python dependency missing | Install dependencies with `$PYTHON -m pip install -r requirements-dev.txt` from the repository root |
+| Python dependency missing | Install the missing package directly into the active interpreter (for example `$PYTHON -m pip install pytest` when running tests); released builds do not ship `requirements-dev.txt` |
 | Config file not found | Verify `{project-root}/lens.core/_bmad/_config/` exists and contains the expected files |
 | Permission denied | Check file permissions on the target config directory |

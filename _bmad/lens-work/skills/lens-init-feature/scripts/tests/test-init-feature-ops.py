@@ -428,6 +428,30 @@ def test_create_domain_name_defaults_to_slug(tmp_path: Path):
 # TestCreate
 # ---------------------------------------------------------------------------
 class TestCreate:
+    def test_create_feature_execute_governance_git_returns_self_contained_remaining_commands(self, tmp_path: Path):
+        _, gov = init_main_repo_with_remote(tmp_path)
+
+        completed, payload = run_script([
+            "create",
+            "--governance-repo", str(gov),
+            "--feature-id", "lens-dev-new-codebase-command-contract",
+            "--domain", "lens-dev",
+            "--service", "new-codebase",
+            "--name", "Command Contract",
+            "--track", "express",
+            "--username", "testuser",
+            "--execute-governance-git",
+        ])
+
+        assert completed.returncode == 0
+        assert payload["status"] == "pass"
+        assert payload["governance_git_executed"] is True
+        assert len(payload["remaining_commands"]) == 2
+        assert payload["remaining_commands"][0].startswith(sys.executable)
+        assert payload["remaining_commands"][1].startswith(sys.executable)
+        assert "$PYTHON" not in payload["remaining_commands"][0]
+        assert "$PYTHON" not in payload["remaining_commands"][1]
+
     def test_create_feature_execute_governance_git_auto_syncs_dirty_repo(self, tmp_path: Path):
         remote, gov = init_main_repo_with_remote(tmp_path)
         (gov / "DIRTY.txt").write_text("dirty\n", encoding="utf-8")

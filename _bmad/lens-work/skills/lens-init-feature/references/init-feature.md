@@ -91,12 +91,12 @@ When `--execute-governance-git` succeeds, the script has already published gover
 ```bash
 # Each command in remaining_commands runs in order
 # Example remaining commands after governance auto-publish:
-# $PYTHON {project-root}/lens.core/_bmad/lens-work/skills/lens-git-orchestration/scripts/git-orchestration-ops.py \
+# /path/to/python {project-root}/lens.core/_bmad/lens-work/skills/lens-git-orchestration/scripts/git-orchestration-ops.py \
 #   create-feature-branches \
 #   --governance-repo {governance_repo} \
 #   --repo {control_repo} \
 #   --feature-id {featureId}
-# $PYTHON {project-root}/lens.core/_bmad/lens-work/skills/lens-switch/scripts/switch-ops.py \
+# /path/to/python {project-root}/lens.core/_bmad/lens-work/skills/lens-switch/scripts/switch-ops.py \
 #   switch \
 #   --governance-repo {governance_repo} \
 #   --feature-id {featureId} \

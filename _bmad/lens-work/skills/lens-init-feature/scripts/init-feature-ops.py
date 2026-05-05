@@ -16,6 +16,7 @@ import os
 import re
 import shlex
 import subprocess
+import sys
 import tempfile
 from datetime import datetime, timezone
 from functools import lru_cache
@@ -70,6 +71,10 @@ def lifecycle_track_markdown() -> str:
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def current_python_command() -> str:
+    return shlex.quote(sys.executable)
 
 
 def validate_safe_id(domain: str) -> None:
@@ -1107,12 +1112,12 @@ def cmd_create(args: argparse.Namespace) -> dict:
 
     remaining_commands = [
         (
-            f"$PYTHON {{project-root}}/lens.core/_bmad/lens-work/skills/lens-git-orchestration/"
+            f"{current_python_command()} {{project-root}}/lens.core/_bmad/lens-work/skills/lens-git-orchestration/"
             f"scripts/git-orchestration-ops.py create-feature-branches "
             f"--governance-repo {shlex.quote(governance_repo)} --repo {shlex.quote(control_repo)} --feature-id {shlex.quote(feature_id)}"
         ),
         (
-            f"$PYTHON {{project-root}}/lens.core/_bmad/lens-work/skills/lens-switch/"
+            f"{current_python_command()} {{project-root}}/lens.core/_bmad/lens-work/skills/lens-switch/"
             f"scripts/switch-ops.py switch "
             f"--governance-repo {shlex.quote(governance_repo)} --feature-id {shlex.quote(feature_id)} --control-repo {shlex.quote(control_repo)}"
         ),

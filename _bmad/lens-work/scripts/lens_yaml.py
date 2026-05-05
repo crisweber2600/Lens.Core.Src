@@ -42,13 +42,13 @@ def safe_dump(
     allow_unicode: bool = True,
     **_: Any,
 ) -> str | None:
-    del default_flow_style, allow_unicode
+    del default_flow_style
     if data == []:
         text = "[]"
     elif data == {}:
         text = "{}"
     else:
-        text = _dump_value(data, 0, sort_keys)
+        text = _dump_value(data, 0, sort_keys, allow_unicode)
     if text and not text.endswith("\n"):
         text += "\n"
     if stream is not None:
@@ -343,33 +343,34 @@ def _fold_block_scalar(lines: list[str]) -> str:
     return "\n".join(paragraphs)
 
 
-def _dump_value(value: Any, indent: int, sort_keys: bool) -> str:
+def _dump_value(value: Any, indent: int, sort_keys: bool, allow_unicode: bool) -> str:
     if isinstance(value, dict):
-        return _dump_mapping(value, indent, sort_keys)
+        return _dump_mapping(value, indent, sort_keys, allow_unicode)
     if isinstance(value, list):
-        return _dump_list(value, indent, sort_keys)
-    return " " * indent + _format_scalar(value)
+        return _dump_list(value, indent, sort_keys, allow_unicode)
+    return " " * indent + _format_scalar(value, allow_unicode)
 
 
-def _dump_mapping(data: dict[Any, Any], indent: int, sort_keys: bool) -> str:
+def _dump_mapping(data: dict[Any, Any], indent: int, sort_keys: bool, allow_unicode: bool) -> str:
     lines: list[str] = []
     keys: Iterable[Any] = sorted(data) if sort_keys else data.keys()
     prefix = " " * indent
     for key in keys:
         value = data[key]
+        formatted_key = _format_key(key, allow_unicode)
         if value == []:
-            lines.append(f"{prefix}{key}: []")
+            lines.append(f"{prefix}{formatted_key}: []")
         elif value == {}:
-            lines.append(f"{prefix}{key}: {{}}")
+            lines.append(f"{prefix}{formatted_key}: {{}}")
         elif isinstance(value, (dict, list)):
-            lines.append(f"{prefix}{key}:")
-            lines.append(_dump_value(value, indent + 2, sort_keys))
+            lines.append(f"{prefix}{formatted_key}:")
+            lines.append(_dump_value(value, indent + 2, sort_keys, allow_unicode))
         else:
-            lines.append(f"{prefix}{key}: {_format_scalar(value)}")
+            lines.append(f"{prefix}{formatted_key}: {_format_scalar(value, allow_unicode)}")
     return "\n".join(lines)
 
 
-def _dump_list(data: list[Any], indent: int, sort_keys: bool) -> str:
+def _dump_list(data: list[Any], indent: int, sort_keys: bool, allow_unicode: bool) -> str:
     lines: list[str] = []
     prefix = " " * indent
     for item in data:
@@ -382,22 +383,22 @@ def _dump_list(data: list[Any], indent: int, sort_keys: bool) -> str:
             first_key = keys[0] if keys else None
             first_value = item[first_key] if first_key is not None else None
             if first_key is not None and not isinstance(first_value, (dict, list)):
-                lines.append(f"{prefix}- {first_key}: {_format_scalar(first_value)}")
+                lines.append(f"{prefix}- {_format_key(first_key, allow_unicode)}: {_format_scalar(first_value, allow_unicode)}")
                 rest = {key: item[key] for key in keys[1:]}
                 if rest:
-                    lines.append(_dump_mapping(rest, indent + 2, sort_keys))
+                    lines.append(_dump_mapping(rest, indent + 2, sort_keys, allow_unicode))
             else:
                 lines.append(f"{prefix}-")
-                lines.append(_dump_value(item, indent + 2, sort_keys))
+                lines.append(_dump_value(item, indent + 2, sort_keys, allow_unicode))
         elif isinstance(item, list):
             lines.append(f"{prefix}-")
-            lines.append(_dump_value(item, indent + 2, sort_keys))
+            lines.append(_dump_value(item, indent + 2, sort_keys, allow_unicode))
         else:
-            lines.append(f"{prefix}- {_format_scalar(item)}")
+            lines.append(f"{prefix}- {_format_scalar(item, allow_unicode)}")
     return "\n".join(lines)
 
 
-def _format_scalar(value: Any) -> str:
+def _format_scalar(value: Any, allow_unicode: bool) -> str:
     if value is None:
         return "null"
     if value is True:
@@ -407,11 +408,27 @@ def _format_scalar(value: Any) -> str:
     if isinstance(value, (int, float)):
         return str(value)
     text = str(value)
+    if not allow_unicode and not text.isascii():
+        return json.dumps(text, ensure_ascii=True)
     if "\n" in text:
         return "|\n" + "\n".join(f"  {line}" for line in text.splitlines())
     if text == "" or text.strip() != text or text.lower() in {"true", "false", "null", "none", "~"}:
         return _quote_scalar(text)
     if any(char in text for char in [": ", "#", "[", "]", "{", "}", ","]):
+        return _quote_scalar(text)
+    return text
+
+
+def _format_key(key: Any, allow_unicode: bool) -> str:
+    text = str(key)
+    if not allow_unicode and not text.isascii():
+        return json.dumps(text, ensure_ascii=True)
+    if (
+        text == ""
+        or text.strip() != text
+        or any(char in text for char in [":", "#", "[", "]", "{", "}", ","])
+        or text.lower() in {"true", "false", "null", "none", "~"}
+    ):
         return _quote_scalar(text)
     return text
 

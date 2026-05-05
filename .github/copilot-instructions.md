@@ -14,12 +14,12 @@ Examples:
 
 ```bash
 PYTHON=python3
-$PYTHON -m pip install -r requirements-dev.txt
+$PYTHON -m pip install pytest
 $PYTHON -m pytest
 ```
 
 ```powershell
 $env:PYTHON = "python"
-& $env:PYTHON -m pip install -r requirements-dev.txt
+& $env:PYTHON -m pip install pytest
 & $env:PYTHON -m pytest
 ```
