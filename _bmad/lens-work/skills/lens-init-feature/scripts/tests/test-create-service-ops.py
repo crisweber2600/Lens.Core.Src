@@ -10,9 +10,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import sys
-from pathlib import Path
-
 _LENS_WORK_ROOT = next(
     (parent for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
     None,

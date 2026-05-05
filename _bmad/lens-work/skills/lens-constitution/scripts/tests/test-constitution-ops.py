@@ -15,9 +15,6 @@ from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
 import pytest
-import sys
-from pathlib import Path
-
 _LENS_WORK_ROOT = next(
     (parent for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
     None,
