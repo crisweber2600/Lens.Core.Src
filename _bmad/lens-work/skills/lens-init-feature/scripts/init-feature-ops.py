@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["pyyaml>=6.0"]
+# dependencies = []
 # ///
 """Init feature operations (new-codebase implementation).
 
@@ -21,7 +21,16 @@ from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 
-import yaml
+import sys
+from pathlib import Path
+
+_LENS_WORK_ROOT = next(
+    (parent for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+    None,
+)
+if _LENS_WORK_ROOT is not None:
+    sys.path.insert(0, str(_LENS_WORK_ROOT / "scripts"))
+import lens_yaml as yaml
 
 # source: old-codebase init-feature-ops.py SAFE_ID_PATTERN
 SAFE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")

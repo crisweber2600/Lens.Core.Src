@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pyyaml>=6.0"]
+# dependencies = []
 # ///
 """Read-only git and governance state reporting for Lens features."""
 
@@ -16,7 +16,16 @@ import sys
 from pathlib import Path
 from typing import Any, Callable
 
-import yaml
+import sys
+from pathlib import Path
+
+_LENS_WORK_ROOT = next(
+    (parent for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+    None,
+)
+if _LENS_WORK_ROOT is not None:
+    sys.path.insert(0, str(_LENS_WORK_ROOT / "scripts"))
+import lens_yaml as yaml
 
 
 MODULE_ROOT = Path(__file__).resolve().parents[3]

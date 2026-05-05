@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.9"
-# dependencies = ["pyyaml"]
+# dependencies = []
 # ///
 """
 merge-config.py — Anti-zombie config merge for the lens module.
@@ -13,7 +13,16 @@ import argparse
 import sys
 from pathlib import Path
 
-import yaml
+import sys
+from pathlib import Path
+
+_LENS_WORK_ROOT = next(
+    (parent for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+    None,
+)
+if _LENS_WORK_ROOT is not None:
+    sys.path.insert(0, str(_LENS_WORK_ROOT / "scripts"))
+import lens_yaml as yaml
 
 
 def merge_module_config(module_yaml_path: Path, target_config_path: Path) -> None:

@@ -20,7 +20,16 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-import yaml
+import sys
+from pathlib import Path
+
+_LENS_WORK_ROOT = next(
+    (parent for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+    None,
+)
+if _LENS_WORK_ROOT is not None:
+    sys.path.insert(0, str(_LENS_WORK_ROOT / "scripts"))
+import lens_yaml as yaml
 
 
 # ---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["PyYAML>=6.0", "pytest>=8.0"]
+# dependencies = ["pytest>=8.0"]
 # ///
 """Tests for git-orchestration-ops.py — uses real temporary git repos."""
 
@@ -14,7 +14,16 @@ import tempfile
 from pathlib import Path
 
 import pytest
-import yaml
+import sys
+from pathlib import Path
+
+_LENS_WORK_ROOT = next(
+    (parent for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+    None,
+)
+if _LENS_WORK_ROOT is not None:
+    sys.path.insert(0, str(_LENS_WORK_ROOT / "scripts"))
+import lens_yaml as yaml
 
 # Ensure the script under test is importable (hyphenated filename requires importlib)
 _script_path = Path(__file__).parent.parent / "git-orchestration-ops.py"

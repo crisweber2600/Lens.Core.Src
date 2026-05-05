@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pyyaml>=6.0"]
+# dependencies = []
 # ///
 """
 branch-prep.py — Thin entry-point wrapper for branch_prep.py.

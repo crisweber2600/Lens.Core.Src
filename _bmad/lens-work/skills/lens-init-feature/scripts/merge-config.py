@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.9"
-# dependencies = ["pyyaml"]
+# dependencies = []
 # ///
 """Merge module configuration into shared {project-root}/lens.core/_bmad/config.yaml and config.user.yaml.
 
@@ -24,11 +24,13 @@ import json
 import sys
 from pathlib import Path
 
-try:
-    import yaml
-except ImportError:
-    print("Error: pyyaml is required (PEP 723 dependency)", file=sys.stderr)
-    sys.exit(2)
+_LENS_WORK_ROOT = next(
+    (parent for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+    None,
+)
+if _LENS_WORK_ROOT is not None:
+    sys.path.insert(0, str(_LENS_WORK_ROOT / "scripts"))
+import lens_yaml as yaml
 
 
 def parse_args():

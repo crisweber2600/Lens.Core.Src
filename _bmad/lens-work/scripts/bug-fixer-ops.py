@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pyyaml>=6.0"]
+# dependencies = []
 # ///
 """
 bug-fixer-ops.py — Bug discovery and status mutation operations for lens-bugbash.
@@ -41,15 +41,13 @@ from bugbash_schema import (
     validate_transition,
 )
 
-try:
-    import yaml
-except ImportError:
-    print(
-        "ERROR: pyyaml is required but not installed. "
-        "Run via: $PYTHON bug-fixer-ops.py",
-        file=sys.stderr,
-    )
-    sys.exit(1)
+_LENS_WORK_ROOT = next(
+    (parent for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+    None,
+)
+if _LENS_WORK_ROOT is not None:
+    sys.path.insert(0, str(_LENS_WORK_ROOT / "scripts"))
+import lens_yaml as yaml
 
 
 FEATURE_ID_PREFIX = "lens-dev-new-codebase-bugfix-"
