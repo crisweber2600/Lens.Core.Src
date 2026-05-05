@@ -1,7 +1,7 @@
-#!/usr/bin/env -S uv run --script
+#!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pytest>=8.0", "pyyaml>=6.0"]
+# dependencies = ["pytest>=8.0"]
 # ///
 """Direct unit tests for next-ops.py.
 
@@ -10,7 +10,7 @@ for scripts/next-ops.py. Broader routing and no-write coverage lives in
 test_next_no_writes.py.
 """
 
-import importlib.util
+from importlib import util as importlib_util
 from pathlib import Path
 
 
@@ -18,8 +18,8 @@ SCRIPT = Path(__file__).resolve().parents[1] / "next-ops.py"
 
 
 def load_next_ops():
-    spec = importlib.util.spec_from_file_location("next_ops_under_test", SCRIPT)
-    module = importlib.util.module_from_spec(spec)
+    spec = importlib_util.spec_from_file_location("next_ops_under_test", SCRIPT)
+    module = importlib_util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
     return module

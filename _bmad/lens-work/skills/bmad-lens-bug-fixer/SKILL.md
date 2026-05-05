@@ -65,7 +65,7 @@ delegate to `lens-expressplan` for planning execution. You own the outcome repor
 ### Phase 1 — Discovery
 4. Invoke:
    ```bash
-   uv run --script _bmad/lens-work/scripts/bug-fixer-ops.py discover-new \
+   $PYTHON _bmad/lens-work/scripts/bug-fixer-ops.py discover-new \
      --governance-repo {governance_repo}
    ```
 5. Parse JSON output.
@@ -79,7 +79,7 @@ delegate to `lens-expressplan` for planning execution. You own the outcome repor
    - If multiple slugs: `stub = {first_slug}-batch-{count}`
 9. Derive feature ID via script:
    ```bash
-   uv run --script _bmad/lens-work/scripts/bug-fixer-ops.py derive-feature-id \
+   $PYTHON _bmad/lens-work/scripts/bug-fixer-ops.py derive-feature-id \
      --slugs {slug1} {slug2} ...
    ```
    Parse JSON and set `featureId = result["feature_id"]`.
@@ -91,7 +91,7 @@ delegate to `lens-expressplan` for planning execution. You own the outcome repor
     - E.g. `["preflight-failed", "reporter-bug"]` → `"Bugbash: Preflight Failed; Reporter Bug"`
 11. Delegate feature creation to `init-feature-ops.py create`:
     ```bash
-    uv run --script _bmad/lens-work/skills/lens-init-feature/scripts/init-feature-ops.py create \
+    $PYTHON _bmad/lens-work/skills/lens-init-feature/scripts/init-feature-ops.py create \
       --governance-repo {governance_repo} \
       --control-repo {control_repo} \
       --feature-id {featureId} \
@@ -114,7 +114,7 @@ delegate to `lens-expressplan` for planning execution. You own the outcome repor
 ### Phase 3 — Status → Inprogress
 14. Invoke:
     ```bash
-    uv run --script _bmad/lens-work/scripts/bug-fixer-ops.py move-to-inprogress \
+    $PYTHON _bmad/lens-work/scripts/bug-fixer-ops.py move-to-inprogress \
       --governance-repo {governance_repo} \
       --feature-id {featureId} \
       --slugs {slug1} {slug2} ...
@@ -126,7 +126,7 @@ delegate to `lens-expressplan` for planning execution. You own the outcome repor
 ### Phase 4 — Expressplan Execution
 18. Collect planning input by delegating to `bug-fixer-ops.py`:
     ```bash
-    uv run --script _bmad/lens-work/scripts/bug-fixer-ops.py collect-planning-input \
+    $PYTHON _bmad/lens-work/scripts/bug-fixer-ops.py collect-planning-input \
       --governance-repo {governance_repo} \
       --feature-id {featureId}
     ```
@@ -157,7 +157,7 @@ delegate to `lens-expressplan` for planning execution. You own the outcome repor
 
 1. Invoke `resolve-bugs`:
    ```bash
-   uv run --script _bmad/lens-work/scripts/bug-fixer-ops.py resolve-bugs \
+   $PYTHON _bmad/lens-work/scripts/bug-fixer-ops.py resolve-bugs \
      --governance-repo {governance_repo} \
      --feature-id {featureId}
    ```
@@ -165,7 +165,7 @@ delegate to `lens-expressplan` for planning execution. You own the outcome repor
 3. If `already_fixed` is non-empty and `resolved` is empty: print `already_fixed`; no commit; exit 0.
 4. For resolved slugs, invoke `move-to-fixed`:
    ```bash
-   uv run --script _bmad/lens-work/scripts/bug-fixer-ops.py move-to-fixed \
+   $PYTHON _bmad/lens-work/scripts/bug-fixer-ops.py move-to-fixed \
      --governance-repo {governance_repo} \
      --slugs {slug1} {slug2} ...
    ```

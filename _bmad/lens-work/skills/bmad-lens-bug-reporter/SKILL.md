@@ -51,7 +51,7 @@ outcome. You do **not** write bug artifacts directly; the script owns all file o
 5. If any field is missing or empty: display a correction prompt; do not proceed.
 6. Invoke:
    ```bash
-   uv run --script _bmad/lens-work/scripts/bug-reporter-ops.py create-bug \
+   $PYTHON _bmad/lens-work/scripts/bug-reporter-ops.py create-bug \
      --title "{title}" \
      --description "{description}" \
      --chat-log "{chat_log}" \

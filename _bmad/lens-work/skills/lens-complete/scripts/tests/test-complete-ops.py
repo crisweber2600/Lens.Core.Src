@@ -9,18 +9,29 @@ Covers the complete-ops.py CLI contract:
 
 All tests use fixture data — no real governance repo is accessed.
 
-Run: uv run --with pytest pytest _bmad/lens-work/skills/lens-complete/scripts/tests/test-complete-ops.py -q
+Run: $PYTHON -m pytest _bmad/lens-work/skills/lens-complete/scripts/tests/test-complete-ops.py -q
 """
 
 from __future__ import annotations
 
-import importlib.util
+from importlib import util as importlib_util
 import json
 from pathlib import Path
 from typing import Any
 
 import pytest
-import yaml
+
+_LENS_YAML_PATH = next(
+    (parent / "scripts" / "lens_yaml.py" for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+    None,
+)
+if _LENS_YAML_PATH is None:
+    raise ModuleNotFoundError("lens_yaml")
+_LENS_YAML_SPEC = importlib_util.spec_from_file_location("lens_yaml", _LENS_YAML_PATH)
+if _LENS_YAML_SPEC is None or _LENS_YAML_SPEC.loader is None:
+    raise ModuleNotFoundError("lens_yaml")
+yaml = importlib_util.module_from_spec(_LENS_YAML_SPEC)
+_LENS_YAML_SPEC.loader.exec_module(yaml)
 
 
 # ---------------------------------------------------------------------------
@@ -42,9 +53,9 @@ def _script_main():
 def _script_module():
     """Import and return the complete-ops.py module."""
     script_path = Path(__file__).resolve().parents[1] / "complete-ops.py"
-    spec = importlib.util.spec_from_file_location("complete_ops", script_path)
+    spec = importlib_util.spec_from_file_location("complete_ops", script_path)
     assert spec is not None and spec.loader is not None, f"Could not load {script_path}"
-    mod = importlib.util.module_from_spec(spec)
+    mod = importlib_util.module_from_spec(spec)
     spec.loader.exec_module(mod)  # type: ignore[attr-defined]
     return mod
 

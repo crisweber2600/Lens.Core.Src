@@ -4,8 +4,21 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from importlib import util as importlib_util
+
 import pytest
-import yaml
+
+_LENS_YAML_PATH = next(
+    (parent / "scripts" / "lens_yaml.py" for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+    None,
+)
+if _LENS_YAML_PATH is None:
+    raise ModuleNotFoundError("lens_yaml")
+_LENS_YAML_SPEC = importlib_util.spec_from_file_location("lens_yaml", _LENS_YAML_PATH)
+if _LENS_YAML_SPEC is None or _LENS_YAML_SPEC.loader is None:
+    raise ModuleNotFoundError("lens_yaml")
+yaml = importlib_util.module_from_spec(_LENS_YAML_SPEC)
+_LENS_YAML_SPEC.loader.exec_module(yaml)
 
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "init-feature-ops.py"
@@ -415,6 +428,30 @@ def test_create_domain_name_defaults_to_slug(tmp_path: Path):
 # TestCreate
 # ---------------------------------------------------------------------------
 class TestCreate:
+    def test_create_feature_execute_governance_git_returns_self_contained_remaining_commands(self, tmp_path: Path):
+        _, gov = init_main_repo_with_remote(tmp_path)
+
+        completed, payload = run_script([
+            "create",
+            "--governance-repo", str(gov),
+            "--feature-id", "lens-dev-new-codebase-command-contract",
+            "--domain", "lens-dev",
+            "--service", "new-codebase",
+            "--name", "Command Contract",
+            "--track", "express",
+            "--username", "testuser",
+            "--execute-governance-git",
+        ])
+
+        assert completed.returncode == 0
+        assert payload["status"] == "pass"
+        assert payload["governance_git_executed"] is True
+        assert len(payload["remaining_commands"]) == 2
+        assert payload["remaining_commands"][0].startswith(sys.executable)
+        assert payload["remaining_commands"][1].startswith(sys.executable)
+        assert "$PYTHON" not in payload["remaining_commands"][0]
+        assert "$PYTHON" not in payload["remaining_commands"][1]
+
     def test_create_feature_execute_governance_git_auto_syncs_dirty_repo(self, tmp_path: Path):
         remote, gov = init_main_repo_with_remote(tmp_path)
         (gov / "DIRTY.txt").write_text("dirty\n", encoding="utf-8")

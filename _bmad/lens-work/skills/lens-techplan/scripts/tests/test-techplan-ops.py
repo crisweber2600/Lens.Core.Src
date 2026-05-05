@@ -1,18 +1,29 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pytest>=8.0", "pyyaml>=6.0"]
+# dependencies = ["pytest>=8.0"]
 # ///
 """Focused regression tests for lens-techplan command surface.
 
 Run:
     cd TargetProjects/lens-dev/new-codebase/lens.core.src
-    uv run --with pytest pytest _bmad/lens-work/skills/lens-techplan/scripts/tests/test-techplan-ops.py -q
+    $PYTHON -m pytest _bmad/lens-work/skills/lens-techplan/scripts/tests/test-techplan-ops.py -q
 """
 
+from importlib import util as importlib_util
 from pathlib import Path
 
-import yaml
+_LENS_YAML_PATH = next(
+    (parent / "scripts" / "lens_yaml.py" for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+    None,
+)
+if _LENS_YAML_PATH is None:
+    raise ModuleNotFoundError("lens_yaml")
+_LENS_YAML_SPEC = importlib_util.spec_from_file_location("lens_yaml", _LENS_YAML_PATH)
+if _LENS_YAML_SPEC is None or _LENS_YAML_SPEC.loader is None:
+    raise ModuleNotFoundError("lens_yaml")
+yaml = importlib_util.module_from_spec(_LENS_YAML_SPEC)
+_LENS_YAML_SPEC.loader.exec_module(yaml)
 
 
 # ---------------------------------------------------------------------------
@@ -57,7 +68,7 @@ def test_stub_exists():
 def test_stub_preflight_then_release_prompt():
     """Stub must run preflight before loading the release prompt, and must stop on failure."""
     text = read_text(STUB_PROMPT)
-    preflight = "uv run _bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py"
+    preflight = "$PYTHON _bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py"
     release = "_bmad/lens-work/prompts/lens-techplan.prompt.md"
     assert preflight in text, f"Stub missing preflight command: {preflight!r}"
     assert release in text, f"Stub missing release prompt reference: {release!r}"

@@ -1,7 +1,7 @@
-#!/usr/bin/env -S uv run --script
+#!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["pyyaml>=6.0"]
+# dependencies = []
 # ///
 """Init feature operations (new-codebase implementation).
 
@@ -16,12 +16,24 @@ import os
 import re
 import shlex
 import subprocess
+import sys
 import tempfile
 from datetime import datetime, timezone
 from functools import lru_cache
+from importlib import util as importlib_util
 from pathlib import Path
 
-import yaml
+_LENS_YAML_PATH = next(
+    (parent / "scripts" / "lens_yaml.py" for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+    None,
+)
+if _LENS_YAML_PATH is None:
+    raise ModuleNotFoundError("lens_yaml")
+_LENS_YAML_SPEC = importlib_util.spec_from_file_location("lens_yaml", _LENS_YAML_PATH)
+if _LENS_YAML_SPEC is None or _LENS_YAML_SPEC.loader is None:
+    raise ModuleNotFoundError("lens_yaml")
+yaml = importlib_util.module_from_spec(_LENS_YAML_SPEC)
+_LENS_YAML_SPEC.loader.exec_module(yaml)
 
 # source: old-codebase init-feature-ops.py SAFE_ID_PATTERN
 SAFE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
@@ -59,6 +71,10 @@ def lifecycle_track_markdown() -> str:
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def current_python_command() -> str:
+    return shlex.quote(sys.executable)
 
 
 def validate_safe_id(domain: str) -> None:
@@ -1096,12 +1112,12 @@ def cmd_create(args: argparse.Namespace) -> dict:
 
     remaining_commands = [
         (
-            f"uv run --script {{project-root}}/lens.core/_bmad/lens-work/skills/lens-git-orchestration/"
+            f"{current_python_command()} {{project-root}}/lens.core/_bmad/lens-work/skills/lens-git-orchestration/"
             f"scripts/git-orchestration-ops.py create-feature-branches "
             f"--governance-repo {shlex.quote(governance_repo)} --repo {shlex.quote(control_repo)} --feature-id {shlex.quote(feature_id)}"
         ),
         (
-            f"uv run --script {{project-root}}/lens.core/_bmad/lens-work/skills/lens-switch/"
+            f"{current_python_command()} {{project-root}}/lens.core/_bmad/lens-work/skills/lens-switch/"
             f"scripts/switch-ops.py switch "
             f"--governance-repo {shlex.quote(governance_repo)} --feature-id {shlex.quote(feature_id)} --control-repo {shlex.quote(control_repo)}"
         ),

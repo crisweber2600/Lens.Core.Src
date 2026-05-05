@@ -162,7 +162,7 @@ When a dev invocation includes an explicit post-dev completion request, the cond
 3. Invoke the complete runtime from the installed module path:
 
 ```bash
-uv run --script lens.core/_bmad/lens-work/skills/lens-complete/scripts/complete-ops.py finalize \
+$PYTHON _bmad/lens-work/skills/lens-complete/scripts/complete-ops.py finalize \
    --governance-repo {governance_repo} \
    --feature-id {feature_id} \
    --control-repo {control_repo} \

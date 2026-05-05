@@ -1,27 +1,37 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pytest>=8.0", "pyyaml>=6.0"]
+# dependencies = ["pytest>=8.0"]
 # ///
 """Focused tests for feature-yaml-ops.py."""
 
 from __future__ import annotations
 
-import importlib.util
+from importlib import util as importlib_util
 import json
 import subprocess
 import sys
 from pathlib import Path
 
-import yaml
+_LENS_YAML_PATH = next(
+    (parent / "scripts" / "lens_yaml.py" for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+    None,
+)
+if _LENS_YAML_PATH is None:
+    raise ModuleNotFoundError("lens_yaml")
+_LENS_YAML_SPEC = importlib_util.spec_from_file_location("lens_yaml", _LENS_YAML_PATH)
+if _LENS_YAML_SPEC is None or _LENS_YAML_SPEC.loader is None:
+    raise ModuleNotFoundError("lens_yaml")
+yaml = importlib_util.module_from_spec(_LENS_YAML_SPEC)
+_LENS_YAML_SPEC.loader.exec_module(yaml)
 
 
 SCRIPT = Path(__file__).parent.parent / "feature-yaml-ops.py"
 
 
 def load_ops_module():
-    spec = importlib.util.spec_from_file_location("feature_yaml_ops", SCRIPT)
-    module = importlib.util.module_from_spec(spec)
+    spec = importlib_util.spec_from_file_location("feature_yaml_ops", SCRIPT)
+    module = importlib_util.module_from_spec(spec)
     assert spec and spec.loader
     spec.loader.exec_module(module)
     return module

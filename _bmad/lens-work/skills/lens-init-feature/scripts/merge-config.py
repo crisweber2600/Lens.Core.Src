@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.9"
-# dependencies = ["pyyaml"]
+# dependencies = []
 # ///
 """Merge module configuration into shared {project-root}/lens.core/_bmad/config.yaml and config.user.yaml.
 
@@ -21,14 +21,21 @@ Exit codes: 0=success, 1=validation error, 2=runtime error
 
 import argparse
 import json
+from importlib import util as importlib_util
 import sys
 from pathlib import Path
 
-try:
-    import yaml
-except ImportError:
-    print("Error: pyyaml is required (PEP 723 dependency)", file=sys.stderr)
-    sys.exit(2)
+_LENS_YAML_PATH = next(
+    (parent / "scripts" / "lens_yaml.py" for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+    None,
+)
+if _LENS_YAML_PATH is None:
+    raise ModuleNotFoundError("lens_yaml")
+_LENS_YAML_SPEC = importlib_util.spec_from_file_location("lens_yaml", _LENS_YAML_PATH)
+if _LENS_YAML_SPEC is None or _LENS_YAML_SPEC.loader is None:
+    raise ModuleNotFoundError("lens_yaml")
+yaml = importlib_util.module_from_spec(_LENS_YAML_SPEC)
+_LENS_YAML_SPEC.loader.exec_module(yaml)
 
 
 def parse_args():

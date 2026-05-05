@@ -1,17 +1,29 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pytest>=8.0", "pyyaml>=6.0"]
+# dependencies = ["pytest>=8.0"]
 # ///
 """Focused regression tests for switch-ops.py."""
 
 import json
 import subprocess
+from importlib import util as importlib_util
 import sys
 from pathlib import Path
 
 import pytest
-import yaml
+
+_LENS_YAML_PATH = next(
+    (parent / "scripts" / "lens_yaml.py" for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+    None,
+)
+if _LENS_YAML_PATH is None:
+    raise ModuleNotFoundError("lens_yaml")
+_LENS_YAML_SPEC = importlib_util.spec_from_file_location("lens_yaml", _LENS_YAML_PATH)
+if _LENS_YAML_SPEC is None or _LENS_YAML_SPEC.loader is None:
+    raise ModuleNotFoundError("lens_yaml")
+yaml = importlib_util.module_from_spec(_LENS_YAML_SPEC)
+_LENS_YAML_SPEC.loader.exec_module(yaml)
 
 
 SCRIPT = Path(__file__).parent.parent / "switch-ops.py"
@@ -184,7 +196,7 @@ FEATURE = {
 
 def test_stub_preflight_then_release_prompt():
     text = read_text(STUB_PROMPT)
-    preflight = "uv run _bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py"
+    preflight = "$PYTHON _bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py"
     release = "_bmad/lens-work/prompts/lens-switch.prompt.md"
     assert preflight in text
     assert release in text
@@ -475,7 +487,7 @@ def test_skill_documents_contracts_and_focused_command():
     assert "target_repo_state" in text
     assert "context_paths" in text
     assert "branch_switched" in text
-    assert "uv run --with pytest _bmad/lens-work/skills/lens-switch/scripts/tests/test-switch-ops.py -q" in text
+    assert "$PYTHON -m pytest _bmad/lens-work/skills/lens-switch/scripts/tests/test-switch-ops.py -q" in text
 
 
 if __name__ == "__main__":

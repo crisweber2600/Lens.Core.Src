@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pytest>=8.0", "pyyaml>=6.0"]
+# dependencies = ["pytest>=8.0"]
 # ///
 """Split-feature regression tests covering the approved clean-room contract."""
 
 from __future__ import annotations
 
-import importlib.util
+from importlib import util as importlib_util
 import json
 import shutil
 import subprocess
@@ -15,7 +15,17 @@ import sys
 from pathlib import Path
 
 import pytest
-import yaml
+_LENS_YAML_PATH = next(
+    (parent / "scripts" / "lens_yaml.py" for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+    None,
+)
+if _LENS_YAML_PATH is None:
+    raise ModuleNotFoundError("lens_yaml")
+_LENS_YAML_SPEC = importlib_util.spec_from_file_location("lens_yaml", _LENS_YAML_PATH)
+if _LENS_YAML_SPEC is None or _LENS_YAML_SPEC.loader is None:
+    raise ModuleNotFoundError("lens_yaml")
+yaml = importlib_util.module_from_spec(_LENS_YAML_SPEC)
+_LENS_YAML_SPEC.loader.exec_module(yaml)
 
 
 TEST_FILE = Path(__file__).resolve()
@@ -24,9 +34,9 @@ SCRIPT = SKILL_ROOT / "scripts" / "split-feature-ops.py"
 
 
 def load_module():
-    spec = importlib.util.spec_from_file_location("split_feature_ops", SCRIPT)
+    spec = importlib_util.spec_from_file_location("split_feature_ops", SCRIPT)
     assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
+    module = importlib_util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 

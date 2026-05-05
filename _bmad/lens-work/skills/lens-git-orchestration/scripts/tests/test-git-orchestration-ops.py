@@ -1,11 +1,11 @@
-#!/usr/bin/env -S uv run --script
+#!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["PyYAML>=6.0", "pytest>=8.0"]
+# dependencies = ["pytest>=8.0"]
 # ///
 """Tests for git-orchestration-ops.py — uses real temporary git repos."""
 
-import importlib.util
+from importlib import util as importlib_util
 import json
 import os
 import subprocess
@@ -14,17 +14,27 @@ import tempfile
 from pathlib import Path
 
 import pytest
-import yaml
+_LENS_YAML_PATH = next(
+    (parent / "scripts" / "lens_yaml.py" for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+    None,
+)
+if _LENS_YAML_PATH is None:
+    raise ModuleNotFoundError("lens_yaml")
+_LENS_YAML_SPEC = importlib_util.spec_from_file_location("lens_yaml", _LENS_YAML_PATH)
+if _LENS_YAML_SPEC is None or _LENS_YAML_SPEC.loader is None:
+    raise ModuleNotFoundError("lens_yaml")
+yaml = importlib_util.module_from_spec(_LENS_YAML_SPEC)
+_LENS_YAML_SPEC.loader.exec_module(yaml)
 
 # Ensure the script under test is importable (hyphenated filename requires importlib)
 _script_path = Path(__file__).parent.parent / "git-orchestration-ops.py"
-_spec = importlib.util.spec_from_file_location("git_orchestration_ops", _script_path)
-ops = importlib.util.module_from_spec(_spec)
+_spec = importlib_util.spec_from_file_location("git_orchestration_ops", _script_path)
+ops = importlib_util.module_from_spec(_spec)
 _spec.loader.exec_module(ops)
 
 _sync_helper_path = Path(__file__).parent.parent / "repo_sync.py"
-_sync_spec = importlib.util.spec_from_file_location("lens_repo_sync", _sync_helper_path)
-sync_helpers = importlib.util.module_from_spec(_sync_spec)
+_sync_spec = importlib_util.spec_from_file_location("lens_repo_sync", _sync_helper_path)
+sync_helpers = importlib_util.module_from_spec(_sync_spec)
 _sync_spec.loader.exec_module(sync_helpers)
 
 
@@ -1219,7 +1229,7 @@ class TestCLIIntegration:
     def test_create_feature_branches_dry_run(self, repo):
         write_feature_yaml(repo, "cli-test-feat")
         proc = subprocess.run(
-            ["uv", "run", "--script", self._script(),
+            [sys.executable, self._script(),
              "create-feature-branches",
              "--governance-repo", str(repo),
              "--feature-id", "cli-test-feat",
@@ -1233,7 +1243,7 @@ class TestCLIIntegration:
 
     def test_invalid_feature_id_exit_1(self, repo):
         proc = subprocess.run(
-            ["uv", "run", "--script", self._script(),
+            [sys.executable, self._script(),
              "create-feature-branches",
              "--governance-repo", str(repo),
              "--feature-id", "Bad/Id"],
@@ -1246,7 +1256,7 @@ class TestCLIIntegration:
     def test_create_dev_branch_dry_run(self, repo):
         make_branch(repo, "cli-dev-feat")
         proc = subprocess.run(
-            ["uv", "run", "--script", self._script(),
+            [sys.executable, self._script(),
              "create-dev-branch",
              "--governance-repo", str(repo),
              "--feature-id", "cli-dev-feat",
@@ -1260,7 +1270,7 @@ class TestCLIIntegration:
 
     def test_prepare_dev_branch_dry_run(self, repo):
         proc = subprocess.run(
-            ["uv", "run", "--script", self._script(),
+            [sys.executable, self._script(),
              "prepare-dev-branch",
              "--repo", str(repo),
              "--feature-id", "cli-feature",
@@ -1274,7 +1284,7 @@ class TestCLIIntegration:
 
     def test_prepare_dev_branch_dry_run_with_feature_slug(self, repo):
         proc = subprocess.run(
-            ["uv", "run", "--script", self._script(),
+            [sys.executable, self._script(),
              "prepare-dev-branch",
              "--repo", str(repo),
              "--feature-id", "platform-identity-cli-feature",

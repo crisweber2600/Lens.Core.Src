@@ -290,8 +290,6 @@ jobs:
       - name: Register lens-work module in develop config
         if: matrix.config.release_branch != 'alpha'
         run: |
-          python3 -m pip install --quiet pyyaml
-
           python3 build-output/_bmad/lens-work/lens-work-setup/scripts/merge-config.py \
             --module-yaml build-output/_bmad/lens-work/module.yaml \
             --target-config build-output/_bmad/_config/manifest.yaml

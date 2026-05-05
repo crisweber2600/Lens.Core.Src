@@ -1,4 +1,4 @@
-#!/usr/bin/env -S uv run --script
+#!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.11"
 # dependencies = []
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import importlib.util
+from importlib import util as importlib_util
 import re
 import subprocess
 import sys
@@ -478,11 +478,11 @@ def pull_window_seconds(branch: str) -> int:
 
 def _load_repo_sync_module():
     helper_path = Path(__file__).resolve().parents[2] / "lens-git-orchestration" / "scripts" / "repo_sync.py"
-    spec = importlib.util.spec_from_file_location("lens_repo_sync", helper_path)
+    spec = importlib_util.spec_from_file_location("lens_repo_sync", helper_path)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"Unable to load repo sync helper from {helper_path}")
 
-    module = importlib.util.module_from_spec(spec)
+    module = importlib_util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 

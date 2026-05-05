@@ -1,7 +1,7 @@
-#!/usr/bin/env -S uv run --script
+#!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pyyaml>=6.0"]
+# dependencies = []
 # ///
 """
 next-ops.py — Deterministic routing engine for the lens-next skill.
@@ -10,15 +10,26 @@ Reads feature.yaml and lifecycle.yaml to produce a structured JSON routing
 recommendation. Produces no side effects: no file writes, no git operations.
 
 Usage:
-    uv run next-ops.py suggest --feature-id <id> [--governance-repo <path>] [--control-repo <path>]
+    $PYTHON next-ops.py suggest --feature-id <id> [--governance-repo <path>] [--control-repo <path>]
 """
 import argparse
 import json
 import re
+from importlib import util as importlib_util
 import sys
 from pathlib import Path
 
-import yaml
+_LENS_YAML_PATH = next(
+    (parent / "scripts" / "lens_yaml.py" for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
+    None,
+)
+if _LENS_YAML_PATH is None:
+    raise ModuleNotFoundError("lens_yaml")
+_LENS_YAML_SPEC = importlib_util.spec_from_file_location("lens_yaml", _LENS_YAML_PATH)
+if _LENS_YAML_SPEC is None or _LENS_YAML_SPEC.loader is None:
+    raise ModuleNotFoundError("lens_yaml")
+yaml = importlib_util.module_from_spec(_LENS_YAML_SPEC)
+_LENS_YAML_SPEC.loader.exec_module(yaml)
 
 
 # ---------------------------------------------------------------------------

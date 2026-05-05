@@ -4,7 +4,7 @@
 # ///
 """Tests for merge-help-csv.py — anti-zombie CSV merge logic."""
 
-import importlib.util
+from importlib import util as importlib_util
 import sys
 from pathlib import Path
 
@@ -15,8 +15,8 @@ SCRIPT = Path(__file__).resolve().parents[1] / "merge-help-csv.py"
 
 
 def _load_merge_help_csv():
-    spec = importlib.util.spec_from_file_location("merge_help_csv", str(SCRIPT))
-    mod = importlib.util.module_from_spec(spec)
+    spec = importlib_util.spec_from_file_location("merge_help_csv", str(SCRIPT))
+    mod = importlib_util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
 
