@@ -20,7 +20,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-import sys
 
 _LENS_YAML_PATH = next(
     (parent / "scripts" / "lens_yaml.py" for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
