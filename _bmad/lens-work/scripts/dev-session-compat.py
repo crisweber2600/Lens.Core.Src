@@ -36,14 +36,12 @@ All writes go through save() and always emit the new schema.
 
 from __future__ import annotations
 
+from importlib import util as importlib_util
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-
-import sys
-
-from importlib import util as importlib_util
 
 _LENS_YAML_PATH = next(
     (parent / "scripts" / "lens_yaml.py" for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
