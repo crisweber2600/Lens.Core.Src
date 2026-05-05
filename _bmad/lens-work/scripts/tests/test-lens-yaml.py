@@ -55,15 +55,3 @@ def test_safe_dump_allow_unicode_false_escapes_non_ascii_scalars() -> None:
     assert '"caf\\u00e9"' in dumped
     assert '"na\\u00efve path"' in dumped
     assert lens_yaml.safe_load(dumped) == payload
-
-
-def test_safe_dump_allow_unicode_false_escapes_non_ascii_scalars() -> None:
-    payload = {"name": "café", "description": "naïve path"}
-
-    dumped = lens_yaml.safe_dump(payload, sort_keys=False, allow_unicode=False)
-
-    assert "café" not in dumped
-    assert "naïve" not in dumped
-    assert '"caf\\u00e9"' in dumped
-    assert '"na\\u00efve path"' in dumped
-    assert lens_yaml.safe_load(dumped) == payload
