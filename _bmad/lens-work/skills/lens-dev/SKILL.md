@@ -158,7 +158,7 @@ All timestamps are ISO 8601. All writes emit this schema exactly. Read-time comp
 When a dev invocation includes an explicit post-dev completion request, the conductor MUST:
 
 1. Finish all normal dev closing actions first: story statuses, target repo commits, target PR, and `feature.yaml` phase `dev-complete`.
-2. Check out or create the control repo `dev` branch and keep it as the working branch for completion-era docs delivery.
+2. Check out or create the control repo `{feature_id}-dev` branch and keep it as the working branch for dev-cycle docs delivery.
 3. Invoke the complete runtime from the installed module path:
 
 ```bash
@@ -170,7 +170,7 @@ uv run --script lens.core/_bmad/lens-work/skills/lens-complete/scripts/complete-
 ```
 
 4. Commit and push governance archive changes to `main` after a successful finalize response.
-5. Surface any `control_repo_merge_failed` warning from the complete runtime; do not report completion as blocked if governance archival succeeded.
+5. The complete runtime validates `{feature_id}-plan` -> `{feature_id}` -> `{feature_id}-dev`, merges `{feature_id}-dev` into `main`, and deletes the related control branches after a successful merge. Surface any `control_repo_merge_failed` warning from the complete runtime; do not report completion as blocked if governance archival succeeded.
 
 ## Integration Points
 

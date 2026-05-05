@@ -14,7 +14,7 @@ Before calling finalize, confirm all of the following:
 - [ ] `retrospective.md` exists in the feature directory with `status: approved`
 - [ ] Project documentation captured via `lens-document-project`
 - [ ] Target repo feature branches are merged to their default base branch
-- [ ] Control repo feature branches (`{featureId}` and `{featureId}-plan`) have all commits that should land in `develop`
+- [ ] Control repo feature branches are merged in order: `{featureId}-plan` into `{featureId}`, then `{featureId}` into `{featureId}-dev`
 - [ ] User has explicitly confirmed finalize (this is irreversible)
 
 ## Confirmation Gate
@@ -70,7 +70,7 @@ uv run --script ./scripts/complete-ops.py finalize \
 3. Updates `phase` to `complete` and sets `completed_at` to current UTC ISO timestamp
 4. Reads `{governance-repo}/feature-index.yaml` and updates the matching entry's `status` to `archived` and `updated_at` to current UTC ISO timestamp
 5. Writes `{feature-dir}/summary.md` with the archive summary
-6. When `--control-repo` is provided, checks out the shared control `dev` branch, pushes it, creates a PR from `dev` to `main`, and merges it
+6. When `--control-repo` is provided, checks out `{featureId}-dev`, validates related branch ancestry, pushes it, creates a PR from `{featureId}-dev` to `main`, merges it, and deletes related branches
 7. All writes are atomic (temp file + rename)
 
 ## Post-Script Git Sync
@@ -88,17 +88,20 @@ If `git push` fails (e.g., concurrent write conflict), report the error and inst
 
 ## Post-Script Control Repo Branch Merge
 
-When `--control-repo` is passed, the script switches the control repo to the shared `dev` branch, pushes it, creates a PR from `dev` to `main`, and merges it through GitHub CLI. Merge failure is returned as a warning because governance archival has already succeeded.
+When `--control-repo` is passed, the script switches the control repo to `{featureId}-dev`, validates `{featureId}-plan` -> `{featureId}` -> `{featureId}-dev`, pushes the dev branch, creates a PR from `{featureId}-dev` to `main`, and merges it through GitHub CLI. After confirming the dev branch is merged to `main`, it deletes `{featureId}-plan`, `{featureId}`, and `{featureId}-dev` locally and on origin. Merge or cleanup failure is returned as a warning because governance archival has already succeeded.
 
 ```bash
-git -C {control_repo} checkout dev
-git -C {control_repo} pull --ff-only origin dev
-git -C {control_repo} push -u origin dev
-gh pr create --head dev --base main --title "[complete] {featureId} - docs delivery to main" --body "..."
+git -C {control_repo} checkout {featureId}-dev
+git -C {control_repo} pull --ff-only origin {featureId}-dev
+git -C {control_repo} push -u origin {featureId}-dev
+gh pr create --head {featureId}-dev --base main --title "[complete] {featureId} - docs delivery to main" --body "..."
 gh pr merge <pr-url> --merge
+git -C {control_repo} checkout main
+git -C {control_repo} branch -d {featureId}-plan {featureId} {featureId}-dev
+git -C {control_repo} push origin --delete {featureId}-plan {featureId} {featureId}-dev
 ```
 
-> **Note:** After this step, `dev` remains the working branch. If the PR merge cannot complete, do not roll back governance archive files; surface the returned warning.
+> **Note:** After this step, `main` is the working branch. If the PR merge or branch cleanup cannot complete, do not roll back governance archive files; surface the returned warning.
 
 ## Output
 

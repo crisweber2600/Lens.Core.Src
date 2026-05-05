@@ -125,7 +125,10 @@ def test_completion_gate_supports_requested_auto_complete():
     assert "complete-ops.py finalize" in text
     assert "--control-repo {project-root}" in text
     assert "--confirm" in text
-    assert "dev" in text and "main" in text
+    assert "{feature_id}-dev" in text
+    assert "validate related branches" in text
+    assert "delete related control branches" in text
+    assert "main" in text
 
 
 def test_completion_gate_forbids_uncommitted_or_manual_handoff_response():
