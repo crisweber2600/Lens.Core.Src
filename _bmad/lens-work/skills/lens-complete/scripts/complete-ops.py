@@ -296,8 +296,10 @@ def _gh_merge_to_main(
     control_repo: Path,
     feature_id: str,
     dry_run: bool,
+    head_branch: str = "dev",
+    base_branch: str = "main",
 ) -> tuple[str | None, str | None]:
-    """Create and merge a PR from {feature_id}-dev → main in the control repo.
+    """Create and merge a PR from the control dev branch to main.
 
     Returns (pr_url, None) on success, or (None, error_msg) on failure.
     On dry_run, returns ('dry_run', None) without executing any commands.
@@ -305,8 +307,18 @@ def _gh_merge_to_main(
     if dry_run:
         return "dry_run", None
 
-    dev_branch = f"{feature_id}-dev"
     cwd = str(control_repo)
+
+    def _git(*cmd_args: str) -> tuple[int, str, str]:
+        try:
+            r = subprocess.run(
+                ["git", *cmd_args], cwd=cwd, capture_output=True, text=True, timeout=60
+            )
+            return r.returncode, r.stdout.strip(), r.stderr.strip()
+        except FileNotFoundError:
+            return -1, "", "git CLI not found."
+        except subprocess.TimeoutExpired:
+            return -1, "", "git command timed out after 60 s."
 
     def _gh(*cmd_args: str) -> tuple[int, str, str]:
         try:
@@ -319,11 +331,43 @@ def _gh_merge_to_main(
         except subprocess.TimeoutExpired:
             return -1, "", "gh command timed out after 60 s."
 
+    code, out, err = _git("status", "--porcelain")
+    if code != 0:
+        return None, f"control repo status failed: {err or out}"
+    if out:
+        return None, "control repo has uncommitted changes; commit them on dev before finalizing."
+
+    code, out, err = _git("fetch", "origin", base_branch, head_branch)
+    if code != 0:
+        return None, f"control repo fetch failed: {err or out}"
+
+    code, out, err = _git("rev-parse", "--verify", head_branch)
+    if code == 0:
+        code, out, err = _git("checkout", head_branch)
+        if code != 0:
+            return None, f"control repo checkout {head_branch} failed: {err or out}"
+    else:
+        code, out, err = _git("rev-parse", "--verify", f"origin/{head_branch}")
+        start_point = f"origin/{head_branch}" if code == 0 else f"origin/{base_branch}"
+        code, out, err = _git("checkout", "-B", head_branch, start_point)
+        if code != 0:
+            return None, f"control repo checkout {head_branch} failed: {err or out}"
+
+    code, out, err = _git("rev-parse", "--verify", f"origin/{head_branch}")
+    if code == 0:
+        code, out, err = _git("pull", "--ff-only", "origin", head_branch)
+        if code != 0:
+            return None, f"control repo pull {head_branch} failed: {err or out}"
+
+    code, out, err = _git("push", "-u", "origin", head_branch)
+    if code != 0:
+        return None, f"control repo push {head_branch} failed: {err or out}"
+
     # Check for an existing open or merged PR to avoid duplicates
     code, out, err = _gh(
         "pr", "list",
-        "--head", dev_branch,
-        "--base", "main",
+        "--head", head_branch,
+        "--base", base_branch,
         "--json", "url,state",
         "--limit", "1",
         "--state", "all",
@@ -347,8 +391,8 @@ def _gh_merge_to_main(
     if not pr_url:
         code, out, err = _gh(
             "pr", "create",
-            "--head", dev_branch,
-            "--base", "main",
+            "--head", head_branch,
+            "--base", base_branch,
             "--title", f"[complete] {feature_id} — docs delivery to main",
             "--body",
             (
@@ -593,7 +637,7 @@ def cmd_finalize(args: argparse.Namespace) -> int:
     if control_repo is not None:
         planned_changes.append({
             "repo": str(control_repo),
-            "change": f"create and merge PR: {feature_id}-dev → main",
+            "change": "create and merge PR: dev → main",
         })
 
     doc_check = _check_document_project(feature_dir)
@@ -677,7 +721,7 @@ def cmd_finalize(args: argparse.Namespace) -> int:
         {"path": str(summary_path.relative_to(governance_repo)), "change": "archive summary written"},
     ]
 
-    # Merge feature-dev → main in the control repo if requested
+    # Merge dev → main in the control repo if requested
     merge_pr_url: str | None = None
     merge_warning: str | None = None
     if control_repo is not None:
@@ -689,7 +733,7 @@ def cmd_finalize(args: argparse.Namespace) -> int:
         else:
             changes_applied.append({
                 "repo": str(control_repo),
-                "change": f"PR merged: {feature_id}-dev → main",
+                "change": "PR merged: dev → main",
                 "pr_url": merge_pr_url or "",
             })
 
@@ -826,7 +870,7 @@ def _build_parser() -> argparse.ArgumentParser:
                        help="Required for non-dry-run execution")
     p_fin.add_argument("--control-repo", dest="control_repo", default=None,
                        help="Path to the control repo. When provided, creates and merges a PR "
-                            "from {featureId}-dev → main after governance archival.")
+                           "from dev → main after governance archival.")
 
     # archive-status
     sub.add_parser("archive-status", parents=[shared],

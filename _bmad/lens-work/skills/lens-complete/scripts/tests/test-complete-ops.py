@@ -36,12 +36,17 @@ ALLOWED_WRITE_FILES = {"feature.yaml", "feature-index.yaml", "summary.md"}
 
 def _script_main():
     """Import and return the main() entry point from complete-ops.py."""
+    return _script_module().main
+
+
+def _script_module():
+    """Import and return the complete-ops.py module."""
     script_path = Path(__file__).resolve().parents[1] / "complete-ops.py"
     spec = importlib.util.spec_from_file_location("complete_ops", script_path)
     assert spec is not None and spec.loader is not None, f"Could not load {script_path}"
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)  # type: ignore[attr-defined]
-    return mod.main
+    return mod
 
 
 def _run(argv: list[str], capsys: pytest.CaptureFixture) -> tuple[int, dict[str, Any]]:
@@ -474,3 +479,57 @@ def test_prerequisite_missing_degradation(capsys: pytest.CaptureFixture, gov_pas
     assert "document_project_skipped" in result.get("warnings", []), (
         "Expected 'document_project_skipped' warning when project-documentation.md is absent"
     )
+
+
+def test_control_repo_merge_uses_shared_dev_branch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Control repo automation checks out dev and opens the merge PR against main."""
+    mod = _script_module()
+    control_repo = tmp_path / "control"
+    control_repo.mkdir()
+    calls: list[list[str]] = []
+
+    class Result:
+        def __init__(self, returncode: int = 0, stdout: str = "", stderr: str = "") -> None:
+            self.returncode = returncode
+            self.stdout = stdout
+            self.stderr = stderr
+
+    def fake_run(cmd, cwd, capture_output, text, timeout):
+        assert cwd == str(control_repo)
+        assert capture_output is True
+        assert text is True
+        assert timeout == 60
+        calls.append(cmd)
+        if cmd[:3] == ["git", "status", "--porcelain"]:
+            return Result()
+        if cmd[:2] == ["git", "fetch"]:
+            return Result()
+        if cmd == ["git", "rev-parse", "--verify", "dev"]:
+            return Result()
+        if cmd == ["git", "checkout", "dev"]:
+            return Result()
+        if cmd == ["git", "rev-parse", "--verify", "origin/dev"]:
+            return Result()
+        if cmd == ["git", "pull", "--ff-only", "origin", "dev"]:
+            return Result()
+        if cmd == ["git", "push", "-u", "origin", "dev"]:
+            return Result()
+        if cmd[:3] == ["gh", "pr", "list"]:
+            return Result(stdout="[]")
+        if cmd[:3] == ["gh", "pr", "create"]:
+            return Result(stdout="https://github.com/example/control/pull/7")
+        if cmd[:3] == ["gh", "pr", "merge"]:
+            return Result()
+        raise AssertionError(f"unexpected command: {cmd}")
+
+    monkeypatch.setattr(mod.subprocess, "run", fake_run)
+    pr_url, error = mod._gh_merge_to_main(control_repo, "lens-dev-example", dry_run=False)
+
+    assert error is None
+    assert pr_url == "https://github.com/example/control/pull/7"
+    assert ["git", "checkout", "dev"] in calls
+    assert ["git", "push", "-u", "origin", "dev"] in calls
+    assert any(cmd[:3] == ["gh", "pr", "create"] and "--head" in cmd and "dev" in cmd for cmd in calls)
+    assert any(cmd[:3] == ["gh", "pr", "create"] and "--base" in cmd and "main" in cmd for cmd in calls)
+    flattened = " ".join(" ".join(cmd) for cmd in calls)
+    assert "lens-dev-example-dev" not in flattened

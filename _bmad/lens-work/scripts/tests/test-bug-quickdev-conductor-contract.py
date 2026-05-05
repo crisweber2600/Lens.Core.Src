@@ -117,6 +117,17 @@ def test_completion_gate_verifies_commit_push_and_pr_before_returning():
         assert required in text, f"Completion gate missing required check: {required}"
 
 
+def test_completion_gate_supports_requested_auto_complete():
+    """Requested post-dev completion must invoke lens-complete instead of stopping after the target PR."""
+    text = _skill_text()
+
+    assert "automatic completion after the dev cycle" in text
+    assert "complete-ops.py finalize" in text
+    assert "--control-repo {project-root}" in text
+    assert "--confirm" in text
+    assert "dev" in text and "main" in text
+
+
 def test_completion_gate_forbids_uncommitted_or_manual_handoff_response():
     """The conductor must not return while work is uncommitted or PR creation is delegated."""
     text = _skill_text()
