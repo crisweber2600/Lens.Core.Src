@@ -8,6 +8,7 @@ import json
 import os
 import re
 import sys
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,6 +23,10 @@ HOME_MARKER_START = "<!-- pr-changelog-wiki:start -->"
 HOME_MARKER_END = "<!-- pr-changelog-wiki:end -->"
 CHANGELOG_SEPARATOR = "\n---\n"
 CHANGELOG_HEADER = "# Pull Request Change Log"
+DEFAULT_MAX_PRS_PER_RUN = 25
+REQUEST_TIMEOUT_SECONDS = 30
+REQUEST_MAX_ATTEMPTS = 3
+REQUEST_RETRYABLE_HTTP_STATUS_CODES = {408, 429, 500, 502, 503, 504}
 
 
 @dataclass(frozen=True)
@@ -54,6 +59,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--wiki-dir", required=True)
     parser.add_argument("--changelog-page", default=DEFAULT_CHANGELOG_PAGE)
     parser.add_argument("--state-file", default=DEFAULT_STATE_FILE)
+    parser.add_argument("--max-prs-per-run", type=int, default=DEFAULT_MAX_PRS_PER_RUN)
     return parser.parse_args(argv)
 
 
@@ -67,6 +73,10 @@ def require_value(value: str | None, message: str) -> str:
     raise SystemExit(message)
 
 
+def _is_retryable_http_error(exc: HTTPError) -> bool:
+    return exc.code in REQUEST_RETRYABLE_HTTP_STATUS_CODES
+
+
 def request_json(url: str, token: str) -> Any:
     request = Request(
         url,
@@ -77,13 +87,20 @@ def request_json(url: str, token: str) -> Any:
             "X-GitHub-Api-Version": "2022-11-28",
         },
     )
-    try:
-        with urlopen(request) as response:
-            return json.load(response)
-    except HTTPError as exc:
-        raise RuntimeError(f"GitHub API request failed ({exc.code}) for {url}") from exc
-    except URLError as exc:
-        raise RuntimeError(f"GitHub API request failed for {url}: {exc.reason}") from exc
+    for attempt in range(1, REQUEST_MAX_ATTEMPTS + 1):
+        try:
+            with urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
+                return json.load(response)
+        except HTTPError as exc:
+            if attempt < REQUEST_MAX_ATTEMPTS and _is_retryable_http_error(exc):
+                time.sleep(attempt)
+                continue
+            raise RuntimeError(f"GitHub API request failed ({exc.code}) for {url}") from exc
+        except URLError as exc:
+            if attempt < REQUEST_MAX_ATTEMPTS:
+                time.sleep(attempt)
+                continue
+            raise RuntimeError(f"GitHub API request failed for {url}: {exc.reason}") from exc
 
 
 def paginated_request(base_url: str, token: str, params: dict[str, Any]) -> list[Any]:
@@ -117,6 +134,21 @@ def fetch_merged_pull_requests(repo: str, token: str, api_url: str) -> list[dict
     return merged
 
 
+def select_unprocessed_pulls(
+    merged_pulls: list[dict[str, Any]],
+    processed_numbers: set[int],
+    max_prs_per_run: int,
+) -> list[dict[str, Any]]:
+    selected: list[dict[str, Any]] = []
+    for pull in merged_pulls:
+        if int(pull["number"]) in processed_numbers:
+            continue
+        selected.append(pull)
+        if len(selected) >= max_prs_per_run:
+            break
+    return selected
+
+
 def fetch_pull_files(repo: str, pull_number: int, token: str, api_url: str) -> tuple[PullFile, ...]:
     url = f"{api_url.rstrip('/')}/repos/{repo}/pulls/{pull_number}/files"
     files = paginated_request(url, token, {"per_page": 100})
@@ -145,13 +177,22 @@ def load_state(path: Path) -> dict[str, Any]:
     return payload
 
 
-def save_state(path: Path, repo: str, processed_numbers: set[int], updated_at: str) -> None:
+def save_state(
+    path: Path,
+    repo: str,
+    processed_numbers: set[int],
+    updated_at: str,
+    existing_text: str = "",
+) -> str:
     payload = {
         "repository": repo,
         "processed_pull_numbers": sorted(processed_numbers),
         "updated_at": updated_at,
     }
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    rendered = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    if rendered != existing_text:
+        path.write_text(rendered, encoding="utf-8")
+    return rendered
 
 
 def strip_markdown(text: str) -> str:
@@ -358,6 +399,8 @@ def main(argv: list[str]) -> int:
     args = parse_args(argv)
     repo = require_value(args.repo, "--repo or GITHUB_REPOSITORY is required")
     token = require_value(args.token, "--token or GITHUB_TOKEN is required")
+    if args.max_prs_per_run < 1:
+        raise SystemExit("--max-prs-per-run must be at least 1")
     updated_at = now_iso()
 
     wiki_dir = Path(args.wiki_dir).resolve()
@@ -372,7 +415,7 @@ def main(argv: list[str]) -> int:
     processed_numbers = {int(number) for number in state.get("processed_pull_numbers", [])}
 
     merged_pulls = fetch_merged_pull_requests(repo, token, args.api_url)
-    new_pulls = [pull for pull in merged_pulls if int(pull["number"]) not in processed_numbers]
+    new_pulls = select_unprocessed_pulls(merged_pulls, processed_numbers, args.max_prs_per_run)
 
     summaries = [
         build_pull_request_summary(repo, pull, token, args.api_url)
@@ -395,20 +438,11 @@ def main(argv: list[str]) -> int:
             home_path.write_text(rendered_home, encoding="utf-8")
 
     processed_numbers.update(summary.number for summary in summaries)
-    rendered_state = json.dumps(
-        {
-            "repository": repo,
-            "processed_pull_numbers": sorted(processed_numbers),
-            "updated_at": updated_at,
-        },
-        indent=2,
-        sort_keys=True,
-    ) + "\n"
     if summaries or not state_path.exists():
-        if rendered_state != existing_state:
-            state_path.write_text(rendered_state, encoding="utf-8")
+        save_state(state_path, repo, processed_numbers, updated_at, existing_state)
 
     payload = {
+        "max_prs_per_run": args.max_prs_per_run,
         "repo": repo,
         "processed_new_pull_requests": [summary.number for summary in summaries],
         "total_processed_pull_requests": len(processed_numbers),

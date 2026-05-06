@@ -3,9 +3,11 @@
 
 from __future__ import annotations
 
+import io
 import importlib.util
 import sys
 from pathlib import Path
+from urllib.error import HTTPError, URLError
 
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "pr_changelog_wiki.py"
@@ -96,3 +98,63 @@ def test_render_home_page_adds_and_replaces_managed_block():
     assert "[Pull Request Change Log](PR-Change-Log)" in initial
     assert updated.count(MODULE.HOME_MARKER_START) == 1
     assert "_Last PR changelog update: 2026-05-07T00:00:00Z_" in updated
+
+
+def test_select_unprocessed_pulls_respects_processing_cap():
+    pulls = [
+        {"number": 5},
+        {"number": 4},
+        {"number": 3},
+        {"number": 2},
+    ]
+
+    selected = MODULE.select_unprocessed_pulls(pulls, {4}, 2)
+
+    assert [pull["number"] for pull in selected] == [5, 3]
+
+
+def test_request_json_retries_with_timeout(monkeypatch):
+    attempts: list[int] = []
+    sleeps: list[int] = []
+
+    class _Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return b'{"ok": true}'
+
+    def fake_urlopen(request, timeout):
+        attempts.append(timeout)
+        if len(attempts) == 1:
+            raise URLError("temporary outage")
+        return _Response()
+
+    monkeypatch.setattr(MODULE, "urlopen", fake_urlopen)
+    monkeypatch.setattr(MODULE.time, "sleep", sleeps.append)
+
+    payload = MODULE.request_json("https://api.github.com/example", "token")
+
+    assert payload == {"ok": True}
+    assert attempts == [MODULE.REQUEST_TIMEOUT_SECONDS, MODULE.REQUEST_TIMEOUT_SECONDS]
+    assert sleeps == [1]
+
+
+def test_request_json_raises_after_retryable_http_error_exhausted(monkeypatch):
+    response = io.BytesIO(b"busy")
+
+    def fake_urlopen(request, timeout):
+        raise HTTPError(request.full_url, 503, "busy", {}, response)
+
+    monkeypatch.setattr(MODULE, "urlopen", fake_urlopen)
+    monkeypatch.setattr(MODULE.time, "sleep", lambda seconds: None)
+
+    try:
+        MODULE.request_json("https://api.github.com/example", "token")
+    except RuntimeError as exc:
+        assert "503" in str(exc)
+    else:
+        raise AssertionError("Expected RuntimeError for exhausted retries")
