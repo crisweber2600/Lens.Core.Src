@@ -122,7 +122,7 @@ gh pr create --base {featureId} --head {featureId}-plan --title "[plan] {feature
 ### Step 3 - downstream-bundle-and-final-pr
 
 1. After the planning PR has landed or the user confirms `{featureId}` contains the reviewed planning state, and only after the review-driven planning fixes from Step 1 are applied, generate the downstream planning bundle through `lens-bmad-skill` in this exact order:
-   First run the track-specific FinalizePlan input gate and capture `approved_input_documents` from the JSON `found_files` map:
+   First run the track-specific FinalizePlan input gate. Flatten the `found_files` dict values into a single sorted list of relative file paths and use that list as `approved_input_documents`:
 
 ```bash
 uv run --script {project-root}/lens.core/_bmad/lens-work/scripts/validate-phase-artifacts.py \
@@ -135,7 +135,7 @@ uv run --script {project-root}/lens.core/_bmad/lens-work/scripts/validate-phase-
 ```
 
    If this gate fails, stop before any `lens-bmad-skill` delegation and surface the track-specific missing artifacts. For express-track features, the approved input set is `business-plan.md`, `tech-plan.md`, and `sprint-plan.md`; do not ask the user to provide PRD-, architecture-, or UX-named documents when the express input contract passes. Include `expressplan-adversarial-review.md` and `finalizeplan-review.md` as supporting review context when present.
-   Pass the approved input document set to every downstream wrapper call as `finalizeplan_input_documents` / `approved_input_documents`. Downstream BMAD prerequisite discovery must treat that set as the already confirmed analysis set for this Lens phase; it may ask only for genuinely missing track-required artifacts reported by the shared validator, not for generic BMAD document names absent from the selected track.
+   `approved_input_documents` is a flat list of relative file paths obtained by concatenating all lists in `found_files` values (e.g. `[p for paths in found_files.values() for p in paths]`) and sorting the result. Pass this list to every downstream wrapper call as `finalizeplan_input_documents` / `approved_input_documents`. Downstream BMAD prerequisite discovery must treat that set as the already confirmed analysis set for this Lens phase; it may ask only for genuinely missing track-required artifacts reported by the shared validator, not for generic BMAD document names absent from the selected track.
 
    Load `{project-root}/lens.core/_bmad/lens-work/skills/lens-bmad-skill/SKILL.md` and invoke these wrapper calls in order. Treat each line below as a skill handoff, not as a requirement to discover a standalone `lens-bmad-skill-ops.py` entrypoint.
    1. `lens-bmad-skill --skill bmad-create-epics-and-stories`

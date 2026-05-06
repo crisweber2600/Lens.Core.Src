@@ -49,14 +49,19 @@ def get_required_artifacts(lifecycle_path: Path, phase: str, contract: str, trac
         if phase == "finalizeplan":
             contracts_by_track = phase_data.get("input_contracts_by_track", {})
             normalized_track = normalize_track(track)
-            if normalized_track:
-                if normalized_track not in contracts_by_track:
-                    known = ", ".join(sorted(contracts_by_track)) or "none"
-                    raise ValueError(
-                        f"No input-ready contract defined for phase {phase!r} and track {track!r}; "
-                        f"known tracks: {known}"
-                    )
-                return contracts_by_track.get(normalized_track, [])
+            if not normalized_track:
+                known = ", ".join(sorted(contracts_by_track)) or "none"
+                raise ValueError(
+                    f"--track is required for phase {phase!r} with contract 'input-ready'; "
+                    f"known tracks: {known}"
+                )
+            if normalized_track not in contracts_by_track:
+                known = ", ".join(sorted(contracts_by_track)) or "none"
+                raise ValueError(
+                    f"No input-ready contract defined for phase {phase!r} and track {track!r}; "
+                    f"known tracks: {known}"
+                )
+            return contracts_by_track[normalized_track]
 
         completion_review = phase_data.get("completion_review", {})
         return completion_review.get(
@@ -322,7 +327,7 @@ def main() -> int:
         files = existing_artifact_files(docs_root, artifact)
         if files:
             found.append(artifact)
-            found_files[artifact] = [str(path.relative_to(docs_root)).replace("\\", "/") for path in files]
+            found_files[artifact] = sorted([str(path.relative_to(docs_root)).replace("\\", "/") for path in files])
         else:
             missing.append(artifact)
 

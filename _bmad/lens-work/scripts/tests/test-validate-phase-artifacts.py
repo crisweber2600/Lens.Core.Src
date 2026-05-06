@@ -306,7 +306,7 @@ open_questions:
         assert payload["status"] == "pass"
         assert "expressplan-adversarial-review" in payload["found_list"]
 
-    def test_input_ready_contract_for_finalizeplan_express_uses_quickplan_outputs(self, tmp_path):
+    def test_input_ready_contract_for_finalizeplan_express_track(self, tmp_path):
         docs_root = tmp_path / "docs"
         docs_root.mkdir()
         (docs_root / "business-plan.md").write_text("# Business\n", encoding="utf-8")
@@ -344,6 +344,27 @@ open_questions:
             "--phase", "finalizeplan",
             "--contract", "input-ready",
             "--track", "expressplan",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--json",
+        )
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["status"] == "pass"
+        assert payload["found_list"] == ["business-plan", "tech-plan", "sprint-plan"]
+
+    def test_input_ready_contract_for_finalizeplan_quickplan_alias(self, tmp_path):
+        docs_root = tmp_path / "docs"
+        docs_root.mkdir()
+        (docs_root / "business-plan.md").write_text("# Business\n", encoding="utf-8")
+        (docs_root / "tech-plan.md").write_text("# Tech\n", encoding="utf-8")
+        (docs_root / "sprint-plan.md").write_text("# Sprint\n", encoding="utf-8")
+
+        result = _run(
+            "--phase", "finalizeplan",
+            "--contract", "input-ready",
+            "--track", "quickplan",
             "--lifecycle-path", str(LIFECYCLE),
             "--docs-root", str(docs_root),
             "--json",
@@ -401,6 +422,24 @@ open_questions:
         assert payload["status"] == "fail"
         assert payload["failure_reason"] == "unknown_contract"
         assert "unknown-track" in payload["error"]
+
+    def test_input_ready_contract_for_finalizeplan_requires_track(self, tmp_path):
+        docs_root = tmp_path / "docs"
+        docs_root.mkdir()
+
+        result = _run(
+            "--phase", "finalizeplan",
+            "--contract", "input-ready",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--json",
+        )
+
+        assert result.returncode == 1, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["status"] == "fail"
+        assert payload["failure_reason"] == "unknown_contract"
+        assert "--track is required" in payload["error"]
 
     def test_accepts_research_documents_in_research_subdir(self, tmp_path):
         docs_root = tmp_path / "docs"
