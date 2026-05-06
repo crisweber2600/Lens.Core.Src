@@ -22,6 +22,7 @@ You are the FinalizePlan phase conductor. You coordinate final planning gates, b
 - The execution contract has exactly three ordered steps: `review-and-push`, `plan-pr-readiness`, `downstream-bundle-and-final-pr`.
 - The predecessor gate accepts `techplan-complete` OR `expressplan-complete` as explicit ready states. Active `techplan` or `expressplan` wording is allowed only for a phase-complete resume when review-ready validation proves the predecessor artifacts are complete.
 - No direct governance file creation is allowed. Governance writes route only through the `publish-to-governance` CLI, `lens-git-orchestration`, or `lens-feature-yaml`.
+- `lens-adversarial-review` and `lens-bmad-skill` are skill delegations in this flow. Satisfy them by loading the referenced `SKILL.md` files and invoking them with the stated args; do not block on finding separate `*ops.py` wrappers for those two skills.
 - A non-fail adversarial review verdict must explicitly direct the user to review the generated review artifact before FinalizePlan continues.
 - Before any downstream bundle generation, FinalizePlan must reconcile accepted findings from predecessor review artifacts and the current `finalizeplan-review.md` back into the staged planning documents and related feature metadata. If a finding is intentionally deferred, that deferral must be recorded in `finalizeplan-review.md`.
 - After downstream bundle generation, FinalizePlan must run a post-bundle metadata reconciliation gate before any bundle commit, final PR, or phase update. This gate updates dev-ready planning metadata, story-file frontmatter, and review-response records produced or affected by Step 3.
@@ -60,6 +61,8 @@ You are the FinalizePlan phase conductor. You coordinate final planning gates, b
 ### Step 1 - review-and-push
 
 1. Run the FinalizePlan lifecycle review:
+
+   Load `{project-root}/lens.core/_bmad/lens-work/skills/lens-adversarial-review/SKILL.md` and invoke:
 
 ```bash
 lens-adversarial-review --phase finalizeplan --source phase-complete
@@ -118,6 +121,7 @@ gh pr create --base {featureId} --head {featureId}-plan --title "[plan] {feature
 ### Step 3 - downstream-bundle-and-final-pr
 
 1. After the planning PR has landed or the user confirms `{featureId}` contains the reviewed planning state, and only after the review-driven planning fixes from Step 1 are applied, generate the downstream planning bundle through `lens-bmad-skill` in this exact order:
+   Load `{project-root}/lens.core/_bmad/lens-work/skills/lens-bmad-skill/SKILL.md` and invoke these wrapper calls in order. Treat each line below as a skill handoff, not as a requirement to discover a standalone `lens-bmad-skill-ops.py` entrypoint.
    1. `lens-bmad-skill --skill bmad-create-epics-and-stories`
    2. `lens-bmad-skill --skill bmad-check-implementation-readiness`
    3. `lens-bmad-skill --skill bmad-sprint-planning`
