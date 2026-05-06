@@ -22,6 +22,7 @@ You are the FinalizePlan phase conductor. You coordinate final planning gates, b
 - The execution contract has exactly three ordered steps: `review-and-push`, `plan-pr-readiness`, `downstream-bundle-and-final-pr`.
 - The predecessor gate accepts `techplan-complete` OR `expressplan-complete` as explicit ready states. Active `techplan` or `expressplan` wording is allowed only for a phase-complete resume when review-ready validation proves the predecessor artifacts are complete.
 - No direct governance file creation is allowed. Governance writes route only through the `publish-to-governance` CLI, `lens-git-orchestration`, or `lens-feature-yaml`.
+- `lens-adversarial-review` and `lens-bmad-skill` are skill delegations in this flow. Satisfy them by loading the referenced `SKILL.md` files and invoking them with the stated args; do not block on finding separate `*ops.py` wrappers for those two skills.
 - A non-fail adversarial review verdict must explicitly direct the user to review the generated review artifact before FinalizePlan continues.
 - Before any downstream bundle generation, FinalizePlan must reconcile accepted findings from predecessor review artifacts and the current `finalizeplan-review.md` back into the staged planning documents and related feature metadata. If a finding is intentionally deferred, that deferral must be recorded in `finalizeplan-review.md`.
 - After downstream bundle generation, FinalizePlan must run a post-bundle metadata reconciliation gate before any bundle commit, final PR, or phase update. This gate updates dev-ready planning metadata, story-file frontmatter, and review-response records produced or affected by Step 3.
@@ -46,7 +47,7 @@ You are the FinalizePlan phase conductor. You coordinate final planning gates, b
 5. Validate the predecessor phase gate:
    - Accept `techplan-complete`.
    - Accept `expressplan-complete`.
-   - If phase wording is active `techplan` or active `expressplan`, continue only when `uv run {project-root}/lens.core/_bmad/lens-work/scripts/validate-phase-artifacts.py --phase {phase} --contract review-ready --lifecycle-path {project-root}/lens.core/_bmad/lens-work/lifecycle.yaml --docs-root {staged_docs_path} --json` passes and the user is resuming a phase-complete handoff.
+   - If phase wording is active `techplan` or active `expressplan`, continue only when `$PYTHON {project-root}/lens.core/_bmad/lens-work/scripts/validate-phase-artifacts.py --phase {phase} --contract review-ready --lifecycle-path {project-root}/lens.core/_bmad/lens-work/lifecycle.yaml --docs-root {staged_docs_path} --json` passes and the user is resuming a phase-complete handoff.
    - Otherwise stop with: "FinalizePlan requires TechPlan or ExpressPlan completion before it can begin."
 6. Resolve staged docs path from `feature.yaml.docs.path` with fallback `docs/{domain}/{service}/{featureId}` in `{control_repo}`.
 7. Load domain constitution through `lens-constitution` for final cross-feature and governance context.
@@ -61,9 +62,10 @@ You are the FinalizePlan phase conductor. You coordinate final planning gates, b
 
 1. Run the FinalizePlan lifecycle review:
 
-```bash
-lens-adversarial-review --phase finalizeplan --source phase-complete
-```
+   Load `{project-root}/lens.core/_bmad/lens-work/skills/lens-adversarial-review/SKILL.md` and invoke:
+
+   - Skill handoff: `lens-adversarial-review`
+   - Args: `--phase finalizeplan --source phase-complete`
 
 2. If the verdict is `fail`, stop. Do not publish, commit, push, open PRs, or update `feature.yaml`.
 3. If the verdict is `pass` or `pass-with-warnings`, report the path to `finalizeplan-review.md`, direct the user to review it, and surface any findings that must be reconciled before bundle generation.
@@ -78,7 +80,7 @@ lens-adversarial-review --phase finalizeplan --source phase-complete
 8. Publish reviewed upstream planning artifacts to the governance mirror through the CLI-backed boundary:
 
 ```bash
-uv run {project-root}/lens.core/_bmad/lens-work/skills/lens-git-orchestration/scripts/git-orchestration-ops.py \
+$PYTHON {project-root}/lens.core/_bmad/lens-work/skills/lens-git-orchestration/scripts/git-orchestration-ops.py \
   publish-to-governance \
   --governance-repo {governance_repo} \
   --control-repo {control_repo} \
@@ -95,7 +97,7 @@ uv run {project-root}/lens.core/_bmad/lens-work/skills/lens-git-orchestration/sc
 1. Create or verify the planning PR from `{featureId}-plan` to `{featureId}` by executing this terminal command; do not narrate the operation or ask the user to create the PR:
 
 ```bash
-uv run --script {project-root}/lens.core/_bmad/lens-work/skills/lens-git-orchestration/scripts/git-orchestration-ops.py \
+$PYTHON {project-root}/lens.core/_bmad/lens-work/skills/lens-git-orchestration/scripts/git-orchestration-ops.py \
    merge-plan \
    --governance-repo {governance_repo} \
    --repo {control_repo} \
@@ -118,6 +120,7 @@ gh pr create --base {featureId} --head {featureId}-plan --title "[plan] {feature
 ### Step 3 - downstream-bundle-and-final-pr
 
 1. After the planning PR has landed or the user confirms `{featureId}` contains the reviewed planning state, and only after the review-driven planning fixes from Step 1 are applied, generate the downstream planning bundle through `lens-bmad-skill` in this exact order:
+   Load `{project-root}/lens.core/_bmad/lens-work/skills/lens-bmad-skill/SKILL.md` and invoke these wrapper calls in order. Treat each line below as a skill handoff, not as a requirement to discover a standalone `lens-bmad-skill-ops.py` entrypoint.
    1. `lens-bmad-skill --skill bmad-create-epics-and-stories`
    2. `lens-bmad-skill --skill bmad-check-implementation-readiness`
    3. `lens-bmad-skill --skill bmad-sprint-planning`
@@ -130,7 +133,7 @@ gh pr create --base {featureId} --head {featureId}-plan --title "[plan] {feature
 3. Validate that bundle outputs exist in the resolved docs path and pass strict handoff metadata checks by executing:
 
 ```bash
-uv run --script {project-root}/lens.core/_bmad/lens-work/scripts/validate-phase-artifacts.py \
+$PYTHON {project-root}/lens.core/_bmad/lens-work/scripts/validate-phase-artifacts.py \
    --phase finalizeplan \
    --contract phase-artifacts \
    --lifecycle-path {project-root}/lens.core/_bmad/lens-work/lifecycle.yaml \
@@ -144,7 +147,7 @@ uv run --script {project-root}/lens.core/_bmad/lens-work/scripts/validate-phase-
 6. Open or verify the final PR from `{featureId}` to `{featureId}-dev` by executing this terminal command; do not narrate the operation or ask the user to create the PR:
 
 ```bash
-uv run --script {project-root}/lens.core/_bmad/lens-work/skills/lens-git-orchestration/scripts/git-orchestration-ops.py \
+$PYTHON {project-root}/lens.core/_bmad/lens-work/skills/lens-git-orchestration/scripts/git-orchestration-ops.py \
    create-pr \
    --governance-repo {governance_repo} \
    --repo {control_repo} \
