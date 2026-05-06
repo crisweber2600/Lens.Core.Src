@@ -147,7 +147,7 @@ def test_request_json_raises_after_retryable_http_error_exhausted(monkeypatch):
     response = io.BytesIO(b"busy")
 
     def fake_urlopen(request, timeout):
-        raise HTTPError(request.full_url, 503, "busy", {}, response)
+        raise HTTPError("https://api.github.com/example", 503, "busy", {}, response)
 
     monkeypatch.setattr(MODULE, "urlopen", fake_urlopen)
     monkeypatch.setattr(MODULE.time, "sleep", lambda seconds: None)

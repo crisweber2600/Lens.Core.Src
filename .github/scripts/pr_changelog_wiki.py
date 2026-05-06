@@ -186,7 +186,7 @@ def save_state(
     repo: str,
     processed_numbers: set[int],
     updated_at: str,
-    existing_text: str = "",
+    existing_text: str,
 ) -> str:
     """Return the rendered state payload and write it only when content changes."""
     payload = {

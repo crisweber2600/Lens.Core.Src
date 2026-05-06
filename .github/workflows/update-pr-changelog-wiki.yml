@@ -36,7 +36,7 @@ jobs:
             *) printf '%s\n' "$GITHUB_TOKEN" ;;
           esac
           EOF
-          chmod 700 "$ASKPASS"
+          chmod 500 "$ASKPASS"
           {
             echo "GIT_ASKPASS=$ASKPASS"
             echo "GIT_TERMINAL_PROMPT=0"
