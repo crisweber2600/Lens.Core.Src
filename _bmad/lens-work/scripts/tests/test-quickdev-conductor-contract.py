@@ -70,9 +70,10 @@ def test_skill_blocks_before_target_assessment_without_dev_ready_context():
     """Non-dev-ready or unresolved target context must block before repo assessment."""
     text = _skill_text()
 
-    assert "feature is not dev-ready" in text
+    assert "quickdev_phase_gate_failed" in text
+    assert "finalizeplan-complete`, `dev-ready`, or `dev`" in text
     assert "Block before target-repo assessment" in text
-    assert "`target_repos` is missing or unresolved" in text
+    assert "quickdev_target_repo_unresolved" in text
     assert "blocks without guessing a write target" in text
 
 
@@ -100,3 +101,26 @@ def test_module_help_exposes_lens_quickdev_once_with_dev_ready_guidance():
     assert len(rows) == 1
     assert "dev-ready-only" in rows[0]
     assert "versioned quickdev evidence" in rows[0]
+
+
+def test_skill_uses_sanctioned_feature_yaml_read_for_context_resolution():
+    """Feature resolution must use the sanctioned feature-yaml helper."""
+    text = _skill_text()
+
+    assert "--feature-id <featureId>" in text
+    assert "ignore the active workspace feature" in text
+    assert ".lens/personal/context.yaml" in text
+    assert "feature-yaml-ops.py read" in text
+    assert "--governance-repo {governance_repo}" in text
+    assert "--feature-id {feature_id}" in text
+
+
+def test_skill_resolves_docs_and_target_repos_before_assessment():
+    """Docs paths and target repo must resolve before evidence or source assessment."""
+    text = _skill_text()
+
+    assert "Resolve `docs.path` and `docs.governance_docs_path`" in text
+    assert "Resolve the first `target_repos` entry before target-repo assessment" in text
+    assert "string alias such as `lens.core.src`" in text
+    assert "structured entry with `local_path`" in text
+    assert "Do not infer a write target from open files" in text
