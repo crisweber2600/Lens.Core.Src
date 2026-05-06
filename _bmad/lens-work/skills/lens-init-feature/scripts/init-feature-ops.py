@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["pyyaml>=6.0"]
+# dependencies = []
 # ///
 """Init feature operations (new-codebase implementation).
 
@@ -22,11 +22,6 @@ from datetime import datetime, timezone
 from functools import lru_cache
 from importlib import util as importlib_util
 from pathlib import Path
-
-try:
-    import yaml as pyyaml
-except Exception:  # pragma: no cover - optional fallback only
-    pyyaml = None
 
 _LENS_YAML_PATH = next(
     (parent / "scripts" / "lens_yaml.py" for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
@@ -1032,6 +1027,61 @@ def _normalize_legacy_index_summaries(raw: str) -> str:
     return "\n".join(normalized) + trailing_newline
 
 
+def _scan_feature_ids_from_text(raw: str) -> set[str]:
+    ids: set[str] = set()
+    for line in raw.splitlines():
+        match = re.match(r"^\s*(?:featureId|id):\s*(.+?)\s*$", line)
+        if not match:
+            continue
+        value = match.group(1).strip()
+        if value.startswith("\"") and value.endswith("\"") and len(value) >= 2:
+            value = value[1:-1].replace('\\"', '"')
+        elif value.startswith("'") and value.endswith("'") and len(value) >= 2:
+            value = value[1:-1].replace("''", "'")
+        if value:
+            ids.add(value)
+    return ids
+
+
+def _yaml_quote(value: str) -> str:
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
+
+
+def _append_feature_index_entry(index_path: Path, entry: dict) -> None:
+    if not index_path.exists():
+        index_path.parent.mkdir(parents=True, exist_ok=True)
+        index_path.write_text("features:\n", encoding="utf-8")
+
+    raw = index_path.read_text(encoding="utf-8")
+    if not raw.strip():
+        raw = "features:\n"
+    if not raw.endswith("\n"):
+        raw += "\n"
+
+    block = "\n".join([
+        f"  - featureId: {_yaml_quote(str(entry.get('featureId', '')))}",
+        f"    id: {_yaml_quote(str(entry.get('id', '')))}",
+        f"    name: {_yaml_quote(str(entry.get('name', '')))}",
+        f"    featureSlug: {_yaml_quote(str(entry.get('featureSlug', '')))}",
+        f"    domain: {_yaml_quote(str(entry.get('domain', '')))}",
+        f"    service: {_yaml_quote(str(entry.get('service', '')))}",
+        f"    status: {_yaml_quote(str(entry.get('status', '')))}",
+        f"    track: {_yaml_quote(str(entry.get('track', '')))}",
+        f"    owner: {_yaml_quote(str(entry.get('owner', '')))}",
+        f"    plan_branch: {_yaml_quote(str(entry.get('plan_branch', '')))}",
+        "    related_features:",
+        "      depends_on: []",
+        "      blocks: []",
+        "      related: []",
+        f"    created: {_yaml_quote(str(entry.get('created', '')))}",
+        f"    updated_at: {_yaml_quote(str(entry.get('updated_at', '')))}",
+        f"    summary: {_yaml_quote(str(entry.get('summary', '')))}",
+    ]) + "\n"
+
+    index_path.write_text(raw + block, encoding="utf-8")
+
+
 def _load_feature_index(gov_path: Path) -> dict:
     index_path = gov_path / "feature-index.yaml"
     if not index_path.exists():
@@ -1042,36 +1092,19 @@ def _load_feature_index(gov_path: Path) -> dict:
     try:
         data = yaml.safe_load(raw) or {}
     except yaml.YAMLError as exc:
-        # Fallback to PyYAML for legacy index shapes the lightweight parser does not support.
-        if pyyaml is not None:
+        repaired = _normalize_legacy_index_summaries(raw)
+        if repaired != raw:
             try:
-                data = pyyaml.safe_load(raw) or {}
-            except Exception as py_exc:
-                repaired = _normalize_legacy_index_summaries(raw)
-                if repaired == raw:
-                    raise RuntimeError(f"Failed to read feature-index.yaml: {exc}") from exc
-                try:
-                    data = pyyaml.safe_load(repaired) or {}
-                except Exception as repaired_exc:
-                    raise RuntimeError(
-                        "Failed to read feature-index.yaml via PyYAML fallback: "
-                        f"{py_exc}; normalization retry failed: {repaired_exc}"
-                    ) from repaired_exc
+                data = yaml.safe_load(repaired) or {}
+            except yaml.YAMLError:
+                ids = _scan_feature_ids_from_text(repaired)
+                data = {"features": [{"id": fid, "featureId": fid} for fid in sorted(ids)]}
         else:
-            repaired = _normalize_legacy_index_summaries(raw)
-            if repaired != raw:
-                try:
-                    data = yaml.safe_load(repaired) or {}
-                except yaml.YAMLError as repaired_exc:
-                    raise RuntimeError(
-                        "Failed to read feature-index.yaml after legacy summary normalization: "
-                        f"{repaired_exc}"
-                    ) from repaired_exc
+            ids = _scan_feature_ids_from_text(raw)
+            if ids:
+                data = {"features": [{"id": fid, "featureId": fid} for fid in sorted(ids)]}
             else:
-                raise RuntimeError(
-                    "Failed to read feature-index.yaml with the lightweight parser and no PyYAML fallback: "
-                    f"{exc}"
-                ) from exc
+                raise RuntimeError(f"Failed to read feature-index.yaml: {exc}") from exc
 
     if "features" not in data:
         data["features"] = []
@@ -1311,14 +1344,12 @@ def cmd_create(args: argparse.Namespace) -> dict:
         return {"status": "fail", "scope": "feature", "dry_run": False,
                 "error": f"Failed to write summary.md: {exc}"}
 
-    # Re-read index (timestamp may differ) and append entry
-    index_data = _load_feature_index(gov_path)
+    # Append index entry without reparsing the entire file to avoid legacy parser edge cases.
     new_entry = _make_index_entry(
         feature_id, feature_slug, domain, service, name, track, username, starting_phase, timestamp
     )
-    index_data["features"].append(new_entry)
     try:
-        atomic_write_yaml(index_path, index_data)
+        _append_feature_index_entry(index_path, new_entry)
     except OSError as exc:
         # Rollback: remove already-written feature files to avoid partial state
         for written_path in files_written:
