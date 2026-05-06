@@ -136,9 +136,9 @@ def test_request_json_retries_with_timeout(monkeypatch):
     monkeypatch.setattr(MODULE, "urlopen", fake_urlopen)
     monkeypatch.setattr(MODULE.time, "sleep", sleeps.append)
 
-    payload = MODULE.request_json("https://api.github.com/example", "token")
+    response_data = MODULE.request_json("https://api.github.com/example", "token")
 
-    assert payload == {"ok": True}
+    assert response_data == {"ok": True}
     assert attempts == [MODULE.REQUEST_TIMEOUT_SECONDS, MODULE.REQUEST_TIMEOUT_SECONDS]
     assert sleeps == [1]
 

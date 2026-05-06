@@ -188,7 +188,7 @@ def save_state(
     updated_at: str,
     existing_text: str,
 ) -> str:
-    """Return the rendered state payload and write it only when content changes."""
+    """Return the rendered state payload and write it to disk only when content changes."""
     payload = {
         "repository": repo,
         "processed_pull_numbers": sorted(processed_numbers),
