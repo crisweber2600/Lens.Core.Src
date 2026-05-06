@@ -64,9 +64,8 @@ You are the FinalizePlan phase conductor. You coordinate final planning gates, b
 
    Load `{project-root}/lens.core/_bmad/lens-work/skills/lens-adversarial-review/SKILL.md` and invoke:
 
-```bash
-lens-adversarial-review --phase finalizeplan --source phase-complete
-```
+   - Skill handoff: `lens-adversarial-review`
+   - Args: `--phase finalizeplan --source phase-complete`
 
 2. If the verdict is `fail`, stop. Do not publish, commit, push, open PRs, or update `feature.yaml`.
 3. If the verdict is `pass` or `pass-with-warnings`, report the path to `finalizeplan-review.md`, direct the user to review it, and surface any findings that must be reconciled before bundle generation.
