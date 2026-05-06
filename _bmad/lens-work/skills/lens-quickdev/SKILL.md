@@ -56,6 +56,26 @@ uv run --script lens.core/_bmad/lens-work/skills/lens-feature-yaml/scripts/featu
 - Broader non-source edits require a scope-creep warning and an explicit operator override before edits proceed.
 - Any approved override must be recorded in the versioned quickdev evidence artifact.
 
+## Versioned Evidence Scaffold
+
+Every run creates exactly one quickdev evidence artifact before implementation delegation.
+
+1. Resolve `evidence_dir = {docs.path}/quickdev` after the Feature Resolution Gate succeeds.
+2. Build `summaryofrequeststub` from the implementation ask by lowercasing, replacing non-alphanumeric runs with `-`, trimming leading/trailing separators, and keeping the result short enough for a readable filename.
+3. Find existing files matching `quickdev/quickdev-[summaryofrequeststub]-vNNN.md` in `evidence_dir`.
+4. Select the next version by incrementing the highest existing `vNNN` suffix, starting at `v001` when no prior artifact exists.
+5. Create `quickdev/quickdev-[summaryofrequeststub]-vNNN.md` and never overwrite an existing evidence file.
+6. Before delegating to `bmad-quick-dev`, write the artifact with these sections:
+	- `Request`
+	- `Context Assessment`
+	- `Assumptions`
+	- `Scope Decision`
+	- `Validation Plan`
+	- `Implementation Plan`
+	- `Delegation Result`
+	- `Commit and Publication Record`
+7. The versioned quickdev artifact is the only quickdev evidence file for the run. Do not create `commit.md`, `quickdev-commit.md`, or any separate sidecar commit record.
+
 ## Execution Contract
 
 1. Confirm prompt-start preflight succeeded.
@@ -63,7 +83,7 @@ uv run --script lens.core/_bmad/lens-work/skills/lens-feature-yaml/scripts/featu
 3. Block before target-repo assessment when the feature phase is not a dev-ready phase value or the target repo cannot be resolved.
 4. Assess the target codebase and feature-associated control docs for the request.
 5. Produce an implementation plan, assumptions, and validation plan for the ask.
-6. Create or update a versioned evidence artifact at `quickdev/quickdev-[summaryofrequeststub]-vNNN.md` under the feature docs path.
+6. Create a new versioned evidence artifact at `quickdev/quickdev-[summaryofrequeststub]-vNNN.md` under the feature docs path. Never update or replace a previous run's evidence artifact.
 7. Delegate implementation through the registered `bmad-quick-dev` skill with Lens context. Do not introduce alternate implementation behavior here.
 8. Capture the delegate outcome, including changed files, validation result, commit hash, branch, and PR URL when present.
 9. Publish the versioned evidence artifact through the sanctioned Lens publication path when governance publication is required.
@@ -106,3 +126,5 @@ Validate this contract with focused tests or inspection that assert:
 - Non-dev-ready features block before target-repo assessment.
 - Missing `target_repos` blocks without guessing a write target.
 - Versioned quickdev evidence paths use `quickdev/quickdev-[summaryofrequeststub]-vNNN.md`.
+- Reruns create the next available version and do not overwrite prior artifacts.
+- No separate `commit.md` or sidecar commit evidence file is created.

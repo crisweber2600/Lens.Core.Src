@@ -83,6 +83,38 @@ def test_skill_defines_versioned_evidence_artifact():
 
     assert "quickdev/quickdev-[summaryofrequeststub]-vNNN.md" in text
     assert "Versioned quickdev evidence paths" in text
+    assert "evidence_dir = {docs.path}/quickdev" in text
+    assert "starting at `v001`" in text
+
+
+def test_skill_requires_evidence_before_delegation():
+    """The artifact must contain planning evidence before implementation delegation."""
+    text = _skill_text()
+
+    scaffold_index = text.index("Before delegating to `bmad-quick-dev`")
+    delegation_index = text.index("Delegate implementation through the registered `bmad-quick-dev` skill")
+
+    assert scaffold_index < delegation_index
+    for required_section in (
+        "Request",
+        "Context Assessment",
+        "Assumptions",
+        "Scope Decision",
+        "Validation Plan",
+        "Implementation Plan",
+        "Delegation Result",
+        "Commit and Publication Record",
+    ):
+        assert f"`{required_section}`" in text
+
+
+def test_skill_forbids_overwrite_and_sidecar_commit_records():
+    """Reruns must create the next version without commit.md sidecars."""
+    text = _skill_text()
+
+    assert "never overwrite an existing evidence file" in text
+    assert "Never update or replace a previous run's evidence artifact" in text
+    assert "Do not create `commit.md`, `quickdev-commit.md`, or any separate sidecar" in text
 
 
 def test_module_yaml_exposes_lens_quickdev_once():
