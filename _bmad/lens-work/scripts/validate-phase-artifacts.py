@@ -216,6 +216,13 @@ def collect_story_ids(value: object) -> set[str]:
 def sprint_status_story_ids(docs_root: Path) -> tuple[set[str], str | None]:
     sprint_status = docs_root / "sprint-status.yaml"
     if not sprint_status.exists() or sprint_status.stat().st_size == 0:
+        sprint_backlog = docs_root / "sprint-backlog.md"
+        if sprint_backlog.exists() and sprint_backlog.stat().st_size > 0:
+            return (
+                set(),
+                "strict metadata requires sprint-status.yaml to verify story-file coverage; "
+                "sprint-backlog.md alone is insufficient"
+            )
         return set(), None
 
     try:
