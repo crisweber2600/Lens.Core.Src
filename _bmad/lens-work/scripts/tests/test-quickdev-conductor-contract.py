@@ -64,6 +64,52 @@ def test_skill_is_conductor_only_and_delegates_to_bmad_quick_dev():
     assert "does not implement a second quick-dev engine" in text
     assert "The only implementation engine for this wrapper is `bmad-quick-dev`" in text
     assert "Delegate implementation through the registered `bmad-quick-dev` skill" in text
+    assert "Do not reimplement the quick-dev planning, editing, validation, or review workflow" in text
+
+
+def test_skill_builds_delegation_packet_with_lens_context():
+    """Delegation must pass Lens context and the ask to bmad-quick-dev."""
+    text = _skill_text()
+
+    assert "## Delegation Packet" in text
+    for required_field in (
+        "delegate_skill: bmad-quick-dev",
+        "feature_id: {feature_id}",
+        "target_repo_path: {resolved_target_repo_path}",
+        "docs_path: {docs.path}",
+        "governance_docs_path: {docs.governance_docs_path}",
+        "quickdev_artifact_path: {quickdev_artifact_path}",
+        "ask: {ask}",
+    ):
+        assert required_field in text
+
+
+def test_skill_defines_registered_quick_dev_fallback():
+    """When no script facade exists, the registered skill must be loaded directly."""
+    text = _skill_text()
+
+    assert "lens-bmad-skill --skill bmad-quick-dev" in text
+    assert "If no script facade is available" in text
+    assert "{project-root}/.github/skills/bmad-quick-dev/SKILL.md" in text
+    assert "pass the same Lens context fields" in text
+
+
+def test_skill_captures_delegate_outputs_for_later_steps():
+    """Delegate result fields must be available for evidence and branch policy stories."""
+    text = _skill_text()
+
+    for required_field in (
+        "changed_files",
+        "validation_command",
+        "validation_status",
+        "validation_summary",
+        "commit_hash",
+        "branch",
+        "pr_url",
+        "no_op",
+        "blocked_reason",
+    ):
+        assert f"`{required_field}`" in text
 
 
 def test_skill_blocks_before_target_assessment_without_dev_ready_context():

@@ -84,13 +84,45 @@ Every run creates exactly one quickdev evidence artifact before implementation d
 4. Assess the target codebase and feature-associated control docs for the request.
 5. Produce an implementation plan, assumptions, and validation plan for the ask.
 6. Create a new versioned evidence artifact at `quickdev/quickdev-[summaryofrequeststub]-vNNN.md` under the feature docs path. Never update or replace a previous run's evidence artifact.
-7. Delegate implementation through the registered `bmad-quick-dev` skill with Lens context. Do not introduce alternate implementation behavior here.
+7. Build the Delegation Packet. Delegate implementation through the registered `bmad-quick-dev` skill with Lens context. Do not introduce alternate implementation behavior here.
 8. Capture the delegate outcome, including changed files, validation result, commit hash, branch, and PR URL when present.
 9. Publish the versioned evidence artifact through the sanctioned Lens publication path when governance publication is required.
 
 ## Delegation Boundary
 
 The only implementation engine for this wrapper is `bmad-quick-dev`. This skill may prepare context and evidence for that delegate, but source-code changes, tests, and implementation-specific decisions belong to the delegate.
+
+## Delegation Packet
+
+Build one delegation packet after the evidence scaffold is created and before invoking implementation:
+
+```yaml
+delegate_skill: bmad-quick-dev
+feature_id: {feature_id}
+target_repo_path: {resolved_target_repo_path}
+docs_path: {docs.path}
+governance_docs_path: {docs.governance_docs_path}
+quickdev_artifact_path: {quickdev_artifact_path}
+ask: {ask}
+validation_plan: {validation_plan}
+branch_context: {branch_context}
+```
+
+Invocation rules:
+- Prefer the sanctioned Lens BMAD wrapper route when it can invoke registered implementation skills with Lens context: `lens-bmad-skill --skill bmad-quick-dev`.
+- If no script facade is available for that route, load the installed registered skill directly from `{project-root}/.github/skills/bmad-quick-dev/SKILL.md` and pass the same Lens context fields.
+- Do not reimplement the quick-dev planning, editing, validation, or review workflow inside `lens-quickdev`.
+
+Capture these delegate result fields for later evidence and branch-policy steps:
+- `changed_files`
+- `validation_command`
+- `validation_status`
+- `validation_summary`
+- `commit_hash`
+- `branch`
+- `pr_url`
+- `no_op`
+- `blocked_reason`
 
 ## Output Contract
 
@@ -128,3 +160,6 @@ Validate this contract with focused tests or inspection that assert:
 - Versioned quickdev evidence paths use `quickdev/quickdev-[summaryofrequeststub]-vNNN.md`.
 - Reruns create the next available version and do not overwrite prior artifacts.
 - No separate `commit.md` or sidecar commit evidence file is created.
+- Delegation packet includes feature id, target repo, docs path, evidence artifact path, and ask.
+- The fallback loads `{project-root}/.github/skills/bmad-quick-dev/SKILL.md` directly when no script facade exists.
+- Delegate outputs include changed files, validation result, commit, branch, PR URL, no-op, and blocker fields.
