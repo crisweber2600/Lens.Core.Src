@@ -86,8 +86,9 @@ Every run creates exactly one quickdev evidence artifact before implementation d
 6. Create a new versioned evidence artifact at `quickdev/quickdev-[summaryofrequeststub]-vNNN.md` under the feature docs path. Never update or replace a previous run's evidence artifact.
 7. Resolve Branch and PR Policy, recording `branch_context` or stopping on unsafe branch state before implementation.
 8. Build the Delegation Packet. Delegate implementation through the registered `bmad-quick-dev` skill with Lens context. Do not introduce alternate implementation behavior here.
-9. Capture the delegate outcome, including changed files, validation result, commit hash, branch, and PR URL when present.
-10. Publish the versioned evidence artifact through the sanctioned Lens publication path when governance publication is required.
+9. Capture the delegate outcome, including changed files, validation result, commit hash, branch, PR URL, and no-op state when present.
+10. Update the existing versioned quickdev artifact in place through Run Result Recording.
+11. Publish the versioned evidence artifact through the sanctioned Lens publication path when governance publication is required.
 
 ## Delegation Boundary
 
@@ -157,6 +158,17 @@ uv run --script lens.core/_bmad/lens-work/skills/lens-git-orchestration/scripts/
 
 6. Record `branch_context` before delegation with `branch`, `base_branch`, `direct_commit`, `requires_pr`, `pr_url`, and `branch_policy_reason`. Preserve those fields for the quickdev evidence update.
 
+## Run Result Recording
+
+After delegation, update the existing versioned quickdev artifact in place. Preserve the original `quickdev/quickdev-[summaryofrequeststub]-vNNN.md` filename for the entire run.
+
+1. Record the focused validation command, exit status, and concise output summary in `Delegation Result`.
+2. Inspect changed files after delegation.
+3. If changed files are present and validation is acceptable for commit, create one conventional commit on the resolved branch and record `commit_hash`, `branch`, `base_branch`, `changed_files`, and `pr_url` when present in `Commit and Publication Record`.
+4. If no changed files are present, record `no-op` in `Delegation Result`, explain why no source change was needed, and do not create an empty commit.
+5. If a PR is created or reused by Branch and PR Policy, record the PR URL in the same versioned artifact.
+6. Do not rename the artifact, create a replacement artifact, or split validation/commit details into another file.
+
 ## Output Contract
 
 Return:
@@ -201,3 +213,7 @@ Validate this contract with focused tests or inspection that assert:
 - Non-active branches use `git-orchestration-ops.py prepare-dev-branch` and `git-orchestration-ops.py create-pr`.
 - Dirty, detached, merge, rebase, cherry-pick, and ambiguous branch states block before implementation.
 - Branch context records branch, base branch, direct-commit flag, PR requirement, PR URL, and policy reason.
+- Focused validation command and result are recorded in the existing versioned artifact.
+- Non-empty runs record conventional commit hash, changed files, branch, and PR URL when present.
+- No-op runs record `no-op` and do not create empty commits.
+- Evidence updates preserve the original versioned filename for the run.

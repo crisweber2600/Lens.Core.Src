@@ -149,6 +149,28 @@ def test_skill_records_branch_context_for_evidence():
         assert f"`{required_field}`" in text
 
 
+def test_skill_records_validation_commit_and_noop_outcomes():
+    """Run results must update the existing artifact with validation, commit, and no-op evidence."""
+    text = _skill_text()
+
+    assert "## Run Result Recording" in text
+    assert "focused validation command, exit status, and concise output summary" in text
+    assert "create one conventional commit" in text
+    assert "record `commit_hash`, `branch`, `base_branch`, `changed_files`, and `pr_url`" in text
+    assert "record `no-op`" in text
+    assert "do not create an empty commit" in text
+
+
+def test_skill_preserves_existing_versioned_artifact_for_result_updates():
+    """Validation and commit details must stay in the same versioned artifact."""
+    text = _skill_text()
+
+    assert "update the existing versioned quickdev artifact in place" in text
+    assert "Preserve the original `quickdev/quickdev-[summaryofrequeststub]-vNNN.md` filename" in text
+    assert "Do not rename the artifact" in text
+    assert "split validation/commit details into another file" in text
+
+
 def test_skill_blocks_before_target_assessment_without_dev_ready_context():
     """Non-dev-ready or unresolved target context must block before repo assessment."""
     text = _skill_text()
