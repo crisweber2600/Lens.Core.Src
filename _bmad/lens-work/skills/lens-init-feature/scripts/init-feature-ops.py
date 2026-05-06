@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.12"
-# dependencies = []
+# dependencies = ["pyyaml>=6.0"]
 # ///
 """Init feature operations (new-codebase implementation).
 
@@ -22,6 +22,11 @@ from datetime import datetime, timezone
 from functools import lru_cache
 from importlib import util as importlib_util
 from pathlib import Path
+
+try:
+    import yaml as pyyaml
+except Exception:  # pragma: no cover - optional fallback only
+    pyyaml = None
 
 _LENS_YAML_PATH = next(
     (parent / "scripts" / "lens_yaml.py" for parent in Path(__file__).resolve().parents if (parent / "scripts" / "lens_yaml.py").is_file()),
@@ -973,12 +978,101 @@ def make_summary_md(feature_id: str, name: str, starting_phase: str, track: str,
     )
 
 
+def _normalize_legacy_index_summaries(raw: str) -> str:
+    """Flatten malformed multi-line summary scalars into quoted single-line values.
+
+    Some legacy feature-index entries include plain-scalar summary continuations with
+    inconsistent indentation, which can break YAML parsing. This normalizer joins
+    continuation lines into one quoted summary value so the index remains parseable.
+    """
+
+    lines = raw.splitlines()
+    normalized: list[str] = []
+    i = 0
+
+    while i < len(lines):
+        line = lines[i]
+        match = re.match(r"^(\s*)summary:\s*(.*)$", line)
+        if not match:
+            normalized.append(line)
+            i += 1
+            continue
+
+        indent = len(match.group(1))
+        base_value = match.group(2).strip()
+        parts = [base_value] if base_value else []
+
+        j = i + 1
+        while j < len(lines):
+            candidate = lines[j]
+            stripped = candidate.strip()
+            if stripped == "":
+                break
+
+            candidate_indent = len(candidate) - len(candidate.lstrip(" "))
+            # Stop when the next mapping/list item begins at the same or shallower level.
+            if candidate_indent <= indent:
+                break
+            if re.match(r"^\s*[-\w\"'][\w\-\"']*:\s*", candidate):
+                break
+
+            parts.append(stripped)
+            j += 1
+
+        if j > i + 1:
+            joined = " ".join(p for p in parts if p).strip().replace('"', '\\"')
+            normalized.append(f"{match.group(1)}summary: \"{joined}\"")
+            i = j
+            continue
+
+        normalized.append(line)
+        i += 1
+
+    trailing_newline = "\n" if raw.endswith("\n") else ""
+    return "\n".join(normalized) + trailing_newline
+
+
 def _load_feature_index(gov_path: Path) -> dict:
     index_path = gov_path / "feature-index.yaml"
     if not index_path.exists():
         return {"features": []}
-    with index_path.open(encoding="utf-8") as fh:
-        data = yaml.safe_load(fh) or {}
+
+    raw = index_path.read_text(encoding="utf-8")
+
+    try:
+        data = yaml.safe_load(raw) or {}
+    except yaml.YAMLError as exc:
+        # Fallback to PyYAML for legacy index shapes the lightweight parser does not support.
+        if pyyaml is not None:
+            try:
+                data = pyyaml.safe_load(raw) or {}
+            except Exception as py_exc:
+                repaired = _normalize_legacy_index_summaries(raw)
+                if repaired == raw:
+                    raise RuntimeError(f"Failed to read feature-index.yaml: {exc}") from exc
+                try:
+                    data = pyyaml.safe_load(repaired) or {}
+                except Exception as repaired_exc:
+                    raise RuntimeError(
+                        "Failed to read feature-index.yaml via PyYAML fallback: "
+                        f"{py_exc}; normalization retry failed: {repaired_exc}"
+                    ) from repaired_exc
+        else:
+            repaired = _normalize_legacy_index_summaries(raw)
+            if repaired != raw:
+                try:
+                    data = yaml.safe_load(repaired) or {}
+                except yaml.YAMLError as repaired_exc:
+                    raise RuntimeError(
+                        "Failed to read feature-index.yaml after legacy summary normalization: "
+                        f"{repaired_exc}"
+                    ) from repaired_exc
+            else:
+                raise RuntimeError(
+                    "Failed to read feature-index.yaml with the lightweight parser and no PyYAML fallback: "
+                    f"{exc}"
+                ) from exc
+
     if "features" not in data:
         data["features"] = []
     return data
