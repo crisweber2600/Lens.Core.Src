@@ -77,6 +77,10 @@ def _is_retryable_http_error(exc: HTTPError) -> bool:
     return exc.code in REQUEST_RETRYABLE_HTTP_STATUS_CODES
 
 
+def _retry_delay(attempt: int) -> int:
+    return 2 ** (attempt - 1)
+
+
 def request_json(url: str, token: str) -> Any:
     request = Request(
         url,
@@ -93,12 +97,12 @@ def request_json(url: str, token: str) -> Any:
                 return json.load(response)
         except HTTPError as exc:
             if attempt < REQUEST_MAX_ATTEMPTS and _is_retryable_http_error(exc):
-                time.sleep(attempt)
+                time.sleep(_retry_delay(attempt))
                 continue
             raise RuntimeError(f"GitHub API request failed ({exc.code}) for {url}") from exc
         except URLError as exc:
             if attempt < REQUEST_MAX_ATTEMPTS:
-                time.sleep(attempt)
+                time.sleep(_retry_delay(attempt))
                 continue
             raise RuntimeError(f"GitHub API request failed for {url}: {exc.reason}") from exc
 
@@ -184,6 +188,7 @@ def save_state(
     updated_at: str,
     existing_text: str = "",
 ) -> str:
+    """Return the rendered state payload and write it only when content changes."""
     payload = {
         "repository": repo,
         "processed_pull_numbers": sorted(processed_numbers),

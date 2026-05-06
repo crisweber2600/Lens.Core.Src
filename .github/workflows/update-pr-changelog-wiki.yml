@@ -45,6 +45,7 @@ jobs:
       - name: Prepare wiki checkout
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           WIKI_URL="https://github.com/${GITHUB_REPOSITORY}.wiki.git"
           rm -rf wiki

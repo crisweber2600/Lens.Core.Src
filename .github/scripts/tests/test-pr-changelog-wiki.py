@@ -158,3 +158,9 @@ def test_request_json_raises_after_retryable_http_error_exhausted(monkeypatch):
         assert "503" in str(exc)
     else:
         raise AssertionError("Expected RuntimeError for exhausted retries")
+
+
+def test_retry_delay_uses_exponential_backoff():
+    assert MODULE._retry_delay(1) == 1
+    assert MODULE._retry_delay(2) == 2
+    assert MODULE._retry_delay(3) == 4
