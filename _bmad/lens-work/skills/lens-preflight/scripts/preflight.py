@@ -655,7 +655,10 @@ def branch_cleanup_fallback_branch(repo_label: str, branch: str) -> str | None:
 
 
 def checkout_branch_cleanup_fallback(repo: Path, remote: str, fallback_branch: str) -> tuple[bool, str | None]:
-    fetch_result = repo_git_repo(repo, ["fetch", remote, f"{fallback_branch}:refs/remotes/{remote}/{fallback_branch}"])
+    fetch_result = repo_git_repo(
+        repo,
+        ["fetch", remote, f"refs/heads/{fallback_branch}:refs/remotes/{remote}/{fallback_branch}"],
+    )
     if fetch_result.returncode != 0:
         return False, f"failed to fetch {remote}/{fallback_branch}: {repo_git_error(fetch_result)}"
 
