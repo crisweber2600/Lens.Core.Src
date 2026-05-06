@@ -88,7 +88,8 @@ Every run creates exactly one quickdev evidence artifact before implementation d
 8. Build the Delegation Packet. Delegate implementation through the registered `bmad-quick-dev` skill with Lens context. Do not introduce alternate implementation behavior here.
 9. Capture the delegate outcome, including changed files, validation result, commit hash, branch, PR URL, and no-op state when present.
 10. Update the existing versioned quickdev artifact in place through Run Result Recording.
-11. Publish the versioned evidence artifact through the sanctioned Lens publication path when governance publication is required.
+11. Apply Validation Failure Handling when validation fails at any stage.
+12. Publish the versioned evidence artifact through the sanctioned Lens publication path when governance publication is required.
 
 ## Delegation Boundary
 
@@ -169,6 +170,24 @@ After delegation, update the existing versioned quickdev artifact in place. Pres
 5. If a PR is created or reused by Branch and PR Policy, record the PR URL in the same versioned artifact.
 6. Do not rename the artifact, create a replacement artifact, or split validation/commit details into another file.
 
+## Validation Failure Handling
+
+Validation failures use explicit recovery paths and never rewrite shared history.
+
+1. Pre-commit validation failure:
+	- create no commit;
+	- mark the versioned quickdev artifact `blocked`;
+	- record the failed validation command, output summary, and operator guidance.
+2. Local post-commit validation failure before push or PR:
+	- do not push;
+	- do not create a PR;
+	- record `validation-failed` guidance in the artifact with the local commit hash and recovery instructions.
+3. Pushed or PR validation failure:
+	- do not rewrite shared history;
+	- record fix-forward guidance when the branch can continue;
+	- record blocked PR recovery when the PR must remain open but blocked.
+4. This failure policy applies only to `lens-quickdev`. The existing `/lens-bug-quickdev` route remains separate and keeps its mandatory commit, push, PR, bug-artifact recording, and closeout behavior.
+
 ## Output Contract
 
 Return:
@@ -217,3 +236,7 @@ Validate this contract with focused tests or inspection that assert:
 - Non-empty runs record conventional commit hash, changed files, branch, and PR URL when present.
 - No-op runs record `no-op` and do not create empty commits.
 - Evidence updates preserve the original versioned filename for the run.
+- Pre-commit validation failures create no commit and mark the artifact `blocked`.
+- Local post-commit validation failures do not push or create PRs and record `validation-failed` guidance.
+- Pushed or PR validation failures do not rewrite shared history and record fix-forward or blocked PR recovery.
+- `/lens-bug-quickdev` remains separate with mandatory commit, push, PR, bug-artifact recording, and closeout behavior.
