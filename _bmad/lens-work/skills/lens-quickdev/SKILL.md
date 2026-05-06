@@ -84,9 +84,10 @@ Every run creates exactly one quickdev evidence artifact before implementation d
 4. Assess the target codebase and feature-associated control docs for the request.
 5. Produce an implementation plan, assumptions, and validation plan for the ask.
 6. Create a new versioned evidence artifact at `quickdev/quickdev-[summaryofrequeststub]-vNNN.md` under the feature docs path. Never update or replace a previous run's evidence artifact.
-7. Build the Delegation Packet. Delegate implementation through the registered `bmad-quick-dev` skill with Lens context. Do not introduce alternate implementation behavior here.
-8. Capture the delegate outcome, including changed files, validation result, commit hash, branch, and PR URL when present.
-9. Publish the versioned evidence artifact through the sanctioned Lens publication path when governance publication is required.
+7. Resolve Branch and PR Policy, recording `branch_context` or stopping on unsafe branch state before implementation.
+8. Build the Delegation Packet. Delegate implementation through the registered `bmad-quick-dev` skill with Lens context. Do not introduce alternate implementation behavior here.
+9. Capture the delegate outcome, including changed files, validation result, commit hash, branch, and PR URL when present.
+10. Publish the versioned evidence artifact through the sanctioned Lens publication path when governance publication is required.
 
 ## Delegation Boundary
 
@@ -124,6 +125,38 @@ Capture these delegate result fields for later evidence and branch-policy steps:
 - `no_op`
 - `blocked_reason`
 
+## Branch and PR Policy
+
+Resolve branch policy before invoking the delegate.
+
+1. Inspect the resolved target repo branch and working tree state.
+2. Block with `quickdev_branch_state_blocked` before implementation when the repo is dirty, detached, in a merge/rebase/cherry-pick state, or when the current branch is ambiguous for the active quickdev run.
+3. If the target repo is already on an active in-progress feature branch for the current Lens feature or quickdev run, use that branch and direct commit behavior. Do not prepare an additional branch or PR.
+4. If the target repo is not on an active in-progress feature branch, prepare a working branch through Lens git orchestration:
+
+```bash
+uv run --script lens.core/_bmad/lens-work/skills/lens-git-orchestration/scripts/git-orchestration-ops.py prepare-dev-branch \
+	--repo {target_repo_path} \
+	--governance-repo {governance_repo} \
+	--feature-id {feature_id} \
+	--feature-slug {feature_slug} \
+	--mode feature-id
+```
+
+5. When a working branch is used, create or reuse the PR through Lens git orchestration after implementation creates a non-empty commit:
+
+```bash
+uv run --script lens.core/_bmad/lens-work/skills/lens-git-orchestration/scripts/git-orchestration-ops.py create-pr \
+	--repo {target_repo_path} \
+	--governance-repo {governance_repo} \
+	--head {working_branch} \
+	--base {base_branch} \
+	--title {pr_title} \
+	--body {pr_body}
+```
+
+6. Record `branch_context` before delegation with `branch`, `base_branch`, `direct_commit`, `requires_pr`, `pr_url`, and `branch_policy_reason`. Preserve those fields for the quickdev evidence update.
+
 ## Output Contract
 
 Return:
@@ -143,6 +176,7 @@ Hard stops:
 - Feature phase is not `finalizeplan-complete`, `dev-ready`, or `dev`.
 - `target_repos` is missing or unresolved.
 - Target repo has unresolved merge conflicts.
+- Target repo branch state is dirty, detached, ambiguous, or unrelated to the active quickdev run.
 - The requested work exceeds the approved source/docs scope and no override is approved.
 
 Recoverable outcomes:
@@ -163,3 +197,7 @@ Validate this contract with focused tests or inspection that assert:
 - Delegation packet includes feature id, target repo, docs path, evidence artifact path, and ask.
 - The fallback loads `{project-root}/.github/skills/bmad-quick-dev/SKILL.md` directly when no script facade exists.
 - Delegate outputs include changed files, validation result, commit, branch, PR URL, no-op, and blocker fields.
+- Active in-progress feature branches use direct commit behavior without preparing an extra PR branch.
+- Non-active branches use `git-orchestration-ops.py prepare-dev-branch` and `git-orchestration-ops.py create-pr`.
+- Dirty, detached, merge, rebase, cherry-pick, and ambiguous branch states block before implementation.
+- Branch context records branch, base branch, direct-commit flag, PR requirement, PR URL, and policy reason.

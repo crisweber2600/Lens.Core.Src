@@ -112,6 +112,43 @@ def test_skill_captures_delegate_outputs_for_later_steps():
         assert f"`{required_field}`" in text
 
 
+def test_skill_defines_branch_and_pr_policy():
+    """Branch policy must distinguish active direct commits from orchestrated PR branches."""
+    text = _skill_text()
+
+    assert "## Branch and PR Policy" in text
+    assert "active in-progress feature branch" in text
+    assert "direct commit behavior" in text
+    assert "Do not prepare an additional branch or PR" in text
+    assert "git-orchestration-ops.py prepare-dev-branch" in text
+    assert "git-orchestration-ops.py create-pr" in text
+
+
+def test_skill_blocks_unsafe_branch_states_before_implementation():
+    """Dirty or ambiguous branch states must stop before implementation."""
+    text = _skill_text()
+
+    assert "quickdev_branch_state_blocked" in text
+    for state in ("dirty", "detached", "merge/rebase/cherry-pick", "ambiguous"):
+        assert state in text
+    assert "before implementation" in text
+
+
+def test_skill_records_branch_context_for_evidence():
+    """Branch, base, direct/PR mode, and PR URL must be evidence fields."""
+    text = _skill_text()
+
+    for required_field in (
+        "branch",
+        "base_branch",
+        "direct_commit",
+        "requires_pr",
+        "pr_url",
+        "branch_policy_reason",
+    ):
+        assert f"`{required_field}`" in text
+
+
 def test_skill_blocks_before_target_assessment_without_dev_ready_context():
     """Non-dev-ready or unresolved target context must block before repo assessment."""
     text = _skill_text()
