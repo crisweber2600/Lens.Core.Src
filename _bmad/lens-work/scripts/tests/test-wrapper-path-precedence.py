@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 
@@ -30,7 +31,6 @@ def test_public_wrappers_use_normalized_module_relative_paths():
     for prompt in sorted(GITHUB_PROMPTS.glob("lens-*.prompt.md")):
         text = _read(prompt)
         # Extract just the bash block(s) to avoid false-positives on the delegate path.
-        import re
         bash_blocks = re.findall(r"```bash\n(.*?)```", text, re.DOTALL)
         for block in bash_blocks:
             assert "lens.core/_bmad/lens-work" not in block, (
