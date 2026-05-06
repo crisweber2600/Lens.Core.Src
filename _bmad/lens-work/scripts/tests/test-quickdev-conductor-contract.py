@@ -14,6 +14,8 @@ TEST_FILE = Path(__file__).resolve()
 MODULE_ROOT = TEST_FILE.parents[2]
 PROMPT_MD = MODULE_ROOT / "prompts" / "lens-quickdev.prompt.md"
 SKILL_MD = MODULE_ROOT / "skills" / "lens-quickdev" / "SKILL.md"
+MODULE_YAML = MODULE_ROOT / "module.yaml"
+MODULE_HELP_CSV = MODULE_ROOT / "module-help.csv"
 
 
 def _prompt_text() -> str:
@@ -22,6 +24,14 @@ def _prompt_text() -> str:
 
 def _skill_text() -> str:
     return SKILL_MD.read_text(encoding="utf-8")
+
+
+def _module_yaml_text() -> str:
+    return MODULE_YAML.read_text(encoding="utf-8")
+
+
+def _module_help_text() -> str:
+    return MODULE_HELP_CSV.read_text(encoding="utf-8")
 
 
 def test_public_prompt_runs_preflight_before_skill_loading():
@@ -72,3 +82,21 @@ def test_skill_defines_versioned_evidence_artifact():
 
     assert "quickdev/quickdev-[summaryofrequeststub]-vNNN.md" in text
     assert "Versioned quickdev evidence paths" in text
+
+
+def test_module_yaml_exposes_lens_quickdev_once():
+    """The module manifest must expose the public prompt and skill exactly once."""
+    text = _module_yaml_text()
+
+    assert text.count("lens-quickdev.prompt.md") == 1
+    assert text.count("  - lens-quickdev\n") == 1
+
+
+def test_module_help_exposes_lens_quickdev_once_with_dev_ready_guidance():
+    """Operator help must show lens-quickdev once and name its dev-ready-only scope."""
+    text = _module_help_text()
+    rows = [line for line in text.splitlines() if ",lens-quickdev," in line]
+
+    assert len(rows) == 1
+    assert "dev-ready-only" in rows[0]
+    assert "versioned quickdev evidence" in rows[0]
