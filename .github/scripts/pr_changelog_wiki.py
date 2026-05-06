@@ -61,7 +61,7 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def ensure_success(value: str | None, message: str) -> str:
+def require_value(value: str | None, message: str) -> str:
     if value:
         return value
     raise SystemExit(message)
@@ -234,14 +234,14 @@ def extract_accomplishments(body: str, title: str) -> list[str]:
 
 
 def summarize_areas(files: tuple[PullFile, ...]) -> list[str]:
-    seen: list[str] = []
+    seen: dict[str, None] = {}
     for changed_file in files:
         area = changed_file.filename.split("/", 1)[0]
         if area not in seen:
-            seen.append(area)
+            seen[area] = None
         if len(seen) == 5:
             break
-    return seen
+    return list(seen)
 
 
 def format_merged_at(merged_at: str) -> str:
@@ -356,8 +356,8 @@ def build_pull_request_summary(repo: str, pull: dict[str, Any], token: str, api_
 
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
-    repo = ensure_success(args.repo, "--repo or GITHUB_REPOSITORY is required")
-    token = ensure_success(args.token, "--token or GITHUB_TOKEN is required")
+    repo = require_value(args.repo, "--repo or GITHUB_REPOSITORY is required")
+    token = require_value(args.token, "--token or GITHUB_TOKEN is required")
     updated_at = now_iso()
 
     wiki_dir = Path(args.wiki_dir).resolve()
