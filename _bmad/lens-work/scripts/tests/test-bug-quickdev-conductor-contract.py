@@ -65,6 +65,20 @@ def test_workflow_uses_git_orchestration_prepare_dev_branch():
     assert "creates the fresh Core Bugfix working branch" in text
 
 
+def test_workflow_forbids_worktree_recovery_paths():
+    """Dirty or failed branch prep must not be bypassed with sibling worktrees."""
+    text = _skill_text()
+
+    assert "Never create, add, remove, or use a sibling git worktree" in text
+    assert "Do not run `git worktree add`" in text
+    assert "Do not run `git worktree remove`" in text
+    assert "dirty_working_tree" in text
+    assert "prepare-dev-branch` exits non-zero, stop and surface the exact error" in text
+    assert "Do not create or switch to any git worktree as a workaround" in text
+    assert "The only valid implementation path is `{target_project}`" in text
+    assert "Do not satisfy branch, commit, validation, push, or PR evidence from a sibling worktree" in text
+
+
 def test_workflow_forbids_implicit_branch_continuation():
     """Each distinct bug must get its own base-derived core bugfix branch."""
     text = _skill_text()
