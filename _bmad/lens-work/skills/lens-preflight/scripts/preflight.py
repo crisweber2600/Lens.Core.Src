@@ -624,7 +624,6 @@ GOVERNANCE_WRITE_CALLERS = {
 }
 MIXED_CALLERS = {
     "lens-bug-quickdev",
-    "lens-bugbash",
     "lens-businessplan",
     "lens-complete",
     "lens-dev",
