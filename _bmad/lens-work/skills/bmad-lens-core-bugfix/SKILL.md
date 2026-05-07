@@ -23,6 +23,7 @@ This skill is a thin conductor. It orchestrates inputs and delegation only.
 - No-op completion is not allowed for this flow. If implementation produces no staged code changes, stop with a structured blocker (`bugfix_no_changes`) and do not report success.
 - Every distinct bug must use its own branch created from the base branch. Do not infer continuation from recent conversation history, the current git branch, a previous Output Contract, or an open PR from another bug.
 - Never create, add, remove, or use a sibling git worktree for this flow. Do not run `git worktree add`. Do not run `git worktree remove`. Do not switch implementation to another local clone or worktree as recovery. If `{target_project}` is dirty or `prepare-dev-branch` exits non-zero, stop and surface the exact error. Only continue in the canonical `{target_project}` path after explicit user approval to preserve unrelated edits and after `prepare-dev-branch` succeeds there.
+- Prompt-start preflight and cloud-agent cleanup steps do not auto-clean `{target_project}`. Dirty target repos can still happen (for example from interrupted or user-local edits) and must be treated as hard blockers until explicitly approved by the user.
 
 ## Required Inputs
 
