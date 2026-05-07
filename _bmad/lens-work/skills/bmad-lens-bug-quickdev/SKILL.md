@@ -19,6 +19,8 @@ This skill is a thin conductor. It orchestrates inputs and delegation only.
 - Never leave implementation, governance, or control-repo changes uncommitted as a manual handoff.
 - Never tell the user to commit, push, or open the PR themselves when the required automation commands are available.
 - The complete target-project workflow is mandatory: checkout/pull base, create or reuse the QuickDev branch, implement, validate, commit, push, create or reuse the PR, document the changes, and close the QuickDev bug artifact.
+- A successful `/lens-bug-quickdev` run requires all of the following to be non-empty and verified: `working_branch`, `commit hash`, `PR URL`, and `bug_artifact_path` (under `bugs/Fixed/`).
+- No-op completion is not allowed for this flow. If implementation produces no staged code changes, stop with a structured blocker (`bugfix_no_changes`) and do not report success.
 
 ## Required Inputs
 
@@ -127,14 +129,17 @@ Required workflow in target project:
     Capture the PR URL from the `gh pr create` output, then execute the same `record-quickdev-pr` and `close-quickdev-bug` commands above with the captured PR URL. Do NOT ask the user to create the PR themselves."
 
 7. After quick-dev delegation returns, run this conductor completion gate before responding to the user. This gate is mandatory even if the delegate claims the work is complete:
-   - Verify the target project is still on `{working_branch}`.
+   - Verify `working_branch` is non-empty and the target project is currently on `{working_branch}`.
    - Run `git status --short`. If implementation changes remain unstaged or uncommitted, commit them with a conventional commit message before continuing. Do not include unrelated user changes; stop and surface the blocker if unrelated changes are mixed into the same worktree.
+   - Verify a non-empty implementation commit exists for this run. If no implementation commit can be established, stop with `bugfix_no_changes`.
    - Run `git -C {governance_repo} status --short`. If this flow produced governance changes (for example bug artifact updates), stage, commit, and push those changes before continuing. Do not include unrelated user changes; stop and surface the blocker if unrelated changes are mixed.
    - Run `git -C {project-root} status --short`. If this flow produced control-repo changes that belong to the bugfix execution, stage, commit, and push those changes on the active branch before continuing. Do not include unrelated user changes; stop and surface the blocker if unrelated changes are mixed.
    - Run `git rev-parse --short HEAD` and capture the result as `commit hash`.
    - Re-run the standard Lens push command from step 6 with `--branch {working_branch}` to verify the branch is pushed. If it exits non-zero, stop and surface the exact error.
+   - Verify `origin/{working_branch}` exists after push verification. If not, stop and surface the blocking command/error.
    - Verify governance and control repos are clean for changes introduced by this flow after required pushes complete.
    - Re-run the idempotent PR creation command from step 9, capture `pr_url`, and include it as `PR URL`. The command must reuse an existing open PR when present.
+   - If `pr_url` is empty after PR creation/reuse, stop and surface `pr_creation_failed`.
    - Re-run `record-quickdev-pr` with `bug_slug` and the final `pr_url`, capture the returned `path`, and use it as `bug_artifact_path` until closeout completes.
    - Re-run `close-quickdev-bug` with `bug_slug`, a concise change summary, and validation summary. Capture the returned `path` as the final `bug_artifact_path`, and verify it points under `bugs/Fixed/`.
    - If the user requested automatic completion after the dev cycle, invoke `lens-complete` after the target PR is recorded. The conductor must run `complete-ops.py finalize --control-repo {project-root} --confirm` for the active feature, commit and push governance archival changes, and include the completion result or structured blocker in the final response.
