@@ -213,6 +213,28 @@ def test_bug_quickdev_route_remains_separate_and_mandatory_commit_flow():
     assert "close-quickdev-bug" in skill_text
 
 
+def test_skill_defines_governance_publication_path():
+    """Quickdev evidence must publish to the feature governance quickdev folder."""
+    text = _skill_text()
+
+    assert "## Governance Publication" in text
+    assert "feature.yaml.docs.governance_docs_path" in text
+    assert "{governance_docs_path}/quickdev/quickdev-[summaryofrequeststub]-vNNN.md" in text
+    assert "git-orchestration-ops.py publish-to-governance" in text
+    assert "Do not hand-copy directly into the governance repo" in text
+
+
+def test_skill_records_publication_status_and_preserves_versions():
+    """Publication must preserve version suffixes and record status in the same artifact."""
+    text = _skill_text()
+
+    assert "Preserve the unique `vNNN` suffix for reruns" in text
+    assert "Verify the published artifact content matches the local versioned artifact" in text
+    assert "`publication_status`" in text
+    assert "`governance_artifact_path`" in text
+    assert "Commit and Publication Record" in text
+
+
 def test_skill_blocks_before_target_assessment_without_dev_ready_context():
     """Non-dev-ready or unresolved target context must block before repo assessment."""
     text = _skill_text()

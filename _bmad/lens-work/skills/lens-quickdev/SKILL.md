@@ -89,7 +89,7 @@ Every run creates exactly one quickdev evidence artifact before implementation d
 9. Capture the delegate outcome, including changed files, validation result, commit hash, branch, PR URL, and no-op state when present.
 10. Update the existing versioned quickdev artifact in place through Run Result Recording.
 11. Apply Validation Failure Handling when validation fails at any stage.
-12. Publish the versioned evidence artifact through the sanctioned Lens publication path when governance publication is required.
+12. Publish the versioned evidence artifact through Governance Publication when governance publication is required.
 
 ## Delegation Boundary
 
@@ -188,6 +188,17 @@ Validation failures use explicit recovery paths and never rewrite shared history
 	- record blocked PR recovery when the PR must remain open but blocked.
 4. This failure policy applies only to `lens-quickdev`. The existing `/lens-bug-quickdev` route remains separate and keeps its mandatory commit, push, PR, bug-artifact recording, and closeout behavior.
 
+## Governance Publication
+
+Publish completed quickdev evidence through sanctioned Lens publication tooling.
+
+1. Resolve `governance_docs_path` from `feature.yaml.docs.governance_docs_path`.
+2. Map `{docs.path}/quickdev/quickdev-[summaryofrequeststub]-vNNN.md` to `{governance_docs_path}/quickdev/quickdev-[summaryofrequeststub]-vNNN.md`.
+3. Publish through the Lens publication helper or `git-orchestration-ops.py publish-to-governance`. Do not hand-copy directly into the governance repo when a helper supports the publication.
+4. Preserve the unique `vNNN` suffix for reruns. Never collapse multiple runs into one governance artifact.
+5. Verify the published artifact content matches the local versioned artifact before reporting success.
+6. Record `publication_status`, `governance_artifact_path`, and publication validation summary in `Commit and Publication Record`.
+
 ## Output Contract
 
 Return:
@@ -240,3 +251,7 @@ Validate this contract with focused tests or inspection that assert:
 - Local post-commit validation failures do not push or create PRs and record `validation-failed` guidance.
 - Pushed or PR validation failures do not rewrite shared history and record fix-forward or blocked PR recovery.
 - `/lens-bug-quickdev` remains separate with mandatory commit, push, PR, bug-artifact recording, and closeout behavior.
+- Exact versioned artifacts publish to `feature.yaml.docs.governance_docs_path/quickdev/`.
+- Publication uses the sanctioned Lens publication helper instead of direct governance authoring.
+- Published reruns preserve unique `vNNN` suffixes.
+- Publication status and governance artifact path are recorded in the quickdev artifact.
