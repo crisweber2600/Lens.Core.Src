@@ -62,9 +62,9 @@ Every run creates exactly one quickdev evidence artifact before implementation d
 
 1. Resolve `evidence_dir = {docs.path}/quickdev` after the Feature Resolution Gate succeeds.
 2. Build `summaryofrequeststub` from the implementation ask by lowercasing, replacing non-alphanumeric runs with `-`, trimming leading/trailing separators, and keeping the result short enough for a readable filename.
-3. Find existing files matching `quickdev/quickdev-[summaryofrequeststub]-vNNN.md` in `evidence_dir`.
+3. Find existing files matching `quickdev-[summaryofrequeststub]-vNNN.md` in `evidence_dir`.
 4. Select the next version by incrementing the highest existing `vNNN` suffix, starting at `v001` when no prior artifact exists.
-5. Create `quickdev/quickdev-[summaryofrequeststub]-vNNN.md` and never overwrite an existing evidence file.
+5. Create `quickdev-[summaryofrequeststub]-vNNN.md` and never overwrite an existing evidence file.
 6. Before delegating to `bmad-quick-dev`, write the artifact with these sections:
 	- `Request`
 	- `Context Assessment`
