@@ -313,10 +313,14 @@ def test_skill_defines_versioned_evidence_artifact():
     """Quickdev evidence must use the versioned artifact path from the plan."""
     text = _skill_text()
 
+    assert "Canonical naming: within `evidence_dir` use filename `quickdev-[summaryofrequeststub]-vNNN.md`" in text
+    assert "relative to `{docs.path}` the artifact path is `quickdev/quickdev-[summaryofrequeststub]-vNNN.md`" in text
     assert "quickdev/quickdev-[summaryofrequeststub]-vNNN.md" in text
     assert "Versioned quickdev evidence paths" in text
     assert "evidence_dir = {docs.path}/quickdev" in text
     assert "quickdev-[summaryofrequeststub]-vNNN.md" in text
+    assert "matching `quickdev/quickdev-[summaryofrequeststub]-vNNN.md` in `evidence_dir`" not in text
+    assert "Create `quickdev/quickdev-[summaryofrequeststub]-vNNN.md` and never overwrite an existing evidence file." not in text
     assert "starting at `v001`" in text
 
 
