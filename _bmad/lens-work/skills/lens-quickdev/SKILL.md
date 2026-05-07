@@ -199,6 +199,17 @@ Publish completed quickdev evidence through sanctioned Lens publication tooling.
 5. Verify the published artifact content matches the local versioned artifact before reporting success.
 6. Record `publication_status`, `governance_artifact_path`, and publication validation summary in `Commit and Publication Record`.
 
+## Metadata and Handoff Reconciliation
+
+Keep feature metadata and implementation-readiness handoff docs aligned before execution and before final reporting.
+
+1. Read feature metadata through `feature-yaml-ops.py read --governance-repo {governance_repo} --feature-id {feature_id}`.
+2. Confirm `target_repos` includes `lens.core.src` or the resolved target repo required by the active feature.
+3. If `target_repos` must be corrected, use the sanctioned `feature-yaml` update helper. Do not patch governance `feature.yaml` by hand.
+4. Confirm implementation-readiness records the versioned `quickdev/quickdev-[summaryofrequeststub]-vNNN.md` evidence rule and sanctioned Governance Publication path.
+5. After metadata or readiness changes, run strict handoff validation before delegating implementation or reporting completion.
+6. Record the metadata source, target repo confirmation, readiness validation, and handoff validation result in `Context Assessment` or `Commit and Publication Record`.
+
 ## Output Contract
 
 Return:
@@ -255,3 +266,7 @@ Validate this contract with focused tests or inspection that assert:
 - Publication uses the sanctioned Lens publication helper instead of direct governance authoring.
 - Published reruns preserve unique `vNNN` suffixes.
 - Publication status and governance artifact path are recorded in the quickdev artifact.
+- Feature metadata is read through `feature-yaml-ops.py read` and confirms `target_repos` contains `lens.core.src` or the resolved target repo.
+- Metadata corrections use the sanctioned `feature-yaml` update helper rather than hand-editing governance YAML.
+- Implementation-readiness records the versioned quickdev rule and sanctioned governance publication path.
+- Strict handoff validation runs after metadata or readiness changes and records the result.

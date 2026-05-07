@@ -235,6 +235,28 @@ def test_skill_records_publication_status_and_preserves_versions():
     assert "Commit and Publication Record" in text
 
 
+def test_skill_reconciles_metadata_and_handoff_docs():
+    """Quickdev must keep target repo metadata and handoff docs aligned."""
+    text = _skill_text()
+
+    assert "## Metadata and Handoff Reconciliation" in text
+    assert "feature-yaml-ops.py read --governance-repo {governance_repo} --feature-id {feature_id}" in text
+    assert "`target_repos` includes `lens.core.src`" in text
+    assert "sanctioned `feature-yaml` update helper" in text
+    assert "Do not patch governance `feature.yaml` by hand" in text
+
+
+def test_skill_requires_readiness_and_strict_handoff_validation():
+    """Handoff validation must cover readiness docs and metadata changes."""
+    text = _skill_text()
+
+    assert "implementation-readiness records the versioned `quickdev/quickdev-[summaryofrequeststub]-vNNN.md`" in text
+    assert "sanctioned Governance Publication path" in text
+    assert "run strict handoff validation" in text
+    assert "readiness validation" in text
+    assert "handoff validation result" in text
+
+
 def test_skill_blocks_before_target_assessment_without_dev_ready_context():
     """Non-dev-ready or unresolved target context must block before repo assessment."""
     text = _skill_text()
