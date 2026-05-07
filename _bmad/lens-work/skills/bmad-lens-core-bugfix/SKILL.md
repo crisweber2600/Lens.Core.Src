@@ -142,7 +142,7 @@ Required workflow in target project:
    ```
     Capture the PR URL from the `gh pr create` output, then execute the same `record-quickdev-pr` and `close-quickdev-bug` commands above with the captured PR URL. Do NOT ask the user to create the PR themselves."
 
-8. After quick-dev delegation returns, run this conductor completion gate before responding to the user. This gate is mandatory even if the delegate claims the work is complete:
+8) After quick-dev delegation returns, run this conductor completion gate before responding to the user. This gate is mandatory even if the delegate claims the work is complete:
    - Verify `working_branch` is non-empty and the target project is currently on `{working_branch}`.
    - Verify `working_branch` starts with `feature/lens-core-bugfix-`; otherwise stop with `branch_scope_mismatch`.
    - Run `git status --short`. If implementation changes remain unstaged or uncommitted, commit them with a conventional commit message before continuing. Do not include unrelated user changes; stop and surface the blocker if unrelated changes are mixed into the same worktree.
