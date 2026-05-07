@@ -104,9 +104,10 @@ def test_control_dev_branch_pull_uses_ff_only_syntax():
     """The pull step in Control Dev Branch Activation must use `--ff-only origin {branch}` form."""
     text = _skill_text()
     activation_start = text.find("## Control Dev Branch Activation")
+    assert activation_start != -1, "SKILL.md must document Control Dev Branch Activation"
     activation_end = text.find("##", activation_start + 1)
     section = text[activation_start:activation_end]
-    assert "pull --ff-only origin" in section, (
+    assert "git -C {control_repo} pull --ff-only origin {control_dev_branch}" in section, (
         "Control Dev Branch Activation pull step must use "
         "`git pull --ff-only origin {control_dev_branch}` (not `origin/{branch}` ref form)"
     )
