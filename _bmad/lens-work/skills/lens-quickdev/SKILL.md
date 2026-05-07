@@ -186,7 +186,7 @@ Validation failures use explicit recovery paths and never rewrite shared history
 	- do not rewrite shared history;
 	- record fix-forward guidance when the branch can continue;
 	- record blocked PR recovery when the PR must remain open but blocked.
-4. This failure policy applies only to `lens-quickdev`. The `/lens-core-bugfix` route remains separate and keeps its mandatory fresh branch, commit, push, PR, bug-artifact recording, and closeout behavior. `/lens-bug-quickdev` is only a legacy alias for `/lens-core-bugfix`.
+4. This failure policy applies only to `lens-quickdev`. The `/lens-core-bugfix` route remains separate and keeps its mandatory fresh branch, commit, push, PR, bug-artifact recording, and closeout behavior.
 
 ## Governance Publication
 
@@ -273,7 +273,7 @@ Validate this contract with focused tests or inspection that assert:
 - Pre-commit validation failures create no commit and mark the artifact `blocked`.
 - Local post-commit validation failures do not push or create PRs and record `validation-failed` guidance.
 - Pushed or PR validation failures do not rewrite shared history and record fix-forward or blocked PR recovery.
-- `/lens-core-bugfix` remains separate with mandatory fresh branch, commit, push, PR, bug-artifact recording, and closeout behavior; `/lens-bug-quickdev` remains only as a legacy alias.
+- `/lens-core-bugfix` remains separate with mandatory fresh branch, commit, push, PR, bug-artifact recording, and closeout behavior.
 - Exact versioned artifacts publish to `feature.yaml.docs.governance_docs_path/quickdev/`.
 - Publication uses the sanctioned Lens publication helper instead of direct governance authoring.
 - Published reruns preserve unique `vNNN` suffixes.

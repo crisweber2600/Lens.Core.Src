@@ -18,7 +18,6 @@ from pathlib import Path
 TEST_FILE = Path(__file__).resolve()
 MODULE_ROOT = TEST_FILE.parents[2]
 SKILL_MD = MODULE_ROOT / "skills" / "bmad-lens-core-bugfix" / "SKILL.md"
-LEGACY_SKILL_MD = MODULE_ROOT / "skills" / "bmad-lens-bug-quickdev" / "SKILL.md"
 
 
 def _skill_text() -> str:
@@ -301,11 +300,3 @@ def test_bug_intake_uses_quickdev_queue():
     )
     assert "bug_slug" in text, "SKILL.md must capture the create-bug slug for later PR recording"
 
-
-def test_legacy_bug_quickdev_skill_redirects_to_core_bugfix():
-    """The old skill name must be an alias so it cannot retain stale branch-continuation rules."""
-    text = LEGACY_SKILL_MD.read_text(encoding="utf-8")
-
-    assert "bmad-lens-core-bugfix/SKILL.md" in text
-    assert "deprecated compatibility spelling" in text
-    assert "Do not apply any legacy branch-continuation behavior" in text

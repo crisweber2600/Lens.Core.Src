@@ -11,9 +11,6 @@ description: Core bugfix conductor. Takes one Lens core bug report, records bug 
 It captures one bug report, records a governance bug artifact, and then delegates
 implementation to quick-dev in the target project.
 
-`/lens-bug-quickdev` is a legacy alias for this flow. The canonical command name
-is `/lens-core-bugfix`.
-
 This skill is a thin conductor. It orchestrates inputs and delegation only.
 
 ## Non-Negotiables
@@ -96,7 +93,7 @@ Required workflow in target project:
    The command is mandatory because it checks out the base branch, pulls the base branch, and creates the fresh Core Bugfix working branch from `develop` for this bug. Do not replace it with narrative instructions or skip it when the target repo already appears to be on a usable branch.
    If `working_branch` does not start with `feature/lens-core-bugfix-`, stop with `branch_scope_mismatch`.
    If `reused` is true for a newly created bug artifact, stop with `branch_reuse_blocked` unless the reused branch exactly matches `feature/{feature_id}` and is known to belong to the same `bug_slug`.
-2) Before implementing, identify the primary affected Lens command (`lens-core-bugfix`; legacy alias `lens-bug-quickdev`) and inspect the same command in `TargetProjects/lens-dev/old-codebase/lens.core.src` to understand legacy behavior and identify gaps. Use the same command name and closest matching prompt/skill/script entrypoint when available. If no legacy match exists, record that as a gap.
+2) Before implementing, identify the primary affected Lens command (`lens-core-bugfix`) and inspect the same command in `TargetProjects/lens-dev/old-codebase/lens.core.src` to understand legacy behavior and identify gaps. Use the same command name and closest matching prompt/skill/script entrypoint when available. If no legacy match exists, record that as a gap.
 3) If the legacy comparison reveals large gaps that materially change expected behavior, workflow, or outputs, stop and use `vscode_askQuestions` to confirm user intent before implementing.
 4) Implement the fix and run relevant validation.
 5) Stage and commit the implementation changes in `{target_project}` with a conventional commit message. Commit is mandatory for this flow; do not leave the bugfix branch with uncommitted implementation changes.
@@ -145,7 +142,7 @@ Required workflow in target project:
    ```
     Capture the PR URL from the `gh pr create` output, then execute the same `record-quickdev-pr` and `close-quickdev-bug` commands above with the captured PR URL. Do NOT ask the user to create the PR themselves."
 
-7. After quick-dev delegation returns, run this conductor completion gate before responding to the user. This gate is mandatory even if the delegate claims the work is complete:
+8. After quick-dev delegation returns, run this conductor completion gate before responding to the user. This gate is mandatory even if the delegate claims the work is complete:
    - Verify `working_branch` is non-empty and the target project is currently on `{working_branch}`.
    - Verify `working_branch` starts with `feature/lens-core-bugfix-`; otherwise stop with `branch_scope_mismatch`.
    - Run `git status --short`. If implementation changes remain unstaged or uncommitted, commit them with a conventional commit message before continuing. Do not include unrelated user changes; stop and surface the blocker if unrelated changes are mixed into the same worktree.
