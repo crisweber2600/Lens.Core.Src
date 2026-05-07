@@ -210,6 +210,18 @@ Keep feature metadata and implementation-readiness handoff docs aligned before e
 5. After metadata or readiness changes, run strict handoff validation before delegating implementation or reporting completion.
 6. Record the metadata source, target repo confirmation, readiness validation, and handoff validation result in `Context Assessment` or `Commit and Publication Record`.
 
+## Scope Expansion Guard and Final Audit
+
+Protect the wrapper from silently broadening beyond the approved source and feature-associated documentation scope.
+
+1. Treat source changes in the resolved target repo, the public `lens-quickdev` prompt, the `lens-quickdev` skill, module command metadata, tests, and feature-associated control docs under `feature.yaml.docs.path` as approved scope.
+2. Treat non-source changes outside `feature.yaml.docs.path`, command metadata, tests, or the sanctioned governance publication path as broader non-source work.
+3. Before broader non-source work proceeds, emit a `quickdev_scope_expansion_warning` that names the proposed paths, why they exceed approved scope, and the approval needed to continue.
+4. If the user approves the expansion, record `scope_expansion_override`, approved paths, approving instruction, timestamp, and rationale in the versioned quickdev artifact.
+5. If approval is not present, stop before editing broader non-source files and record `quickdev_scope_expansion_blocked`.
+6. Before completion, run a final audit readiness check covering command surface registration, dev-ready gate, target repo resolution, versioned evidence, delegation packet, branch policy, validation failure handling, governance publication, metadata reconciliation, scope guard, and `/lens-bug-quickdev` compatibility.
+7. Record unresolved blockers or `audit_ready: true` in the versioned quickdev artifact and completion summary.
+
 ## Output Contract
 
 Return:
@@ -270,3 +282,7 @@ Validate this contract with focused tests or inspection that assert:
 - Metadata corrections use the sanctioned `feature-yaml` update helper rather than hand-editing governance YAML.
 - Implementation-readiness records the versioned quickdev rule and sanctioned governance publication path.
 - Strict handoff validation runs after metadata or readiness changes and records the result.
+- Broader non-source work triggers `quickdev_scope_expansion_warning` before edits proceed.
+- Approved scope overrides record `scope_expansion_override`, approved paths, approving instruction, timestamp, and rationale.
+- Unapproved broader non-source work stops with `quickdev_scope_expansion_blocked` before editing files.
+- Final audit readiness covers command surface, evidence versioning, governance publication, metadata, scope, and bug quickdev compatibility, then records `audit_ready: true` or unresolved blockers.

@@ -257,6 +257,30 @@ def test_skill_requires_readiness_and_strict_handoff_validation():
     assert "handoff validation result" in text
 
 
+def test_skill_warns_and_blocks_unapproved_scope_expansion():
+    """Broader non-source edits must warn and stop without an approved override."""
+    text = _skill_text()
+
+    assert "## Scope Expansion Guard and Final Audit" in text
+    assert "source changes in the resolved target repo" in text
+    assert "feature-associated control docs under `feature.yaml.docs.path`" in text
+    assert "quickdev_scope_expansion_warning" in text
+    assert "quickdev_scope_expansion_blocked" in text
+    assert "stop before editing broader non-source files" in text
+
+
+def test_skill_records_scope_override_and_final_audit_readiness():
+    """Approved scope expansion and final audit readiness must be durable evidence."""
+    text = _skill_text()
+
+    assert "`scope_expansion_override`" in text
+    assert "approved paths" in text
+    assert "approving instruction" in text
+    assert "final audit readiness check" in text
+    assert "`/lens-bug-quickdev` compatibility" in text
+    assert "`audit_ready: true`" in text
+
+
 def test_skill_blocks_before_target_assessment_without_dev_ready_context():
     """Non-dev-ready or unresolved target context must block before repo assessment."""
     text = _skill_text()
