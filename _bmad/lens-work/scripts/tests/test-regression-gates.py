@@ -26,8 +26,8 @@ EXPRESSPLAN_SKILL = MODULE_ROOT / "skills" / "lens-expressplan" / "SKILL.md"
 FINALIZEPLAN_SKILL = MODULE_ROOT / "skills" / "lens-finalizeplan" / "SKILL.md"
 CORE_BUGFIX_SKILL = MODULE_ROOT / "skills" / "bmad-lens-core-bugfix" / "SKILL.md"
 
-PREFLIGHT_SCRIPT_PATH = "lens.core/_bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py"
-STANDARD_PREFLIGHT = f"uv run --script {PREFLIGHT_SCRIPT_PATH}"
+PREFLIGHT_SCRIPT_REF = "lens.core/_bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py"
+STANDARD_PREFLIGHT = f"uv run --script {PREFLIGHT_SCRIPT_REF}"
 NO_PREFLIGHT_PROMPTS = {"lens-core-bugfix.prompt.md"}
 
 
@@ -79,7 +79,7 @@ def test_public_prompt_wrappers_match_installed_workspace_contract():
         for block in bash_blocks:
             assert " _bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py" not in block
             assert "lens.core/_bmad/lens-work/prompts/" not in block
-            assert PREFLIGHT_SCRIPT_PATH in block
+            assert PREFLIGHT_SCRIPT_REF in block
 
 
 def test_preflight_caller_classification_covers_prompt_surface():
