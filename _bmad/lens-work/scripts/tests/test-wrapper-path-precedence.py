@@ -16,7 +16,7 @@ MODULE_ROOT = TEST_FILE.parents[2]
 REPO_ROOT = MODULE_ROOT.parents[1]
 GITHUB_PROMPTS = REPO_ROOT / ".github" / "prompts"
 BMAD_WRAPPER_SKILL = MODULE_ROOT / "skills" / "lens-bmad-skill" / "SKILL.md"
-NO_PREFLIGHT_PROMPTS = {"lens-core-bugfix.prompt.md", "lens-postflight.prompt.md"}
+NO_PREFLIGHT_PROMPTS = {"lens-core-bugfix.prompt.md"}
 
 
 def _read(path: Path) -> str:
@@ -53,12 +53,6 @@ def test_core_bugfix_wrapper_omits_preflight_and_delegates():
     assert "preflight" not in text.lower()
     assert "vscode_askQuestions" in text
     assert "lens.core/_bmad/lens-work/prompts/lens-core-bugfix.prompt.md" in text
-
-
-def test_postflight_wrapper_omits_preflight_and_delegates():
-    text = _read(GITHUB_PROMPTS / "lens-postflight.prompt.md")
-    assert "preflight" not in text.lower()
-    assert "lens.core/_bmad/lens-work/prompts/lens-postflight.prompt.md" in text
 
 
 def test_bmad_wrapper_declares_output_path_precedence_and_logging():

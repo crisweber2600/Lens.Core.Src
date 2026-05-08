@@ -34,7 +34,7 @@ LEGACY_PREFLIGHT_PATTERNS = (
     rf"(^|\s)uv\s+run\s+--script\s+{LEGACY_PREFLIGHT_SCRIPT_PATTERN}(\s|$)",
     rf"(^|\s){LEGACY_PREFLIGHT_SCRIPT_PATTERN}(\s|$)",
 )
-NO_PREFLIGHT_PROMPTS = {"lens-core-bugfix.prompt.md", "lens-postflight.prompt.md"}
+NO_PREFLIGHT_PROMPTS = {"lens-core-bugfix.prompt.md"}
 
 
 def _read(path: Path) -> str:
@@ -131,7 +131,7 @@ def test_preflight_caller_classification_covers_prompt_surface():
         for prompt in GITHUB_PROMPTS.glob("lens-*.prompt.md")
         if prompt.name not in NO_PREFLIGHT_PROMPTS
     }
-    expected_prompt_callers = set(expected) - {"lens-core-bugfix", "lens-postflight"}
+    expected_prompt_callers = set(expected) - {"lens-core-bugfix"}
     assert prompt_callers == expected_prompt_callers, "Every preflight prompt caller must have an explicit policy"
 
     explicit_callers_by_class = _explicit_callers_by_class(preflight)
