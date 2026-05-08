@@ -1,5 +1,8 @@
 name: Regression Gates
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     paths:
