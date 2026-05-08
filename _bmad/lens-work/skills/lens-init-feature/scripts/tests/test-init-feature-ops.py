@@ -447,8 +447,8 @@ class TestCreate:
         assert payload["status"] == "pass"
         assert payload["governance_git_executed"] is True
         assert len(payload["remaining_commands"]) == 2
-        assert payload["remaining_commands"][0].startswith(sys.executable)
-        assert payload["remaining_commands"][1].startswith(sys.executable)
+        assert payload["remaining_commands"][0].lstrip("'\"").startswith(sys.executable)
+        assert payload["remaining_commands"][1].lstrip("'\"").startswith(sys.executable)
         assert "$PYTHON" not in payload["remaining_commands"][0]
         assert "$PYTHON" not in payload["remaining_commands"][1]
 
@@ -766,28 +766,141 @@ class TestCreate:
         (gov / "features" / "lens-dev" / "domain.yaml").write_text("{}", encoding="utf-8")
         (gov / "features" / "lens-dev" / "new-codebase" / "service.yaml").write_text("{}", encoding="utf-8")
 
-        # Make gov/ read-only: atomic_write_yaml for feature-index.yaml creates a temp file
-        # in gov/ and then renames it — both operations fail when gov/ is not writable.
-        # Sub-directories (features/…) retain their default writable permissions so
-        # feature.yaml and summary.md are written first, then the rollback code removes them.
-        gov.chmod(0o555)
-        try:
-            completed, payload = run_script([
-                "create",
-                "--governance-repo", str(gov),
-                "--feature-id", "lens-dev-new-codebase-rollback-test",
-                "--domain", "lens-dev",
-                "--service", "new-codebase",
-                "--name", "Rollback Test",
-                "--track", "express",
-            ])
+        # Simulate index write failure in an OS-neutral way by creating a directory
+        # at the target feature-index path.
+        (gov / "feature-index.yaml").mkdir(parents=False)
 
-            assert completed.returncode == 1
-            assert payload["status"] == "fail"
-            assert "feature-index.yaml" in payload["error"]
-            # feature.yaml and summary.md must have been rolled back
-            feature_dir = gov / "features" / "lens-dev" / "new-codebase" / "lens-dev-new-codebase-rollback-test"
-            assert not (feature_dir / "feature.yaml").exists()
-            assert not (feature_dir / "summary.md").exists()
-        finally:
-            gov.chmod(0o755)  # Restore write permission for tmp_path cleanup
+        completed, payload = run_script([
+            "create",
+            "--governance-repo", str(gov),
+            "--feature-id", "lens-dev-new-codebase-rollback-test",
+            "--domain", "lens-dev",
+            "--service", "new-codebase",
+            "--name", "Rollback Test",
+            "--track", "express",
+        ])
+
+        assert completed.returncode == 1
+        assert payload["status"] == "fail"
+        assert "feature-index.yaml" in payload["error"]
+        # feature.yaml and summary.md must have been rolled back
+        feature_dir = gov / "features" / "lens-dev" / "new-codebase" / "lens-dev-new-codebase-rollback-test"
+        assert not (feature_dir / "feature.yaml").exists()
+        assert not (feature_dir / "summary.md").exists()
+
+    def test_create_feature_recovers_from_malformed_multiline_summary_index(self, tmp_path: Path):
+        gov = tmp_path / "gov"
+        gov.mkdir()
+        (gov / "features" / "lens-dev" / "new-codebase").mkdir(parents=True)
+        (gov / "features" / "lens-dev" / "domain.yaml").write_text("{}", encoding="utf-8")
+        (gov / "features" / "lens-dev" / "new-codebase" / "service.yaml").write_text("{}", encoding="utf-8")
+        (gov / "feature-index.yaml").write_text(
+            """features:
+  - featureId: lens-dev-new-codebase-existing
+    id: lens-dev-new-codebase-existing
+    name: Existing
+    summary: Next command rewrite - express track; expressplan-complete, advancing to
+      finalizeplan.
+""",
+            encoding="utf-8",
+        )
+
+        completed, payload = run_script([
+            "create",
+            "--governance-repo", str(gov),
+            "--feature-id", "lens-dev-new-codebase-malformed-summary-recovery",
+            "--domain", "lens-dev",
+            "--service", "new-codebase",
+            "--name", "Malformed Summary Recovery",
+            "--track", "express",
+        ])
+
+        assert completed.returncode == 0
+        assert payload["status"] == "pass"
+        assert (
+            gov
+            / "features"
+            / "lens-dev"
+            / "new-codebase"
+            / "lens-dev-new-codebase-malformed-summary-recovery"
+            / "feature.yaml"
+        ).exists()
+        index_text = (gov / "feature-index.yaml").read_text(encoding="utf-8")
+        assert "lens-dev-new-codebase-existing" in index_text
+        assert "lens-dev-new-codebase-malformed-summary-recovery" in index_text
+
+    def test_create_feature_duplicate_detected_from_unparseable_index_scan(self, tmp_path: Path):
+        gov = tmp_path / "gov"
+        gov.mkdir()
+        (gov / "features" / "lens-dev" / "new-codebase").mkdir(parents=True)
+        (gov / "features" / "lens-dev" / "domain.yaml").write_text("{}", encoding="utf-8")
+        (gov / "features" / "lens-dev" / "new-codebase" / "service.yaml").write_text("{}", encoding="utf-8")
+        (gov / "feature-index.yaml").write_text(
+            """features:
+  - featureId: lens-dev-new-codebase-dup-scan
+    id: lens-dev-new-codebase-dup-scan
+    name: Broken Entry
+      this line causes indentation failure
+""",
+            encoding="utf-8",
+        )
+
+        completed, payload = run_script([
+            "create",
+            "--governance-repo", str(gov),
+            "--feature-id", "lens-dev-new-codebase-dup-scan",
+            "--domain", "lens-dev",
+            "--service", "new-codebase",
+            "--name", "Duplicate Scan",
+            "--track", "express",
+        ])
+
+        assert completed.returncode == 1
+        assert payload["status"] == "fail"
+        assert "already exists" in payload["error"]
+        assert not (
+            gov
+            / "features"
+            / "lens-dev"
+            / "new-codebase"
+            / "lens-dev-new-codebase-dup-scan"
+            / "summary.md"
+        ).exists()
+
+    def test_create_feature_malformed_index_without_ids_returns_structured_fail(self, tmp_path: Path):
+        gov = tmp_path / "gov"
+        gov.mkdir()
+        (gov / "features" / "lens-dev" / "new-codebase").mkdir(parents=True)
+        (gov / "features" / "lens-dev" / "domain.yaml").write_text("{}", encoding="utf-8")
+        (gov / "features" / "lens-dev" / "new-codebase" / "service.yaml").write_text("{}", encoding="utf-8")
+        (gov / "feature-index.yaml").write_text(
+            """features:
+  -
+    :
+    ???
+""",
+            encoding="utf-8",
+        )
+
+        completed, payload = run_script([
+            "create",
+            "--governance-repo", str(gov),
+            "--feature-id", "lens-dev-new-codebase-index-hard-fail",
+            "--domain", "lens-dev",
+            "--service", "new-codebase",
+            "--name", "Index Hard Fail",
+            "--track", "express",
+        ])
+
+        assert completed.returncode == 1
+        assert payload["status"] == "fail"
+        assert "Failed to read feature-index.yaml" in payload["error"]
+        assert "Traceback" not in completed.stderr
+        assert not (
+            gov
+            / "features"
+            / "lens-dev"
+            / "new-codebase"
+            / "lens-dev-new-codebase-index-hard-fail"
+            / "feature.yaml"
+        ).exists()

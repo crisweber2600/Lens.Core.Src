@@ -1087,7 +1087,10 @@ def _load_feature_index(gov_path: Path) -> dict:
     if not index_path.exists():
         return {"features": []}
 
-    raw = index_path.read_text(encoding="utf-8")
+    try:
+        raw = index_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise RuntimeError(f"Failed to read feature-index.yaml: {exc}") from exc
 
     try:
         data = yaml.safe_load(raw) or {}
@@ -1251,7 +1254,15 @@ def cmd_create(args: argparse.Namespace) -> dict:
     ]
 
     # Duplicate detection
-    index_data = _load_feature_index(gov_path)
+    try:
+        index_data = _load_feature_index(gov_path)
+    except RuntimeError as exc:
+        return {
+            "status": "fail",
+            "scope": "feature",
+            "dry_run": bool(args.dry_run),
+            "error": str(exc),
+        }
     if _feature_index_has_id(index_data, feature_id):
         return {
             "status": "fail",
@@ -1344,7 +1355,36 @@ def cmd_create(args: argparse.Namespace) -> dict:
         return {"status": "fail", "scope": "feature", "dry_run": False,
                 "error": f"Failed to write summary.md: {exc}"}
 
-    # Append index entry without reparsing the entire file to avoid legacy parser edge cases.
+    # Re-check index before append to avoid writing on duplicates/races.
+    try:
+        index_data = _load_feature_index(gov_path)
+    except RuntimeError as exc:
+        for written_path in files_written:
+            try:
+                written_path.unlink()
+            except OSError:
+                pass
+        return {
+            "status": "fail",
+            "scope": "feature",
+            "dry_run": False,
+            "error": str(exc),
+        }
+
+    if _feature_index_has_id(index_data, feature_id):
+        for written_path in files_written:
+            try:
+                written_path.unlink()
+            except OSError:
+                pass
+        return {
+            "status": "fail",
+            "scope": "feature",
+            "dry_run": False,
+            "error": f"Feature '{feature_id}' already exists in feature-index.yaml.",
+        }
+
+    # Append index entry without reparsing/writing the entire file to avoid legacy parser edge cases.
     new_entry = _make_index_entry(
         feature_id, feature_slug, domain, service, name, track, username, starting_phase, timestamp
     )

@@ -1,0 +1,37 @@
+name: Init Feature Tests
+
+on:
+  pull_request:
+    paths:
+      - "_bmad/lens-work/skills/lens-init-feature/scripts/init-feature-ops.py"
+      - "_bmad/lens-work/skills/lens-init-feature/scripts/tests/**"
+      - ".github/workflows/init-feature-tests.yml"
+  push:
+    branches: [main, develop]
+    paths:
+      - "_bmad/lens-work/skills/lens-init-feature/scripts/init-feature-ops.py"
+      - "_bmad/lens-work/skills/lens-init-feature/scripts/tests/**"
+      - ".github/workflows/init-feature-tests.yml"
+
+jobs:
+  init-feature-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install pytest
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest
+
+      - name: Run init-feature tests
+        run: |
+          python -m pytest _bmad/lens-work/skills/lens-init-feature/scripts/tests/test-init-feature-ops.py -v
+          python -m pytest _bmad/lens-work/skills/lens-init-feature/scripts/tests/test-create-service-ops.py -v
