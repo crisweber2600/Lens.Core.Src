@@ -206,6 +206,7 @@ Hard stop behavior:
 - Do not bypass validators for phase or metadata contracts.
 - Do not use destructive git operations unless explicitly requested and approved.
 - Keep governance operations auditable and boundary-preserving.
+- Use `vscode_askQuestions` for all follow-up questions instead of freeform chat prompts.
 
 ## Quick Compliance Checklist
 
