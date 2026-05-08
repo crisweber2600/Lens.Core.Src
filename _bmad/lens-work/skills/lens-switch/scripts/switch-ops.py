@@ -157,6 +157,19 @@ def load_feature_yaml_for_index_entry(governance_repo: str, entry: dict) -> dict
     return data if isinstance(data, dict) else None
 
 
+def resolve_feature_list_status(index_entry: dict, feature_data: dict | None) -> str:
+    """Return the display status for list output.
+
+    Prefer live `feature.yaml` phase when present because feature-index can lag
+    during lifecycle updates. Fall back to index status for compatibility.
+    """
+    if isinstance(feature_data, dict):
+        phase = str(feature_data.get("phase") or "").strip()
+        if phase:
+            return phase
+    return str(index_entry.get("status") or "active")
+
+
 def feature_yaml_path_for_index_entry(governance_repo: str, entry: dict) -> Path | None:
     """Return the direct feature.yaml path for an index entry when available."""
     feature_id = str(entry.get("id") or entry.get("featureId") or "").strip()
@@ -452,7 +465,7 @@ def cmd_list(args: argparse.Namespace) -> dict:
                 "id": f.get("id", ""),
                 "domain": f.get("domain", ""),
                 "service": f.get("service", ""),
-                "status": f.get("status", "active"),
+                "status": resolve_feature_list_status(f, feature_data),
                 "owner": f.get("owner", ""),
                 "summary": f.get("summary", ""),
                 "target_repo": normalize_target_repo_state(feature_data or {}),
