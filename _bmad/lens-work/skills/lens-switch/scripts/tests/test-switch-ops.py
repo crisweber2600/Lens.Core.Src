@@ -434,7 +434,7 @@ def test_switch_target_repo_state_null_and_stale_true(tmp_path: Path):
     assert payload["target_repo_state"] is None
 
 
-def test_branch_missing_reports_new_feature_guidance(tmp_path: Path):
+def test_branch_missing_reports_branch_init_guidance(tmp_path: Path):
     governance = tmp_path / "governance"
     control = tmp_path / "control"
     governance.mkdir()
@@ -451,7 +451,7 @@ def test_branch_missing_reports_new_feature_guidance(tmp_path: Path):
     assert payload["branch_switched"] is False
     assert payload["checked_out_branch"] is None
     assert payload["branch_error"] == "branch_not_found"
-    assert payload["message"] == "Run /new-feature to initialize branches."
+    assert payload["message"] == "Re-run init-feature/create-feature-branches to initialize branches."
 
 
 def test_branch_dirty_tree_reports_raw_git_error(tmp_path: Path):
