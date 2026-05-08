@@ -148,6 +148,97 @@ class TestValidatePhaseArtifactsStoryFiles:
         assert payload["status"] == "pass"
         assert payload["metadata_errors"] == []
 
+    def test_strict_metadata_rejects_missing_story_file_referenced_by_sprint_status(self, tmp_path):
+        docs_root = _make_docs(tmp_path)
+        (docs_root / "sprint-status.yaml").write_text(
+            """
+sprints:
+  - sprint_number: 1
+    stories:
+      - story_id: PF-1.1
+        status: ready-for-dev
+      - story_id: PF-1.2
+        status: ready-for-dev
+""".lstrip(),
+            encoding="utf-8",
+        )
+        stories_dir = docs_root / "stories"
+        stories_dir.mkdir()
+        (stories_dir / "story-PF-1.1.md").write_text(_story_frontmatter("PF-1.1"), encoding="utf-8")
+
+        result = _run(
+            "--phase", "finalizeplan",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--strict-metadata",
+            "--json",
+        )
+
+        assert result.returncode == 1, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["status"] == "fail"
+        assert payload["failure_reason"] == "metadata_errors"
+        assert payload["metadata_errors"] == [
+            "sprint-status.yaml references story IDs without matching story files: PF-1.2"
+        ]
+
+    def test_strict_metadata_accepts_all_sprint_status_story_files(self, tmp_path):
+        docs_root = _make_docs(tmp_path)
+        (docs_root / "sprint-status.yaml").write_text(
+            """
+sprints:
+  - sprint_number: 1
+    stories:
+      - story_id: PF-1.1
+        status: ready-for-dev
+      - story_id: PF-1.2
+        status: ready-for-dev
+""".lstrip(),
+            encoding="utf-8",
+        )
+        stories_dir = docs_root / "stories"
+        stories_dir.mkdir()
+        (stories_dir / "story-PF-1.1.md").write_text(_story_frontmatter("PF-1.1"), encoding="utf-8")
+        (stories_dir / "story-PF-1.2.md").write_text(_story_frontmatter("PF-1.2"), encoding="utf-8")
+
+        result = _run(
+            "--phase", "finalizeplan",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--strict-metadata",
+            "--json",
+        )
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["status"] == "pass"
+        assert payload["metadata_errors"] == []
+
+    def test_strict_metadata_requires_sprint_status_yaml_for_story_coverage(self, tmp_path):
+        docs_root = _make_docs(tmp_path)
+        (docs_root / "sprint-status.yaml").unlink()
+        (docs_root / "sprint-backlog.md").write_text("# Sprint Backlog\n", encoding="utf-8")
+        stories_dir = docs_root / "stories"
+        stories_dir.mkdir()
+        (stories_dir / "story-PF-1.1.md").write_text(_story_frontmatter("PF-1.1"), encoding="utf-8")
+
+        result = _run(
+            "--phase", "finalizeplan",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--strict-metadata",
+            "--json",
+        )
+
+        assert result.returncode == 1, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["status"] == "fail"
+        assert payload["failure_reason"] == "metadata_errors"
+        assert payload["metadata_errors"] == [
+            "strict metadata requires sprint-status.yaml to verify story-file coverage; "
+            "sprint-backlog.md alone is insufficient"
+        ]
+
     def test_strict_metadata_rejects_draft_sprint_plan(self, tmp_path):
         docs_root = _make_docs(tmp_path)
         stories_dir = docs_root / "stories"
@@ -305,6 +396,141 @@ open_questions:
         payload = json.loads(result.stdout)
         assert payload["status"] == "pass"
         assert "expressplan-adversarial-review" in payload["found_list"]
+
+    def test_input_ready_contract_for_finalizeplan_express_track(self, tmp_path):
+        docs_root = tmp_path / "docs"
+        docs_root.mkdir()
+        (docs_root / "business-plan.md").write_text("# Business\n", encoding="utf-8")
+        (docs_root / "tech-plan.md").write_text("# Tech\n", encoding="utf-8")
+        (docs_root / "sprint-plan.md").write_text("# Sprint\n", encoding="utf-8")
+
+        result = _run(
+            "--phase", "finalizeplan",
+            "--contract", "input-ready",
+            "--track", "express",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--json",
+        )
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["status"] == "pass"
+        assert payload["found_list"] == ["business-plan", "tech-plan", "sprint-plan"]
+        assert payload["missing"] == []
+        assert payload["found_files"] == {
+            "business-plan": ["business-plan.md"],
+            "tech-plan": ["tech-plan.md"],
+            "sprint-plan": ["sprint-plan.md"],
+        }
+
+    def test_input_ready_contract_for_finalizeplan_expressplan_alias(self, tmp_path):
+        docs_root = tmp_path / "docs"
+        docs_root.mkdir()
+        (docs_root / "business-plan.md").write_text("# Business\n", encoding="utf-8")
+        (docs_root / "tech-plan.md").write_text("# Tech\n", encoding="utf-8")
+        (docs_root / "sprint-plan.md").write_text("# Sprint\n", encoding="utf-8")
+
+        result = _run(
+            "--phase", "finalizeplan",
+            "--contract", "input-ready",
+            "--track", "expressplan",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--json",
+        )
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["status"] == "pass"
+        assert payload["found_list"] == ["business-plan", "tech-plan", "sprint-plan"]
+
+    def test_input_ready_contract_for_finalizeplan_quickplan_alias(self, tmp_path):
+        docs_root = tmp_path / "docs"
+        docs_root.mkdir()
+        (docs_root / "business-plan.md").write_text("# Business\n", encoding="utf-8")
+        (docs_root / "tech-plan.md").write_text("# Tech\n", encoding="utf-8")
+        (docs_root / "sprint-plan.md").write_text("# Sprint\n", encoding="utf-8")
+
+        result = _run(
+            "--phase", "finalizeplan",
+            "--contract", "input-ready",
+            "--track", "quickplan",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--json",
+        )
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["status"] == "pass"
+        assert payload["found_list"] == ["business-plan", "tech-plan", "sprint-plan"]
+
+    def test_input_ready_contract_for_finalizeplan_full_requires_full_track_docs(self, tmp_path):
+        docs_root = tmp_path / "docs"
+        docs_root.mkdir()
+        (docs_root / "business-plan.md").write_text("# Business\n", encoding="utf-8")
+        (docs_root / "tech-plan.md").write_text("# Tech\n", encoding="utf-8")
+        (docs_root / "sprint-plan.md").write_text("# Sprint\n", encoding="utf-8")
+
+        result = _run(
+            "--phase", "finalizeplan",
+            "--contract", "input-ready",
+            "--track", "full",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--json",
+        )
+
+        assert result.returncode == 1, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["status"] == "fail"
+        assert payload["failure_reason"] == "missing_artifacts"
+        assert payload["missing"] == [
+            "product-brief",
+            "research",
+            "brainstorm",
+            "prd",
+            "ux-design",
+            "architecture",
+        ]
+
+    def test_input_ready_contract_for_finalizeplan_unknown_track_fails(self, tmp_path):
+        docs_root = tmp_path / "docs"
+        docs_root.mkdir()
+
+        result = _run(
+            "--phase", "finalizeplan",
+            "--contract", "input-ready",
+            "--track", "unknown-track",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--json",
+        )
+
+        assert result.returncode == 1, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["status"] == "fail"
+        assert payload["failure_reason"] == "unknown_contract"
+        assert "unknown-track" in payload["error"]
+
+    def test_input_ready_contract_for_finalizeplan_requires_track(self, tmp_path):
+        docs_root = tmp_path / "docs"
+        docs_root.mkdir()
+
+        result = _run(
+            "--phase", "finalizeplan",
+            "--contract", "input-ready",
+            "--lifecycle-path", str(LIFECYCLE),
+            "--docs-root", str(docs_root),
+            "--json",
+        )
+
+        assert result.returncode == 1, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["status"] == "fail"
+        assert payload["failure_reason"] == "unknown_contract"
+        assert "--track is required" in payload["error"]
 
     def test_accepts_research_documents_in_research_subdir(self, tmp_path):
         docs_root = tmp_path / "docs"

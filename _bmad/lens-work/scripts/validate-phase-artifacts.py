@@ -26,10 +26,49 @@ REQUIRED_STORY_FRONTMATTER = (
 )
 
 
-def get_required_artifacts(lifecycle_path: Path, phase: str, contract: str) -> list[str]:
+TRACK_ALIASES = {
+    "expressplan": "express",
+    "quickplan": "express",
+    "standard": "full",
+    "tech-change": "full",
+}
+
+
+def normalize_track(track: str | None) -> str | None:
+    if not track:
+        return None
+    normalized = track.strip().lower()
+    return TRACK_ALIASES.get(normalized, normalized)
+
+
+def get_required_artifacts(lifecycle_path: Path, phase: str, contract: str, track: str | None = None) -> list[str]:
     data = yaml.safe_load(lifecycle_path.read_text(encoding="utf-8"))
     phases = data.get("phases", {})
     phase_data = phases.get(phase, {})
+    if contract == "input-ready":
+        if phase == "finalizeplan":
+            contracts_by_track = phase_data.get("input_contracts_by_track", {})
+            normalized_track = normalize_track(track)
+            if not normalized_track:
+                known = ", ".join(sorted(contracts_by_track)) or "none"
+                raise ValueError(
+                    f"--track is required for phase {phase!r} with contract 'input-ready'; "
+                    f"known tracks: {known}"
+                )
+            if normalized_track not in contracts_by_track:
+                known = ", ".join(sorted(contracts_by_track)) or "none"
+                raise ValueError(
+                    f"No input-ready contract defined for phase {phase!r} and track {track!r}; "
+                    f"known tracks: {known}"
+                )
+            return contracts_by_track[normalized_track]
+
+        completion_review = phase_data.get("completion_review", {})
+        return completion_review.get(
+            "ready_when_artifacts",
+            completion_review.get("reviewed_artifacts", []),
+        )
+
     if contract == "phase-artifacts":
         return phase_data.get("artifacts", [])
 
@@ -67,6 +106,12 @@ def artifact_candidates(docs_root: Path, name: str) -> list[Path]:
         case "architecture":
             candidates = [docs_root / "architecture.md"]
             candidates += list(docs_root.glob("*architecture*.md"))
+        case "business-plan":
+            candidates = [docs_root / "business-plan.md"]
+        case "tech-plan":
+            candidates = [docs_root / "tech-plan.md"]
+        case "sprint-plan":
+            candidates = [docs_root / "sprint-plan.md"]
         case "epics":
             candidates = [docs_root / "epics.md"]
         case "stories":
@@ -152,6 +197,70 @@ def yaml_metadata_from_file(path: Path) -> dict | None:
         return None
 
 
+def collect_story_ids(value: object) -> set[str]:
+    story_ids: set[str] = set()
+
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key in {"story_id", "storyId"} and item:
+                story_ids.add(str(item))
+            else:
+                story_ids.update(collect_story_ids(item))
+    elif isinstance(value, list):
+        for item in value:
+            story_ids.update(collect_story_ids(item))
+
+    return story_ids
+
+
+def sprint_status_story_ids(docs_root: Path) -> tuple[set[str], str | None]:
+    sprint_status = docs_root / "sprint-status.yaml"
+    if not sprint_status.exists() or sprint_status.stat().st_size == 0:
+        sprint_backlog = docs_root / "sprint-backlog.md"
+        if sprint_backlog.exists() and sprint_backlog.stat().st_size > 0:
+            return (
+                set(),
+                "strict metadata requires sprint-status.yaml to verify story-file coverage; "
+                "sprint-backlog.md alone is insufficient"
+            )
+        return set(), None
+
+    try:
+        documents = list(yaml.safe_load_all(sprint_status.read_text(encoding="utf-8")))
+    except yaml.YAMLError:
+        return set(), "sprint-status.yaml has malformed YAML (parse error)"
+
+    story_ids: set[str] = set()
+    for document in documents:
+        story_ids.update(collect_story_ids(document))
+    return story_ids, None
+
+
+def story_ids_for_file(story_file: Path) -> set[str]:
+    story_ids: set[str] = set()
+    metadata = yaml_metadata_from_file(story_file)
+    if isinstance(metadata, dict):
+        story_id = metadata.get("story_id")
+        if story_id:
+            story_ids.add(str(story_id))
+
+    stem = story_file.stem
+    story_ids.add(stem)
+    if stem.startswith("story-"):
+        story_ids.add(stem.removeprefix("story-"))
+    if stem.startswith("dev-story-"):
+        story_ids.add(stem.removeprefix("dev-story-"))
+
+    return story_ids
+
+
+def existing_story_ids(docs_root: Path) -> set[str]:
+    story_ids: set[str] = set()
+    for story_file in existing_artifact_files(docs_root, "story-files"):
+        story_ids.update(story_ids_for_file(story_file))
+    return story_ids
+
+
 def metadata_field_missing(metadata: dict, field: str) -> bool:
     if field not in metadata:
         return True
@@ -164,6 +273,17 @@ def strict_metadata_errors(phase: str, contract: str, docs_root: Path) -> list[s
         return []
 
     errors: list[str] = []
+
+    sprint_story_ids, sprint_error = sprint_status_story_ids(docs_root)
+    if sprint_error:
+        errors.append(sprint_error)
+    elif sprint_story_ids:
+        missing_story_ids = sorted(sprint_story_ids - existing_story_ids(docs_root))
+        if missing_story_ids:
+            errors.append(
+                "sprint-status.yaml references story IDs without matching story files: "
+                + ", ".join(missing_story_ids)
+            )
 
     for story_file in existing_artifact_files(docs_root, "story-files"):
         metadata = yaml_metadata_from_file(story_file)
@@ -210,8 +330,12 @@ def main() -> int:
     parser.add_argument(
         "--contract",
         default="phase-artifacts",
-        choices=("phase-artifacts", "completion-review", "review-ready"),
+        choices=("phase-artifacts", "completion-review", "review-ready", "input-ready"),
         help="Which lifecycle artifact contract to validate.",
+    )
+    parser.add_argument(
+        "--track",
+        help="Lifecycle track for contracts that vary by track, such as FinalizePlan input-ready.",
     )
     parser.add_argument("--lifecycle-path", required=True, help="Path to lifecycle.yaml")
     parser.add_argument("--docs-root", required=True, help="Path to docs root")
@@ -230,16 +354,40 @@ def main() -> int:
         print(f"ERROR: lifecycle.yaml not found: {lifecycle_path}", file=sys.stderr)
         return 1
 
-    required = get_required_artifacts(lifecycle_path, args.phase, args.contract)
+    try:
+        required = get_required_artifacts(lifecycle_path, args.phase, args.contract, args.track)
+    except ValueError as error:
+        if args.json:
+            print(json.dumps({
+                "phase": args.phase,
+                "contract": args.contract,
+                "track": args.track,
+                "required": 0,
+                "found": 0,
+                "missing": [],
+                "found_list": [],
+                "found_files": {},
+                "metadata_errors": [],
+                "misplaced": {},
+                "failure_reason": "unknown_contract",
+                "status": "fail",
+                "error": str(error),
+            }, indent=2))
+        else:
+            print(f"ERROR: {error}", file=sys.stderr)
+        return 1
 
     if not required:
         if args.json:
             print(json.dumps({
                 "phase": args.phase,
                 "contract": args.contract,
+                "track": args.track,
                 "required": 0,
                 "found": 0,
                 "missing": [],
+                "found_list": [],
+                "found_files": {},
                 "status": "no_artifacts_defined",
             }))
         else:
@@ -247,11 +395,14 @@ def main() -> int:
         return 0
 
     found: list[str] = []
+    found_files: dict[str, list[str]] = {}
     missing: list[str] = []
 
     for artifact in required:
-        if artifact_exists(docs_root, artifact):
+        files = existing_artifact_files(docs_root, artifact)
+        if files:
             found.append(artifact)
+            found_files[artifact] = sorted([str(path.relative_to(docs_root)).replace("\\", "/") for path in files])
         else:
             missing.append(artifact)
 
@@ -267,10 +418,12 @@ def main() -> int:
         print(json.dumps({
             "phase": args.phase,
             "contract": args.contract,
+            "track": args.track,
             "required": len(required),
             "found": len(found),
             "missing": missing,
             "found_list": found,
+            "found_files": found_files,
             "metadata_errors": metadata_errors,
             "misplaced": {},
             "failure_reason": failure_reason,
@@ -282,6 +435,8 @@ def main() -> int:
                 print("Phase artifacts verified")
             elif args.contract == "completion-review":
                 print("Completion review artifacts verified")
+            elif args.contract == "input-ready":
+                print("Input-ready artifacts verified")
             else:
                 print("Review-ready artifacts verified")
         else:
@@ -289,10 +444,14 @@ def main() -> int:
                 print("Phase incomplete")
             elif args.contract == "completion-review":
                 print("Completion review incomplete")
+            elif args.contract == "input-ready":
+                print("Input-ready contract incomplete")
             else:
                 print("Review-ready contract incomplete")
         print(f"  Phase:    {args.phase}")
         print(f"  Contract: {args.contract}")
+        if args.track:
+            print(f"  Track:    {args.track}")
         print(f"  Required: {len(required)}")
         print(f"  Found:    {len(found)}")
         print(f"  Missing:  {', '.join(missing) if missing else 'none'}")

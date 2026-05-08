@@ -44,6 +44,9 @@ class TestFinalizePlanContract:
         assert "expressplan-complete" in activation
         assert "active `techplan`" in activation
         assert "active `expressplan`" in activation
+        assert "predecessor_phase=techplan" in activation
+        assert "predecessor_phase=expressplan" in activation
+        assert "--contract review-ready" in activation
 
     def test_governance_writes_are_only_through_allowed_boundaries(self):
         content = SKILL_PATH.read_text(encoding="utf-8")
@@ -100,6 +103,26 @@ class TestFinalizePlanContract:
         assert positions == sorted(positions), "Downstream bundle delegations are out of order"
         assert "review-driven planning fixes" in step_three
 
+    def test_step_three_requires_track_specific_input_gate_before_delegation(self):
+        content = SKILL_PATH.read_text(encoding="utf-8")
+        step_three = section_between(content, "### Step 3 - downstream-bundle-and-final-pr", "## Output Artifacts")
+
+        assert "--contract input-ready" in step_three
+        assert "--track {track}" in step_three
+        assert "approved_input_documents" in step_three
+        assert "finalizeplan_input_documents" in step_three
+        assert "business-plan.md" in step_three
+        assert "tech-plan.md" in step_three
+        assert "sprint-plan.md" in step_three
+        assert "PRD-, architecture-, or UX-named documents" in step_three
+
+        input_gate_position = step_three.find("--contract input-ready")
+        first_delegation_position = step_three.find("lens-bmad-skill --skill bmad-create-epics-and-stories")
+
+        assert input_gate_position != -1
+        assert first_delegation_position != -1
+        assert input_gate_position < first_delegation_position
+
     def test_step_three_requires_post_bundle_metadata_gate(self):
         content = SKILL_PATH.read_text(encoding="utf-8")
         step_three = section_between(content, "### Step 3 - downstream-bundle-and-final-pr", "## Output Artifacts")
@@ -111,6 +134,8 @@ class TestFinalizePlanContract:
         assert "open_questions" in step_three
         assert "dependency paths" in step_three
         assert "target repositories" in step_three
+        assert "every story referenced by `sprint-status.yaml`" in step_three
+        assert "single seeded story file" in step_three
         assert "story_id" in step_three
         assert "depends_on" in step_three
         assert "updated_at" in step_three

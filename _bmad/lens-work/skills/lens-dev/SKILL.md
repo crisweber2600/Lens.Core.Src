@@ -20,13 +20,20 @@ Required inputs:
 
 Optional inputs:
 - target_repo_path: Explicit target repo path override.
-- epic: Epic selector (number or id) when the user narrows execution.
+- epic: Epic selector (number or id) to narrow execution to stories belonging to that epic.
+  Omit this input to run without epic filtering.
+  The values `all` and `all stories` are sentinels meaning "no epic filter" — they behave
+  the same as omitting `epic` and do not filter the story queue to a literal `all` prefix.
+  To run all sprints with auto-continue, omit `epic` (or use the sentinel) and set
+  `continue_across_sprints: true`.
+- continue_across_sprints: Boolean session flag set when the user explicitly requests `all stories`, `all sprints`, `run all the way through`, or automatic post-dev completion.
 - base_branch: Branch to fork from when branch prep is needed.
 - working_branch: Existing branch to resume if already prepared.
 
 Preconditions:
 - FinalizePlan artifacts exist and are review-ready.
 - Governance feature state is readable.
+- Control repo can check out the feature dev branch before reading feature docs.
 - Target repo is reachable and has no unresolved merge state.
 
 ## Output Contract
@@ -44,6 +51,7 @@ Secondary outputs:
 
 Hard-stop errors:
 - Missing required inputs or unresolved feature context.
+- Control repo dev branch checkout failure.
 - FinalizePlan gate not satisfied.
 - Target repo branch prep failure.
 - Commit/push failure for a completed story slice.
@@ -59,12 +67,29 @@ Never continue silently after a hard-stop error.
 Validate this contract with focused tests that assert:
 - Required input keys are named in this skill.
 - Output contract includes story commit references and dev-session updates.
+- Control repo `{feature_id}-dev` branch activation is required before phase entry story validation.
 - Hard-stop and recoverable error categories are explicitly documented.
 - Scope statement keeps this skill orchestration-only.
 
+## Control Dev Branch Activation
+
+Before any Phase Entry Validation that reads `sprint-status.yaml`, story files, or other feature docs, the conductor MUST ensure the control repo is on the feature dev branch for the active feature.
+
+1. Resolve `feature_id` from the explicit input, active session context, or governance feature selection before reading control-repo feature docs.
+2. Set `control_dev_branch = {feature_id}-dev`.
+3. Inspect the current control-repo branch with `git -C {control_repo} branch --show-current`.
+4. If the current branch is not `control_dev_branch`, attempt to check out the dev branch:
+   - Prefer an existing local `control_dev_branch` when present.
+   - Otherwise fetch and check out `origin/{control_dev_branch}` when present.
+   - Run `git -C {control_repo} pull --ff-only origin {control_dev_branch}` after checkout when the remote exists.
+5. If checkout or pull fails, emit `control_dev_branch_checkout_failed` hard-stop with the attempted branch and git error. Do not proceed to `sprint_status_missing`, `story_file_missing`, or story queue validation while still on the wrong branch.
+6. If checkout succeeds, use the docs on `control_dev_branch` as the source for all Phase Entry Validation and dev-cycle docs updates.
+
+This branch activation is mandatory for `/lens-dev` because finalized planning docs are delivered on `{feature_id}-dev`. A `story_file_missing` result from `main`, `{feature_id}`, `{feature_id}-plan`, or any unrelated branch is not authoritative until this dev-branch activation has succeeded.
+
 ## Phase Entry Validation
 
-Before execution begins, the conductor MUST validate all of the following. Fail fast on any violation.
+After Control Dev Branch Activation succeeds, the conductor MUST validate all of the following. Fail fast on any violation.
 
 1. **feature.yaml phase gate**: Read `feature.yaml` from the governance repo. The `phase` field MUST be `finalizeplan-complete`. If the phase is any other value:
    - If phase is `dev` or `dev-complete`: Resume dev execution from the recorded `dev-session.yaml` checkpoint.
@@ -96,13 +121,23 @@ After phase entry passes:
 
 1. Parse `sprint-status.yaml`. Stories are iterable items; each has at minimum `story_id`, `status`, and optionally `blocked_by`.
 2. Build the **ready queue**: stories where `status == 'ready'` and all `blocked_by` entries are in the `completed` list of `dev-session.yaml`.
-3. If the `epic` input is set, filter the ready queue to stories matching that epic prefix.
+3. If the `epic` input is set to a specific epic number or id, filter the ready queue to stories matching that epic prefix. The sentinel values `all` and `all stories` are treated the same as omitting `epic` — no epic filtering is applied; they do not filter the queue to a literal `all` prefix.
 4. If the ready queue is empty and there are stories in `status == 'in-progress'` from a prior session: re-enqueue those stories as `ready` (crash recovery).
 5. If the ready queue is empty and no stories remain in `ready` or `in-progress`: the sprint is **complete**. Emit `sprint_complete` signal and update `feature.yaml` phase to `dev-complete`, then run the complete cycle automatically when the invocation requested post-dev completion.
 
-## Sprint Boundary Pause
+## Sprint Boundary Policy
 
-After completing every story in the ready queue for the current sprint, emit a `sprint_boundary` pause signal. The conductor MUST wait for explicit user confirmation before advancing to the next sprint. This is not optional and may not be bypassed.
+After completing every story in the ready queue for the current sprint, emit a `sprint_boundary` checkpoint.
+
+Default behavior:
+- For normal sprint-scoped or epic-scoped invocations, the conductor MUST wait for explicit user confirmation before advancing to the next sprint.
+- This default pause protects users from accidentally starting another sprint of target-repo work.
+
+All-stories behavior:
+- When the invocation explicitly requests `all stories`, `all sprints`, `run all the way through`, or automatic post-dev completion, set `continue_across_sprints: true` in session context before the first story loop.
+- In that mode, the original invocation is the explicit confirmation to cross sprint boundaries. The conductor MUST record the `sprint_boundary` checkpoint and immediately resolve the next unblocked sprint queue without rendering a numbered continue/stop menu.
+- Continue across sprint boundaries until every story in the selected scope is `done`, or until a hard-stop error, test failure, failed story, or blocked story requires user intervention.
+- The conductor MUST NOT stop merely because the current sprint completed while `continue_across_sprints: true` and additional unblocked stories remain.
 
 The pause message must include:
 - Stories completed in this sprint.
@@ -146,12 +181,13 @@ All timestamps are ISO 8601. All writes emit this schema exactly. Read-time comp
 
 ## Execution Flow
 
-1. **Phase entry validation**: Validate feature.yaml phase, sprint-status.yaml, story files, target repo state, and dev-session.yaml integrity.
-2. **Story queue resolution**: Build ready queue from sprint-status.yaml and dev-session.yaml completed list.
-3. **Branch context**: Confirm or prepare target repo branch via `lens-git-orchestration`.
-4. **Story loop**: For each ready story, validate, delegate, test, commit, record, and advance.
-5. **Sprint boundary**: Pause after each sprint for user confirmation.
-6. **Completion**: When all stories are done, emit `sprint_complete` and update `feature.yaml` to `dev-complete`. If the invocation requested automatic post-dev completion, immediately run `lens-complete` preconditions and then `complete-ops.py finalize --control-repo {control_repo} --confirm`; treat the user's auto-complete request as the explicit confirmation for that finalize call. If completion preconditions fail, surface the structured blocker and do not simulate completion.
+1. **Control dev branch activation**: Resolve the active feature and switch the control repo to `{feature_id}-dev` before reading `sprint-status.yaml` or story files.
+2. **Phase entry validation**: Validate feature.yaml phase, sprint-status.yaml, story files, target repo state, and dev-session.yaml integrity on `{feature_id}-dev`.
+3. **Story queue resolution**: Build ready queue from sprint-status.yaml and dev-session.yaml completed list.
+4. **Branch context**: Confirm or prepare target repo branch via `lens-git-orchestration`.
+5. **Story loop**: For each ready story, validate, delegate, test, commit, record, and advance.
+6. **Sprint boundary**: Record a boundary checkpoint after each sprint. Pause for user confirmation by default; continue automatically when `continue_across_sprints: true` was set by an explicit all-stories/all-sprints/auto-complete invocation.
+7. **Completion**: When all stories are done, emit `sprint_complete` and update `feature.yaml` to `dev-complete`. If the invocation requested automatic post-dev completion, immediately run `lens-complete` preconditions and then `complete-ops.py finalize --control-repo {control_repo} --confirm`; treat the user's auto-complete request as the explicit confirmation for that finalize call. If completion preconditions fail, surface the structured blocker and do not simulate completion.
 
 ## Automatic Complete Handoff
 

@@ -84,8 +84,36 @@ def test_phase_entry_validates_finalizeplan_complete():
     )
 
 
+def test_control_dev_branch_activation_precedes_phase_entry_validation():
+    """Conductor switches to {feature_id}-dev before story validation reads feature docs."""
+    text = _skill_text()
+    activation_index = text.find("## Control Dev Branch Activation")
+    validation_index = text.find("## Phase Entry Validation")
+
+    assert activation_index != -1, "SKILL.md must document Control Dev Branch Activation"
+    assert validation_index != -1, "SKILL.md must document Phase Entry Validation"
+    assert activation_index < validation_index, (
+        "Control dev branch activation must be documented before phase entry validation"
+    )
+    assert "{feature_id}-dev" in text
+    assert "control_dev_branch_checkout_failed" in text
+    assert "Do not proceed to `sprint_status_missing`, `story_file_missing`" in text
+
+
+def test_control_dev_branch_pull_uses_ff_only_syntax():
+    """The pull step in Control Dev Branch Activation must use `--ff-only origin {branch}` form."""
+    text = _skill_text()
+    activation_start = text.find("## Control Dev Branch Activation")
+    activation_end = text.find("##", activation_start + 1)
+    section = text[activation_start:activation_end]
+    assert "pull --ff-only origin" in section, (
+        "Control Dev Branch Activation pull step must use "
+        "`git pull --ff-only origin {control_dev_branch}` (not `origin/{branch}` ref form)"
+    )
+
+
 def test_sprint_boundary_pause_documented():
-    """Sprint boundary pause is documented as mandatory."""
+    """Sprint boundary pause remains documented for default invocations."""
     text = _skill_text()
     assert re.search(r"sprint.boundary", text, re.IGNORECASE), (
         "SKILL.md must document sprint boundary pause"
@@ -93,6 +121,35 @@ def test_sprint_boundary_pause_documented():
     # Must be explicit about requiring user confirmation
     assert re.search(r"user confirmation|explicit.*confirm", text, re.IGNORECASE), (
         "Sprint boundary pause must require explicit user confirmation"
+    )
+
+
+def test_all_stories_invocation_continues_across_sprint_boundaries():
+    """Explicit all-stories scope is pre-confirmed to cross sprint boundaries."""
+    text = _skill_text()
+    assert "continue_across_sprints" in text, (
+        "SKILL.md must name the continue_across_sprints session flag"
+    )
+    assert re.search(r"all stories|all sprints", text, re.IGNORECASE), (
+        "SKILL.md must document all-stories/all-sprints invocation behavior"
+    )
+    # The original/initial invocation pre-confirms sprint-boundary crossings (key concept,
+    # not an exact phrase — resilient to minor wording changes in SKILL.md).
+    assert re.search(r"invocation.{0,80}confirm", text, re.IGNORECASE | re.DOTALL), (
+        "All-stories mode must document that the initial invocation pre-confirms sprint boundary crossings"
+    )
+    # Continuation is automatic — no interactive numbered menu is shown.
+    # Checks for 'immediately' near 'sprint' (within 80 chars), 'without' near 'menu'
+    # (within 80 chars), or 'record...boundary...immediately' — all signal the same concept.
+    assert re.search(
+        r"immediately.{0,80}sprint|without.{0,80}menu|record.{0,80}boundary.{0,80}immediately",
+        text, re.IGNORECASE | re.DOTALL,
+    ), (
+        "All-stories mode must document automatic continuation without an interactive stop"
+    )
+    # Conductor MUST NOT stop merely because the current sprint completed
+    assert re.search(r"must not stop|not stop.{0,80}sprint", text, re.IGNORECASE | re.DOTALL), (
+        "All-stories mode must not stop at sprint completion when additional unblocked work remains"
     )
 
 
