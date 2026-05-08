@@ -41,7 +41,7 @@ You are the FinalizePlan phase conductor. You coordinate final planning gates, b
 
 ## On Activation
 
-1. Load config from `{project-root}/lens.core/_bmad/config.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml`.
+1. Load config from `{project-root}/lens.core/_bmad/bmadconfig.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml`.
 2. Resolve `{governance_repo}`, `{control_repo}`, `{feature_id}`, and `{module_path}`.
 3. Load `feature.yaml` through `lens-feature-yaml` and resolve `domain`, `service`, `track`, `phase`, `docs.path`, and branch names.
 4. Validate the current branch model: `{featureId}` and `{featureId}-plan` must exist in the control repo before FinalizePlan proceeds.

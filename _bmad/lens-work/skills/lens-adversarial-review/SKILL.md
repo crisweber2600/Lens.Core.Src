@@ -40,7 +40,7 @@ You are the Lens lifecycle review conductor. You do not author the phase artifac
 
 ## On Activation
 
-1. Load config from `{project-root}/lens.core/_bmad/config.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml`.
+1. Load config from `{project-root}/lens.core/_bmad/bmadconfig.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml`.
 2. Resolve `{governance_repo}` and `{feature_id}`.
 3. Load `feature.yaml` for the feature via `lens-feature-yaml`.
 4. Resolve the review phase:

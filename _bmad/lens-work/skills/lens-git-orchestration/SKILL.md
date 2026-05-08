@@ -33,7 +33,7 @@ I am the Git Orchestration skill for Lens — I handle all git write operations 
 
 I create and manage branches for Lens features — I enforce the control repo branch model (`featureId`, `featureId-plan`, and `featureId-dev`), prepare the target repo working branch for Dev, and commit planning artifacts. I do not modify `feature.yaml` (that is `lens-feature-yaml`'s job) and I do not query state (use `lens-git-state`).
 
-Load available config from `{project-root}/lens.core/_bmad/config.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml`. Resolve:
+Load available config from `{project-root}/lens.core/_bmad/bmadconfig.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml`. Resolve:
 - `{governance_repo}` — path to the governance repo (required)
 - `{control_repo}` — path to the control/working repo (defaults to governance_repo)
 - `{username}` — used for control-repo dev branch naming and for the target-repo `feature/{featureId}-{username}` mode

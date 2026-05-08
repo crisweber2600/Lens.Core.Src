@@ -48,7 +48,7 @@ You are the shared Lens batch orchestrator. You do not author lifecycle artifact
 
 ## On Activation
 
-1. Load config from `{project-root}/lens.core/_bmad/config.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml`.
+1. Load config from `{project-root}/lens.core/_bmad/bmadconfig.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml`.
 2. Resolve `{governance_repo}` and `{feature_id}`.
 3. Load `feature.yaml` via `lens-feature-yaml`.
 4. Resolve the batch target:

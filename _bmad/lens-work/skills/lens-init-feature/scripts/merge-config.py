@@ -3,7 +3,7 @@
 # requires-python = ">=3.9"
 # dependencies = ["pyyaml"]
 # ///
-"""Merge module configuration into shared {project-root}/lens.core/_bmad/config.yaml and config.user.yaml.
+"""Merge module configuration into shared {project-root}/lens.core/_bmad/bmadconfig.yaml and config.user.yaml.
 
 Reads a module.yaml definition and a JSON answers file, then writes or updates
 the shared config.yaml (core values at root + module section) and config.user.yaml
@@ -11,7 +11,7 @@ the shared config.yaml (core values at root + module section) and config.user.ya
 Uses an anti-zombie pattern for the module section in config.yaml.
 
 Legacy migration: when --legacy-dir is provided, reads old per-module config files
-from {legacy-dir}/{module-code}/config.yaml and {legacy-dir}/core/config.yaml.
+from {legacy-dir}/{module-code}/bmadconfig.yaml and {legacy-dir}/core/bmadconfig.yaml.
 Matching values serve as fallback defaults (answers override them). After a
 successful merge, the legacy config.yaml files are deleted. Only the current
 module and core directories are touched — other module directories are left alone.
@@ -33,12 +33,12 @@ except ImportError:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Merge module config into shared {project-root}/lens.core/_bmad/config.yaml with anti-zombie pattern."
+        description="Merge module config into shared {project-root}/lens.core/_bmad/bmadconfig.yaml with anti-zombie pattern."
     )
     parser.add_argument(
         "--config-path",
         required=True,
-        help="Path to the target {project-root}/lens.core/_bmad/config.yaml file",
+        help="Path to the target {project-root}/lens.core/_bmad/bmadconfig.yaml file",
     )
     parser.add_argument(
         "--module-yaml",
@@ -95,7 +95,7 @@ def load_legacy_values(
 ) -> tuple[dict, dict, list]:
     """Read legacy per-module config files and return core/module value dicts.
 
-    Reads {legacy_dir}/core/config.yaml and {legacy_dir}/{module_code}/config.yaml.
+    Reads {legacy_dir}/core/bmadconfig.yaml and {legacy_dir}/{module_code}/bmadconfig.yaml.
     Only returns values whose keys match the current schema (core keys or module.yaml
     variable definitions). Other modules' directories are not touched.
 

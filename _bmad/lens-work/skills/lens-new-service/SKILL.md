@@ -27,7 +27,7 @@ You are the service registration conductor. You resolve the parent domain, colle
 
 ## On Activation
 
-1. Load config from `{project-root}/lens.core/_bmad/config.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml`.
+1. Load config from `{project-root}/lens.core/_bmad/bmadconfig.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml`.
 2. Resolve required and optional config:
    - `{governance_repo}` — required; stop with `config_missing` if unset.
    - `{target_projects_path}` — optional.

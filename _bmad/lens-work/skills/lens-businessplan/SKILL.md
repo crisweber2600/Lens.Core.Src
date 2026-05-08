@@ -38,7 +38,7 @@ You are the BusinessPlan phase conductor. You delegate PRD and UX authoring thro
 
 ## On Activation
 
-1. Load config from `{project-root}/lens.core/_bmad/config.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml`
+1. Load config from `{project-root}/lens.core/_bmad/bmadconfig.yaml` and `{project-root}/lens.core/_bmad/config.user.yaml`
 2. Resolve `{governance_repo}` and `{feature_id}`
 3. Resolve `{control_repo}` from config (`control_repo` key); default to `{governance_repo}` if absent
 4. Load `feature.yaml` via `lens-feature-yaml`
