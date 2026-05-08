@@ -28,6 +28,11 @@ CORE_BUGFIX_SKILL = MODULE_ROOT / "skills" / "bmad-lens-core-bugfix" / "SKILL.md
 
 LIGHT_PREFLIGHT_SCRIPT_PATH = "lens.core/_bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py"
 STANDARD_PREFLIGHT = f"uv run --script {LIGHT_PREFLIGHT_SCRIPT_PATH}"
+LEGACY_PREFLIGHT_PATTERNS = (
+    r"(^|\s)uv\s+run\s+_bmad/lens-work/skills/lens-preflight/scripts/light-preflight\.py(\s|$)",
+    r"(^|\s)uv\s+run\s+--script\s+_bmad/lens-work/skills/lens-preflight/scripts/light-preflight\.py(\s|$)",
+    r"(^|\s)_bmad/lens-work/skills/lens-preflight/scripts/light-preflight\.py(\s|$)",
+)
 NO_PREFLIGHT_PROMPTS = {"lens-core-bugfix.prompt.md"}
 
 
@@ -77,7 +82,10 @@ def test_public_prompt_wrappers_match_installed_workspace_contract():
         bash_blocks = re.findall(r"```bash\n(.*?)```", text, re.DOTALL)
         assert bash_blocks, f"{prompt.name} must include the executable preflight bash block"
         for block in bash_blocks:
-            assert " _bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py" not in block
+            for legacy_pattern in LEGACY_PREFLIGHT_PATTERNS:
+                assert not re.search(legacy_pattern, block), (
+                    f"{prompt.name} preflight command still uses legacy path pattern: {legacy_pattern}"
+                )
             assert "lens.core/_bmad/lens-work/prompts/" not in block
             assert LIGHT_PREFLIGHT_SCRIPT_PATH in block
 
@@ -116,9 +124,17 @@ def test_preflight_caller_classification_covers_prompt_surface():
     expected_prompt_callers = set(expected) - {"lens-core-bugfix"}
     assert prompt_callers == expected_prompt_callers, "Every preflight prompt caller must have an explicit policy"
 
+    explicit_callers_by_class = {
+        "read-only": preflight.READ_ONLY_CALLERS,
+        "control-write": preflight.CONTROL_WRITE_CALLERS,
+        "governance-write": preflight.GOVERNANCE_WRITE_CALLERS,
+        "mixed": preflight.MIXED_CALLERS,
+    }
     for caller, request_class in expected.items():
+        assert caller in explicit_callers_by_class[request_class], (
+            f"{caller} must be explicitly listed in the {request_class} preflight caller set"
+        )
         assert preflight.classify_request(caller) == request_class
-    assert preflight.classify_request("lens-core-bugfix") == "mixed"
 
     assert preflight.request_requires_repo("control-write", "control") is True
     assert preflight.request_requires_repo("control-write", "governance") is False
