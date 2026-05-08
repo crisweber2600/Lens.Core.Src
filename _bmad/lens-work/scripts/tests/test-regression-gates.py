@@ -34,7 +34,7 @@ LEGACY_PREFLIGHT_PATTERNS = (
     rf"(^|\s)uv\s+run\s+--script\s+{LEGACY_PREFLIGHT_SCRIPT_PATTERN}(\s|$)",
     rf"(^|\s){LEGACY_PREFLIGHT_SCRIPT_PATTERN}(\s|$)",
 )
-NO_PREFLIGHT_PROMPTS = {"lens-core-bugfix.prompt.md"}
+NO_PREFLIGHT_PROMPTS = {"lens-core-bugfix.prompt.md", "lens-postflight.prompt.md"}
 
 
 def _read(path: Path) -> str:
@@ -131,7 +131,7 @@ def test_preflight_caller_classification_covers_prompt_surface():
         for prompt in GITHUB_PROMPTS.glob("lens-*.prompt.md")
         if prompt.name not in NO_PREFLIGHT_PROMPTS
     }
-    expected_prompt_callers = set(expected) - {"lens-core-bugfix"}
+    expected_prompt_callers = set(expected) - {"lens-core-bugfix", "lens-postflight"}
     assert prompt_callers == expected_prompt_callers, "Every preflight prompt caller must have an explicit policy"
 
     explicit_callers_by_class = _explicit_callers_by_class(preflight)
@@ -145,6 +145,18 @@ def test_preflight_caller_classification_covers_prompt_surface():
     assert preflight.request_requires_repo("control-write", "governance") is False
     assert preflight.request_requires_repo("governance-write", "governance") is True
     assert preflight.request_requires_repo("governance-write", "control") is False
+
+
+def test_postflight_skill_explicitly_requires_closeout_commit_push_and_clean_state():
+    postflight = _read(MODULE_ROOT / "skills" / "bmad-lens-postflight" / "SKILL.md")
+    for phrase in [
+        "commit and push",
+        "target, control, and governance repos are clean",
+        "Never leave target, control, or governance repo changes uncommitted or unpushed",
+        "If any repo remains dirty after commit and push",
+        "Do not sweep unrelated user edits into the closeout commit",
+    ]:
+        assert phrase in postflight
 
 
 def test_lifecycle_contract_prevents_track_and_finalizeplan_input_drift():

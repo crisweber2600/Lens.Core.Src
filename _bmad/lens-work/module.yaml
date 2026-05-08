@@ -10,6 +10,7 @@ prompts:
   - lens-dev.prompt.md
   - lens-quickdev.prompt.md
   - lens-core-bugfix.prompt.md
+  - lens-postflight.prompt.md
   - lens-discover.prompt.md
   - lens-expressplan.prompt.md
   - lens-new-domain.prompt.md
@@ -34,6 +35,7 @@ skills:
   - lens-quickdev
   - lens-discover
   - lens-expressplan
+  - lens-postflight
   - lens-feature-yaml
   - lens-finalizeplan
   - lens-git-orchestration
