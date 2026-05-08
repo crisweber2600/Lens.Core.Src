@@ -147,7 +147,7 @@ This skill produces no output artifacts. All artifact authorship belongs to the 
 
 | Artifact | Producer | Location |
 |---|---|---|
-| Phase artifacts | Delegated phase skill (via `lens-bmad-skill`) | `feature.yaml.docs.path` |
+| Phase artifacts | Delegated phase conductor skill | `feature.yaml.docs.path` |
 
 ## Integration Points
 

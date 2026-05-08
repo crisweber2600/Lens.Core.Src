@@ -253,7 +253,9 @@ def test_skill_md_delegates_directly_to_phase_conductor():
     text = SKILL_MD.read_text(encoding="utf-8")
 
     assert "{module_path}/skills/lens-{phase}/SKILL.md" in text
+    assert "Delegated phase conductor skill" in text
     assert "lens-bmad-skill --skill lens-{phase}" not in text
+    assert "via `lens-bmad-skill`" not in text
     assert "do not implement the delegated phase inline" in text
 
 
