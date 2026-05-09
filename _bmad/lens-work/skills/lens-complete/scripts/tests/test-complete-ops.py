@@ -14,8 +14,10 @@ Run: uv run --with pytest pytest _bmad/lens-work/skills/lens-complete/scripts/te
 
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -379,7 +381,42 @@ def test_finalize_skips_control_repo_when_explicit_matches_governance(
 
     assert exit_code == 0
     assert called is False
-    assert all(change.get("op") != "control_repo_merge" for change in result["changes_applied"])
+    assert all("repo" not in change for change in result["changes_applied"])
+
+
+def test_resolve_control_repo_expands_tilde_for_explicit_alias(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Explicit '~' control repo aliases governance repo after expansion and resolves to None."""
+    mod = _script_module()
+    home = tmp_path / "home"
+    governance_repo = home / "gov"
+    governance_repo.mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(home))
+
+    args = argparse.Namespace(control_repo="~/gov", workspace_root=None)
+    assert mod._resolve_control_repo_for_finalize(args, governance_repo) is None
+
+
+def test_resolve_control_repo_expands_tilde_for_workspace_alias(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Workspace '~' path aliases governance repo after expansion and resolves to None."""
+    mod = _script_module()
+    home = tmp_path / "home"
+    governance_repo = home / "gov"
+    governance_repo.mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(home))
+
+    args = argparse.Namespace(control_repo=None, workspace_root="~/gov")
+    original_cwd = os.getcwd()
+    try:
+        os.chdir(str(tmp_path))
+        assert mod._resolve_control_repo_for_finalize(args, governance_repo) is None
+    finally:
+        os.chdir(original_cwd)
 
 
 # ---------------------------------------------------------------------------

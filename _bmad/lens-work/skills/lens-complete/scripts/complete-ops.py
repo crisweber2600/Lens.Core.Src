@@ -163,12 +163,12 @@ def _resolve_control_repo_for_finalize(args: argparse.Namespace, governance_repo
     governance_key = _path_key(governance_repo)
     explicit = getattr(args, "control_repo", None)
     if explicit:
-        explicit_path = Path(explicit).resolve()
+        explicit_path = Path(explicit).expanduser().resolve()
         if _path_key(explicit_path) == governance_key:
             return None
         return explicit_path
 
-    workspace_root = Path(getattr(args, "workspace_root", None) or os.getcwd()).resolve()
+    workspace_root = Path(getattr(args, "workspace_root", None) or os.getcwd()).expanduser().resolve()
     if _path_key(workspace_root) == governance_key:
         return None
 
