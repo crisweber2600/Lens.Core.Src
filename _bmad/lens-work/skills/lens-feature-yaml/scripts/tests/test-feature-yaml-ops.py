@@ -430,6 +430,77 @@ def test_update_field_phase_rejects_invalid_phase(tmp_path: Path):
     assert payload["error"] == "invalid_target_phase"
 
 
+def test_reopen_moves_terminal_feature_to_expressplan_and_unarchives_index(tmp_path: Path):
+    feature_path = write_feature(
+        tmp_path,
+        "auth-login",
+        base_feature(
+            phase="complete",
+            status="archived",
+            completed_at="2026-05-01T00:00:00Z",
+        ),
+    )
+    write_feature_index(
+        tmp_path,
+        [
+            {
+                "id": "auth-login",
+                "domain": "platform",
+                "service": "identity",
+                "phase": "complete",
+                "status": "archived",
+                "track": "express",
+            }
+        ],
+    )
+
+    payload, code = run_feature_yaml(
+        [
+            "reopen",
+            "--feature-path",
+            str(feature_path),
+            "--governance-repo",
+            str(tmp_path),
+            "--to-phase",
+            "expressplan",
+        ]
+    )
+
+    assert code == 0
+    assert payload["status"] == "pass"
+    assert "phase" in payload["changed_fields"]
+
+    updated = yaml.safe_load(feature_path.read_text(encoding="utf-8"))
+    assert updated["phase"] == "expressplan"
+    assert updated["status"] == "active"
+    assert "completed_at" not in updated
+    assert updated["phase_transitions"][-1]["phase"] == "expressplan"
+    assert updated["phase_transitions"][-1]["user"] == "lens-feature-yaml-reopen"
+
+    index_data = yaml.safe_load((tmp_path / "feature-index.yaml").read_text(encoding="utf-8"))
+    entry = index_data["features"][0]
+    assert entry["phase"] == "expressplan"
+    assert entry["status"] == "active"
+
+
+def test_reopen_rejects_non_terminal_phase(tmp_path: Path):
+    feature_path = write_feature(tmp_path, "auth-login", base_feature(phase="dev", status="active"))
+
+    payload, code = run_feature_yaml(
+        [
+            "reopen",
+            "--feature-path",
+            str(feature_path),
+            "--governance-repo",
+            str(tmp_path),
+        ]
+    )
+
+    assert code == 1
+    assert payload["status"] == "fail"
+    assert payload["error"] == "reopen_not_allowed"
+
+
 def test_dirty_state_handler_pulls_stages_commits_pushes_and_reports_sha(tmp_path: Path):
     ops = load_ops_module()
     commands: list[list[str]] = []

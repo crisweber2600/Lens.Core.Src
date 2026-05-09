@@ -29,6 +29,17 @@ Validate a requested phase transition against the feature track and lifecycle co
 
 Update only the requested fields: `phase`, `docs.path`, `docs.governance_docs_path`, `target_repos`, and `milestones`. Unknown fields and untouched fields remain in place.
 
+### reopen
+
+Reopen a terminal feature (`complete`/`archived`) back to an active planning phase (defaults to `expressplan`) and synchronize `feature-index.yaml` so the feature is no longer archived in switch/list flows.
+
+```bash
+uv run --script {project-root}/lens.core/_bmad/lens-work/skills/lens-feature-yaml/scripts/feature-yaml-ops.py reopen \
+  --governance-repo <governance-repo> \
+  --feature-id <feature-id> \
+  --to-phase expressplan
+```
+
 ### commit-dirty
 
 Persist relevant governance repo changes before continuing: detect dirty state, pull with autostash, stage the requested paths, commit, push, and report the resulting SHA. This operation is CLI-backed and testable with mocked git subprocess calls.

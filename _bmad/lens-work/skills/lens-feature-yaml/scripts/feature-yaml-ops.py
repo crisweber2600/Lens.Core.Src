@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import json
 import os
 import subprocess
@@ -530,6 +531,76 @@ def cmd_update(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def cmd_reopen(args: argparse.Namespace) -> dict[str, Any]:
+    feature_path = resolve_feature_path(args)
+    governance_repo = resolve_governance_repo(args)
+    feature_data = load_yaml_mapping(feature_path)
+    lifecycle = load_lifecycle(args)
+
+    current_phase = str(feature_data.get("phase") or "").strip()
+    current_status = str(feature_data.get("status") or "").strip().lower()
+    terminal_phases = {"complete", "complete-complete", "archived"}
+    is_terminal = current_phase in terminal_phases or current_status in {"archived", "complete"}
+    if not is_terminal:
+        return fail(
+            "reopen_not_allowed",
+            f"Feature phase '{current_phase}' is not terminal; reopen is only valid for completed/archived features.",
+            current_phase=current_phase,
+            current_status=current_status,
+        )
+
+    target_phase = str(getattr(args, "to_phase", "") or "expressplan").strip()
+    states = phase_state_sequence(lifecycle, feature_data.get("track"))
+    if target_phase not in states:
+        return fail(
+            "invalid_target_phase",
+            f"Target phase '{target_phase}' is not valid for track '{feature_data.get('track', '')}'",
+            valid_phases=states,
+        )
+    if target_phase in terminal_phases:
+        return fail(
+            "invalid_reopen_target",
+            f"Reopen target phase '{target_phase}' must be non-terminal.",
+            target_phase=target_phase,
+        )
+
+    changed_fields: list[str] = []
+    if feature_data.get("phase") != target_phase:
+        feature_data["phase"] = target_phase
+        changed_fields.append("phase")
+
+    if current_status in {"archived", "complete"}:
+        feature_data["status"] = "active"
+        changed_fields.append("status")
+
+    if "completed_at" in feature_data:
+        feature_data.pop("completed_at", None)
+        changed_fields.append("completed_at")
+
+    transitions = feature_data.get("phase_transitions")
+    if not isinstance(transitions, list):
+        transitions = []
+    transitions.append(
+        {
+            "phase": target_phase,
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "user": str(getattr(args, "actor", None) or "lens-feature-yaml-reopen"),
+        }
+    )
+    feature_data["phase_transitions"] = transitions
+    changed_fields.append("phase_transitions")
+
+    atomic_write_yaml(feature_path, feature_data)
+    sync_result = sync_feature_index(governance_repo, feature_data)
+    return {
+        "status": "pass",
+        "feature_yaml_path": str(feature_path),
+        "changed_fields": list(dict.fromkeys(changed_fields)),
+        "feature_index_sync": sync_result,
+        "feature": build_read_payload(feature_path, feature_data),
+    }
+
+
 def normalize_field_update(args: argparse.Namespace) -> dict[str, Any] | None:
     field = str(getattr(args, "field", "") or "").strip()
     value = getattr(args, "value", None)
@@ -620,6 +691,14 @@ def build_parser() -> argparse.ArgumentParser:
     add_feature_args(set_phase_parser)
     set_phase_parser.add_argument("phase", help="New phase value")
 
+    reopen_parser = subparsers.add_parser(
+        "reopen",
+        help="Reopen a completed/archived feature to an active phase and unarchive its feature-index entry",
+    )
+    add_feature_args(reopen_parser)
+    reopen_parser.add_argument("--to-phase", default="expressplan", help="Target non-terminal phase (default: expressplan)")
+    reopen_parser.add_argument("--actor", required=False, help="Phase transition actor label")
+
     sync_parser = subparsers.add_parser("sync-feature-index", help="Synchronize feature-index.yaml from feature.yaml")
     add_feature_args(sync_parser)
 
@@ -642,6 +721,7 @@ def main() -> None:
         "validate": cmd_validate,
         "update": cmd_update,
         "set-phase": cmd_update,
+        "reopen": cmd_reopen,
         "sync-feature-index": cmd_sync_feature_index,
         "commit-dirty": cmd_commit_dirty,
     }
