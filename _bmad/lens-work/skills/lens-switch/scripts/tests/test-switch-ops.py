@@ -280,6 +280,16 @@ def test_list_domains_mode_when_index_missing(tmp_path: Path):
     assert payload["domains"][0]["services"][0]["id"] == "platform-identity"
 
 
+def test_list_domains_mode_empty_inventory_guides_new_feature(tmp_path: Path):
+    payload, code = run_switch(["list", "--governance-repo", str(tmp_path)])
+
+    assert code == 0
+    assert payload["status"] == "pass"
+    assert payload["mode"] == "domains"
+    assert payload["domains"] == []
+    assert payload["message"] == "No features initialized and no domains registered. Run /new-feature to begin."
+
+
 def test_config_resolution_precedence_and_missing(tmp_path: Path):
     workspace = tmp_path / "workspace"
     workspace.mkdir()

@@ -26,6 +26,7 @@ import yaml
 SAFE_ID_PATTERN = re.compile(r"^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$")
 MAX_INDEX_BYTES = 1_000_000  # 1 MB sanity cap on feature-index.yaml
 STALE_DAYS = 30
+NEW_FEATURE_COMMAND = "/new-feature"
 MISSING_BRANCH_GUIDANCE = "Re-run init-feature/create-feature-branches to initialize branches."
 LIST_HIDDEN_PHASES = {"complete", "archived"}
 LIST_HIDDEN_STATUSES = {"complete", "archived"}
