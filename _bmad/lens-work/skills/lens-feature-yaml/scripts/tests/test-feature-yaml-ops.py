@@ -316,6 +316,135 @@ def test_sync_feature_index_preserves_explicit_feature_status(tmp_path: Path):
     assert entry["status"] == "archived"
 
 
+def test_reopen_success_reactivates_terminal_feature(tmp_path: Path):
+    feature_path = write_feature(
+        tmp_path,
+        "test-feature",
+        {
+            "name": "Test Feature",
+            "featureId": "test-feature",
+            "domain": "lens-dev",
+            "service": "new-codebase",
+            "phase": "complete",
+            "status": "archived",
+            "completed_at": "2026-01-01T00:00:00Z",
+            "track": "express",
+            "phase_transitions": [],
+        },
+    )
+
+    payload, code = run_feature_yaml(
+        [
+            "reopen",
+            "--governance-repo",
+            str(tmp_path),
+            "--feature-id",
+            "test-feature",
+            "--to-phase",
+            "expressplan",
+            "--actor",
+            "test",
+        ]
+    )
+
+    assert code == 0
+    assert payload["status"] == "ok"
+    assert payload["new_phase"] == "expressplan"
+    assert payload["index_synced"] is True
+
+    updated = yaml.safe_load(feature_path.read_text(encoding="utf-8"))
+    assert updated["phase"] == "expressplan"
+    assert updated["status"] == "active"
+    assert "completed_at" not in updated
+    assert updated["phase_transitions"][-1]["to"] == "expressplan"
+    assert updated["phase_transitions"][-1]["actor"] == "test"
+
+
+def test_reopen_rejects_non_terminal_feature(tmp_path: Path):
+    write_feature(
+        tmp_path,
+        "test-feature",
+        {
+            "name": "Test Feature",
+            "featureId": "test-feature",
+            "domain": "lens-dev",
+            "service": "new-codebase",
+            "phase": "dev",
+            "status": "active",
+            "track": "express",
+            "phase_transitions": [],
+        },
+    )
+
+    payload, code = run_feature_yaml(
+        [
+            "reopen",
+            "--governance-repo",
+            str(tmp_path),
+            "--feature-id",
+            "test-feature",
+            "--to-phase",
+            "expressplan",
+        ]
+    )
+
+    assert code != 0
+    assert payload["status"] == "error"
+    assert payload["reason"] == "reopen_not_allowed"
+
+
+def test_reopen_syncs_feature_index_status(tmp_path: Path):
+    write_feature(
+        tmp_path,
+        "test-feature",
+        {
+            "name": "Test Feature",
+            "featureId": "test-feature",
+            "domain": "lens-dev",
+            "service": "new-codebase",
+            "phase": "complete",
+            "status": "archived",
+            "completed_at": "2026-01-01T00:00:00Z",
+            "track": "express",
+            "phase_transitions": [],
+        },
+    )
+    write_feature_index(
+        tmp_path,
+        [
+            {
+                "id": "test-feature",
+                "domain": "lens-dev",
+                "service": "new-codebase",
+                "phase": "complete",
+                "status": "archived",
+                "track": "express",
+            }
+        ],
+    )
+
+    payload, code = run_feature_yaml(
+        [
+            "reopen",
+            "--governance-repo",
+            str(tmp_path),
+            "--feature-id",
+            "test-feature",
+            "--to-phase",
+            "expressplan",
+        ]
+    )
+
+    assert code == 0
+    assert payload["status"] == "ok"
+    assert payload["index_synced"] is True
+
+    index_data = yaml.safe_load((tmp_path / "feature-index.yaml").read_text(encoding="utf-8"))
+    entry = index_data["features"][0]
+    assert entry["phase"] == "expressplan"
+    assert entry["status"] == "active"
+
+
 def test_set_phase_alias_uses_phase_transition_validator(tmp_path: Path):
     feature_path = write_feature(tmp_path, "auth-login", base_feature(phase="finalizeplan-complete", status="active"))
     write_feature_index(
