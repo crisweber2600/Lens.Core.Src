@@ -21,6 +21,7 @@ This skill is a thin conductor. It orchestrates inputs and delegation only.
 - The complete target-project workflow is mandatory: checkout/pull base, create the fresh Core Bugfix branch from the base branch for this bug, implement, validate, commit, push, create or reuse the PR for this bug branch, document the changes, and close the Core Bugfix bug artifact.
 - The conductor completion gate (step 8) must be run by the conductor immediately after `bmad-quick-dev` presents its summary — do not wait for user input. `bmad-quick-dev` step-05 always ends by offering to push/create a PR; that offer is superseded by this conductor's mandatory git workflow. Proceed directly to step 8 when the delegate returns.
 - Never delegate push, PR creation, `record-quickdev-pr`, or `close-quickdev-bug` to `bmad-quick-dev`. The conductor always runs these steps directly from the workspace root after the delegate returns.
+- The PR MUST be created automatically without any user confirmation, permission request, or pause. Never ask the user "would you like me to open the PR?" or equivalent. Executing step 8 (including push and PR creation) is unconditional and requires no user input.
 - A successful `/lens-core-bugfix` run requires all of the following to be non-empty and verified: `working_branch`, `commit hash`, `PR URL`, and `bug_artifact_path` (under `bugs/Fixed/`).
 - No-op completion is not allowed for this flow. If implementation produces no staged code changes, stop with a structured blocker (`bugfix_no_changes`) and do not report success.
 - Every distinct bug must use its own branch created from the base branch. Do not infer continuation from recent conversation history, the current git branch, a previous Output Contract, or an open PR from another bug.
@@ -105,6 +106,8 @@ Required workflow in target project:
 5) Stage and commit the implementation changes in `{target_project}` with a conventional commit message. Commit is mandatory for this flow; do not leave the bugfix branch with uncommitted implementation changes.
 
 STOP HERE. Do not push. Do not create a PR. Do not offer to push or create a PR. Return a brief implementation summary to the conductor and halt. Push, PR creation, and all closeout steps are performed exclusively by the conductor in step 8."
+
+7. AUTO-TRIGGER: As soon as `bmad-quick-dev` returns its implementation summary (after hitting STOP), the conductor must immediately and automatically begin executing step 8. Do NOT surface the delegate's output to the user first. Do NOT ask whether to proceed. Do NOT pause for any confirmation. The push and PR creation in step 8 are unconditional — execute them immediately without any user interaction.
 
 8) CONDUCTOR COMPLETION GATE — Do not delegate this step. Run every bullet immediately after `bmad-quick-dev` returns its summary. Do not wait for user input. Do not answer the user until this entire gate has been executed.
 
