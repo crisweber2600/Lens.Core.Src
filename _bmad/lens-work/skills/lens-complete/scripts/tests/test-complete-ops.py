@@ -347,6 +347,41 @@ def test_finalize_auto_resolves_control_repo_from_workspace_root(
     )
 
 
+def test_finalize_skips_control_repo_when_explicit_matches_governance(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture,
+    gov_pass: Path,
+) -> None:
+    """finalize treats explicit --control-repo equal to governance repo as governance-only."""
+    mod = _script_module()
+    called = False
+
+    def fake_merge(path: Path, feature_id: str, dry_run: bool) -> tuple[str, None]:
+        nonlocal called
+        called = True
+        return "https://github.com/example/control/pull/9", None
+
+    monkeypatch.setattr(mod, "_gh_merge_to_main", fake_merge)
+
+    exit_code = mod.main(
+        [
+            "finalize",
+            "--governance-repo",
+            str(gov_pass),
+            "--control-repo",
+            str(gov_pass),
+            "--feature-id",
+            "lens-dev-test-feature",
+            "--confirm",
+        ]
+    )
+    result = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert called is False
+    assert all(change.get("op") != "control_repo_merge" for change in result["changes_applied"])
+
+
 # ---------------------------------------------------------------------------
 # CP-2: archive boundary — finalize writes ONLY the three allowed files
 # ---------------------------------------------------------------------------
