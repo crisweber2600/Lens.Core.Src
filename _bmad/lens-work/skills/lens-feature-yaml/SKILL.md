@@ -29,6 +29,29 @@ Validate a requested phase transition against the feature track and lifecycle co
 
 Update only the requested fields: `phase`, `docs.path`, `docs.governance_docs_path`, `target_repos`, and `milestones`. Unknown fields and untouched fields remain in place.
 
+### reopen
+
+Restore a terminal feature to active planning by reopening it into a non-terminal phase (default: `expressplan`) and synchronizing `feature-index.yaml`.
+
+Precondition: feature must be terminal (`phase: complete` or `status: archived`).
+
+| Arg | Required | Default | Description |
+|---|---|---|---|
+| `--feature-id` | Yes | - | Feature identifier |
+| `--governance-repo` | Yes | - | Path to governance repo root |
+| `--to-phase` | No | `expressplan` | Phase to restore to (must be non-terminal) |
+| `--actor` | No | `system` | Audit label recorded in `phase_transitions` |
+
+```bash
+uv run --script {project-root}/lens.core/_bmad/lens-work/skills/lens-feature-yaml/scripts/feature-yaml-ops.py reopen \
+  --feature-id my-feature \
+  --governance-repo ./TargetProjects/lens/lens-governance \
+  --to-phase expressplan \
+  --actor alice
+```
+
+Deferral note: a dedicated `/lens-reopen` conductor is not included in this implementation slice and is deferred to a future feature.
+
 ### commit-dirty
 
 Persist relevant governance repo changes before continuing: detect dirty state, pull with autostash, stage the requested paths, commit, push, and report the resulting SHA. This operation is CLI-backed and testable with mocked git subprocess calls.
