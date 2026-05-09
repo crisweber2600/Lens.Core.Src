@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime
 import json
 import os
 import subprocess
@@ -28,6 +29,7 @@ from lens_config import ConfigError, discover_feature_yaml, load_lens_config, no
 
 
 DEFAULT_PHASE_ORDER = ["preplan", "businessplan", "techplan", "finalizeplan", "dev", "complete"]
+TERMINAL_REOPEN_STATES = {"complete", "archived"}
 TRACK_ALIASES = {
     "full": "standard",
     "tech-change": "standard",
@@ -530,6 +532,73 @@ def cmd_update(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def cmd_reopen(args: argparse.Namespace) -> dict[str, Any]:
+    feature_path = resolve_feature_path(args)
+    governance_repo = resolve_governance_repo(args)
+    feature_data = load_yaml_mapping(feature_path)
+
+    target_phase = str(args.to_phase or "expressplan").strip() or "expressplan"
+    old_phase = str(feature_data.get("phase") or "").strip()
+    old_status = str(feature_data.get("status") or "").strip()
+
+    if old_phase not in TERMINAL_REOPEN_STATES and old_status not in TERMINAL_REOPEN_STATES:
+        return {
+            "status": "error",
+            "reason": "reopen_not_allowed",
+            "feature_id": feature_identity(feature_data)["featureId"],
+            "phase": old_phase,
+            "status_value": old_status,
+        }
+
+    if target_phase in TERMINAL_REOPEN_STATES:
+        return {
+            "status": "error",
+            "reason": "invalid_target_phase",
+            "feature_id": feature_identity(feature_data)["featureId"],
+            "target_phase": target_phase,
+            "message": "--to-phase must be non-terminal",
+        }
+
+    warnings: list[dict[str, str]] = []
+    if not str(feature_data.get("track") or "").strip():
+        warnings.append(
+            {
+                "code": "track_missing",
+                "message": "feature.yaml has no track; reopen continued with warning.",
+            }
+        )
+
+    feature_data["phase"] = target_phase
+    feature_data["status"] = "active"
+    feature_data.pop("completed_at", None)
+
+    transitions = feature_data.get("phase_transitions")
+    if not isinstance(transitions, list):
+        transitions = []
+    transitions.append(
+        {
+            "from": old_phase,
+            "to": target_phase,
+            "actor": args.actor,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+        }
+    )
+    feature_data["phase_transitions"] = transitions
+
+    atomic_write_yaml(feature_path, feature_data)
+    sync_feature_index(governance_repo, feature_data)
+
+    payload: dict[str, Any] = {
+        "status": "ok",
+        "feature_id": feature_identity(feature_data)["featureId"],
+        "new_phase": target_phase,
+        "index_synced": True,
+    }
+    if warnings:
+        payload["warnings"] = warnings
+    return payload
+
+
 def normalize_field_update(args: argparse.Namespace) -> dict[str, Any] | None:
     field = str(getattr(args, "field", "") or "").strip()
     value = getattr(args, "value", None)
@@ -623,6 +692,24 @@ def build_parser() -> argparse.ArgumentParser:
     sync_parser = subparsers.add_parser("sync-feature-index", help="Synchronize feature-index.yaml from feature.yaml")
     add_feature_args(sync_parser)
 
+    reopen_parser = subparsers.add_parser(
+        "reopen",
+        help="Reopen a terminal feature and restore it to an active non-terminal phase",
+    )
+    add_feature_args(reopen_parser)
+    reopen_parser.add_argument(
+        "--to-phase",
+        required=False,
+        default="expressplan",
+        help="Target non-terminal phase to reopen into (default: expressplan)",
+    )
+    reopen_parser.add_argument(
+        "--actor",
+        required=False,
+        default="system",
+        help="Audit actor label recorded in phase_transitions",
+    )
+
     commit_parser = subparsers.add_parser("commit-dirty", help="Commit and push relevant dirty governance changes")
     commit_parser.add_argument("--governance-repo", required=False, help="Governance repo root path")
     commit_parser.add_argument("--workspace-root", required=False, help="Workspace/project root for config discovery")
@@ -643,6 +730,7 @@ def main() -> None:
         "update": cmd_update,
         "set-phase": cmd_update,
         "sync-feature-index": cmd_sync_feature_index,
+        "reopen": cmd_reopen,
         "commit-dirty": cmd_commit_dirty,
     }
     try:
@@ -660,7 +748,7 @@ def main() -> None:
         )
     json.dump(payload, sys.stdout, indent=2, default=str)
     print()
-    raise SystemExit(0 if payload.get("status") in {"pass", "warning"} else 1)
+    raise SystemExit(0 if payload.get("status") in {"pass", "warning", "ok"} else 1)
 
 
 if __name__ == "__main__":
