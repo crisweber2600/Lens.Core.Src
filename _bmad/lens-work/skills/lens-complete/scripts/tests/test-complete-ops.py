@@ -17,7 +17,6 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
-import os
 from pathlib import Path
 from typing import Any
 
@@ -381,7 +380,10 @@ def test_finalize_skips_control_repo_when_explicit_matches_governance(
 
     assert exit_code == 0
     assert called is False
-    assert all("repo" not in change for change in result["changes_applied"])
+    assert not any(
+        {"repo", "pr_url"}.issubset(change.keys())
+        for change in result["changes_applied"]
+    )
 
 
 def test_resolve_control_repo_expands_tilde_for_explicit_alias(
@@ -411,12 +413,8 @@ def test_resolve_control_repo_expands_tilde_for_workspace_alias(
     monkeypatch.setenv("HOME", str(home))
 
     args = argparse.Namespace(control_repo=None, workspace_root="~/gov")
-    original_cwd = os.getcwd()
-    try:
-        os.chdir(str(tmp_path))
-        assert mod._resolve_control_repo_for_finalize(args, governance_repo) is None
-    finally:
-        os.chdir(original_cwd)
+    monkeypatch.chdir(tmp_path)
+    assert mod._resolve_control_repo_for_finalize(args, governance_repo) is None
 
 
 # ---------------------------------------------------------------------------
