@@ -280,6 +280,16 @@ def test_list_domains_mode_when_index_missing(tmp_path: Path):
     assert payload["domains"][0]["services"][0]["id"] == "platform-identity"
 
 
+def test_list_domains_mode_empty_inventory_guides_new_feature(tmp_path: Path):
+    payload, code = run_switch(["list", "--governance-repo", str(tmp_path)])
+
+    assert code == 0
+    assert payload["status"] == "pass"
+    assert payload["mode"] == "domains"
+    assert payload["domains"] == []
+    assert payload["message"] == "No features initialized and no domains registered. Run /new-feature to begin."
+
+
 def test_config_resolution_precedence_and_missing(tmp_path: Path):
     workspace = tmp_path / "workspace"
     workspace.mkdir()
@@ -434,7 +444,7 @@ def test_switch_target_repo_state_null_and_stale_true(tmp_path: Path):
     assert payload["target_repo_state"] is None
 
 
-def test_branch_missing_reports_new_feature_guidance(tmp_path: Path):
+def test_branch_missing_reports_branch_init_guidance(tmp_path: Path):
     governance = tmp_path / "governance"
     control = tmp_path / "control"
     governance.mkdir()
@@ -451,7 +461,7 @@ def test_branch_missing_reports_new_feature_guidance(tmp_path: Path):
     assert payload["branch_switched"] is False
     assert payload["checked_out_branch"] is None
     assert payload["branch_error"] == "branch_not_found"
-    assert payload["message"] == "Run /new-feature to initialize branches."
+    assert payload["message"] == "Re-run init-feature/create-feature-branches to initialize branches."
 
 
 def test_branch_dirty_tree_reports_raw_git_error(tmp_path: Path):
