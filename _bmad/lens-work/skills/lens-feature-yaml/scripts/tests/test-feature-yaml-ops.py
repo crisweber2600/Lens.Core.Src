@@ -512,6 +512,87 @@ def test_update_set_rejects_unsupported_field(tmp_path: Path):
     assert payload["error"] == "unsupported_set_field"
 
 
+def test_update_set_invalid_format_missing_equals(tmp_path: Path):
+    feature_path = write_feature(tmp_path, "auth-login", base_feature())
+
+    payload, code = run_feature_yaml(
+        [
+            "update",
+            "--feature-path",
+            str(feature_path),
+            "--set",
+            "phase",
+        ]
+    )
+
+    assert code == 1
+    assert payload["status"] == "fail"
+    assert payload["error"] == "invalid_set_format"
+
+
+def test_update_set_missing_value_empty_rhs(tmp_path: Path):
+    feature_path = write_feature(tmp_path, "auth-login", base_feature())
+
+    payload, code = run_feature_yaml(
+        [
+            "update",
+            "--feature-path",
+            str(feature_path),
+            "--set",
+            "phase=",
+        ]
+    )
+
+    assert code == 1
+    assert payload["status"] == "fail"
+    assert payload["error"] == "missing_set_value"
+
+
+def test_update_set_conflicting_values_with_explicit_flag(tmp_path: Path):
+    feature_path = write_feature(tmp_path, "auth-login", base_feature(phase="finalizeplan-complete", status="active"))
+
+    payload, code = run_feature_yaml(
+        [
+            "update",
+            "--feature-path",
+            str(feature_path),
+            "--docs-path",
+            "docs/platform/identity/auth-login",
+            "--set",
+            "docs.path=docs/platform/identity/OTHER",
+        ]
+    )
+
+    assert code == 1
+    assert payload["status"] == "fail"
+    assert payload["error"] == "conflicting_set_values"
+    assert payload["field"] == "docs.path"
+
+
+def test_update_set_no_conflict_for_equivalent_target_repos_representations(tmp_path: Path):
+    """JSON and YAML representations of the same list must not be treated as conflicting."""
+    feature_path = write_feature(tmp_path, "auth-login", base_feature())
+    target_repos = [{"name": "lens.core.src", "local_path": "TargetProjects/lens.core.src", "default_branch": "main"}]
+    json_repr = json.dumps(target_repos)
+    yaml_repr = yaml.safe_dump(target_repos, default_flow_style=True).strip()
+
+    payload, code = run_feature_yaml(
+        [
+            "update",
+            "--feature-path",
+            str(feature_path),
+            "--target-repos",
+            json_repr,
+            "--set",
+            f"target_repos={yaml_repr}",
+        ]
+    )
+
+    assert code == 0
+    assert payload["status"] == "pass"
+    assert payload["changed_fields"] == ["target_repos"]
+
+
 def test_dirty_state_handler_pulls_stages_commits_pushes_and_reports_sha(tmp_path: Path):
     ops = load_ops_module()
     commands: list[list[str]] = []
