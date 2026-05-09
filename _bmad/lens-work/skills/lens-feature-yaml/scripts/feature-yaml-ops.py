@@ -56,6 +56,14 @@ class GitCommandError(RuntimeError):
 Runner = Callable[..., subprocess.CompletedProcess[str]]
 
 
+# Fields within normalize_set_updates that require deep (parsed) comparison rather than
+# raw-string equality so that equivalent JSON / YAML representations are not rejected.
+_SET_COMPLEX_FIELD_TYPES: dict[str, type] = {
+    "target_repos": list,
+    "milestones": dict,
+}
+
+
 def fail(error: str, message: str, **extra: object) -> dict[str, Any]:
     payload: dict[str, Any] = {"status": "fail", "error": error, "message": message}
     payload.update(extra)
@@ -617,15 +625,12 @@ def normalize_set_updates(args: argparse.Namespace) -> dict[str, Any] | None:
         if existing_value is not None and existing_value != value:
             # For complex fields (lists/dicts), normalize both sides before declaring a conflict
             # so that semantically equivalent JSON vs YAML representations are not rejected.
-            complex_field_types: dict[str, type] = {
-                "target_repos": list,
-                "milestones": dict,
-            }
-            expected_type = complex_field_types.get(attr_name)
+            # Both existing_value and value are raw strings from argparse at this point.
+            expected_type = _SET_COMPLEX_FIELD_TYPES.get(attr_name)
             conflict = True
             if expected_type is not None:
                 try:
-                    parsed_existing = parse_yaml_value(str(existing_value), attr_name, expected_type)
+                    parsed_existing = parse_yaml_value(existing_value, attr_name, expected_type)
                     parsed_incoming = parse_yaml_value(value, attr_name, expected_type)
                     conflict = parsed_existing != parsed_incoming
                 except FeatureYamlError:
