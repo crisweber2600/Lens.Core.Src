@@ -194,10 +194,10 @@ Hard stop behavior:
 
 ## Constitution Hard Gate Enforcement Contract
 
-All phase conductors (planning and dev) must load and enforce the domain constitution before delegating to any authoring or implementation skill.
+All phase conductors (planning and dev) must invoke constitution resolution and enforce hard gates before delegating to any authoring or implementation skill.
 
 Rules:
-- Load the applicable constitution through `lens-constitution resolve --governance-dir {governance_repo}` immediately after feature context is resolved and before any artifact authoring or implementation delegation.
+- Invoke `lens-constitution resolve --governance-dir {governance_repo}` (via `lens-constitution/SKILL.md`) immediately after feature context is resolved and before any artifact authoring or implementation delegation.
 - If constitution resolution fails (missing required org level or parse error), stop immediately. Do not continue to authoring or implementation.
 - Extract all hard-gate requirements from the full resolved constitution — both structured fields (`gate_mode: hard`, `required_artifacts`, `enforce_stories`, `enforce_review`) and all prose articles.
 - Display the applicable hard-gate requirements to the operator before delegation.
