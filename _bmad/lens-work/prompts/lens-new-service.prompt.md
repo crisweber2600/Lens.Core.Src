@@ -19,7 +19,7 @@ The user wants to initialize a new service container, not a feature. The flow mu
 3. Resolve or ask for the parent domain when not supplied by active context.
 4. Ask for the service display name.
 5. Derive a safe service slug using the same normalization pattern as `new-domain`.
-6. If the derived slug is valid, proceed without a confirmation stop when the derived slug is valid. Only ask for a manual slug when normalization yields an invalid safe ID.
+6. If the derived slug is valid, proceed without a confirmation stop. Only ask for a manual slug when normalization yields an invalid safe ID.
 7. Create `{governance_repo}/features/{domain}/{service}/service.yaml`.
 8. Create `{governance_repo}/constitutions/{domain}/{service}/constitution.md`.
 9. If the parent domain marker or constitution is absent, create them first by calling `create-domain` helpers — do not re-implement domain creation inline.
