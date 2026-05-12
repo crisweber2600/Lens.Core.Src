@@ -33,7 +33,7 @@ def _load_external_pyyaml(repo_root: Path):
 
         module_name = (
             "_lens_external_yaml_"
-            + hashlib.sha1(str(Path(__file__).resolve()).encode("utf-8")).hexdigest()[:12]
+            + hashlib.sha256(str(Path(__file__).resolve()).encode("utf-8")).hexdigest()
         )
         spec = importlib.util.spec_from_file_location(
             module_name,
