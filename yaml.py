@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Iterator
 from typing import Any, TextIO
 
 
@@ -144,13 +145,18 @@ def _parse_scalar(text: str) -> Any:
     return value
 
 
-def _normalise_source(src: Any) -> list[str]:
+def _source_text(src: Any) -> str:
     if hasattr(src, "read"):
         src = src.read()
     if isinstance(src, bytes):
         src = src.decode("utf-8")
     if not isinstance(src, str):
         raise YAMLError("safe_load expects a string, bytes, or file-like object")
+    return src
+
+
+def _normalise_source(src: Any) -> list[str]:
+    src = _source_text(src)
 
     lines: list[str] = []
     for raw in src.splitlines():
@@ -246,7 +252,10 @@ def _parse_mapping(lines: list[str], index: int, indent: int) -> tuple[dict[str,
         index += 1
         if raw_value:
             result[key] = _parse_scalar(raw_value)
-        elif index < len(lines) and _line_indent(lines[index]) > indent:
+        elif index < len(lines) and (
+            _line_indent(lines[index]) > indent
+            or (_line_indent(lines[index]) == indent and lines[index].strip().startswith("- "))
+        ):
             result[key], index = _parse_block(lines, index, _line_indent(lines[index]))
         else:
             result[key] = None
@@ -261,6 +270,27 @@ def safe_load(src: Any) -> Any:
     if index != len(lines):
         raise YAMLError(f"could not parse line: {lines[index].strip()}")
     return data
+
+
+def safe_load_all(src: Any) -> Iterator[Any]:
+    text = _source_text(src)
+    current: list[str] = []
+
+    def flush_document() -> Iterator[Any]:
+        if not current:
+            return iter(())
+        document = "\n".join(current)
+        current.clear()
+        return iter((safe_load(document),))
+
+    for raw in text.splitlines():
+        marker = raw.strip()
+        if marker in {"---", "..."}:
+            yield from flush_document()
+            continue
+        current.append(raw)
+
+    yield from flush_document()
 
 
 def _scalar(value: Any) -> str:

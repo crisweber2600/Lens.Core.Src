@@ -266,7 +266,7 @@ The tests in `scripts/tests/test-complete-ops.py` define the executable regressi
 Focused validation for the scaffold:
 
 ```bash
-python --with pytest pytest {project-root}/lens.core/_bmad/lens-work/skills/lens-complete/scripts/tests/test-complete-ops.py -q
+python -m pytest {project-root}/lens.core/_bmad/lens-work/skills/lens-complete/scripts/tests/test-complete-ops.py -q
 ```
 
 ## References

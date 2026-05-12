@@ -7,7 +7,7 @@
 
 Run:
     cd TargetProjects/lens-dev/new-codebase/lens.core.src
-    python --with pytest pytest _bmad/lens-work/skills/lens-techplan/scripts/tests/test-techplan-ops.py -q
+    python -m pytest _bmad/lens-work/skills/lens-techplan/scripts/tests/test-techplan-ops.py -q
 """
 
 from pathlib import Path
@@ -299,4 +299,3 @@ def test_pr6_clean_room_no_old_codebase_prose():
         assert para not in new_text, (
             f"Clean-room violation: old-codebase paragraph reproduced verbatim in new skill:\n{para[:120]}..."
         )
-

@@ -238,7 +238,7 @@ Known error codes: `invalid_feature_id`, `invalid_domain`, `invalid_service`, `c
 Run from the target source repo root:
 
 ```bash
-python --with pytest _bmad/lens-work/skills/lens-switch/scripts/tests/test-switch-ops.py -q
+python -m pytest _bmad/lens-work/skills/lens-switch/scripts/tests/test-switch-ops.py -q
 ```
 
 ## Integration Points

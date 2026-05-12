@@ -555,7 +555,7 @@ def test_skill_documents_contracts_and_focused_command():
     assert "target_repo_state" in text
     assert "context_paths" in text
     assert "branch_switched" in text
-    assert "python --with pytest _bmad/lens-work/skills/lens-switch/scripts/tests/test-switch-ops.py -q" in text
+    assert "python -m pytest _bmad/lens-work/skills/lens-switch/scripts/tests/test-switch-ops.py -q" in text
 
 
 if __name__ == "__main__":

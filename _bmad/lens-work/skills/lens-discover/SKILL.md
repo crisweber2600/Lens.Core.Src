@@ -84,7 +84,7 @@ No `add-entry` calls are made and no governance commit is attempted. If the pre/
 
 ## Script Subcommands
 
-Run script commands with `python --script` from the source repo root.
+Run script commands with `python` from the source repo root.
 
 ### scan
 
@@ -169,6 +169,6 @@ No empty commit is allowed on a no-op run. The commit message must be exactly `[
 Run from the target source repo root:
 
 ```bash
-python --with pytest pytest {project-root}/lens.core/_bmad/lens-work/skills/lens-discover/scripts/tests/ -q
+python -m pytest {project-root}/lens.core/_bmad/lens-work/skills/lens-discover/scripts/tests/ -q
 python {project-root}/lens.core/_bmad/lens-work/skills/lens-discover/scripts/discover-ops.py --help
 ```
