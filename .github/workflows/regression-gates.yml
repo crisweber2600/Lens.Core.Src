@@ -57,7 +57,10 @@ jobs:
                   tmpdirs = []
                   for param_name in inspect.signature(test).parameters:
                       if param_name != "tmp_path":
-                          raise RuntimeError(f"Unsupported fixture {param_name} for {test_file}:{name}")
+                          raise RuntimeError(
+                              f"Unsupported fixture '{param_name}' for {test_file}:{name}. "
+                              "Only 'tmp_path' is supported."
+                          )
                       tmpdir = tempfile.TemporaryDirectory()
                       tmpdirs.append(tmpdir)
                       kwargs[param_name] = Path(tmpdir.name)

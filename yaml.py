@@ -31,7 +31,8 @@ def _strip_comment(line: str) -> str:
             elif in_quote is None:
                 in_quote = char
             continue
-        if char == "#" and in_quote is None and (index == 0 or line[index - 1].isspace()):
+        is_comment_start = index == 0 or line[index - 1].isspace()
+        if char == "#" and in_quote is None and is_comment_start:
             return line[:index].rstrip()
     return line.rstrip()
 
@@ -135,7 +136,7 @@ def _parse_scalar(text: str) -> Any:
             return int(value)
         except ValueError:
             pass
-    if re.fullmatch(r"-?(?:\d+\.\d*|\d*\.\d+)", value):
+    if re.fullmatch(r"-?\d+\.\d+", value):
         try:
             return float(value)
         except ValueError:
@@ -270,7 +271,12 @@ def _scalar(value: Any) -> str:
     if isinstance(value, (int, float)):
         return str(value)
     text = str(value)
-    if text == "" or any(char in text for char in ":#\n[]{}") or text.strip() != text:
+    if (
+        text == ""
+        or any(char in text for char in ":#\n[]{}")
+        or text.strip() != text
+        or re.search(r"\s{2,}", text)
+    ):
         return json.dumps(text)
     return text
 
