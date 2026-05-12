@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any
+from typing import Any, TextIO
 
 
 class YAMLError(ValueError):
@@ -317,7 +317,7 @@ def _dump(obj: Any, indent: int = 0) -> list[str]:
     return [f"{spaces}{_scalar(obj)}"]
 
 
-def safe_dump(data: Any, stream: Any = None, *_, **__) -> str | None:
+def safe_dump(data: Any, stream: TextIO | None = None, *_, **__) -> str | None:
     rendered = "\n".join(_dump(data)) + "\n"
     if stream is not None:
         stream.write(rendered)

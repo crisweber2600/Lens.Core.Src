@@ -53,6 +53,11 @@ def _load_module(path: Path, name: str):
 
 
 def test_builtin_yaml_safe_dump_supports_stream_writes():
+    data = {"phase_order": ["preplan", "businessplan"]}
+    expected = "phase_order:\n  - preplan\n  - businessplan\n"
+    assert yaml.safe_dump(data) == expected
+    assert yaml.dump(data) == expected
+
     stream = io.StringIO()
     result = yaml.safe_dump({"repositories": [{"name": "repo", "enabled": True}]}, stream)
     assert result is None
@@ -61,11 +66,9 @@ def test_builtin_yaml_safe_dump_supports_stream_writes():
     }
 
     stream = io.StringIO()
-    result = yaml.dump({"phase_order": ["preplan", "businessplan"]}, stream=stream)
+    result = yaml.dump(data, stream=stream)
     assert result is None
-    assert yaml.safe_load(stream.getvalue()) == {
-        "phase_order": ["preplan", "businessplan"]
-    }
+    assert stream.getvalue() == expected
 
 
 def _prompt_caller(prompt: Path) -> str:
