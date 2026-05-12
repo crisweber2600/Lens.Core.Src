@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import re
 from pathlib import Path
 
@@ -49,6 +50,25 @@ def _load_module(path: Path, name: str):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def test_builtin_yaml_safe_dump_supports_stream_writes():
+    data = {"phase_order": ["preplan", "businessplan"]}
+    expected = "phase_order:\n  - preplan\n  - businessplan\n"
+    assert yaml.safe_dump(data) == expected
+    assert yaml.dump(data) == expected
+
+    stream = io.StringIO()
+    result = yaml.safe_dump({"repositories": [{"name": "repo", "enabled": True}]}, stream)
+    assert result is None
+    assert yaml.safe_load(stream.getvalue()) == {
+        "repositories": [{"name": "repo", "enabled": True}]
+    }
+
+    stream = io.StringIO()
+    result = yaml.dump(data, stream=stream)
+    assert result is None
+    assert stream.getvalue() == expected
 
 
 def _prompt_caller(prompt: Path) -> str:
