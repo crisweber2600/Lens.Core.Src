@@ -317,7 +317,8 @@ def _dump(obj: Any, indent: int = 0) -> list[str]:
     return [f"{spaces}{_scalar(obj)}"]
 
 
-def safe_dump(data: Any, stream: TextIO | None = None, *_, **__) -> str | None:
+def safe_dump(data: Any, stream: TextIO | None = None, *args: Any, **kwargs: Any) -> str | None:
+    """Render YAML, accepting and ignoring extra PyYAML dump options."""
     rendered = "\n".join(_dump(data)) + "\n"
     if stream is not None:
         stream.write(rendered)
@@ -325,5 +326,5 @@ def safe_dump(data: Any, stream: TextIO | None = None, *_, **__) -> str | None:
     return rendered
 
 
-def dump(data: Any, *args: Any, **kwargs: Any) -> str | None:
-    return safe_dump(data, *args, **kwargs)
+def dump(data: Any, stream: TextIO | None = None, *args: Any, **kwargs: Any) -> str | None:
+    return safe_dump(data, stream, *args, **kwargs)
