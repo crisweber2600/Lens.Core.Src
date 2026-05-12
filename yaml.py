@@ -317,9 +317,13 @@ def _dump(obj: Any, indent: int = 0) -> list[str]:
     return [f"{spaces}{_scalar(obj)}"]
 
 
-def safe_dump(data: Any, *_, **__) -> str:
-    return "\n".join(_dump(data)) + "\n"
+def safe_dump(data: Any, stream: Any = None, *_, **__) -> str | None:
+    rendered = "\n".join(_dump(data)) + "\n"
+    if stream is not None:
+        stream.write(rendered)
+        return None
+    return rendered
 
 
-def dump(data: Any, *args: Any, **kwargs: Any) -> str:
+def dump(data: Any, *args: Any, **kwargs: Any) -> str | None:
     return safe_dump(data, *args, **kwargs)
