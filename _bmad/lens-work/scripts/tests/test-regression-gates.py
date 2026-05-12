@@ -29,7 +29,7 @@ FINALIZEPLAN_SKILL = MODULE_ROOT / "skills" / "lens-finalizeplan" / "SKILL.md"
 CORE_BUGFIX_SKILL = MODULE_ROOT / "skills" / "bmad-lens-core-bugfix" / "SKILL.md"
 
 LIGHT_PREFLIGHT_SCRIPT_PATH = "lens.core/_bmad/lens-work/skills/lens-preflight/scripts/light-preflight.py"
-STANDARD_PREFLIGHT = f"uv run --script {LIGHT_PREFLIGHT_SCRIPT_PATH}"
+STANDARD_PREFLIGHT = f"python {LIGHT_PREFLIGHT_SCRIPT_PATH}"
 LEGACY_PREFLIGHT_SCRIPT_PATTERN = r"_bmad/lens-work/skills/lens-preflight/scripts/light-preflight\.py"
 LEGACY_PREFLIGHT_PATTERNS = (
     rf"(^|\s)uv\s+run\s+{LEGACY_PREFLIGHT_SCRIPT_PATTERN}(\s|$)",
