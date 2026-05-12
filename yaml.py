@@ -170,6 +170,12 @@ def _line_indent(line: str) -> int:
     return len(line) - len(line.lstrip(" "))
 
 
+def _is_nested_value_line(parent_indent: int, line: str) -> bool:
+    """Allow nested values under `key:` including same-indent list shorthand accepted by PyYAML."""
+    line_indent = _line_indent(line)
+    return line_indent > parent_indent or (line_indent == parent_indent and line.strip().startswith("- "))
+
+
 def _parse_block(lines: list[str], index: int, indent: int) -> tuple[Any, int]:
     if index >= len(lines):
         return None, index
@@ -252,10 +258,7 @@ def _parse_mapping(lines: list[str], index: int, indent: int) -> tuple[dict[str,
         index += 1
         if raw_value:
             result[key] = _parse_scalar(raw_value)
-        elif index < len(lines) and (
-            _line_indent(lines[index]) > indent
-            or (_line_indent(lines[index]) == indent and lines[index].strip().startswith("- "))
-        ):
+        elif index < len(lines) and _is_nested_value_line(indent, lines[index]):
             result[key], index = _parse_block(lines, index, _line_indent(lines[index]))
         else:
             result[key] = None
@@ -273,24 +276,21 @@ def safe_load(src: Any) -> Any:
 
 
 def safe_load_all(src: Any) -> Iterator[Any]:
+    """Yield parsed YAML documents separated by `---`/`...` markers."""
     text = _source_text(src)
     current: list[str] = []
-
-    def flush_document() -> Iterator[Any]:
-        if not current:
-            return iter(())
-        document = "\n".join(current)
-        current.clear()
-        return iter((safe_load(document),))
 
     for raw in text.splitlines():
         marker = raw.strip()
         if marker in {"---", "..."}:
-            yield from flush_document()
+            if current:
+                yield safe_load("\n".join(current))
+                current = []
             continue
         current.append(raw)
 
-    yield from flush_document()
+    if current:
+        yield safe_load("\n".join(current))
 
 
 def _scalar(value: Any) -> str:
