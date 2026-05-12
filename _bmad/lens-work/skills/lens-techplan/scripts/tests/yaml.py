@@ -45,7 +45,11 @@ def _load_external_pyyaml(repo_root: Path):
 
         module = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = module
-        spec.loader.exec_module(module)
+        try:
+            spec.loader.exec_module(module)
+        except Exception:
+            sys.modules.pop(spec.name, None)
+            continue
         return module
     return None
 
