@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 from pathlib import Path
 import sys
 
@@ -29,8 +30,12 @@ def _load_external_pyyaml(repo_root: Path):
         if not init_py.exists():
             continue
 
+        module_name = (
+            "_lens_external_yaml_"
+            + hashlib.sha1(str(Path(__file__).resolve()).encode("utf-8")).hexdigest()[:12]
+        )
         spec = importlib.util.spec_from_file_location(
-            "_lens_external_yaml",
+            module_name,
             init_py,
             submodule_search_locations=[str(init_py.parent)],
         )
