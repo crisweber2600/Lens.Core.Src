@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import hashlib
+import os
 from pathlib import Path
 import sys
 
@@ -58,7 +59,7 @@ def _resolve_root_yaml(repo_root: Path) -> Path:
 
 
 _REPO_ROOT = _resolve_repo_root()
-_MODULE = _load_external_pyyaml(_REPO_ROOT)
+_MODULE = _load_external_pyyaml(_REPO_ROOT) if os.getenv("GITHUB_ACTIONS", "").lower() == "true" else None
 if _MODULE is None:
     _ROOT_YAML = _resolve_root_yaml(_REPO_ROOT)
     _SPEC = importlib.util.spec_from_file_location("_lens_yaml_root", _ROOT_YAML)
