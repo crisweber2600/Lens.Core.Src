@@ -763,3 +763,63 @@ def test_control_repo_cleanup_runs_for_already_merged_pr(
     assert ["git", "branch", "-d", "lens-dev-example-plan"] in calls
     assert ["git", "branch", "-d", "lens-dev-example"] in calls
     assert ["git", "branch", "-d", "lens-dev-example-dev"] in calls
+
+
+def test_control_repo_cleanup_also_deletes_feature_prefixed_related_branches(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Cleanup deletes both canonical and feature/ prefixed branch variants."""
+    mod = _script_module()
+    control_repo = tmp_path / "control"
+    control_repo.mkdir()
+    calls: list[list[str]] = []
+
+    class Result:
+        def __init__(self, returncode: int = 0, stdout: str = "", stderr: str = "") -> None:
+            self.returncode = returncode
+            self.stdout = stdout
+            self.stderr = stderr
+
+    def fake_run(cmd, cwd, capture_output, text, timeout):
+        calls.append(cmd)
+        if cmd[:3] == ["git", "status", "--porcelain"]:
+            return Result()
+        if cmd == ["git", "fetch", "--prune", "origin"]:
+            return Result()
+        if cmd[:3] == ["git", "rev-parse", "--verify"]:
+            return Result()
+        if cmd[:3] == ["git", "merge-base", "--is-ancestor"]:
+            return Result()
+        if cmd in (
+            ["git", "checkout", "lens-dev-example-dev"],
+            ["git", "checkout", "main"],
+        ):
+            return Result()
+        if cmd in (
+            ["git", "pull", "--ff-only", "origin", "lens-dev-example-dev"],
+            ["git", "pull", "--ff-only", "origin", "main"],
+        ):
+            return Result()
+        if cmd == ["git", "push", "-u", "origin", "lens-dev-example-dev"]:
+            return Result()
+        if cmd[:3] == ["git", "branch", "-d"]:
+            return Result()
+        if cmd[:3] == ["git", "push", "origin"] and "--delete" in cmd:
+            return Result()
+        if cmd[:3] == ["gh", "pr", "list"]:
+            return Result(stdout='[{"url":"https://github.com/example/control/pull/7","state":"MERGED"}]')
+        if cmd[:3] == ["gh", "pr", "merge"]:
+            raise AssertionError("already merged PR should not be merged again")
+        raise AssertionError(f"unexpected command: {cmd}")
+
+    monkeypatch.setattr(mod.subprocess, "run", fake_run)
+    pr_url, error = mod._gh_merge_to_main(control_repo, "lens-dev-example", dry_run=False)
+
+    assert error is None
+    assert pr_url == "https://github.com/example/control/pull/7"
+    assert ["git", "branch", "-d", "feature/lens-dev-example-plan"] in calls
+    assert ["git", "branch", "-d", "feature/lens-dev-example"] in calls
+    assert ["git", "branch", "-d", "feature/lens-dev-example-dev"] in calls
+    assert ["git", "push", "origin", "--delete", "feature/lens-dev-example-plan"] in calls
+    assert ["git", "push", "origin", "--delete", "feature/lens-dev-example"] in calls
+    assert ["git", "push", "origin", "--delete", "feature/lens-dev-example-dev"] in calls

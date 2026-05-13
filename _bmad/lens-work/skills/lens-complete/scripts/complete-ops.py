@@ -338,6 +338,16 @@ def _gh_merge_to_main(
     feature_branch = feature_id
     plan_branch = f"{feature_id}-plan"
     cleanup_branches = [plan_branch, feature_branch, head_branch]
+    cleanup_candidates: list[str] = []
+    for branch in cleanup_branches:
+        variants = [branch]
+        if branch.startswith("feature/"):
+            variants.append(branch.removeprefix("feature/"))
+        else:
+            variants.append(f"feature/{branch}")
+        for variant in variants:
+            if variant and variant not in cleanup_candidates:
+                cleanup_candidates.append(variant)
     cwd = str(control_repo)
 
     def _git(*cmd_args: str) -> tuple[int, str, str]:
@@ -515,7 +525,7 @@ def _gh_merge_to_main(
         return pr_url, f"PR merged at {pr_url} but pull {base_branch} failed: {err or out}"
 
     cleanup_errors: list[str] = []
-    for branch in cleanup_branches:
+    for branch in cleanup_candidates:
         local_ref, _ = _branch_ref(branch, required=False)
         if local_ref == branch:
             code, out, err = _git("branch", "-d", branch)
