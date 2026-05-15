@@ -241,7 +241,7 @@ def _build_spec_payload(
     blockers: list[str] | None = None,
 ) -> dict[str, Any]:
     blocked = bool(blockers)
-    allowed_write_root = str(context.runtime_target_root).replace("/", "\\") if context is not None else None
+    allowed_write_root = str(context.runtime_target_root) if context is not None else None
     branch_identity = _build_bugfix_branch_identity(bug.slug)
     bug_reporter_fields = report.to_bug_reporter_fields()
     payload = {

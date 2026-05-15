@@ -24,6 +24,10 @@ CONTROL_REPO_ROOT = SKILL_SOURCE_ROOT.parents[3]
 GOVERNANCE_REPO_ROOT = CONTROL_REPO_ROOT / "TargetProjects" / "lens" / "Lens.Core.governance"
 
 
+def _normalize_path_text(value: str) -> str:
+    return value.replace("\\", "/")
+
+
 def load_module():
     spec = importlib.util.spec_from_file_location("nextlens_fix_spec", SCRIPT)
     module = importlib.util.module_from_spec(spec)
@@ -96,8 +100,8 @@ def test_fix_spec_contains_required_fields_in_deterministic_order():
     assert spec["bugfix_feature_slug"] == spec["bugfix_feature_id"]
     assert spec["bugfix_working_branch"] == f"feature/{spec['bugfix_feature_id']}"
     assert spec["bug_status"] == "QuickDev"
-    assert spec["bug_artifact_path"].endswith(
-        rf"bugs\nextlens\QuickDev\{spec['bug_slug']}.md"
+    assert _normalize_path_text(spec["bug_artifact_path"]).endswith(
+        f"bugs/nextlens/QuickDev/{spec['bug_slug']}.md"
     )
     assert spec["bug_reporter_fields"]["title"].startswith("NextLens bug:")
     assert spec["bug_reporter_fields"]["queue"] == "QuickDev"
@@ -117,8 +121,8 @@ def test_fix_spec_contains_required_fields_in_deterministic_order():
         "release_clone_paths",
         "unrelated_control_paths",
     ]
-    assert spec["suspected_target_surfaces"] == [
-        str((CONTROL_REPO_ROOT / "TargetProjects" / "nextlens" / "src" / "NextLens" / "Runtime").resolve()).replace("/", "\\")
+    assert [_normalize_path_text(path) for path in spec["suspected_target_surfaces"]] == [
+        (CONTROL_REPO_ROOT / "TargetProjects" / "nextlens" / "src" / "NextLens" / "Runtime").resolve().as_posix()
     ]
     assert spec["validation_expectations"][0] == "Run the NextLens patch preview regression and capture Doctor output."
     assert spec["delegation_blocked"] is False
@@ -168,8 +172,8 @@ def test_fix_spec_without_salmon_keeps_evidence_fields_and_fallback_surface():
 
     assert spec["salmon_linkage"] is None
     assert "Transcript digest:" in spec["evidence_summary"]
-    assert spec["suspected_target_surfaces"] == [
-        str((CONTROL_REPO_ROOT / "TargetProjects" / "nextlens" / "src" / "NextLens").resolve()).replace("/", "\\")
+    assert [_normalize_path_text(path) for path in spec["suspected_target_surfaces"]] == [
+        (CONTROL_REPO_ROOT / "TargetProjects" / "nextlens" / "src" / "NextLens").resolve().as_posix()
     ]
 
 

@@ -28,6 +28,10 @@ SKILL_SOURCE_ROOT = TEST_FILE.parents[4]
 CONTROL_REPO_ROOT = SKILL_SOURCE_ROOT.parents[3]
 
 
+def _normalize_path_text(value: str) -> str:
+    return value.replace("\\", "/")
+
+
 def load_fix_spec_module():
     spec = importlib.util.spec_from_file_location("nextlens_fix_spec_for_bug_reporter_tests", FIX_SPEC_SCRIPT)
     module = importlib.util.module_from_spec(spec)
@@ -773,8 +777,8 @@ class TestCreateBugEndToEnd(unittest.TestCase):
         expected_quickdev_path = (self.governance_repo / "bugs" / "nextlens" / "QuickDev" / f"{spec['bug_slug']}.md").resolve()
         self.assertEqual(Path(spec["bug_artifact_path"]).resolve(), expected_quickdev_path)
         self.assertEqual(
-            spec["suspected_target_surfaces"],
-            [str((CONTROL_REPO_ROOT / "TargetProjects" / "nextlens" / "src" / "NextLens" / "Runtime" / "PatchPreview").resolve()).replace("/", "\\")],
+            [_normalize_path_text(path) for path in spec["suspected_target_surfaces"]],
+            [(CONTROL_REPO_ROOT / "TargetProjects" / "nextlens" / "src" / "NextLens" / "Runtime" / "PatchPreview").resolve().as_posix()],
         )
         self.assertEqual(
             spec["validation_expectations"][0],
