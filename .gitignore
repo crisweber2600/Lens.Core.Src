@@ -2,3 +2,6 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 _bmad/lens-work/config.user.yaml
+_bmad/config.user.yaml
+_bmad/config.user.toml
+_bmad-output/
