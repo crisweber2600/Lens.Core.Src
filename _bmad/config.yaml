@@ -1,0 +1,12 @@
+document_output_language: English
+output_folder: '{project-root}/_bmad-output'
+ausx:
+  name: Auspex
+  description: Workflow suite for LENS/BMAD topology governance, living ledgers, Salmon
+    impact analysis, and stakeholder reporting artifacts.
+  version: 1.0.0
+  default_selected: false
+  feature_archive_path: '{project-root}/docs/features'
+  landscape_root: '{project-root}/docs'
+  reporting_output_path: '{project-root}/_bmad-output/auspex'
+  freshness_threshold_hours: '24'
