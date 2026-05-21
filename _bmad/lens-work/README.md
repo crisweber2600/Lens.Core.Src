@@ -23,6 +23,7 @@ Auspex is the preferred Lens workflow for organic, multi-feature knowledge work:
 - `module-help.csv` — full command catalog with args, phases, and outputs
 - `module.yaml` — module registration and prompt list
 - `agents/lens.agent.md` — entry agent with compact menu
+- `docs/auspex-lens-integration-flow.md` — how to wire Auspex into the Lens workflow and run the new flow
 
 ## Configuration
 

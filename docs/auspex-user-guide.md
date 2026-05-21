@@ -72,6 +72,8 @@ When a BMad agent runs an Auspex workflow, it loads these settings from BMad con
 
 ## Quick Start
 
+For the full Lens-side integration path, see `docs/auspex-lens-integration-flow.md`.
+
 1. Confirm Auspex is configured.
 
    Ask the BMad agent:
@@ -280,3 +282,4 @@ Use stable IDs that survive file moves. Use `belongs_to` for parent relationship
 - Feature archives: `docs/features`
 - Living ledgers and project knowledge: `docs`
 - Auspex reports and snapshots: `_bmad-output/auspex`
+- Lens integration flow: `docs/auspex-lens-integration-flow.md`
