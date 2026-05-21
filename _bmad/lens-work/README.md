@@ -9,6 +9,7 @@ Auspex is the preferred Lens workflow for organic, multi-feature knowledge work:
 | Command | Code | Description |
 |---------|------|-------------|
 | /switch | SW | Switch the active Lens feature context |
+| /lens-auspex-start | AX0 | Create an Auspex unit of work with durable memory, then hand off to Lens lifecycle |
 | /lens-auspex-map-audit | AXA | Audit topology, stable IDs, parent refs, ledgers, and projection readiness |
 | /lens-auspex-topology-design | AXT | Design or update Two-Tree program, domain, and service topology |
 | /lens-auspex-reporting-snapshot | AXR | Create read-only stakeholder status snapshots |

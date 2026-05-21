@@ -89,7 +89,31 @@ Use this contract when adding or maintaining any new Auspex wrapper.
 
 Use this flow for new organic work.
 
-### 1. Create Or Switch To A Lens Feature
+### 1. Start Work With Auspex
+
+Use `lens-auspex-start` as the preferred entrypoint for a new organic unit of work:
+
+```text
+lens-auspex-start "Reporting Snapshot Contract" --domain lens-dev --service new-codebase --track express
+```
+
+The command creates a normal Lens feature, switches context through Lens orchestration, creates `docs/features/<feature-id>/memory.md`, then delegates to `lens-next`.
+
+The memory file is the durable notebook for the unit of work. It captures intent, decisions, open loops, related context, lifecycle handoff, and promotion notes so useful thread knowledge can be reviewed as a diff and reused by later work.
+
+This follows the memory pattern described in [Codex-maxxing](https://jxnl.github.io/blog/writing/2026/05/10/codex-maxxing/): long-running work should serialize useful context into files that can be inspected, edited, diffed, and reused.
+
+### 2. Create A Related Feature
+
+When a second feature builds on the first one, pass the earlier feature as related context:
+
+```text
+lens-auspex-start "Reporting Snapshot Filters" --related lens-dev-new-codebase-reporting-snapshot-contract
+```
+
+The command loads the related feature summary and memory when available, recommends the same domain/service when appropriate, asks the operator to confirm or override them, creates a separate Lens feature, records the relationship in the new memory artifact, and delegates to `lens-next`.
+
+### 3. Create Or Switch To A Lens Feature Directly
 
 Use normal Lens lifecycle setup:
 
@@ -107,7 +131,9 @@ feature_id: lens-dev-new-codebase-auspex
 track: express
 ```
 
-### 2. Configure Auspex
+Use this lower-level route when you need direct governance feature initialization without Auspex memory bootstrap.
+
+### 4. Configure Auspex
 
 Run:
 
@@ -117,7 +143,7 @@ lens-auspex-setup
 
 This ensures `_bmad/config.yaml`, `_bmad/module-help.csv`, and `_bmad-output/auspex` conventions are present. Personal config belongs in ignored files such as `_bmad/config.user.yaml` or `_bmad/config.user.toml`.
 
-### 3. Design Or Confirm Topology
+### 5. Design Or Confirm Topology
 
 Run:
 
@@ -129,7 +155,7 @@ Use this when a feature needs to become a service, a service needs a domain, or 
 
 Do not move feature archives when the landscape changes.
 
-### 4. Archive Feature Evidence
+### 6. Archive Feature Evidence
 
 New durable feature evidence should live under:
 
@@ -153,7 +179,7 @@ promotion_status: pending
 
 Feature archives are historical records. Do not reorganize them to match later service or domain changes.
 
-### 5. Keep Living Ledgers In The Landscape
+### 7. Keep Living Ledgers In The Landscape
 
 Living service, domain, and program knowledge belongs under `docs/`, usually in a top-down path:
 
@@ -178,7 +204,7 @@ ledger_path: docs/lens-dev/new-codebase/ledger
 
 Landscape paths may change as topology matures. IDs should not.
 
-### 6. Audit Before Trusting The Map
+### 8. Audit Before Trusting The Map
 
 Run:
 
@@ -188,7 +214,7 @@ lens-auspex-map-audit
 
 Use the audit before promotion, topology reorganization, projection rebuilds, or stakeholder snapshots. Blocking findings should stop publication or promotion until resolved or explicitly accepted.
 
-### 7. Promote Durable Knowledge
+### 9. Promote Durable Knowledge
 
 Run:
 
@@ -204,7 +230,7 @@ Use apply behavior only when the ledger write is intentional:
 lens-auspex-ledger-promotion --apply
 ```
 
-### 8. Review Upstream Impact With Salmon
+### 10. Review Upstream Impact With Salmon
 
 Run:
 
@@ -214,7 +240,7 @@ lens-auspex-salmon-impact
 
 Use Salmon when a feature discovers something that may invalidate service, domain, program, sibling feature, or ledger assumptions. Salmon signals are advisory by default; blockers come from discovered inconsistency.
 
-### 9. Produce Stakeholder Snapshots
+### 11. Produce Stakeholder Snapshots
 
 Run:
 
@@ -279,6 +305,7 @@ The wrapper should stay orchestration-only. It should not duplicate the BMad mod
 
 | Need | Preferred command |
 | --- | --- |
+| Start new organic Auspex work | `lens-auspex-start` |
 | Register a new governance domain | `lens-new-domain` |
 | Register a new governance service | `lens-new-service` |
 | Initialize a Lens feature | `lens-new-feature` |
@@ -289,7 +316,7 @@ The wrapper should stay orchestration-only. It should not duplicate the BMad mod
 | Generate stakeholder reporting artifacts | `lens-auspex-reporting-snapshot` |
 | Maintain future UI data shape | `lens-auspex-reporting-ui` |
 
-Use legacy commands for governance scaffolding. Use Auspex for cumulative knowledge and reporting.
+Use `lens-auspex-start` for new organic work. Use legacy commands for lower-level governance scaffolding. Use the other Auspex commands for cumulative knowledge and reporting after a unit exists.
 
 ## Boundaries
 
@@ -313,4 +340,3 @@ uv run --with pytest --with pyyaml pytest _bmad/lens-work/scripts/tests/test-mod
 ```
 
 Full target validation is still useful, but failures outside the Auspex surface should be triaged separately from integration regressions.
-

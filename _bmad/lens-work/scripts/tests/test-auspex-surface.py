@@ -35,9 +35,11 @@ GITIGNORE = REPO_ROOT / ".gitignore"
 ARCH_DOC = REPO_ROOT / "docs" / "auspex-architecture.md"
 UI_CONTRACT_DOC = REPO_ROOT / "docs" / "auspex-reporting-ui-contract.md"
 USER_GUIDE = REPO_ROOT / "docs" / "auspex-user-guide.md"
+INTEGRATION_FLOW = REPO_ROOT / "docs" / "auspex-lens-integration-flow.md"
 
 
 AUSPEX_WRAPPERS = {
+    "lens-auspex-start": "lens-init-feature",
     "lens-auspex-setup": "ausx-setup",
     "lens-auspex-map-audit": "ausx-map-audit",
     "lens-auspex-ledger-promotion": "ausx-ledger-promotion",
@@ -104,14 +106,19 @@ def test_every_lens_auspex_wrapper_has_help_row_and_skill_file():
         assert setup_rows[wrapper]["phase"] == "preferred"
 
 
-def test_wrappers_delegate_to_imported_ausx_skills_and_enforce_release_read_only():
+def test_wrappers_delegate_to_expected_skills_and_enforce_release_read_only():
     for wrapper, delegated_skill in AUSPEX_WRAPPERS.items():
         text = _read_text(SKILLS_DIR / wrapper / "SKILL.md")
         assert "lens-preflight" in text
-        assert "lens-constitution" in text
+        if wrapper != "lens-auspex-start":
+            assert "lens-constitution" in text
         assert "write scope" in text.lower()
         assert "NextLensV3.Release" in text
         assert delegated_skill in text
+    start_text = _read_text(SKILLS_DIR / "lens-auspex-start" / "SKILL.md")
+    assert "lens-next" in start_text
+    assert "auspex_start_memory.py" in start_text
+    assert "docs/features/<feature-id>/memory.md" in start_text
 
 
 def test_imported_auspex_module_surface_exists():
@@ -150,9 +157,12 @@ def test_personal_config_and_generated_output_are_ignored():
 
 
 def test_preference_docs_recommend_auspex_without_hiding_legacy_commands():
-    combined = "\n".join([_read_text(AGENT_FILE), _read_text(README), _read_text(USER_GUIDE)])
+    combined = "\n".join(
+        [_read_text(AGENT_FILE), _read_text(README), _read_text(USER_GUIDE), _read_text(INTEGRATION_FLOW)]
+    )
     assert "Auspex" in combined
     assert "preferred" in combined.lower()
+    assert "lens-auspex-start" in combined
     assert "lens-new-domain" in combined
     assert "lens-new-service" in combined
     assert "lens-new-feature" in combined
@@ -185,3 +195,11 @@ def test_reporting_ui_wrapper_is_contract_only_not_a_deployable_ui():
     assert "no UI app" in text
     assert "auspex-reporting-ui-contract.md" in text
 
+
+def test_auspex_start_user_journey_documents_initial_and_related_features():
+    text = _read_text(INTEGRATION_FLOW)
+    assert 'lens-auspex-start "Reporting Snapshot Contract"' in text
+    assert 'lens-auspex-start "Reporting Snapshot Filters"' in text
+    assert "--related lens-dev-new-codebase-reporting-snapshot-contract" in text
+    assert "docs/features/<feature-id>/memory.md" in text
+    assert "delegates to `lens-next`" in text

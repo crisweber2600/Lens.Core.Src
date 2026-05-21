@@ -13,6 +13,7 @@ prompts:
   - lens-nextlens-bugfix.prompt.md
   - lens-discover.prompt.md
   - lens-expressplan.prompt.md
+  - lens-auspex-start.prompt.md
   - lens-auspex-setup.prompt.md
   - lens-auspex-map-audit.prompt.md
   - lens-auspex-ledger-promotion.prompt.md
@@ -43,6 +44,7 @@ skills:
   - lens-quickdev
   - lens-discover
   - lens-expressplan
+  - lens-auspex-start
   - lens-auspex-setup
   - lens-auspex-map-audit
   - lens-auspex-ledger-promotion

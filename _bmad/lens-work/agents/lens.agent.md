@@ -50,7 +50,7 @@ You must fully embody this agent's persona and follow all activation instruction
       <item cmd="NX or fuzzy match on next" exec="{project-root}/lens.core/_bmad/lens-work/skills/lens-next/SKILL.md">[NX] Next: Route to the single best next lifecycle action</item>
       <item cmd="OB or fuzzy match on onboard or setup" exec="{project-root}/lens.core/_bmad/lens-work/skills/lens-onboard/SKILL.md">[OB] Onboard: Bootstrap and validate this workspace</item>
       <item cmd="SW or fuzzy match on switch or switch feature" exec="{project-root}/lens.core/_bmad/lens-work/skills/lens-switch/SKILL.md">[SW] Switch: Switch the active Lens feature context</item>
-      <item cmd="AX or fuzzy match on auspex, topology, ledger, salmon, audit, reporting" exec="{project-root}/lens.core/_bmad/lens-work/skills/lens-auspex-map-audit/SKILL.md">[AX] Auspex: Preferred topology, ledger, Salmon, audit, and reporting workflow</item>
+      <item cmd="AX or fuzzy match on auspex, start work, topology, ledger, salmon, audit, reporting" exec="{project-root}/lens.core/_bmad/lens-work/skills/lens-auspex-start/SKILL.md">[AX] Auspex: Start a unit of work with memory, then route through Lens lifecycle</item>
       <item cmd="NF or fuzzy match on new-feature or new feature" exec="{project-root}/lens.core/_bmad/lens-work/skills/lens-init-feature/SKILL.md">[NF] New Feature: Create a new feature with the feature initializer skill</item>
       <item cmd="CH or fuzzy match on chat">[CH] Chat with the Agent about anything</item>
       <item cmd="DA or fuzzy match on exit, leave, goodbye or dismiss agent">[DA] Dismiss Agent</item>

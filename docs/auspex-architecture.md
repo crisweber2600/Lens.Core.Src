@@ -188,6 +188,7 @@ Lens exposes Auspex through these preferred wrappers:
 
 | Wrapper | Delegates to | Purpose |
 | --- | --- | --- |
+| `lens-auspex-start` | `lens-init-feature`, memory scaffold, `lens-next` | Create a new Auspex unit of work and hand off to Lens lifecycle. |
 | `lens-auspex-setup` | `ausx-setup` | Configure module config, help, and output paths. |
 | `lens-auspex-map-audit` | `ausx-map-audit` | Audit stable IDs, parent refs, ledgers, and projection readiness. |
 | `lens-auspex-ledger-promotion` | `ausx-ledger-promotion` | Promote completed feature knowledge into living ledgers. |
@@ -209,4 +210,3 @@ Minimum viable rollout:
 5. Add lightweight doctor behavior.
 6. Introduce Salmon recursive review.
 7. Expand to domain and program ledgers only when warranted.
-

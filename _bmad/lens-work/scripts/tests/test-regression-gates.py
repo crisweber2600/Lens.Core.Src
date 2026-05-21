@@ -127,6 +127,7 @@ def test_preflight_caller_classification_covers_prompt_surface():
         "lens-discover": "governance-write",
         "lens-new-domain": "governance-write",
         "lens-new-service": "governance-write",
+        "lens-auspex-start": "mixed",
         "lens-auspex-ledger-promotion": "mixed",
         "lens-auspex-map-audit": "mixed",
         "lens-auspex-reporting-snapshot": "mixed",

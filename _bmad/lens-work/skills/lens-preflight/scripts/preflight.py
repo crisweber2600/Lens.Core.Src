@@ -743,6 +743,7 @@ GOVERNANCE_WRITE_CALLERS = {
     "lens-new-service",
 }
 MIXED_CALLERS = {
+    "lens-auspex-start",
     "lens-auspex-ledger-promotion",
     "lens-auspex-map-audit",
     "lens-auspex-reporting-snapshot",

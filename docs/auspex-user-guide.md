@@ -51,6 +51,7 @@ When a BMad agent runs an Auspex workflow, it loads these settings from BMad con
 
 | Lens command | Delegated workflow | Use it when |
 | --- | --- | --- |
+| `lens-auspex-start` | `lens-init-feature`, memory scaffold, `lens-next` | You want to create a new unit of work with durable memory and start the Lens lifecycle. |
 | `lens-auspex-setup` | `ausx-setup` | You need to install, update, or repair Auspex config. |
 | `lens-auspex-map-audit` | `ausx-map-audit` | You need to validate stable IDs, parent references, links, or promotion readiness. |
 | `lens-auspex-ledger-promotion` | `ausx-ledger-promotion` | Completed feature knowledge needs to move into living ledgers. |
@@ -74,7 +75,17 @@ When a BMad agent runs an Auspex workflow, it loads these settings from BMad con
 
 For the full Lens-side integration path, see `docs/auspex-lens-integration-flow.md`.
 
-1. Confirm Auspex is configured.
+1. Start a unit of work with Auspex.
+
+   Ask Lens:
+
+   ```text
+   lens-auspex-start "Reporting Snapshot Contract" --domain lens-dev --service new-codebase --track express
+   ```
+
+   This creates a normal Lens feature, writes durable memory to `docs/features/<feature-id>/memory.md`, then delegates to `lens-next`.
+
+2. Confirm Auspex is configured.
 
    Ask the BMad agent:
 
@@ -84,11 +95,11 @@ For the full Lens-side integration path, see `docs/auspex-lens-integration-flow.
 
    Reconfiguration refreshes Auspex config and help entries using the module setup flow. If legacy Auspex or core config/package directories are present, setup may migrate matching values and remove those legacy files or directories after a successful merge. Review the confirmation summary if you still rely on legacy installer files.
 
-2. Put completed feature knowledge under `docs/features`.
+3. Put completed feature knowledge under `docs/features`.
 
    A feature archive can contain Markdown and YAML-bearing files. Auspex gets the best results when files include stable metadata such as `stable_id`, `entity_type`, `title`, `belongs_to`, `status`, `updated_at`, `source_feature`, `promotion_status`, `salmon_upstream`, `links`, and `replaces`.
 
-3. Keep living project knowledge under `docs`.
+4. Keep living project knowledge under `docs`.
 
    A typical ledger layout is:
 
@@ -98,7 +109,7 @@ For the full Lens-side integration path, see `docs/auspex-lens-integration-flow.
 
    Shallower paths are acceptable when the project is smaller, but each governed entity should still have clear parentage and durable identity.
 
-4. Run a map audit before major promotion or reporting work.
+5. Run a map audit before major promotion or reporting work.
 
    ```text
    ausx map audit
@@ -106,7 +117,7 @@ For the full Lens-side integration path, see `docs/auspex-lens-integration-flow.
 
    Use the report to clear blocking issues before relying on projections, promotions, or stakeholder summaries.
 
-5. Promote completed feature knowledge into ledgers.
+6. Promote completed feature knowledge into ledgers.
 
    ```text
    ausx ledger promotion for docs/features/<feature-id>
@@ -118,7 +129,7 @@ For the full Lens-side integration path, see `docs/auspex-lens-integration-flow.
    ausx ledger promotion for docs/features/<feature-id> --apply
    ```
 
-6. Create a stakeholder snapshot.
+7. Create a stakeholder snapshot.
 
    ```text
    ausx reporting snapshot --format markdown,json
