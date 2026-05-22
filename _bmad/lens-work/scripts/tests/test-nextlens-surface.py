@@ -55,7 +55,7 @@ PUBLIC_NEXTLENS_COMMANDS = {
     "lens-work-intake",
 }
 
-LEGACY_COMMAND_PREFIXES = ("aus" "x-", "lens-" "auspex-")
+LEGACY_COMMAND_PREFIXES = ("ausx-", "lens-auspex-")
 
 
 def _skill_dirs(root: Path) -> set[str]:

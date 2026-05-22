@@ -33,7 +33,7 @@ The shared metadata contract is `skills/lens-setup/assets/metadata-schema.md`. D
 Run the stdlib script when local execution is available:
 
 ```bash
-python scripts/lens_projection.py rebuild {project-root} --work-intake-path {work_intake_path} --feature-archive-path {feature_archive_path} --landscape-root {landscape_root} --reporting-output-path {reporting_output_path}
+python {project-root}/skills/lens-projection-rebuild/scripts/lens_projection.py rebuild {project-root} --work-intake-path {work_intake_path} --feature-archive-path {feature_archive_path} --landscape-root {landscape_root} --reporting-output-path {reporting_output_path}
 ```
 
 Use `--force` only when the user accepts rebuilding despite blocking doctor findings. Use `--include-drafts` only for planning previews; label those outputs as draft-inclusive.
