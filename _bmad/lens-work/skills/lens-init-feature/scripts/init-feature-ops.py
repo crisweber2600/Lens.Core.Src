@@ -79,6 +79,29 @@ def resolve_control_topology(args: argparse.Namespace) -> str:
     return topology
 
 
+def resolve_default_branch(repo: str | None) -> str:
+    """Resolve a repo's remote default branch, falling back to main."""
+    if not repo:
+        return "main"
+    try:
+        result = subprocess.run(
+            ["git", "-C", repo, "remote", "show", "origin"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return "main"
+    if result.returncode == 0:
+        for line in result.stdout.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("HEAD branch:"):
+                branch = stripped.split(":", 1)[1].strip()
+                if branch and branch != "(unknown)":
+                    return branch
+    return "main"
+
+
 def now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -1208,7 +1231,8 @@ def cmd_create(args: argparse.Namespace) -> dict:
         control_topology = resolve_control_topology(args)
     except ValueError as exc:
         return {"status": "fail", "scope": "feature", "dry_run": bool(args.dry_run), "error": str(exc)}
-    plan_branch = feature_id if control_topology == "flat" else f"{feature_id}-plan"
+    control_default_branch = resolve_default_branch(control_repo) if control_repo else "main"
+    plan_branch = control_default_branch if control_topology == "flat" else f"{feature_id}-plan"
 
     if not track:
         try:
@@ -1331,6 +1355,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
             "feature_id": feature_id,
             "feature_slug": feature_slug,
             "control_topology": control_topology,
+            "control_default_branch": control_default_branch,
             "plan_branch": plan_branch,
             "domain": domain,
             "service": service,
@@ -1464,6 +1489,7 @@ def cmd_create(args: argparse.Namespace) -> dict:
         "feature_id": feature_id,
         "feature_slug": feature_slug,
         "control_topology": control_topology,
+        "control_default_branch": control_default_branch,
         "plan_branch": plan_branch,
         "domain": domain,
         "service": service,

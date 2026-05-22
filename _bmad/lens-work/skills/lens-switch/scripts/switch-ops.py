@@ -92,6 +92,27 @@ def resolve_control_topology(args: argparse.Namespace) -> tuple[str | None, dict
     return topology, None
 
 
+def resolve_default_branch(repo: str) -> str:
+    """Resolve the control repo's remote default branch, falling back to main."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", repo, "remote", "show", "origin"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return "main"
+    if result.returncode == 0:
+        for line in result.stdout.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("HEAD branch:"):
+                branch = stripped.split(":", 1)[1].strip()
+                if branch and branch != "(unknown)":
+                    return branch
+    return "main"
+
+
 def resolve_governance_repo(args: argparse.Namespace) -> tuple[str | None, dict | None]:
     """Resolve governance repo from CLI, local override, then module config.
 
@@ -513,7 +534,7 @@ def cmd_list(args: argparse.Namespace) -> dict:
     return {"status": "pass", "mode": "features", "features": features, "total": len(features)}
 
 
-def try_git_checkout(control_repo: str, branch: str) -> tuple[bool, str | None]:
+def try_git_checkout(control_repo: str, branch: str, *, pull: bool = False) -> tuple[bool, str | None]:
     """Attempt git checkout of branch in control_repo. Returns (switched, error_code_or_msg)."""
     try:
         result = subprocess.run(
@@ -521,14 +542,33 @@ def try_git_checkout(control_repo: str, branch: str) -> tuple[bool, str | None]:
             capture_output=True,
             text=True,
         )
-        if result.returncode == 0:
-            return True, None
-        output = result.stderr.strip() or result.stdout.strip() or f"git checkout {branch} failed"
-        if "pathspec" in output and "did not match any file" in output:
-            return False, "branch_not_found"
-        return False, output
+        if result.returncode != 0:
+            output = result.stderr.strip() or result.stdout.strip() or f"git checkout {branch} failed"
+            if "pathspec" in output and "did not match any file" in output:
+                return False, "branch_not_found"
+            return False, output
     except OSError as e:
         return False, f"git not available: {e}"
+    if pull:
+        try:
+            remote_result = subprocess.run(
+                ["git", "-C", control_repo, "remote", "get-url", "origin"],
+                capture_output=True,
+                text=True,
+            )
+            if remote_result.returncode != 0:
+                return True, None
+            pull_result = subprocess.run(
+                ["git", "-C", control_repo, "pull", "--ff-only", "origin", branch],
+                capture_output=True,
+                text=True,
+            )
+        except OSError as e:
+            return False, f"git not available: {e}"
+        if pull_result.returncode != 0:
+            output = pull_result.stderr.strip() or pull_result.stdout.strip() or f"git pull {branch} failed"
+            return False, output
+    return True, None
 
 
 def cmd_switch(args: argparse.Namespace) -> dict:
@@ -558,8 +598,9 @@ def cmd_switch(args: argparse.Namespace) -> dict:
     index_entry = index_by_id.get(args.feature_id)
     if not index_entry:
         return fail("feature_not_found", f"Feature '{args.feature_id}' not found in feature-index.yaml")
+    control_default_branch = resolve_default_branch(control_repo) if control_topology == "flat" else None
     plan_branch = (
-        args.feature_id
+        control_default_branch or "main"
         if control_topology == "flat"
         else str(index_entry.get("plan_branch") or f"{args.feature_id}-plan")
     )
@@ -596,7 +637,11 @@ def cmd_switch(args: argparse.Namespace) -> dict:
     branch_switched2: bool | None = None
     branch_error2: str | None = None
     if control_repo:
-        branch_switched2, branch_error2 = try_git_checkout(control_repo, plan_branch)
+        branch_switched2, branch_error2 = try_git_checkout(
+            control_repo,
+            plan_branch,
+            pull=control_topology == "flat",
+        )
 
     owner = index_entry.get("owner", "")
     if not owner and isinstance(feature_data.get("team"), list) and feature_data["team"]:
@@ -609,6 +654,7 @@ def cmd_switch(args: argparse.Namespace) -> dict:
     out: dict = {
         "status": "pass",
         "control_topology": control_topology,
+        "control_default_branch": control_default_branch,
         "plan_branch": plan_branch,
         "feature_id": args.feature_id,
         "domain": feature_data.get("domain", ""),

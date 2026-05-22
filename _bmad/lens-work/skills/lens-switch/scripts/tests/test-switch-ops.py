@@ -483,14 +483,15 @@ def test_branch_missing_reports_new_feature_guidance(tmp_path: Path):
     assert payload["message"] == "Run /new-feature to initialize branches."
 
 
-def test_flat_topology_switch_checks_out_feature_branch(tmp_path: Path):
+def test_flat_topology_switch_checks_out_default_branch(tmp_path: Path):
     governance = tmp_path / "governance"
     control = tmp_path / "control"
     governance.mkdir()
     control.mkdir()
     init_git_repo(control)
-    create_branch(control, "auth-login")
-    write_index(governance, [{**INDEX_ENTRIES[0], "plan_branch": "auth-login"}])
+    subprocess.run(["git", "-C", str(control), "branch", "-M", "main"], capture_output=True, check=True)
+    create_branch(control, "work-in-progress")
+    write_index(governance, [{**INDEX_ENTRIES[0], "plan_branch": "main"}])
     feature_dir = write_feature(governance, "platform", "identity", "auth-login", FEATURE)
 
     payload, code = run_switch(
@@ -505,9 +506,10 @@ def test_flat_topology_switch_checks_out_feature_branch(tmp_path: Path):
 
     assert code == 0
     assert payload["control_topology"] == "flat"
-    assert payload["plan_branch"] == "auth-login"
+    assert payload["control_default_branch"] == "main"
+    assert payload["plan_branch"] == "main"
     assert payload["branch_switched"] is True
-    assert payload["checked_out_branch"] == "auth-login"
+    assert payload["checked_out_branch"] == "main"
     assert Path(payload["context_path"]) == feature_dir
 
 
