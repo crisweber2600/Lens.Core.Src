@@ -1,12 +1,16 @@
 document_output_language: English
 output_folder: '{project-root}/_bmad-output'
-ausx:
-  name: Auspex
-  description: Workflow suite for LENS/BMAD topology governance, living ledgers, Salmon
-    impact analysis, and stakeholder reporting artifacts.
+lens:
+  name: Lens
+  description: Workflow suite for clean-room NextLens lifecycle planning, topology governance,
+    living ledgers, Salmon impact analysis, and stakeholder reporting artifacts.
   version: 1.0.0
   default_selected: false
+  work_intake_path: '{project-root}/docs/features'
   feature_archive_path: '{project-root}/docs/features'
   landscape_root: '{project-root}/docs'
-  reporting_output_path: '{project-root}/_bmad-output/auspex'
+  reporting_output_path: '{project-root}/_bmad-output/lens'
   freshness_threshold_hours: '24'
+  lens_mode: auto
+  lens_lifecycle_contract: '{project-root}/skills/lens-lifecycle/assets/lifecycle.yaml'
+  lens_context_path: '{project-root}/.lens/personal/context.yaml'
