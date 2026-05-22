@@ -30,6 +30,7 @@ NEW_FEATURE_COMMAND = "/new-feature"
 LIST_HIDDEN_PHASES = {"complete", "dev-complete", "archived", "abandoned"}
 LIST_HIDDEN_STATUSES = {"complete", "completed", "archived", "abandoned", "superseded"}
 CONTROL_TOPOLOGIES = ("3-branch", "flat")
+DEFAULT_BRANCH_CANDIDATES = ("main", "master", "develop", "trunk")
 
 
 def fail(error: str, message: str) -> dict:
@@ -92,25 +93,69 @@ def resolve_control_topology(args: argparse.Namespace) -> tuple[str | None, dict
     return topology, None
 
 
-def resolve_default_branch(repo: str) -> str:
-    """Resolve the control repo's remote default branch, falling back to main."""
+def git_branch_exists(repo: str, branch: str, *, include_remote: bool = False) -> bool:
+    """Return True when branch exists locally or on origin when requested."""
     try:
         result = subprocess.run(
-            ["git", "-C", repo, "remote", "show", "origin"],
+            ["git", "-C", repo, "branch", "--list", branch],
             capture_output=True,
             text=True,
             timeout=30,
         )
     except (OSError, subprocess.TimeoutExpired):
-        return "main"
-    if result.returncode == 0:
-        for line in result.stdout.splitlines():
-            stripped = line.strip()
-            if stripped.startswith("HEAD branch:"):
-                branch = stripped.split(":", 1)[1].strip()
-                if branch and branch != "(unknown)":
-                    return branch
-    return "main"
+        return False
+    if result.stdout.strip():
+        return True
+    if not include_remote:
+        return False
+    try:
+        result = subprocess.run(
+            ["git", "-C", repo, "branch", "-r", "--list", f"origin/{branch}"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return bool(result.stdout.strip())
+
+
+def git_current_branch(repo: str) -> str | None:
+    """Return the current branch name when available."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", repo, "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0:
+        return None
+    branch = result.stdout.strip()
+    return branch or None
+
+
+def resolve_default_branch(repo: str) -> str:
+    """Resolve the control repo default branch, falling back to known/current branches."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", repo, "symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        result = None
+    if result and result.returncode == 0:
+        remote_ref = result.stdout.strip()
+        if remote_ref.startswith("origin/"):
+            return remote_ref.removeprefix("origin/")
+    for candidate in DEFAULT_BRANCH_CANDIDATES:
+        if git_branch_exists(repo, candidate, include_remote=True):
+            return candidate
+    return git_current_branch(repo) or "main"
 
 
 def resolve_governance_repo(args: argparse.Namespace) -> tuple[str | None, dict | None]:
@@ -564,10 +609,10 @@ def try_git_checkout(control_repo: str, branch: str, *, pull: bool = False) -> t
                 text=True,
             )
         except OSError as e:
-            return False, f"git not available: {e}"
+            return True, f"git not available: {e}"
         if pull_result.returncode != 0:
             output = pull_result.stderr.strip() or pull_result.stdout.strip() or f"git pull {branch} failed"
-            return False, output
+            return True, output
     return True, None
 
 
