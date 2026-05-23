@@ -1,0 +1,11 @@
+stable_id: service:wrong-prefix
+entity_type: feature
+title: Invalid Prefix
+belongs_to: service:lens-workbench
+status: active
+publication_state: draft
+updated_at: "2026-05-23T00:00:00Z"
+feature_id: invalid-prefix
+track: full
+phase: finalizeplan
+docs_path: docs/features/invalid-prefix

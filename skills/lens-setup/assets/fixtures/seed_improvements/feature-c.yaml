@@ -1,0 +1,19 @@
+stable_id: feature:seed-c
+entity_type: feature
+title: Seed Feature C
+belongs_to: service:lens-workbench
+status: active
+publication_state: draft
+updated_at: "2026-05-23T00:00:00Z"
+feature_id: seed-c
+track: full
+phase: businessplan
+docs_path: docs/features/seed-c
+salmon_upstream:
+  - signal_id: sig-c
+    target_stable_id: service:lens-workbench
+    category: usability
+    status: advisory
+    owner: Lens maintainer
+    rationale: Weakly similar UX note remains advisory.
+    triggers: []
