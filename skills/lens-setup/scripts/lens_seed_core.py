@@ -200,6 +200,8 @@ def normalize_entity(metadata: dict[str, Any], body: str, path: Path, root: Path
         stable_id = f"feature:{metadata['feature_id']}"
     if not entity_type and stable_id:
         entity_type = stable_id.split(":", 1)[0]
+    docs = metadata.get("docs")
+    docs_fallback = docs.get("path") if isinstance(docs, dict) else None
     return {
         "stable_id": stable_id,
         "entity_type": entity_type,
@@ -211,7 +213,7 @@ def normalize_entity(metadata: dict[str, Any], body: str, path: Path, root: Path
         "feature_id": normalize_text(metadata.get("feature_id") or metadata.get("featureId") or metadata.get("id")),
         "track": normalize_text(metadata.get("track")),
         "phase": normalize_text(metadata.get("phase")),
-        "docs_path": normalize_text(metadata.get("docs_path") or metadata.get("docs", {}).get("path") if isinstance(metadata.get("docs"), dict) else metadata.get("docs_path")),
+        "docs_path": normalize_text(metadata.get("docs_path") or docs_fallback),
         "target_repos": as_list(metadata.get("target_repos")),
         "depends_on": as_list(metadata.get("depends_on")),
         "related_to": as_list(metadata.get("related_to")),
@@ -283,8 +285,8 @@ def validate_required_fields(entities: list[dict[str, Any]]) -> list[dict[str, A
         if entity.get("entity_type") == "feature":
             required.extend(FEATURE_FIELDS)
         for field in required:
-            if entity.get(source_field := field) in (None, "", [], {}):
-                findings.append(finding(severity_for_entity(entity), "missing_required_field", entity, f"Missing required metadata field `{source_field}`.", f"Add `{source_field}` to the source metadata."))
+            if entity.get(field) in (None, "", [], {}):
+                findings.append(finding(severity_for_entity(entity), "missing_required_field", entity, f"Missing required metadata field `{field}`.", f"Add `{field}` to the source metadata."))
     return findings
 
 
@@ -407,13 +409,22 @@ def validate_cycles(entities: list[dict[str, Any]]) -> list[dict[str, Any]]:
     by_id = {entity["stable_id"]: entity for entity in entities if entity.get("stable_id")}
     graph = {entity["stable_id"]: entity.get("belongs_to") for entity in entities if entity.get("stable_id") and entity.get("belongs_to") in by_id}
     findings: list[dict[str, Any]] = []
+    cycle_nodes_seen: set[str] = set()
+    cycles_reported: set[frozenset[str]] = set()
     for stable_id in sorted(graph):
+        if stable_id in cycle_nodes_seen:
+            continue
         seen: list[str] = []
         current = stable_id
         while current in graph:
             if current in seen:
-                cycle = seen[seen.index(current) :] + [current]
-                findings.append(finding("blocker", "parent_cycle", by_id[stable_id], f"Parent graph contains a cycle: {' -> '.join(cycle)}.", "Break the cycle by correcting one parent reference.", cycle=cycle))
+                cycle_nodes = seen[seen.index(current) :]
+                cycle_nodes_seen.update(cycle_nodes)
+                cycle_key = frozenset(cycle_nodes)
+                if cycle_key not in cycles_reported:
+                    cycles_reported.add(cycle_key)
+                    cycle = cycle_nodes + [cycle_nodes[0]]
+                    findings.append(finding("blocker", "parent_cycle", by_id[cycle_nodes[0]], f"Parent graph contains a cycle: {' -> '.join(cycle)}.", "Break the cycle by correcting one parent reference.", cycle=cycle))
                 break
             seen.append(current)
             current = graph[current]
@@ -860,7 +871,7 @@ def run_release_validation(args: argparse.Namespace) -> tuple[int, dict[str, Any
     branch = getattr(args, "branch", None) or git_branch(root)
     setattr(args, "branch", branch)
     doctor = run_doctor(args)
-    projection_args = argparse.Namespace(**{**vars(args), "check": True, "write": False, "explain": None, "branch": None})
+    projection_args = argparse.Namespace(**{**vars(args), "check": True, "write": False, "explain": None, "branch": branch})
     projection_code, projection = run_rebuild(projection_args)
     salmon = run_salmon_report(args)
     promotion = validate_promotion(collect_entities(args), doctor)
