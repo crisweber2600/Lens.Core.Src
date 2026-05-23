@@ -1,0 +1,26 @@
+stable_id: feature:lens-seed-improvements
+entity_type: feature
+title: Lens Seed Improvements
+belongs_to: unknown
+status: intake-blocked
+publication_state: draft
+updated_at: "2026-05-23T00:00:00Z"
+feature_id: lens-seed-improvements
+track: full
+phase: finalizeplan-complete
+docs_path: docs/features/lens-seed-improvements
+target_repos:
+  - name: lens.core.src
+    local_path: TargetProjects/lens-dev/new-codebase/lens.core.src
+    role: implementation
+topology_waiver:
+  code: belongs_to_unknown
+  status: accepted
+  owner: Lens maintainer
+  rationale: Pilot ledger is created during Dev rather than through a legacy placeholder.
+  affected_stable_ids:
+    - feature:lens-seed-improvements
+  review_point: finalizeplan
+  expires_at: ""
+  impacted_gate: finalizeplan
+  accepted_at: "2026-05-23T00:00:00Z"

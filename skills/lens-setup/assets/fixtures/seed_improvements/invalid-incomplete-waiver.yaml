@@ -1,0 +1,14 @@
+stable_id: feature:incomplete-waiver
+entity_type: feature
+title: Incomplete Waiver
+belongs_to: unknown
+status: active
+publication_state: draft
+updated_at: "2026-05-23T00:00:00Z"
+feature_id: incomplete-waiver
+track: full
+phase: finalizeplan
+docs_path: docs/features/incomplete-waiver
+topology_waiver:
+  code: belongs_to_unknown
+  status: accepted

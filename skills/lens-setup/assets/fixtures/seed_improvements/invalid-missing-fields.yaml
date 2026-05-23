@@ -1,0 +1,4 @@
+stable_id: feature:missing-fields
+entity_type: feature
+title: Missing Fields
+belongs_to: service:lens-workbench

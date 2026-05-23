@@ -1,0 +1,22 @@
+stable_id: feature:seed-b
+entity_type: feature
+title: Seed Feature B
+belongs_to: service:lens-workbench
+status: active
+publication_state: draft
+updated_at: "2026-05-23T00:00:00Z"
+feature_id: seed-b
+track: full
+phase: businessplan
+docs_path: docs/features/seed-b
+salmon_upstream:
+  - signal_id: sig-b
+    target_stable_id: service:lens-workbench
+    category: topology
+    status: material
+    owner: Lens maintainer
+    rationale: Parentage affects lifecycle assumptions.
+    triggers:
+      - lifecycle_invalidated
+    from_status: advisory
+    to_status: material

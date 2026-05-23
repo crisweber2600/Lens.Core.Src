@@ -1,0 +1,15 @@
+stable_id: service:lens-workbench
+entity_type: service
+title: Lens Workbench
+belongs_to: unknown
+status: active
+publication_state: draft
+updated_at: "2026-05-23T00:00:00Z"
+features:
+  - feature:lens-seed-improvements
+promotion_provenance:
+  source_feature: feature:lens-seed-improvements
+  source_signals: []
+  promotion_rationale: Pilot service ledger verifies two-tree parentage without moving feature archives.
+  reviewer: Lens maintainer
+  projection_evidence: projection:governance-map

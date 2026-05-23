@@ -1,0 +1,7 @@
+stable_id: service:cycle-a
+entity_type: service
+title: Cycle A
+belongs_to: service:cycle-b
+status: active
+publication_state: published
+updated_at: "2026-05-23T00:00:00Z"

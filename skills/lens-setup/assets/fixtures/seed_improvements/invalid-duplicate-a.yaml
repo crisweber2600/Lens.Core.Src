@@ -1,0 +1,11 @@
+stable_id: feature:duplicate
+entity_type: feature
+title: Duplicate A
+belongs_to: service:lens-workbench
+status: active
+publication_state: published
+updated_at: "2026-05-23T00:00:00Z"
+feature_id: duplicate-a
+track: full
+phase: dev
+docs_path: docs/features/duplicate-a

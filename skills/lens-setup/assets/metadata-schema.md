@@ -47,6 +47,43 @@ This contract defines the frontmatter Lens workflows read from authored project 
 | `salmon_status` | optional | `none`, `pending`, `reviewed`, or `blocked`. |
 | `links` | optional | Local paths or stable IDs this artifact depends on or references. |
 
+## Topology Waivers
+
+`belongs_to: unknown` is allowed only as visible topology debt. A complete waiver must include:
+
+```yaml
+topology_waiver:
+  code: belongs_to_unknown
+  owner: ""
+  rationale: ""
+  affected_stable_ids: []
+  review_point: finalizeplan
+  impacted_gate: finalizeplan
+  status: accepted
+  accepted_at: ""
+```
+
+Dev and Complete validation must either verify a pilot ledger relationship, such as `service:lens-workbench` linking the feature stable ID in its `features` list, or preserve a complete reviewed exception.
+
+## Salmon Signals
+
+`salmon_upstream` may contain structured signal records:
+
+```yaml
+salmon_upstream:
+  - signal_id: sig-a
+    target_stable_id: service:lens-workbench
+    category: topology
+    status: advisory
+    owner: ""
+    rationale: ""
+    triggers: []
+    from_status: advisory
+    to_status: material
+```
+
+Legal state transitions are `advisory -> material`, `material -> blocked|resolved`, `blocked -> waived|resolved`, and `waived -> resolved`. Materiality triggers include published truth conflicts, identity or parent resolution breaks, lifecycle invalidation, critical dependencies, security inconsistencies, and API inconsistencies.
+
 ## Local Lifecycle Artifacts
 
 All clean-room lifecycle artifacts for a feature live beside `feature.yaml` unless `docs_path` points elsewhere.

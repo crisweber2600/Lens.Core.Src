@@ -31,7 +31,45 @@ class MergeHelpCsvTests(unittest.TestCase):
             self.assertEqual(header, ["module", "skill", "display-name", "menu-code"])
             self.assertEqual(loaded, rows)
 
+    def test_anti_zombie_merge_is_idempotent(self):
+        module = load_script("merge-help-csv.py")
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            source = tmp_path / "source.csv"
+            target = tmp_path / "target.csv"
+            header = ",".join(module.HEADER)
+            source.write_text(
+                header
+                + "\nLens,lens-doctor,doctor,LD,Check stable IDs,doctor,[scope],doctor,,,,,\n"
+                + "Lens,lens-projection-rebuild,projection,PR,Rebuild maps,rebuild,[scope],projection,,,,,\n",
+                encoding="utf-8",
+            )
+            target.write_text(
+                header
+                + "\nLens,lens-old,old,ZZ,Stale row,old,[],anytime,,,,,\n"
+                + "Other,other-skill,other,OT,Other row,run,[],anytime,,,,,\n",
+                encoding="utf-8",
+            )
+
+            source_header, source_rows = module.read_csv_rows(str(source))
+            target_header, target_rows = module.read_csv_rows(str(target))
+            filtered = target_rows
+            for code in module.extract_module_codes(source_rows):
+                filtered = module.filter_rows(filtered, code)
+            merged = filtered + source_rows
+            module.write_csv(str(target), target_header or source_header, merged)
+            first = target.read_text(encoding="utf-8")
+
+            target_header, target_rows = module.read_csv_rows(str(target))
+            filtered = target_rows
+            for code in module.extract_module_codes(source_rows):
+                filtered = module.filter_rows(filtered, code)
+            module.write_csv(str(target), target_header, filtered + source_rows)
+
+            self.assertEqual(target.read_text(encoding="utf-8"), first)
+            _, loaded = module.read_csv_rows(str(target))
+            self.assertEqual(sum(1 for row in loaded if row[0] == "Lens"), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
-

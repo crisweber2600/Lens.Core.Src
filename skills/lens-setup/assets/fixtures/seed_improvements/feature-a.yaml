@@ -1,0 +1,22 @@
+stable_id: feature:seed-a
+entity_type: feature
+title: Seed Feature A
+belongs_to: service:lens-workbench
+status: active
+publication_state: draft
+updated_at: "2026-05-23T00:00:00Z"
+feature_id: seed-a
+track: full
+phase: businessplan
+docs_path: docs/features/seed-a
+salmon_upstream:
+  - signal_id: sig-a
+    target_stable_id: service:lens-workbench
+    category: topology
+    status: material
+    owner: Lens maintainer
+    rationale: Parentage contradicts published ledger truth.
+    triggers:
+      - parent_resolution_break
+    from_status: advisory
+    to_status: material

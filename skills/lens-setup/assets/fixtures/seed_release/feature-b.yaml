@@ -1,0 +1,22 @@
+stable_id: feature:seed-b
+entity_type: feature
+title: Seed Feature B
+belongs_to: service:lens-workbench
+status: active
+publication_state: draft
+updated_at: "2026-05-23T00:00:00Z"
+feature_id: seed-b
+track: full
+phase: businessplan
+docs_path: docs/features/seed-b
+salmon_upstream:
+  - signal_id: sig-b
+    target_stable_id: service:lens-workbench
+    category: topology
+    status: resolved
+    owner: Lens maintainer
+    rationale: Parentage issue resolved by pilot ledger.
+    triggers:
+      - lifecycle_invalidated
+    from_status: material
+    to_status: resolved
